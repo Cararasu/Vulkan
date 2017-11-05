@@ -6,25 +6,15 @@
 
 void VWindow::initializeWindow(){
 	
-	pgcQueue = vGlobal.vDevice.requestPGCQueue();
+	pgcQueue = vGlobal.deviceWrapper.requestPGCQueue();
 	
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	window = glfwCreateWindow(640, 480, "Vulkan Test", NULL, NULL);
-	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, &surface), "Creation of Surface failed");
+	window = glfwCreateWindow(640, 640, "Vulkan Test", NULL, NULL);
+	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, &surface), {
+		printf("Creation of Surface failed");
+	});
 	
-	VkBool32 supported;
-	VCHECKCALL(vkGetPhysicalDeviceSurfaceSupportKHR(vGlobal.physicalDevice, pgcQueue->presentQId, surface, &supported), "Surface Not supported");
-	
-	if (VkResult res = glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, &surface)){
-		printf ("Surface Creation Failed %d\n", res);
-		return;
-	}
-	
-	VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
-	if (VkResult res = vkCreateSemaphore(vGlobal.vDevice.device, &semaphoreCreateInfo, nullptr, &imageAvailableGuardSem)) {
-		printf("Creation of Semaphore failed %d\n", res);
-		return;
-	}
+	imageAvailableGuardSem = createSemaphore(vGlobal.deviceWrapper.device);
 	
 	{
 		{
@@ -113,39 +103,27 @@ void VWindow::initializeWindow(){
 		swapchainCreateInfo.presentMode = chosenPresentationMode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 		swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-		if (VkResult res = vkCreateSwapchainKHR(vGlobal.vDevice.device, &swapchainCreateInfo, nullptr, &swapChain)) {
-			printf("Creation of Swapchain failed %d\n", res);
-			return;
-		}
+		
+		VkBool32 supported;
+		VCHECKCALL(vkGetPhysicalDeviceSurfaceSupportKHR(vGlobal.physicalDevice, pgcQueue->presentQId, surface, &supported), {
+			printf("Surface Not supported");
+		});
+		printf("SUPPORTED %d\n", supported);
+		VCHECKCALL(vkCreateSwapchainKHR(vGlobal.deviceWrapper.device, &swapchainCreateInfo, nullptr, &swapChain), {
+			printf("Creation of Swapchain failed\n");
+		});
 	}
 	uint32_t swapImageCount;
-	vkGetSwapchainImagesKHR(vGlobal.vDevice.device, swapChain, &swapImageCount, nullptr);
+	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, nullptr);
 	printf("SwapImageCount %d\n", swapImageCount);
 	VkImage swapChainImages[swapImageCount];
-	vkGetSwapchainImagesKHR(vGlobal.vDevice.device, swapChain, &swapImageCount, swapChainImages);
+	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, swapChainImages);
 	presentImages.resize(swapImageCount);
 	
 	for(size_t i = 0; i < swapImageCount; i++){
-		VkImageViewCreateInfo imageViewCreateInfo = {};
-		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		imageViewCreateInfo.image = swapChainImages[i];
-		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		imageViewCreateInfo.format = presentSwapFormat.format;
-		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-		imageViewCreateInfo.subresourceRange.levelCount = 1;
-		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		if (VkResult res = vkCreateImageView(vGlobal.vDevice.device, &imageViewCreateInfo, nullptr, &presentImages[i])) {
-			printf("Creation of ImageView failed %d\n", res);
-			return;
-		}
+		presentImages[i] = createImageView2D(swapChainImages[i], presentSwapFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
-	vkAcquireNextImageKHR(vGlobal.vDevice.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
+	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
 }
 void VWindow::showNextImage(uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores){
 	
@@ -162,5 +140,8 @@ void VWindow::showNextImage(uint32_t waitSemaphoreCount, const VkSemaphore* pWai
 	
 	vkQueuePresentKHR(pgcQueue->presentQueue, &presentInfo);
 	
-	vkAcquireNextImageKHR(vGlobal.vDevice.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
+	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
+}
+VWindow::~VWindow(){
+	destroySemaphore(vGlobal.deviceWrapper.device, imageAvailableGuardSem);
 }

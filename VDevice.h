@@ -13,9 +13,6 @@ struct VPGCQueue{
 	uint32_t computeQId;
 	bool combinedPGQ;
 	bool combinedGCQ;
-	bool presentCanTransfer;
-	bool graphicsCanTransfer;
-	bool computeCanTransfer;
 	VkQueue presentQueue;
 	VkQueue graphicsQueue;
 	VkQueue computeQueue;
@@ -27,52 +24,95 @@ struct VPGCQueue{
 };
 struct VSinglePGCQueue : VPGCQueue{
 	virtual void submitPresent(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Present Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Present Queue Failed\n");
+		});
 	}
 	virtual void submitGraphics(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(graphicsQueue, count, submitInfo, fence),"Submit to Graphics Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(graphicsQueue, count, submitInfo, fence), {
+			printf("Submit to Graphics Queue Failed\n");
+		});
 	}
 	virtual void submitCompute(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(computeQueue, count, submitInfo, fence),"Submit to Compute Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(computeQueue, count, submitInfo, fence), {
+			printf("Submit to Compute Queue Failed\n");
+		});
 	}
 	virtual void waitForFinish(){
-		VCHECKCALL(vkQueueWaitIdle(presentQueue),"Wait-Idle for Present Queue Failed\n");
-		VCHECKCALL(vkQueueWaitIdle(graphicsQueue),"Wait-Idle for Graphics Queue Failed\n");
-		VCHECKCALL(vkQueueWaitIdle(computeQueue),"Wait-Idle for Compute Queue Failed\n");
+		VCHECKCALL(vkQueueWaitIdle(presentQueue), {
+			printf("Wait for Present Queue Failed\n");
+		});
+		VCHECKCALL(vkQueueWaitIdle(graphicsQueue), {
+			printf("Wait for Graphics Queue Failed\n");
+		});
+		VCHECKCALL(vkQueueWaitIdle(computeQueue), {
+			printf("Wait for Compute Queue Failed\n");
+		});
 	}
 };
 struct VPartlyPGCQueue : VPGCQueue{
 	virtual void submitPresent(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Present Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Present Queue Failed\n");
+		});
 	}
 	virtual void submitGraphics(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Graphics Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Graphics Queue Failed\n");
+		});
 	}
 	virtual void submitCompute(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(computeQueue, count, submitInfo, fence),"Submit to Compute Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(computeQueue, count, submitInfo, fence), {
+			printf("Submit to Compute Queue Failed\n");
+		});
 	}
 	virtual void waitForFinish(){
-		VCHECKCALL(vkQueueWaitIdle(presentQueue),"Wait-Idle for Present-Graphics Queue Failed\n");
-		VCHECKCALL(vkQueueWaitIdle(computeQueue),"Wait-Idle for Compute Queue Failed\n");
+		VCHECKCALL(vkQueueWaitIdle(presentQueue), {
+			printf("Wait-Idle for Present-Graphics Queue Failed\n");
+		});
+		VCHECKCALL(vkQueueWaitIdle(computeQueue), {
+			printf("Wait-Idle for Compute Queue Failed\n");
+		});
 	}
 };
 struct VCombinedPGCQueue : VPGCQueue{
 	virtual void submitPresent(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Present Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Present Queue Failed\n");
+		});
 	}
 	virtual void submitGraphics(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Graphics Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Graphics Queue Failed\n");
+		});
 	}
 	virtual void submitCompute(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
-		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence),"Submit to Compute Queue Failed\n");
+		VCHECKCALL(vkQueueSubmit(presentQueue, count, submitInfo, fence), {
+			printf("Submit to Compute Queue Failed\n");
+		});
 	}
 	virtual void waitForFinish(){
-		VCHECKCALL(vkQueueWaitIdle(presentQueue),"Wait-Idle for Queue Failed\n");
+		VCHECKCALL(vkQueueWaitIdle(presentQueue), {
+			printf("Wait-Idle for Queue Failed\n");
+		});
 	}
 };
-class VTQueue{
+struct VTQueue{
 	uint32_t transferQId;
+	VkQueue transferQueue;
 	
+	VTQueue(uint32_t transferQId, VkQueue transferQueue) : transferQId(transferQId), transferQueue(transferQueue) {}
+	
+	void submitTransfer(uint32_t count, VkSubmitInfo* submitInfo, VkFence fence){
+		VCHECKCALL(vkQueueSubmit(transferQueue, count, submitInfo, fence), {
+			printf("Submit to Compute Queue Failed\n");
+		});
+	}
+	void waitForFinish(){
+		VCHECKCALL(vkQueueWaitIdle(transferQueue), {
+			printf("Wait-Idle for Queue Failed\n");
+		});
+	}
 	//submit(VkSubmitInfo, VkFence)
 	//waitForFinish
 };
@@ -81,15 +121,18 @@ struct VDevice{
 	VkDevice device;
 	size_t pgcIndex = 0;
 	std::vector<VPGCQueue*> pgcQueues;
-	VTQueue* tqueue;
+	VTQueue* tqueue = nullptr;
 	
 	VTQueue* requestTransferQueue(){
 		return tqueue;
 	}
-	VPGCQueue* requestPGCQueue(){
+	VPGCQueue* requestPGCQueue(){//TODO synch
 		VPGCQueue* queue = pgcQueues[pgcIndex];
 		pgcIndex = (pgcIndex + 1) % pgcQueues.size();
 		return queue;
+	}
+	VPGCQueue* getPGCQueue(){//TODO synch
+		return pgcQueues[pgcIndex];
 	}
 };
 

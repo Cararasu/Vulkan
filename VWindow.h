@@ -15,18 +15,23 @@ struct VWindow{
 	VPGCQueue* pgcQueue;
 	VkExtent2D windowExtend;
 	VkExtent2D swapChainExtend;
-	VkSurfaceKHR surface;
-	VkSwapchainKHR swapChain;
-	bool needPresentGuard;
-	VkSemaphore imageAvailableGuardSem;
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
+	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+	VkSemaphore imageAvailableGuardSem = VK_NULL_HANDLE;
 	
 	VkSurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;
 	std::vector<VkImageView> presentImages;
 	
+	~VWindow();
+	
 	void initializeWindow();
 	
 	void showNextImage(uint32_t waitSemaphoreCount = 0, const VkSemaphore* pWaitSemaphores = nullptr);
+	
+	bool isOpen(){
+		return !glfwWindowShouldClose(window);
+	}
 };
 
 #endif // VWINDOW_H

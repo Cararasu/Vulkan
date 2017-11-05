@@ -1,0 +1,33 @@
+
+
+
+
+InputBlob
+	InputDefinition
+
+InputDefinition
+	Sampler
+	SampledImage(f/u/i)(nxm)(32/64)(1/2/3)D
+	SampledImageArray(f/u/i)(nxm)(32/64)(1/2/3)D
+	(R/RW)Image(f/u/i)(nxm)(32/64)(1/2/3)D
+	(R/RW)ImageArray(f/u/i)(nxm)(32/64)(1/2/3)D
+	(R/RW)Buffer(f/u/i)(nxm)(32/64)
+	PixelInput(f/u/i)(nxm)(32/64)
+
+BuiltIns
+	FragCoord
+	InstanceIndex
+	
+	
+BufferAbstraction<R/RW, TYPE, SINGE/VEC/MAT, 32/64 bit, 1/2/3 Dim, SINGLE/ARRAY>
+
+
+Global objects:::
+	
+	objecttypes (vertexinputs)
+	
+	descriptorset templates
+	
+	
+	
+	pipelines

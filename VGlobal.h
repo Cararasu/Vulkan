@@ -36,9 +36,13 @@ struct VGlobal{
 	VkPhysicalDevice physicalDevice;
 	VExtLayerStruct devExtLayers;
 	
-	uint32_t chosenDevice = -1;
+	uint32_t chosenDeviceId = -1;
 	
-	VDevice vDevice;
+	VDevice deviceWrapper;
+	
+	struct {
+		
+	}pipelines;
 	
 	std::vector<VPhysDeviceProps> physicalDevices;
 	

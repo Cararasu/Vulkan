@@ -21,6 +21,18 @@
     <File Name="VDevice.cpp"/>
     <File Name="VWindow.h"/>
     <File Name="VWindow.cpp"/>
+    <File Name="VBuilders.h"/>
+    <File Name="ShaderInputAbstraction.h"/>
+    <File Name="ShaderInputAbstraction.cpp"/>
+    <File Name="Pipelines.cpp"/>
+    <File Name="RenderPasses.cpp"/>
+    <File Name="Shader.cpp"/>
+    <File Name="DataWrapper.h"/>
+    <File Name="DataWrapper.cpp"/>
+    <File Name="DescriptorSet.cpp"/>
+    <File Name="Buffer.cpp"/>
+    <File Name="ViewPort.h"/>
+    <File Name="Image.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
@@ -35,12 +47,12 @@
     <Configuration Name="Debug" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
-        <IncludePath Value="glfw-3.2.1.bin.WIN64\include"/>
-        <IncludePath Value="glm-0.9.9-a1"/>
+        <IncludePath Value="libs/glfw-3.2.1.bin.WIN64\include"/>
+        <IncludePath Value="libs/glm-0.9.9-a1"/>
         <IncludePath Value="C:\Program Files\VulkanSDK\1.0.61.1\Include"/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <LibraryPath Value="glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
+        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
         <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
         <Library Value="glfw3"/>
         <Library Value="user32"/>

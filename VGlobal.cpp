@@ -36,40 +36,64 @@ void gatherExtLayer(VkPhysicalDevice device, std::vector<VkLayerProperties>* lay
 	
 	uint32_t count;
 	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, nullptr), "Could not get Extension-count");
+		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, nullptr), {
+			printf("Could not get Extension-count");
+		});
 	}else{
-		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, nullptr), "Could not get Extension-count");
+		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, nullptr), {
+			printf("Could not get Extension-count");
+		});
 	}
 	extensions->resize(count);
 	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), "Could not get Extensions");
+		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), {
+			printf("Could not get Extensions");
+		});
 	}else{
-		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, extensions->data()), "Could not get Extensions");
+		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, extensions->data()), {
+			printf("Could not get Extensions");
+		});
 	}
 	
 	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, nullptr), "Could not get Layer-count");
+		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, nullptr), {
+			printf("Could not get Layer-count");
+		});
 	}else{
-		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, nullptr), "Could not get Layer-count");
+		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, nullptr), {
+			printf("Could not get Layer-count");
+		});
 	}
 	layers->resize(count);
 	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, layers->data()), "Could not get Layers");
+		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, layers->data()), {
+			printf("Could not get Layers");
+		});
 	}else{
-		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, layers->data()), "Could not get Layers");
+		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, layers->data()), {
+			printf("Could not get Layers");
+		});
 	}
 	for(VkLayerProperties& layerProp : *layers){
 		
 		if(device == VK_NULL_HANDLE){
-			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), "Could not get Layer-count");
+			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), {
+				printf("Could not get Extension-count");
+			});
 		}else{
-			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, nullptr), "Could not get Layer-count");
+			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, nullptr), {
+				printf("Could not get Extension-count");
+			});
 		}
 		VkExtensionProperties extensionArray[count];
 		if(device == VK_NULL_HANDLE){
-			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), "Could not get Extension-count");
+			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), {
+				printf("Could not get Extensions");
+			});
 		}else{
-			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, extensionArray), "Could not get Layer-count");
+			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, extensionArray), {
+				printf("Could not get Extensions");
+			});
 		}
 		for(size_t i = 0; i < count; ++i){
 			addExtension(extensions, extensionArray[i]);
@@ -112,13 +136,19 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 	instanceCreateInfo.enabledExtensionCount = instExtLayers.neededExtensions.size();
 	instanceCreateInfo.ppEnabledExtensionNames = instExtLayers.neededExtensions.data();//maybe we need to add some things in the future
 	
-	VCHECKCALL(vkCreateInstance (&instanceCreateInfo, nullptr, &vkinstance), "Instance Creation Failed\n");
+	VCHECKCALL(vkCreateInstance (&instanceCreateInfo, nullptr, &vkinstance), {
+		printf("Instance Creation Failed\n");
+	});
 	
 	uint32_t devicecount = 0;
-	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, nullptr), "Get physical-device count Failed\n");
+	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, nullptr), {
+		printf("Get physical-device count Failed\n");
+	});
 	VkPhysicalDevice physDevices[devicecount];
 	physicalDevices.resize(devicecount);
-	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, physDevices), "Get physical-devicec Failed\n");
+	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, physDevices), {
+		printf("Get physical-devicec Failed\n");
+	});
 
 	for (size_t i = 0; i < devicecount; i++) {
 		VPhysDeviceProps& prop = physicalDevices[i];
@@ -145,7 +175,7 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 				prop.rating = 0;
 			}
 			bool canPresent = false;
-			for(int j = 0; j < prop.queueFamilyProps.size(); j++){
+			for(size_t j = 0; j < prop.queueFamilyProps.size(); j++){
 				if(glfwGetPhysicalDevicePresentationSupport (vkinstance, physDevices[i], j)){
 					canPresent = true;
 					break;
@@ -154,7 +184,6 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 			if(!canPresent)
 				prop.rating = 0;
 		}
-		int highestratequeue = 0;
 	}
 	
 	std::sort(physicalDevices.begin(), physicalDevices.end(), [](VPhysDeviceProps& lhs, VPhysDeviceProps& rhs){return lhs.rating < rhs.rating;});
@@ -168,20 +197,20 @@ bool VGlobal::choseDevice(uint32_t index){
 	
 	if(index >= physicalDevices.size())
 		return false;
-	chosenDevice = index;
-	devExtLayers.availableExtensions = physicalDevices[chosenDevice].availableExtensions;
-	devExtLayers.availableLayers = physicalDevices[chosenDevice].availableLayers;
+	chosenDeviceId = index;
+	devExtLayers.availableExtensions = physicalDevices[chosenDeviceId].availableExtensions;
+	devExtLayers.availableLayers = physicalDevices[chosenDeviceId].availableLayers;
 	devExtLayers.neededExtensions.clear();
 	devExtLayers.neededLayers.clear();
 	
-	physicalDevice = physicalDevices[chosenDevice].physicalDevice;
+	physicalDevice = physicalDevices[chosenDeviceId].physicalDevice;
 	return true;
 }
 bool VGlobal::initializeDevice(){
 	
 	const float priority = 1.0f;
 	
-	VPhysDeviceProps& devProps = physicalDevices[chosenDevice];
+	VPhysDeviceProps& devProps = physicalDevices[chosenDeviceId];
 	
 	uint32_t pgcId = -1;
 	uint32_t pgId = -1;
@@ -191,7 +220,7 @@ bool VGlobal::initializeDevice(){
 	uint32_t tId = -1;
 	
 	uint32_t highestRate = 0;
-	for(int j = 0; j < devProps.queueFamilyProps.size(); ++j){
+	for(size_t j = 0; j < devProps.queueFamilyProps.size(); ++j){
 		uint32_t rating = 0;
 		
 		bool present = glfwGetPhysicalDevicePresentationSupport (vkinstance, devProps.physicalDevice, j);
@@ -220,7 +249,7 @@ bool VGlobal::initializeDevice(){
 		if(compute && (cId == -1 || rating > highestRate)){
 			cId = j;
 		}
-		if(transfer && (tId == -1 || rating == 1)){//for nvidia 1 transfer queue
+		if(transfer && (tId == -1 && rating == 1)){//for nvidia 1 transfer queue
 			tId = j;
 		}
 		if(rating > highestRate)
@@ -244,11 +273,11 @@ bool VGlobal::initializeDevice(){
 		queueFamilyCount+=3;
 	}
 	
-	VkDeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount];
+	VkDeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount] = {};
 	size_t currentIndex = 0;
 	size_t pgcCount = 0;
-	bool separateTransferQueue = false;;
-	if(tId != -1 && !((pId == tId || gId == tId || cId == tId) && deviceQueueCreateInfos[tId].queueCount <= 1)){
+	bool separateTransferQueue = false;
+	if(tId != -1 && devProps.queueFamilyProps[tId].queueCount <= 1){
 		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
 		deviceQueueCreateInfos[currentIndex].flags = 0;
@@ -260,7 +289,7 @@ bool VGlobal::initializeDevice(){
 		separateTransferQueue = true;
 	}
 	if(pgcId != -1){
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, devProps.queueFamilyProps[pgcId].queueCount);
+		pgcCount = devProps.queueFamilyProps[pgcId].queueCount;
 		assert(pgcCount);
 		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
@@ -271,8 +300,7 @@ bool VGlobal::initializeDevice(){
 		devProps.queueFamilyProps[pgcId].queueCount -= pgcCount;
 		currentIndex+=1;
 	}else if(pgId != -1){
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, 
-				std::min<uint32_t>(devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount));
+		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount);
 		assert(pgcCount);
 		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
@@ -292,9 +320,8 @@ bool VGlobal::initializeDevice(){
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex+=1;
 	}else{
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, 
-				std::min<uint32_t>(devProps.queueFamilyProps[pId].queueCount, 
-				std::min<uint32_t>(devProps.queueFamilyProps[gId].queueCount, devProps.queueFamilyProps[cId].queueCount)));
+		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pId].queueCount, 
+				std::min<uint32_t>(devProps.queueFamilyProps[gId].queueCount, devProps.queueFamilyProps[cId].queueCount));
 		assert(pgcCount);
 		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
@@ -323,12 +350,15 @@ bool VGlobal::initializeDevice(){
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex+=1;
 	}
+	pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 
 	printf("Create %d Present-Graphics-Compute Queues\n",pgcCount);
 	
 	VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
-
+	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
+	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
+	
 	VkDeviceCreateInfo deviceCreateInfo;
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	deviceCreateInfo.pNext = nullptr;
@@ -341,45 +371,47 @@ bool VGlobal::initializeDevice(){
 	deviceCreateInfo.ppEnabledExtensionNames = devExtLayers.neededExtensions.data();
 	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
 	
-	VCHECKCALL (vkCreateDevice (physicalDevice, &deviceCreateInfo, nullptr, &vDevice.device), "Device Creation Failed\n");
+	VCHECKCALL (vkCreateDevice (physicalDevice, &deviceCreateInfo, nullptr, &deviceWrapper.device), {
+		printf("Device Creation Failed\n");
+	});
 	
 	currentIndex = 0;
 	if(separateTransferQueue){
 		VkQueue tQueue;
-		vkGetDeviceQueue(vDevice.device, tId, 0, &tQueue);
+		vkGetDeviceQueue(deviceWrapper.device, tId, 0, &tQueue);
+		
+		deviceWrapper.tqueue = new VTQueue(tId, tQueue);
 	}
 	for(size_t i = 0; i < pgcCount; ++i){
 		VPGCQueue* queue;
 		if(pgcId != -1){
 			queue = new VCombinedPGCQueue();
-			vkGetDeviceQueue(vDevice.device, pgcId, i, &queue->presentQueue);
+			vkGetDeviceQueue(deviceWrapper.device, pgcId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
 			queue->computeQueue = queue->presentQueue;
 		}else if(pgId != -1){
 			queue = new VPartlyPGCQueue();
-			vkGetDeviceQueue(vDevice.device, pgId, i, &queue->presentQueue);
+			vkGetDeviceQueue(deviceWrapper.device, pgId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
-			vkGetDeviceQueue(vDevice.device, cId, i, &queue->computeQueue);
+			vkGetDeviceQueue(deviceWrapper.device, cId, i, &queue->computeQueue);
 		}else{
 			queue = new VSinglePGCQueue();
-			vkGetDeviceQueue(vDevice.device, pId, i, &queue->presentQueue);
-			vkGetDeviceQueue(vDevice.device, gId, i, &queue->graphicsQueue);
-			vkGetDeviceQueue(vDevice.device, cId, i, &queue->computeQueue);
+			vkGetDeviceQueue(deviceWrapper.device, pId, i, &queue->presentQueue);
+			vkGetDeviceQueue(deviceWrapper.device, gId, i, &queue->graphicsQueue);
+			vkGetDeviceQueue(deviceWrapper.device, cId, i, &queue->computeQueue);
 		}
 		queue->presentQId = pId;
 		queue->graphicsQId = gId;
 		queue->computeQId = cId;
 		queue->combinedPGQ = (pId == gId);
 		queue->combinedGCQ = (gId == cId);
-		queue->presentCanTransfer = (tId == pId);
-		queue->graphicsCanTransfer = (tId == gId);
-		queue->computeCanTransfer = (tId == cId);
-		vDevice.pgcQueues.push_back(queue);
+		deviceWrapper.pgcQueues.push_back(queue);
 	}
 	
 	return true;
 }
 void VGlobal::terminate(){
+	
 	
 	vkDestroyInstance(vkinstance, nullptr);
 	glfwTerminate();
