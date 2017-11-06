@@ -94,7 +94,6 @@ int main (int argc, char **argv) {
 		obj.instances.push_back({glm::translate(glm::vec3(-2.0f,0.0f,0.0f))});
 	}
 	
-	
 	PerspectiveViewPort<float> viewport;
 	
 	viewport.m_viewvector = {-0.5f, -0.2f, 1.4f};
@@ -240,35 +239,19 @@ int main (int argc, char **argv) {
 	}
 	
 	BufferWrapper vertexBuffer(sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	transferData(objectStorage.vertices.data(), vertexBuffer.buffer, 0, sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size());
+	transferData(objectStorage.vertices.data(), vertexBuffer.buffer, 0, sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
 	BufferWrapper indexBuffer(sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	transferData(objectStorage.indices.data(), indexBuffer.buffer, 0, sizeof(objectStorage.indices[0]) * objectStorage.indices.size());
-	
-	uint32_t commandCount = 0;
-	{
-		uint32_t count = 0;
-		for(Object& obj : objectStorage.objects){
-			for(ObjectPart& part : obj.parts){
-				((VkDrawIndexedIndirectCommand*)stagingBuffer->data)[commandCount++] = {part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count};
-				commandCount++;
-			}
-			count += obj.instances.size();
-		}
-	}
-	BufferWrapper indirectCommandBuffer(sizeof(VkDrawIndexedIndirectCommand) * commandCount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, 0, sizeof(VkDrawIndexedIndirectCommand)*commandCount);
-	
-	uint32_t instanceCount = 0;
-	for(Object& obj : objectStorage.objects){
-		Instance* instanceArray = (Instance*)stagingBuffer->data;
-		memcpy(&instanceArray[instanceCount], obj.instances.data(), sizeof(Instance)*obj.instances.size());
-		instanceCount += obj.instances.size();
-	}
-	BufferWrapper instanceBuffer(sizeof(Instance) * instanceCount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	copyBuffer(stagingBuffer->buffer, instanceBuffer.buffer, 0, sizeof(Instance)*instanceCount);
+	transferData(objectStorage.indices.data(), indexBuffer.buffer, 0, sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
 	
+	uint32_t MAX_COMMAND_COUNT = 100;
+	uint32_t MAX_INSTANCE_COUNT = 100;
+	
+	BufferWrapper indirectCommandBuffer(sizeof(VkDrawIndexedIndirectCommand) * MAX_COMMAND_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	BufferWrapper instanceBuffer(sizeof(Instance) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	BufferWrapper uniformBuffer(sizeof(Camera), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
 	VkDescriptorBufferInfo bufferInfo = {};
@@ -289,81 +272,100 @@ int main (int argc, char **argv) {
 	
 	vkUpdateDescriptorSets(vGlobal.deviceWrapper.device, 1, &descriptorWrite, 0, nullptr);
 	
-	VkCommandPool commandPool;
-	VkCommandBuffer commandBuffer[vWindow.presentImages.size()];
-	{
-		VkCommandPoolCreateInfo poolInfo = {};
-		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-		poolInfo.queueFamilyIndex = vWindow.pgcQueue->graphicsQId;
-		poolInfo.flags = 0;
-		if (VkResult res = vkCreateCommandPool(vGlobal.deviceWrapper.device, &poolInfo, nullptr, &commandPool)) {
-			printf("Creation of CommandPdeviceWrapperled %d\n", res);
-			return -1;
-		}
-		VkCommandBufferAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.pNext = nullptr;
-		allocInfo.commandPool = commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = vWindow.presentImages.size();
-
-		if (VkResult res = vkAllocateCommandBuffers(vGlobal.deviceWrapper.device, &allocInfo, commandBuffer)) {
-			printf("Creation of CommandBudeviceWrapperailed %d\n", res);
-			return -1;
-		}
-		
-		
-		for (size_t i = 0; i < vWindow.presentImages.size(); i++) {
-			VkCommandBufferBeginInfo beginInfo = {};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-			beginInfo.pInheritanceInfo = nullptr; // Optional
-
-			vkBeginCommandBuffer(commandBuffer[i], &beginInfo);
-			
-			VkRenderPassBeginInfo renderPassInfo = {};
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.pNext = nullptr;
-			renderPassInfo.renderPass = renderPass;
-			renderPassInfo.framebuffer = framebuffers[i];
-			renderPassInfo.renderArea.offset = {0, 0};
-			renderPassInfo.renderArea.extent = vWindow.swapChainExtend;
-			renderPassInfo.clearValueCount = 2;
-			VkClearValue clearColors[2];
-			clearColors[0].color = {0.0f, 0.0f, 0.5f, 1.0f};
-			clearColors[0].depthStencil = {0.0f, 0};
-			clearColors[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-			clearColors[1].depthStencil = {1.0f, 0};
-			renderPassInfo.pClearValues = clearColors;
-			{
-				vkCmdBeginRenderPass(commandBuffer[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-				
-				vkCmdBindPipeline(commandBuffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-				vkCmdBindDescriptorSets(commandBuffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS,  pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-				VkBuffer vertexBuffers[] = {vertexBuffer.buffer, instanceBuffer.buffer};
-				VkDeviceSize offsets[] = {0, 0};
-				vkCmdBindVertexBuffers(commandBuffer[i], 0, 2, vertexBuffers, offsets);
-				vkCmdBindIndexBuffer(commandBuffer[i], indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-				
-				vkCmdDrawIndexedIndirect(commandBuffer[i], indirectCommandBuffer.buffer, 0, commandCount, sizeof(VkDrawIndexedIndirectCommand));
-				
-				vkCmdEndRenderPass(commandBuffer[i]);
-			}
-			if (VkResult res = vkEndCommandBuffer(commandBuffer[i])) {
-				printf("Recording of CommandBuffer failed %d\n", res);
-				return -1;
-			}
-		}
-	}
+	VkCommandPool commandPool = createCommandPool(vWindow.pgcQueue->graphicsQId, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	
 	VkSemaphore imageAvailableSemaphore = createSemaphore(vGlobal.deviceWrapper.device);
 	VkSemaphore drawFinishedSemaphore = createSemaphore(vGlobal.deviceWrapper.device);
 	
+	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+	
 	while(vWindow.isOpen()){
 		
-		viewport.m_viewvector = glm::rotate(viewport.m_viewvector, 0.005f, glm::vec3(0.0f,1.0f,0.0f));
+		uint32_t stagingOffset = 0;
 		
-		((Camera*)stagingBuffer->data)[0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
-		copyBuffer(stagingBuffer->buffer, uniformBuffer.buffer, 0, sizeof(Camera));
+		uint32_t commandOffset = stagingOffset;
+		uint32_t commandCount = 0;
+		{
+			uint32_t count = 0;
+			for(Object& obj : objectStorage.objects){
+				for(ObjectPart& part : obj.parts){
+					((VkDrawIndexedIndirectCommand*)stagingBuffer->data)[commandCount++] = {part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count};
+				}
+				count += obj.instances.size();
+			}
+		}
+		stagingOffset += sizeof(VkDrawIndexedIndirectCommand) * commandCount;
+		
+		uint32_t instanceCount = 0;
+		uint32_t instanceOffset = stagingOffset;
+		for(Object& obj : objectStorage.objects){
+			Instance* instanceArray = (Instance*)(stagingBuffer->data + stagingOffset);
+			memcpy(&(instanceArray[instanceCount]), obj.instances.data(), sizeof(Instance)*obj.instances.size());
+			instanceCount += obj.instances.size();
+		}
+		stagingOffset += sizeof(Instance) * instanceCount;
+		
+		uint32_t uniformOffset = stagingOffset;
+		viewport.m_viewvector = glm::rotate(viewport.m_viewvector, 0.005f, glm::vec3(0.0f,1.0f,0.0f));
+		((Camera*)(stagingBuffer->data + stagingOffset))[0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
+		stagingOffset += sizeof(Camera);
+		
+		copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, commandOffset, 0, sizeof(VkDrawIndexedIndirectCommand)*commandCount,
+			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
+		
+		copyBuffer(stagingBuffer->buffer, instanceBuffer.buffer, instanceOffset, 0, sizeof(Instance)*instanceCount,
+			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT);
+		
+		copyBuffer(stagingBuffer->buffer, uniformBuffer.buffer, uniformOffset, 0, sizeof(Camera),
+			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_UNIFORM_READ_BIT);
+		
+		
+		printf("Commands: %d - %d Instances: %d - %d Uniform: %d\n", commandCount, commandOffset, instanceCount, instanceOffset, uniformOffset);
+		printf("Id: %d\n", vWindow.presentImageIndex);
+		//vGlobal.deviceWrapper.tqueue->waitForFinish();
+		
+		if(commandBuffer != VK_NULL_HANDLE)
+			deleteCommandBuffer(commandPool, commandBuffer);
+		commandBuffer = createCommandBuffer(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.pNext = nullptr;
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = framebuffers[vWindow.presentImageIndex];
+		renderPassInfo.renderArea.offset = {0, 0};
+		renderPassInfo.renderArea.extent = vWindow.swapChainExtend;
+		renderPassInfo.clearValueCount = 2;
+		VkClearValue clearColors[2];
+		clearColors[0].color = {0.0f, 0.0f, 0.5f, 1.0f};
+		clearColors[0].depthStencil = {0.0f, 0};
+		clearColors[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+		clearColors[1].depthStencil = {1.0f, 0};
+		renderPassInfo.pClearValues = clearColors;
+		{
+			vkBeginCommandBuffer(commandBuffer, &beginInfo);
+			
+			vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,  pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+			VkBuffer vertexBuffers[] = {vertexBuffer.buffer, instanceBuffer.buffer};
+			VkDeviceSize offsets[] = {0, 0};
+			vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+			
+			vkCmdDrawIndexedIndirect(commandBuffer, indirectCommandBuffer.buffer, 0, commandCount, sizeof(VkDrawIndexedIndirectCommand));
+			
+			vkCmdEndRenderPass(commandBuffer);
+			
+			VCHECKCALL(vkEndCommandBuffer(commandBuffer), printf("Recording of CommandBuffer failed\n"));
+		}
+		
 		
 		VkSemaphore waitSemaphores[] = {vWindow.imageAvailableGuardSem};
 		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -376,7 +378,7 @@ int main (int argc, char **argv) {
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer[vWindow.presentImageIndex];
+		submitInfo.pCommandBuffers = &commandBuffer;
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 		

@@ -186,7 +186,7 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 		}
 	}
 	
-	std::sort(physicalDevices.begin(), physicalDevices.end(), [](VPhysDeviceProps& lhs, VPhysDeviceProps& rhs){return lhs.rating < rhs.rating;});
+	std::sort(physicalDevices.begin(), physicalDevices.end(), [](VPhysDeviceProps& lhs, VPhysDeviceProps& rhs){return lhs.rating > rhs.rating;});
 	
 	return true;
 }
@@ -255,7 +255,6 @@ bool VGlobal::initializeDevice(){
 		if(rating > highestRate)
 			highestRate = rating;
 	}
-	assert(pId != -1 && gId != -1 && cId != -1);
 	size_t queueFamilyCount = 0;
 	if(tId != -1) 
 		queueFamilyCount++;
@@ -407,6 +406,10 @@ bool VGlobal::initializeDevice(){
 		queue->combinedGCQ = (gId == cId);
 		deviceWrapper.pgcQueues.push_back(queue);
 	}
+	deviceWrapper.compQId = cId;
+	deviceWrapper.presentQId = pId;
+	deviceWrapper.graphQId = gId;
+	deviceWrapper.transfQId = tId;
 	
 	return true;
 }

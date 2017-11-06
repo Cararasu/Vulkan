@@ -123,6 +123,8 @@ struct VDevice{
 	std::vector<VPGCQueue*> pgcQueues;
 	VTQueue* tqueue = nullptr;
 	
+	uint32_t compQId = -1, graphQId = -1, presentQId = -1, transfQId = -1;
+	
 	VTQueue* requestTransferQueue(){
 		return tqueue;
 	}

@@ -11,7 +11,7 @@
 #include <glm/gtx/normal.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <set>
 #include <vector>
 #include <stdio.h>
@@ -88,9 +88,10 @@ VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLe
 void deleteCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
 
 void copyData(const void* srcData, VkDeviceMemory dstMemory, VkDeviceSize offset, VkDeviceSize size);
-void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize offset, VkDeviceSize size);
+void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size,
+	VkAccessFlags inputAccessFlag, VkAccessFlags outputAccessFlag);
 
-void transferData(const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size);
+void transferData(const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size, VkAccessFlags useFlag);
 void transferData(const void* srcData, VkImage targetimage, VkExtent3D offset, VkExtent3D size);
 
 VkFormat findDepthFormat();
