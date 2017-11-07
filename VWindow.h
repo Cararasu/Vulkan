@@ -15,9 +15,9 @@ struct VWindow{
 	VPGCQueue* pgcQueue;
 	vk::Extent2D windowExtend;
 	vk::Extent2D swapChainExtend;
-	vk::SurfaceKHR surface = VK_NULL_HANDLE;
-	vk::SwapchainKHR swapChain = VK_NULL_HANDLE;
-	vk::Semaphore imageAvailableGuardSem = VK_NULL_HANDLE;
+	vk::SurfaceKHR surface = vk::SurfaceKHR();
+	vk::SwapchainKHR swapChain = vk::SwapchainKHR();
+	vk::Semaphore imageAvailableGuardSem = vk::Semaphore();
 	
 	vk::SurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;

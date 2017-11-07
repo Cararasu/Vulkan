@@ -88,29 +88,20 @@ void VWindow::initializeWindow(){
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		}
 		swapchainCreateInfo.preTransform = capabilities.currentTransform;//VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR??
-		swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;//awesome blending with other windows of os
+		swapchainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;//awesome blending with other windows of os
 		swapchainCreateInfo.presentMode = chosenPresentationMode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
-		swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+		swapchainCreateInfo.oldSwapchain = vk::SwapchainKHR();
 		
-		vk::Bool32 supported;
-		VCHECKCALL(vkGetPhysicalDeviceSurfaceSupportKHR(vGlobal.physicalDevice, pgcQueue->presentQId, surface, &supported), {
-			printf("Surface Not supported");
-		});
-		printf("SUPPORTED %d\n", supported);
-		VCHECKCALL(vkCreateSwapchainKHR(vGlobal.deviceWrapper.device, &swapchainCreateInfo, nullptr, &swapChain), {
-			printf("Creation of Swapchain failed\n");
-		});
+		printf("SUPPORTED %d\n", vGlobal.physicalDevice.getSurfaceSupportKHR(pgcQueue->presentQId, surface));
+		
+		V_CHECKCALL(vGlobal.deviceWrapper.device.createSwapchainKHR(&swapchainCreateInfo, nullptr, &swapChain), printf("Creation of Swapchain failed\n"));
 	}
-	uint32_t swapImageCount;
-	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, nullptr);
-	printf("SwapImageCount %d\n", swapImageCount);
-	vk::Image swapChainImages[swapImageCount];
-	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, swapChainImages);
-	presentImages.resize(swapImageCount);
+	std::vector<vk::Image> swapChainImages = vGlobal.deviceWrapper.device.getSwapchainImagesKHR(swapChain);
 	
-	for(size_t i = 0; i < swapImageCount; i++){
-		presentImages[i] = createImageView2D(swapChainImages[i], presentSwapFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
+	presentImages.resize(swapChainImages.size());
+	for(size_t i = 0; i < swapChainImages.size(); i++){
+		presentImages[i] = createImageView2D(swapChainImages[i], presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
 	}
 	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
 }

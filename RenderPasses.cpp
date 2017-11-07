@@ -2,7 +2,7 @@
 #include "VHeader.h"
 #include "VGlobal.h"
 
-vk::RenderPass standardRenderPass = VK_NULL_HANDLE;
+vk::RenderPass standardRenderPass = vk::RenderPass();
 
 vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 	
@@ -45,7 +45,7 @@ vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 void destroyStandardRenderPass(){
 	if(standardRenderPass)
 		destroyRenderPass(standardRenderPass);
-	standardRenderPass = VK_NULL_HANDLE;
+	standardRenderPass = vk::RenderPass();
 }
 void destroyRenderPass(vk::RenderPass renderpass){
 	vkDestroyRenderPass(vGlobal.deviceWrapper.device, renderpass, nullptr);

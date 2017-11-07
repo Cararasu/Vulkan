@@ -5,8 +5,8 @@
 MappedBufferWrapper* stagingBuffer = nullptr;
 
 BufferWrapper::BufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
-	bufferSize(size), buffer(VK_NULL_HANDLE), backedMemory(VK_NULL_HANDLE){
-	createBuffer(size, usage, needed, &buffer, &backedMemory);
+	bufferSize(size), buffer(vk::Buffer()), backedMemory(vk::DeviceMemory()){
+	createBuffer(size, usage, needed, recommended, &buffer, &backedMemory);
 }
 BufferWrapper::~BufferWrapper(){
 	destroyBuffer(buffer, backedMemory);
@@ -22,14 +22,14 @@ MappedBufferWrapper::~MappedBufferWrapper(){
 }
 
 ImageWrapper::ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
-	imageSize(size), imageFormat(format), image(VK_NULL_HANDLE), backedMemory(VK_NULL_HANDLE){
+	imageSize(size), imageFormat(format), image(vk::Image()), backedMemory(vk::DeviceMemory()){
 	if(imageSize.height == 1)
-		imageType = VK_IMAGE_TYPE_1D;
+		imageType = vk::ImageType::e1D;
 	else if(imageSize.depth == 1)
-		imageType = VK_IMAGE_TYPE_2D;
+		imageType = vk::ImageType::e2D;
 	else
-		imageType = VK_IMAGE_TYPE_3D;
-	createImage(size, format, tiling, usage, needed, &image, &backedMemory);
+		imageType = vk::ImageType::e3D;
+	createImage(size, format, tiling, usage, needed, recommended, &image, &backedMemory);
 }
 ImageWrapper::~ImageWrapper(){
 	destroyImage(image, backedMemory);

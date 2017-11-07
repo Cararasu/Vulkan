@@ -159,14 +159,17 @@ int main (int argc, char **argv) {
 	
 	pfn_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) glfwGetInstanceProcAddress(vGlobal.vkinstance, "vkCreateDebugReportCallbackEXT");
 	
-	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
-	debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-	debugReportCallbackCreateInfo.pNext = nullptr;
-	debugReportCallbackCreateInfo.flags = /*VK_DEBUG_REPORT_INFORMATION_BIT_EXT |*/ VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-	debugReportCallbackCreateInfo.pfnCallback = &debugLogger;
-	debugReportCallbackCreateInfo.pUserData = nullptr;
-	
-	pfn_vkCreateDebugReportCallbackEXT(vGlobal.vkinstance, &debugReportCallbackCreateInfo, nullptr, &cb);
+	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo(
+		vk::DebugReportFlagsEXT(
+			//vk::DebugReportFlagBitsEXT::eInformation | 
+			vk::DebugReportFlagBitsEXT::eWarning | 
+			vk::DebugReportFlagBitsEXT::ePerformanceWarning | 
+			vk::DebugReportFlagBitsEXT::eError | 
+			vk::DebugReportFlagBitsEXT::eDebug),
+		&debugLogger,
+		nullptr
+	);
+	vGlobal.vkinstance.createDebugReportCallbackEXT(debugReportCallbackCreateInfo,&cb);
 	
 	vGlobal.choseBestDevice();
 

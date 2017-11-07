@@ -2,21 +2,20 @@
 #include "VGlobal.h"
 #include "VHeader.h"
 
-vk::CommandPool singleImageTransitionCommandPool = VK_NULL_HANDLE;
+vk::CommandPool singleImageTransitionCommandPool = vk::CommandPool();
 
 
-void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed,  vk::Image* image, vk::DeviceMemory* imageMemory){
+void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags preferred, vk::Image* image, vk::DeviceMemory* imageMemory){
 	
-	vk::ImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	vk::ImageCreateInfo imageInfo;
 	
 	if(size.height != 1)
 		if(size.depth != 1)
-			imageInfo.imageType = VK_IMAGE_TYPE_3D;
+			imageInfo.imageType = vk::ImageType::e3D;
 		else
-			imageInfo.imageType = VK_IMAGE_TYPE_2D;
+			imageInfo.imageType = vk::ImageType::e2D;
 	else
-		imageInfo.imageType = VK_IMAGE_TYPE_1D;
+		imageInfo.imageType = vk::ImageType::e1D;
 	
 	imageInfo.extent.width = size.width;
 	imageInfo.extent.height = size.height;
@@ -25,16 +24,16 @@ void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, v
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 	imageInfo.usage = usage;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.samples = vk::SampleCountFlagBits::e1;
+	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	VCHECKCALL(vkCreateImage(vGlobal.deviceWrapper.device, &imageInfo, nullptr, image), printf("Failed To Create Image\n"));
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createImage(&imageInfo, nullptr, image), printf("Failed To Create Image\n"));
 
 	printf("Create Image of dimensions %dx%dx%d\n", size.width, size.height, size.depth);
 	
-	*imageMemory = allocateImageMemory(*image, properties);
+	*imageMemory = allocateImageMemory(*image, needed, preferred);
 	
 	vkBindImageMemory(vGlobal.deviceWrapper.device, *image, *imageMemory, 0);
 }
@@ -44,30 +43,22 @@ void destroyImage(vk::Image image, vk::DeviceMemory imageMemory){
 }
 vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags) {
    
-	vk::ImageViewCreateInfo imageViewCreateInfo = {};
-	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	imageViewCreateInfo.image = image;
-	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	imageViewCreateInfo.format = format;
-	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
-	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	imageViewCreateInfo.subresourceRange.levelCount = 1;
-	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-	imageViewCreateInfo.subresourceRange.layerCount = 1;
+	vk::ImageViewCreateInfo imageViewCreateInfo(
+		vk::ImageViewCreateFlags(),
+		image, 
+		vk::ImageViewType::e2D, format, 
+		vk::ComponentMapping(vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity),
+		vk::ImageSubresourceRange(aspectFlags, 0, 1, 0, 1)
+		);
 	
 	vk::ImageView imageView;
 	
-	VCHECKCALL(vkCreateImageView(vGlobal.deviceWrapper.device, &imageViewCreateInfo, nullptr, &imageView), {
-		printf("Creation of ImageView failed\n");
-	});
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createImageView(&imageViewCreateInfo, nullptr, &imageView), printf("Creation of ImageView failed\n"));
+	
 	return imageView;
 }
 void copyBufferToImage(vk::Buffer buffer, vk::Image image, vk::Offset3D offset, vk::Extent3D extent) {
-	if(singleTransferCommandPool == VK_NULL_HANDLE){
+	if(!singleTransferCommandPool){
 		VTQueue* queue = vGlobal.deviceWrapper.requestTransferQueue();
 		if(queue)
 			singleTransferCommandPool = createCommandPool(queue->transferQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
@@ -77,90 +68,73 @@ void copyBufferToImage(vk::Buffer buffer, vk::Image image, vk::Offset3D offset, 
 	
     vk::CommandBuffer commandBuffer = createCommandBuffer(singleTransferCommandPool, vk::CommandBufferLevel::ePrimary);
 
-    vk::CommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	commandBuffer.begin(beginInfo);
 	
-	vk::BufferImageCopy region = {};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-
-	region.imageOffset = offset;
-	region.imageExtent = extent;
-	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	vk::BufferImageCopy region(
+		0,0,0,//buffer- Offset, -RowLength, -ImageHeight
+		vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
+		offset, extent
+	);
+	commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
 	
-	vkEndCommandBuffer(commandBuffer);
+	commandBuffer.end();
 	
-	vk::SubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	vk::SubmitInfo submitInfo(
+		0, nullptr,//waitsemaphores
+		nullptr,//pWaitDstStageMask
+		1, &commandBuffer,
+		0, nullptr//signalsemaphores
+		);
 
 	VTQueue* vtQueue = vGlobal.deviceWrapper.requestTransferQueue();
 	if(vtQueue){
-		vtQueue->submitTransfer(1,&submitInfo, VK_NULL_HANDLE);
+		vtQueue->submitTransfer(1,&submitInfo);
 		vtQueue->waitForFinish();
 	}else{
-		vGlobal.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo, VK_NULL_HANDLE);
+		vGlobal.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo);
 		vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();
 	}
 	deleteCommandBuffer(singleTransferCommandPool, commandBuffer);
 }
 void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask) {
-	if(singleImageTransitionCommandPool == VK_NULL_HANDLE){
+	if(!singleImageTransitionCommandPool){
 		singleImageTransitionCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	}
 	
     vk::CommandBuffer commandBuffer = createCommandBuffer(singleImageTransitionCommandPool, vk::CommandBufferLevel::ePrimary);
 	
-    vk::CommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 	
 	vk::PipelineStageFlags sourceStage;
 	vk::PipelineStageFlags destinationStage;
 
-	vk::ImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = oldLayout;
-	barrier.newLayout = newLayout;
+	vk::ImageMemoryBarrier barrier(
+		vk::AccessFlags(), vk::AccessFlags(),
+		oldLayout, newLayout,
+		vGlobal.deviceWrapper.graphQId, vGlobal.deviceWrapper.graphQId,
+		image,
+		vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1)
+	);
 	
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = aspectMask;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
 		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eTransfer;
 	} else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+	} else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		barrier.srcAccessMask = vk::AccessFlags();
+		barrier.dstAccessMask = vk::AccessFlags(vk::AccessFlagBits::eDepthStencilAttachmentRead | k::AccessFlagBits::eDepthStencilAttachmentWrite);
 		
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 	} else {
 		assert(false);
 	}
@@ -173,12 +147,13 @@ void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout o
 		0, nullptr,
 		1, &barrier
 	);
-	
-	vkEndCommandBuffer(commandBuffer);
-	vk::SubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	commandBuffer.end();
+	vk::SubmitInfo submitInfo(
+		0, nullptr,//waitsemaphores
+		nullptr,//pWaitDstStageMask
+		1, &commandBuffer,
+		0, nullptr//signalsemaphores
+		);
 
 	vGlobal.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo, VK_NULL_HANDLE);
 	vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();

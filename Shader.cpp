@@ -26,7 +26,7 @@ vk::ShaderModule loadShaderFromFile(const char* filename){
 	
 	std::vector<char> shaderCode = readFile(filename);
 	
-	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.data(), shaderCode.size());
+	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.size(), (const uint32_t*)shaderCode.data());
 	
 	vk::ShaderModule shadermodule;
 	V_CHECKCALL (vGlobal.deviceWrapper.device.createShaderModule(&createInfo, nullptr, &shadermodule), printf ("Creation of Shadermodule failed\n"));

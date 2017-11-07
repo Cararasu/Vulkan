@@ -11,7 +11,6 @@
 #include <glm/gtx/normal.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
-#define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
 #include <set>
 #include <vector>
@@ -35,6 +34,19 @@ void printError(VkResult res);
 		errorcode;\
 	}\
 }
+#ifdef VULKAN_HPP_DISABLE_ENHANCED_MODE
+#define V_CHECKCALL_MAYBE(call, errorcode) {\
+	vk::Result res = call;\
+	if(res != vk::Result::eSuccess){\
+		printf("Error %s\n", vk::to_string(res).c_str());\
+		errorcode;\
+	}\
+}
+#else
+#define V_CHECKCALL_MAYBE(call, errorcode) {\
+	call;\
+}
+#endif
 
 
 struct Vertex {

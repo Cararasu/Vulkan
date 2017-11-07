@@ -3,9 +3,9 @@
 #include "VBuilders.h"
 #include "VGlobal.h"
 
-vk::Pipeline standardPipeline = VK_NULL_HANDLE;
+vk::Pipeline standardPipeline = vk::Pipeline();
 
-vk::PipelineLayout standardPipelineLayout = VK_NULL_HANDLE;
+vk::PipelineLayout standardPipelineLayout = vk::PipelineLayout();
 
 vk::PipelineLayout createStandardPipelineLayout (std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::PushConstantRange>* pushConstRanges) {
 
@@ -36,7 +36,7 @@ vk::PipelineLayout createStandardPipelineLayout (std::vector<vk::DescriptorSetLa
 void destroyStandardPipelineLayout() {
 	if (standardPipelineLayout)
 		destroyPipelineLayout (standardPipelineLayout);
-	standardPipelineLayout = VK_NULL_HANDLE;
+	standardPipelineLayout = vk::PipelineLayout();
 }
 
 void destroyPipelineLayout (vk::PipelineLayout pipelineLayout) {
@@ -147,15 +147,15 @@ vk::Pipeline createStandardPipeline (vk::Extent2D viewportExtend, vk::PipelineLa
 		-1
 	);
 
-	V_CHECKCALL (vGlobal.deviceWrapper.device.createGraphicsPipelines(VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &standardPipeline), printf ("Creation of standard Pipeline failed\n"));
+	V_CHECKCALL (vGlobal.deviceWrapper.device.createGraphicsPipelines(vk::PipelineCache(), 1, &pipelineInfo, nullptr, &standardPipeline), printf ("Creation of standard Pipeline failed\n"));
 	
 	return standardPipeline;
 }
 
 void destroyStandardPipeline() {
-	if (standardPipeline != VK_NULL_HANDLE)
+	if (standardPipeline)
 		destroyPipeline (standardPipeline);
-	standardPipeline = VK_NULL_HANDLE;
+	standardPipeline = vk::Pipeline();
 }
 
 void destroyPipeline (vk::Pipeline pipeline) {

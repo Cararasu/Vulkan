@@ -28,11 +28,10 @@
     <File Name="RenderPasses.cpp"/>
     <File Name="Shader.cpp"/>
     <File Name="DataWrapper.h"/>
-    <File Name="DataWrapper.cpp"/>
-    <File Name="DescriptorSet.cpp"/>
     <File Name="Buffer.cpp"/>
     <File Name="ViewPort.h"/>
     <File Name="Image.cpp"/>
+    <File Name="DataWrapper.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
