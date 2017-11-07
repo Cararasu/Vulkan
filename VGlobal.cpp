@@ -117,28 +117,12 @@ bool VGlobal::preInitialize(){
 }
 bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 	
-	VkApplicationInfo appInfo;
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pNext = nullptr;
-	appInfo.pApplicationName = appName;
-	appInfo.applicationVersion = VK_MAKE_VERSION (1, 0, 0);
-	appInfo.pEngineName = engineName;
-	appInfo.engineVersion = VK_MAKE_VERSION (1, 0, 0);
-	appInfo.apiVersion = VK_MAKE_VERSION (1, 0, 61);
-
-	VkInstanceCreateInfo instanceCreateInfo;
-	instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	instanceCreateInfo.pNext = nullptr;
-	instanceCreateInfo.flags = 0;
-	instanceCreateInfo.pApplicationInfo = &appInfo;//can be null
-	instanceCreateInfo.enabledLayerCount = instExtLayers.neededLayers.size();
-	instanceCreateInfo.ppEnabledLayerNames = instExtLayers.neededLayers.data();
-	instanceCreateInfo.enabledExtensionCount = instExtLayers.neededExtensions.size();
-	instanceCreateInfo.ppEnabledExtensionNames = instExtLayers.neededExtensions.data();//maybe we need to add some things in the future
+	vk::ApplicationInfo appInfo(appName, VK_MAKE_VERSION (1, 0, 0), engineName, VK_MAKE_VERSION (1, 0, 0), VK_MAKE_VERSION (1, 0, 61));
 	
-	VCHECKCALL(vkCreateInstance (&instanceCreateInfo, nullptr, &vkinstance), {
-		printf("Instance Creation Failed\n");
-	});
+	vk::InstanceCreateInfo instanceCreateInfo(vk::InstanceCreateFlags(), &appInfo,
+		instExtLayers.neededLayers.size(), instExtLayers.neededLayers.data(),
+		instExtLayers.neededExtensions.size(), instExtLayers.neededExtensions.data());
+	V_CHECKCALL(vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf("Instance Creation Failed\n"));
 	
 	uint32_t devicecount = 0;
 	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, nullptr), {
@@ -272,107 +256,65 @@ bool VGlobal::initializeDevice(){
 		queueFamilyCount+=3;
 	}
 	
-	VkDeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount] = {};
+	vk::DeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount];
 	size_t currentIndex = 0;
 	size_t pgcCount = 0;
 	bool separateTransferQueue = false;
 	if(tId != -1 && devProps.queueFamilyProps[tId].queueCount <= 1){
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = tId;
-		deviceQueueCreateInfos[currentIndex].queueCount = 1;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), tId, 1, &priority);
 		devProps.queueFamilyProps[tId].queueCount--;
-		currentIndex+=1;
+		currentIndex++;
 		separateTransferQueue = true;
 	}
 	if(pgcId != -1){
 		pgcCount = devProps.queueFamilyProps[pgcId].queueCount;
+		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = pgcId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority);
 		devProps.queueFamilyProps[pgcId].queueCount -= pgcCount;
 		currentIndex+=1;
 	}else if(pgId != -1){
 		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount);
+		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = pgId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pgId, pgcCount, &priority);
 		devProps.queueFamilyProps[pgId].queueCount -= pgcCount;
-		currentIndex+=1;
+		currentIndex++;
 		
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = cId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
-		currentIndex+=1;
+		currentIndex++;
 	}else{
 		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pId].queueCount, 
 				std::min<uint32_t>(devProps.queueFamilyProps[gId].queueCount, devProps.queueFamilyProps[cId].queueCount));
+		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = pId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority);
 		devProps.queueFamilyProps[pId].queueCount -= pgcCount;
-		currentIndex+=1;
+		currentIndex++;
 		//TODO problem if gId == cId
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = gId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority);
 		devProps.queueFamilyProps[gId].queueCount -= pgcCount;
-		currentIndex+=1;
+		currentIndex++;
 		
-		deviceQueueCreateInfos[currentIndex].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		deviceQueueCreateInfos[currentIndex].pNext = nullptr;
-		deviceQueueCreateInfos[currentIndex].flags = 0;
-		deviceQueueCreateInfos[currentIndex].queueFamilyIndex = cId;
-		deviceQueueCreateInfos[currentIndex].queueCount = pgcCount;
-		deviceQueueCreateInfos[currentIndex].pQueuePriorities = &priority;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
-		currentIndex+=1;
+		currentIndex++;
 	}
-	pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 
 	printf("Create %d Present-Graphics-Compute Queues\n",pgcCount);
 	
-	VkPhysicalDeviceFeatures physicalDeviceFeatures = {};
+	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
 	
-	VkDeviceCreateInfo deviceCreateInfo;
-	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceCreateInfo.pNext = nullptr;
-	deviceCreateInfo.flags = 0;
-	deviceCreateInfo.queueCreateInfoCount = queueFamilyCount;
-	deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos;
-	deviceCreateInfo.enabledLayerCount = devExtLayers.neededLayers.size();
-	deviceCreateInfo.ppEnabledLayerNames = devExtLayers.neededLayers.data();
-	deviceCreateInfo.enabledExtensionCount = devExtLayers.neededExtensions.size();
-	deviceCreateInfo.ppEnabledExtensionNames = devExtLayers.neededExtensions.data();
-	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
+	vk::DeviceCreateInfo deviceCreateInfo(vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos, 
+			devExtLayers.neededLayers.size(), devExtLayers.neededLayers.data(), 
+			devExtLayers.neededExtensions.size(), devExtLayers.neededExtensions.data(),
+			&physicalDeviceFeatures);
 	
-	VCHECKCALL (vkCreateDevice (physicalDevice, &deviceCreateInfo, nullptr, &deviceWrapper.device), {
-		printf("Device Creation Failed\n");
-	});
+	V_CHECKCALL (physicalDevice.createDevice(&deviceCreateInfo, nullptr, &deviceWrapper.device), printf("Device Creation Failed\n"));
 	
 	currentIndex = 0;
 	if(separateTransferQueue){
@@ -385,19 +327,19 @@ bool VGlobal::initializeDevice(){
 		VPGCQueue* queue;
 		if(pgcId != -1){
 			queue = new VCombinedPGCQueue();
-			vkGetDeviceQueue(deviceWrapper.device, pgcId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue(pgcId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
 			queue->computeQueue = queue->presentQueue;
 		}else if(pgId != -1){
 			queue = new VPartlyPGCQueue();
-			vkGetDeviceQueue(deviceWrapper.device, pgId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue(pgId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
-			vkGetDeviceQueue(deviceWrapper.device, cId, i, &queue->computeQueue);
+			deviceWrapper.device.getQueue(cId, i, &queue->computeQueue);
 		}else{
 			queue = new VSinglePGCQueue();
-			vkGetDeviceQueue(deviceWrapper.device, pId, i, &queue->presentQueue);
-			vkGetDeviceQueue(deviceWrapper.device, gId, i, &queue->graphicsQueue);
-			vkGetDeviceQueue(deviceWrapper.device, cId, i, &queue->computeQueue);
+			deviceWrapper.device.getQueue(pId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue(gId, i, &queue->graphicsQueue);
+			deviceWrapper.device.getQueue(cId, i, &queue->computeQueue);
 		}
 		queue->presentQId = pId;
 		queue->graphicsQId = gId;

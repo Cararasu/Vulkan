@@ -239,11 +239,11 @@ int main (int argc, char **argv) {
 	}
 	
 	BufferWrapper vertexBuffer(sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	transferData(objectStorage.vertices.data(), vertexBuffer.buffer, 0, sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	transferData(objectStorage.vertices.data(), vertexBuffer.buffer, 0, sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
 	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
 	BufferWrapper indexBuffer(sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	transferData(objectStorage.indices.data(), indexBuffer.buffer, 0, sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
+	transferData(objectStorage.indices.data(), indexBuffer.buffer, 0, sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
 	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
 	
@@ -254,30 +254,22 @@ int main (int argc, char **argv) {
 	BufferWrapper instanceBuffer(sizeof(Instance) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	BufferWrapper uniformBuffer(sizeof(Camera), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = uniformBuffer.buffer;
-	bufferInfo.offset = offsetof(Camera, w2sMatrix);
-	bufferInfo.range = sizeof(glm::mat4);
 	
-	VkWriteDescriptorSet descriptorWrite = {};
-	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrite.dstSet = descriptorSet;
-	descriptorWrite.dstBinding = 0;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.pBufferInfo = &bufferInfo;
-	descriptorWrite.pImageInfo = nullptr; // Optional
-	descriptorWrite.pTexelBufferView = nullptr; // Optional
+	vk::DescriptorBufferInfo bufferInfo(uniformBuffer.buffer, offsetof(Camera, w2sMatrix), sizeof(glm::mat4));
+	vk::WriteDescriptorSet descriptorWrite(vk::DescriptorSet(descriptorSet), 
+		0, 0, //dstBinding, dstArrayElement
+		1, //descriptorCount
+		vk::DescriptorType::eUniformBuffer, //descriptorType
+		nullptr, &bufferInfo, nullptr);//pImageInfo, pBufferInfo, pTexelBufferView
 	
-	vkUpdateDescriptorSets(vGlobal.deviceWrapper.device, 1, &descriptorWrite, 0, nullptr);
+	vGlobal.deviceWrapper.device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
 	
-	VkCommandPool commandPool = createCommandPool(vWindow.pgcQueue->graphicsQId, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	vk::CommandPool commandPool = createCommandPool(vWindow.pgcQueue->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	
-	VkSemaphore imageAvailableSemaphore = createSemaphore(vGlobal.deviceWrapper.device);
-	VkSemaphore drawFinishedSemaphore = createSemaphore(vGlobal.deviceWrapper.device);
+	VkSemaphore imageAvailableSemaphore = createSemaphore();
+	VkSemaphore drawFinishedSemaphore = createSemaphore();
 	
-	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+	vk::CommandBuffer commandBuffer = VK_NULL_HANDLE;
 	
 	while(vWindow.isOpen()){
 		
@@ -296,6 +288,9 @@ int main (int argc, char **argv) {
 		}
 		stagingOffset += sizeof(VkDrawIndexedIndirectCommand) * commandCount;
 		
+		copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, commandOffset, 0, sizeof(VkDrawIndexedIndirectCommand)*commandCount,
+			VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT);
+		
 		uint32_t instanceCount = 0;
 		uint32_t instanceOffset = stagingOffset;
 		for(Object& obj : objectStorage.objects){
@@ -305,82 +300,104 @@ int main (int argc, char **argv) {
 		}
 		stagingOffset += sizeof(Instance) * instanceCount;
 		
+		copyBuffer(stagingBuffer->buffer, instanceBuffer.buffer, instanceOffset, 0, sizeof(Instance)*instanceCount,
+			VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT);
+		
 		uint32_t uniformOffset = stagingOffset;
 		viewport.m_viewvector = glm::rotate(viewport.m_viewvector, 0.005f, glm::vec3(0.0f,1.0f,0.0f));
 		((Camera*)(stagingBuffer->data + stagingOffset))[0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
 		stagingOffset += sizeof(Camera);
 		
-		copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, commandOffset, 0, sizeof(VkDrawIndexedIndirectCommand)*commandCount,
-			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT);
-		
-		copyBuffer(stagingBuffer->buffer, instanceBuffer.buffer, instanceOffset, 0, sizeof(Instance)*instanceCount,
-			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT);
-		
 		copyBuffer(stagingBuffer->buffer, uniformBuffer.buffer, uniformOffset, 0, sizeof(Camera),
-			VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_UNIFORM_READ_BIT);
+			VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT);
 		
 		
 		printf("Commands: %d - %d Instances: %d - %d Uniform: %d\n", commandCount, commandOffset, instanceCount, instanceOffset, uniformOffset);
 		printf("Id: %d\n", vWindow.presentImageIndex);
 		//vGlobal.deviceWrapper.tqueue->waitForFinish();
 		
-		if(commandBuffer != VK_NULL_HANDLE)
-			deleteCommandBuffer(commandPool, commandBuffer);
-		commandBuffer = createCommandBuffer(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		beginInfo.pInheritanceInfo = nullptr; // Optional
-
+		if(commandBuffer)
+			vGlobal.deviceWrapper.device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+		commandBuffer = createCommandBuffer(commandPool, vk::CommandBufferLevel::ePrimary);
+		vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
 		
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.pNext = nullptr;
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = framebuffers[vWindow.presentImageIndex];
-		renderPassInfo.renderArea.offset = {0, 0};
-		renderPassInfo.renderArea.extent = vWindow.swapChainExtend;
-		renderPassInfo.clearValueCount = 2;
-		VkClearValue clearColors[2];
-		clearColors[0].color = {0.0f, 0.0f, 0.5f, 1.0f};
-		clearColors[0].depthStencil = {0.0f, 0};
-		clearColors[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-		clearColors[1].depthStencil = {1.0f, 0};
-		renderPassInfo.pClearValues = clearColors;
+		
+		vk::ClearValue clearColors[2] = {
+			vk::ClearValue(vk::ClearColorValue(std::array<float,4>({0.0f, 0.0f, 0.5f, 1.0f}))),
+			vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0)),
+		};
+		vk::RenderPassBeginInfo renderPassInfo(
+			renderPass, 
+			framebuffers[vWindow.presentImageIndex],
+			vk::Rect2D(0,0),
+			2,clearColors
+			);
 		{
-			vkBeginCommandBuffer(commandBuffer, &beginInfo);
+			commandBuffer.begin(&beginInfo);
 			
-			vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vk::BufferMemoryBarrier bufferMemoryBarriers[3] = {
+				vk::BufferMemoryBarrier(
+					vk::AccessFlags(vk::AccessFlagBits::eTransferWrite), vk::AccessFlags(vk::AccessFlagBits::eIndirectCommandRead),
+					vGlobal.deviceWrapper.transfQId, vGlobal.deviceWrapper.graphQId,
+					indirectCommandBuffer.buffer,
+					0, indirectCommandBuffer.bufferSize),
+				vk::BufferMemoryBarrier(
+					vk::AccessFlags(vk::AccessFlagBits::eTransferWrite), vk::AccessFlags(vk::AccessFlagBits::eVertexAttributeRead),
+					vGlobal.deviceWrapper.transfQId, vGlobal.deviceWrapper.graphQId,
+					instanceBuffer.buffer,
+					0, instanceBuffer.bufferSize),
+				vk::BufferMemoryBarrier(
+					vk::AccessFlags(vk::AccessFlagBits::eTransferWrite), vk::AccessFlags(vk::AccessFlagBits::eUniformRead),
+					vGlobal.deviceWrapper.transfQId, vGlobal.deviceWrapper.graphQId,
+					uniformBuffer.buffer,
+					0, uniformBuffer.bufferSize)
+			};
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlags(vk::PipelineStageFlagBits::eTransfer),vk::PipelineStageFlags(vk::PipelineStageFlagBits::eDrawIndirect),
+				vk::DependencyFlags(),
+				0, nullptr,//memoryBarrier
+				1, &bufferMemoryBarriers[0],//bufferBarrier
+				0, nullptr//imageBarrier
+				);
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlags(vk::PipelineStageFlagBits::eTransfer),vk::PipelineStageFlags(vk::PipelineStageFlagBits::eVertexInput),
+				vk::DependencyFlags(),
+				0, nullptr,//memoryBarrier
+				1, &bufferMemoryBarriers[1],//bufferBarrier
+				0, nullptr//imageBarrier
+				);
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlags(vk::PipelineStageFlagBits::eTransfer),vk::PipelineStageFlags(vk::PipelineStageFlagBits::eVertexShader),
+				vk::DependencyFlags(),
+				0, nullptr,//memoryBarrier
+				1, &bufferMemoryBarriers[2],//bufferBarrier
+				0, nullptr//imageBarrier
+				);
 			
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,  pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-			VkBuffer vertexBuffers[] = {vertexBuffer.buffer, instanceBuffer.buffer};
+			commandBuffer.beginRenderPass(&renderPassInfo, vk::SubpassContents::eInline);
+			
+			commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+			//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr)
+			vk::Buffer vertexBuffers[] = {vertexBuffer.buffer, instanceBuffer.buffer};
 			VkDeviceSize offsets[] = {0, 0};
-			vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+			commandBuffer.bindVertexBuffers(0, 2, vertexBuffers, offsets);
+			commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
 			
-			vkCmdDrawIndexedIndirect(commandBuffer, indirectCommandBuffer.buffer, 0, commandCount, sizeof(VkDrawIndexedIndirectCommand));
+			commandBuffer.drawIndexedIndirect(indirectCommandBuffer.buffer, 0, commandCount, sizeof(VkDrawIndexedIndirectCommand));
 			
-			vkCmdEndRenderPass(commandBuffer);
+			commandBuffer.endRenderPass();
 			
-			VCHECKCALL(vkEndCommandBuffer(commandBuffer), printf("Recording of CommandBuffer failed\n"));
+			commandBuffer.end();
+			//V_CHECKCALL(commandBuffer.end(), printf("Recording of CommandBuffer failed\n"));
 		}
 		
 		
-		VkSemaphore waitSemaphores[] = {vWindow.imageAvailableGuardSem};
-		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-		VkSemaphore signalSemaphores[] = {drawFinishedSemaphore};
+		vk::Semaphore waitSemaphores[] = {vWindow.imageAvailableGuardSem};
+		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+		vk::Semaphore signalSemaphores[] = {drawFinishedSemaphore};
 		
-		VkSubmitInfo submitInfo = {};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext = nullptr;
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
-		submitInfo.pWaitDstStageMask = waitStages;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;
+		vk::SubmitInfo submitInfo(1, waitSemaphores, waitStages, 1, &commandBuffer, 1, signalSemaphores);
 		
 		vWindow.pgcQueue->submitGraphics(1, &submitInfo, VK_NULL_HANDLE);
 		
@@ -400,8 +417,8 @@ int main (int argc, char **argv) {
 	}
 	vkDestroyPipelineLayout(vGlobal.deviceWrapper.device, pipelineLayout, nullptr);
 	
-	destroySemaphore(vGlobal.deviceWrapper.device, imageAvailableSemaphore);
-	destroySemaphore(vGlobal.deviceWrapper.device, drawFinishedSemaphore);
+	destroySemaphore(imageAvailableSemaphore);
+	destroySemaphore(drawFinishedSemaphore);
 	
 	destroyStandardRenderPass();
 	destroyStandardPipeline();

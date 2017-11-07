@@ -31,31 +31,21 @@ VkDeviceMemory allocateBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags neede
 	return allocateMemory(memRequirements, needed, recommended);
 }
 
-VkCommandPool createCommandPool(uint32_t queueId, VkCommandPoolCreateFlags createFlags){
-	VkCommandPoolCreateInfo createInfo = {};
+vk::CommandPool createCommandPool(uint32_t queueId, vk::CommandPoolCreateFlags createFlags){
+	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), queueId);
 	
-	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	createInfo.pNext = nullptr;
-	createInfo.flags = createFlags;
-	createInfo.queueFamilyIndex = queueId;
-	
-	VkCommandPool commandPool;
-	VCHECKCALL(vkCreateCommandPool(vGlobal.deviceWrapper.device, &createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
+	vk::CommandPool commandPool;
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
 	return commandPool;
 }
 void destroyCommandPool(VkCommandPool commandPool){
 	vkDestroyCommandPool(vGlobal.deviceWrapper.device, commandPool, nullptr);
 }
-VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel bufferLevel){
-	VkCommandBufferAllocateInfo allocateInfo = {};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.pNext = nullptr;
-	allocateInfo.commandPool = commandPool;
-	allocateInfo.level = bufferLevel;
-	allocateInfo.commandBufferCount = 1;
+vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel){
+	vk::CommandBufferAllocateInfo allocateInfo(commandPool, bufferLevel, 1);
 	
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(vGlobal.deviceWrapper.device, &allocateInfo, &commandBuffer);
+    vk::CommandBuffer commandBuffer;
+	vGlobal.deviceWrapper.device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
     return commandBuffer;
 }
 void deleteCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer){
@@ -107,15 +97,15 @@ VkFormat findDepthFormat() {
     );
 }
 
-VkSemaphore createSemaphore(VkDevice device){
-	VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
-	VkSemaphore sem = VK_NULL_HANDLE;
-	VCHECKCALL(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &sem), printf("Creation of Semaphore failed\n"))
+vk::Semaphore createSemaphore(){
+	vk::SemaphoreCreateInfo semaphoreCreateInfo;
+	vk::Semaphore sem;
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createSemaphore(&semaphoreCreateInfo, nullptr, &sem), printf("Creation of Semaphore failed\n"));
 	return sem;
 }
 
-void destroySemaphore(VkDevice device, VkSemaphore semaphore){
-	vkDestroySemaphore(device, semaphore, nullptr);
+void destroySemaphore(vk::Semaphore semaphore){
+	vGlobal.deviceWrapper.device.destroySemaphore(semaphore, nullptr);
 }
 
 void printError(VkResult res){

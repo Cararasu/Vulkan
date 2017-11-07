@@ -2,7 +2,7 @@
 <CodeLite_Project Name="VulkanTest" Version="10.0.0" InternalType="Console">
   <Plugins>
     <Plugin Name="qmake">
-      <![CDATA[00010001N0005Debug000000000000]]>
+      <![CDATA[00020001N0005Debug0000000000000001N0013Debug Windows000000000000]]>
     </Plugin>
   </Plugins>
   <Description/>
@@ -44,23 +44,26 @@
       </Linker>
       <ResourceCompiler Options=""/>
     </GlobalSettings>
-    <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="."/>
-        <IncludePath Value="libs/glfw-3.2.1.bin.WIN64\include"/>
-        <IncludePath Value="libs/glm-0.9.9-a1"/>
-        <IncludePath Value="C:\Program Files\VulkanSDK\1.0.61.1\Include"/>
+    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-Wall;-std=c++11" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/include"/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
-        <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
+        <LibraryPath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/lib"/>
         <Library Value="glfw3"/>
-        <Library Value="user32"/>
-        <Library Value="kernel32"/>
-        <Library Value="vulkan-1"/>
+        <Library Value="vulkan"/>
+        <Library Value="X11"/>
+        <Library Value="Xi"/>
+        <Library Value="Xrandr"/>
+        <Library Value="Xxf86vm"/>
+        <Library Value="Xinerama"/>
+        <Library Value="Xcursor"/>
+        <Library Value="rt"/>
+        <Library Value="pthread"/>
+        <Library Value="dl"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./DebugWind" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="no"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
@@ -93,23 +96,21 @@
         <SearchPaths/>
       </Completion>
     </Configuration>
-    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g;-O0;-Wall;-std=c++11" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/include"/>
+    <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="."/>
+        <IncludePath Value="libs/glfw-3.2.1.bin.WIN64\include"/>
+        <IncludePath Value="libs/glm-0.9.9-a1"/>
+        <IncludePath Value="C:\Program Files\VulkanSDK\1.0.61.1\Include"/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <LibraryPath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/lib"/>
+        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
+        <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
         <Library Value="glfw3"/>
-        <Library Value="vulkan"/>
-        <Library Value="X11"/>
-        <Library Value="Xi"/>
-        <Library Value="Xrandr"/>
-        <Library Value="Xxf86vm"/>
-        <Library Value="Xinerama"/>
-        <Library Value="Xcursor"/>
-        <Library Value="rt"/>
-        <Library Value="pthread"/>
-        <Library Value="dl"/>
+        <Library Value="gdi32"/>
+        <Library Value="user32"/>
+        <Library Value="kernel32"/>
+        <Library Value="vulkan-1"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>

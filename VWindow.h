@@ -27,7 +27,7 @@ struct VWindow{
 	
 	void initializeWindow();
 	
-	void showNextImage(uint32_t waitSemaphoreCount = 0, const VkSemaphore* pWaitSemaphores = nullptr);
+	void showNextImage(uint32_t waitSemaphoreCount = 0, const vk::Semaphore* pWaitSemaphores = nullptr);
 	
 	bool isOpen(){
 		return !glfwWindowShouldClose(window);

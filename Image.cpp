@@ -70,12 +70,12 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExte
 	if(singleTransferCommandPool == VK_NULL_HANDLE){
 		VTQueue* queue = vGlobal.deviceWrapper.requestTransferQueue();
 		if(queue)
-			singleTransferCommandPool = createCommandPool(queue->transferQId, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+			singleTransferCommandPool = createCommandPool(queue->transferQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 		else
-			singleTransferCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+			singleTransferCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	}
 	
-    VkCommandBuffer commandBuffer = createCommandBuffer(singleTransferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VkCommandBuffer commandBuffer = createCommandBuffer(singleTransferCommandPool, vk::CommandBufferLevel::ePrimary);
 
     VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -115,10 +115,10 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExte
 }
 void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlags aspectMask) {
 	if(singleImageTransitionCommandPool == VK_NULL_HANDLE){
-		singleImageTransitionCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+		singleImageTransitionCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	}
 	
-    VkCommandBuffer commandBuffer = createCommandBuffer(singleImageTransitionCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VkCommandBuffer commandBuffer = createCommandBuffer(singleImageTransitionCommandPool, vk::CommandBufferLevel::ePrimary);
 	
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

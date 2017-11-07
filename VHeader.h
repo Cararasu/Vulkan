@@ -11,6 +11,7 @@
 #include <glm/gtx/normal.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
+#define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
 #include <set>
 #include <vector>
@@ -24,6 +25,14 @@ void printError(VkResult res);
 	if(VkResult res = call){\
 		errorcode;\
 		printError(res);\
+	}\
+}
+
+#define V_CHECKCALL(call, errorcode) {\
+	vk::Result res = call;\
+	if(res != vk::Result::eSuccess){\
+		printf("Error %s\n", vk::to_string(res).c_str());\
+		errorcode;\
 	}\
 }
 
@@ -81,17 +90,17 @@ extern VkCommandPool singleImageTransitionCommandPool;
 extern VkCommandBuffer singleTransferCommandBuffer;
 extern VkCommandBuffer singleImageTransitionBuffer;
 
-VkCommandPool createCommandPool(uint32_t queueId, VkCommandPoolCreateFlags createFlags);
+vk::CommandPool createCommandPool(uint32_t queueId, vk::CommandPoolCreateFlags createFlags);
 void destroyCommandPool(VkCommandPool commandPool);
 
-VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel bufferLevel);
+vk::CommandBuffer createCommandBuffer(VkCommandPool commandPool, vk::CommandBufferLevel bufferLevel);
 void deleteCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
 
 void copyData(const void* srcData, VkDeviceMemory dstMemory, VkDeviceSize offset, VkDeviceSize size);
 void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size,
-	VkAccessFlags inputAccessFlag, VkAccessFlags outputAccessFlag);
+	VkPipelineStageFlags inputPipelineStageFlags, VkAccessFlags inputAccessFlag, VkPipelineStageFlags outputPipelineStageFlags, VkAccessFlags outputAccessFlag);
 
-void transferData(const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size, VkAccessFlags useFlag);
+void transferData(const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size, VkPipelineStageFlags usePipelineFlags, VkAccessFlags useFlag);
 void transferData(const void* srcData, VkImage targetimage, VkExtent3D offset, VkExtent3D size);
 
 VkFormat findDepthFormat();
@@ -134,8 +143,8 @@ void createStandardDescriptorSet(VkDescriptorPool descriptorSetPool, std::vector
 
 VkShaderModule loadShaderFromFile(const char* filename);
 
-VkSemaphore createSemaphore(VkDevice device);
-void destroySemaphore(VkDevice device, VkSemaphore semaphore);
+vk::Semaphore createSemaphore();
+void destroySemaphore(vk::Semaphore semaphore);
 
 
 #endif

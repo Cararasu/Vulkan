@@ -14,7 +14,7 @@ void VWindow::initializeWindow(){
 		printf("Creation of Surface failed");
 	});
 	
-	imageAvailableGuardSem = createSemaphore(vGlobal.deviceWrapper.device);
+	imageAvailableGuardSem = createSemaphore();
 	
 	{
 		{
@@ -125,23 +125,14 @@ void VWindow::initializeWindow(){
 	}
 	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
 }
-void VWindow::showNextImage(uint32_t waitSemaphoreCount, const VkSemaphore* pWaitSemaphores){
+void VWindow::showNextImage(uint32_t waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores){
 	
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext = nullptr;
-	presentInfo.waitSemaphoreCount = waitSemaphoreCount;
-	presentInfo.pWaitSemaphores = pWaitSemaphores;
-	presentInfo.swapchainCount = 1;
-	VkSwapchainKHR swapChains[] = {swapChain};
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &presentImageIndex;
-	presentInfo.pResults = nullptr; // Optional
-	
-	vkQueuePresentKHR(pgcQueue->presentQueue, &presentInfo);
-	
-	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
+	vk::SwapchainKHR swapChains[] = {swapChain};
+	vk::PresentInfoKHR presentInfo(waitSemaphoreCount, pWaitSemaphores, 1, swapChains, &presentImageIndex, nullptr);
+
+	pgcQueue->presentQueue.presentKHR(&presentInfo);
+	vGlobal.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 }
 VWindow::~VWindow(){
-	destroySemaphore(vGlobal.deviceWrapper.device, imageAvailableGuardSem);
+	destroySemaphore(imageAvailableGuardSem);
 }

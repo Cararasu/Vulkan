@@ -18,7 +18,7 @@ struct VExtLayerStruct{
 };
 
 struct VPhysDeviceProps{
-	VkPhysicalDevice physicalDevice;
+	vk::PhysicalDevice physicalDevice;
 	int rating = 0;
 	std::vector<VkExtensionProperties> availableExtensions;
 	std::vector<VkLayerProperties> availableLayers;
@@ -30,10 +30,10 @@ struct VPhysDeviceProps{
 
 struct VGlobal{
 	
-	VkInstance vkinstance;
+	vk::Instance vkinstance;
 	VExtLayerStruct instExtLayers;
 	
-	VkPhysicalDevice physicalDevice;
+	vk::PhysicalDevice physicalDevice;
 	VExtLayerStruct devExtLayers;
 	
 	uint32_t chosenDeviceId = -1;
