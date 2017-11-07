@@ -16,8 +16,8 @@
 #include <GLFW/glfw3.h>
 
 
-VkBool32 VKAPI_PTR debugLogger(
-			VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, 
+vk::Bool32 VKAPI_PTR debugLogger(
+			vk::DebugReportFlagsEXT flags, vk::DebugReportObjectTypeEXT objectType, 
 			uint64_t object, size_t location, int32_t messageCode,
 			const char* pLayerPrefix, const char* pMessage, void* pUserData){
 	printf("Layer: %s - Message: %s\n", pLayerPrefix, pMessage);
@@ -111,11 +111,11 @@ int main (int argc, char **argv) {
 	vGlobal.preInitialize();
 	
 	printf("Instance Extensions:\n");
-	for(VkExtensionProperties& extProp : vGlobal.instExtLayers.availableExtensions){
+	for(vk::ExtensionProperties& extProp : vGlobal.instExtLayers.availableExtensions){
 		printf("\t%s\n", extProp.extensionName);
 	}
 	printf("Instance Layers:\n");
-	for(VkLayerProperties& layerProp : vGlobal.instExtLayers.availableLayers){
+	for(vk::LayerProperties& layerProp : vGlobal.instExtLayers.availableLayers){
 		printf("\t%s\n", layerProp.layerName);
 		printf("\t\tDesc: %s\n", layerProp.description);
 	}
@@ -145,21 +145,21 @@ int main (int argc, char **argv) {
 	}
 	
 	printf("Instance Extensions available:\n");
-	for(VkExtensionProperties& prop : vGlobal.instExtLayers.availableExtensions){
+	for(vk::ExtensionProperties& prop : vGlobal.instExtLayers.availableExtensions){
 		printf("\t%s\n", prop.extensionName);
 	}
 	printf("Instance Layers available:\n");
-	for(VkLayerProperties& prop : vGlobal.instExtLayers.availableLayers){
+	for(vk::LayerProperties& prop : vGlobal.instExtLayers.availableLayers){
 		printf("\t%s\n", prop.layerName);
 	}
 	
 	vGlobal.initializeInstance("Blabla", "wuwu Engine");
 	
-	VkDebugReportCallbackEXT cb;
+	vk::DebugReportCallbackEXT cb;
 	
 	pfn_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) glfwGetInstanceProcAddress(vGlobal.vkinstance, "vkCreateDebugReportCallbackEXT");
 	
-	VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
+	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = {};
 	debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 	debugReportCallbackCreateInfo.pNext = nullptr;
 	debugReportCallbackCreateInfo.flags = /*VK_DEBUG_REPORT_INFORMATION_BIT_EXT |*/ VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
@@ -173,11 +173,11 @@ int main (int argc, char **argv) {
 	
 
 	printf("Device Extensions available:\n");
-	for(VkExtensionProperties& prop : vGlobal.devExtLayers.availableExtensions){
+	for(vk::ExtensionProperties& prop : vGlobal.devExtLayers.availableExtensions){
 		printf("\t%s\n", prop.extensionName);
 	}
 	printf("Device Layers available:\n");
-	for(VkLayerProperties& prop : vGlobal.devExtLayers.availableLayers){
+	for(vk::LayerProperties& prop : vGlobal.devExtLayers.availableLayers){
 		printf("\t%s\n", prop.layerName);
 	}
 	
@@ -195,37 +195,37 @@ int main (int argc, char **argv) {
 	
 	vWindow.initializeWindow();
 	
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts = createStandardDescriptorSetLayouts();
+	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = createStandardDescriptorSetLayouts();
 	
-	VkPipelineLayout pipelineLayout = createStandardPipelineLayout(&descriptorSetLayouts);
+	vk::PipelineLayout pipelineLayout = createStandardPipelineLayout(&descriptorSetLayouts);
 	
-	VkDescriptorPool descriptorSetPool = createStandardDescriptorSetPool();
+	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool();
 	
-	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<vk::DescriptorSet> descriptorSets;
 	createStandardDescriptorSet(descriptorSetPool, &descriptorSetLayouts, &descriptorSets);
-	VkDescriptorSet descriptorSet = descriptorSets[0];
+	vk::DescriptorSet descriptorSet = descriptorSets[0];
 	
-	VkFormat depthFormat = findDepthFormat();
-	VkExtent3D extent = {vWindow.swapChainExtend.width, vWindow.swapChainExtend.height, 1};
-	ImageWrapper depthImage(extent, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	vk::Format depthFormat = findDepthFormat();
+	vk::Extent3D extent(vWindow.swapChainExtend.width, vWindow.swapChainExtend.height, 1);
+	ImageWrapper depthImage(extent, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags(vk::ImageUsageFlagBits::eDepthStencilAttachment), vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eDeviceLocal));
 	
-	VkImageView depthImageView;
+	vk::ImageView depthImageView;
 	
-	depthImageView = createImageView2D(depthImage.image, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-	transitionImageLayout(depthImage.image, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+	depthImageView = createImageView2D(depthImage.image, (vk::Format)depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+	transitionImageLayout(depthImage.image, (vk::Format)depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-	VkRenderPass renderPass = createStandardRenderPass(vWindow.presentSwapFormat.format);
+	vk::RenderPass renderPass = createStandardRenderPass(vWindow.presentSwapFormat.format);
 	
-	VkPipeline graphicsPipeline = createStandardPipeline(vWindow.swapChainExtend, pipelineLayout, renderPass);
+	vk::Pipeline graphicsPipeline = createStandardPipeline(vWindow.swapChainExtend, pipelineLayout, renderPass);
 	
-	VkFramebuffer framebuffers[vWindow.presentImages.size()];
+	vk::Framebuffer framebuffers[vWindow.presentImages.size()];
 	
 	for(size_t i = 0; i < vWindow.presentImages.size(); i++){
-		VkImageView attachments[2] = {
+		vk::ImageView attachments[2] = {
 			vWindow.presentImages[i],
 			depthImageView
 		};
-		VkFramebufferCreateInfo framebufferInfo = {};
+		vk::FramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = renderPass;
 		framebufferInfo.attachmentCount = 2;
@@ -238,11 +238,17 @@ int main (int argc, char **argv) {
 		
 	}
 	
-	BufferWrapper vertexBuffer(sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	BufferWrapper vertexBuffer(
+		sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), 
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, 
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
 	transferData(objectStorage.vertices.data(), vertexBuffer.buffer, 0, sizeof(objectStorage.vertices[0]) * objectStorage.vertices.size(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
 	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
-	BufferWrapper indexBuffer(sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	BufferWrapper indexBuffer(
+		sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), 
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, 
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
 	transferData(objectStorage.indices.data(), indexBuffer.buffer, 0, sizeof(objectStorage.indices[0]) * objectStorage.indices.size(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT);
 	//vGlobal.deviceWrapper.tqueue->waitForFinish();
 	
@@ -250,9 +256,15 @@ int main (int argc, char **argv) {
 	uint32_t MAX_COMMAND_COUNT = 100;
 	uint32_t MAX_INSTANCE_COUNT = 100;
 	
-	BufferWrapper indirectCommandBuffer(sizeof(VkDrawIndexedIndirectCommand) * MAX_COMMAND_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	BufferWrapper instanceBuffer(sizeof(Instance) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	BufferWrapper uniformBuffer(sizeof(Camera), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	BufferWrapper indirectCommandBuffer(sizeof(vk::DrawIndexedIndirectCommand) * MAX_COMMAND_COUNT, 
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer, 
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
+	BufferWrapper instanceBuffer(sizeof(Instance) * MAX_INSTANCE_COUNT, 
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
+	BufferWrapper uniformBuffer(sizeof(Camera), 
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal);
 	
 	
 	vk::DescriptorBufferInfo bufferInfo(uniformBuffer.buffer, offsetof(Camera, w2sMatrix), sizeof(glm::mat4));
@@ -266,8 +278,8 @@ int main (int argc, char **argv) {
 	
 	vk::CommandPool commandPool = createCommandPool(vWindow.pgcQueue->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	
-	VkSemaphore imageAvailableSemaphore = createSemaphore();
-	VkSemaphore drawFinishedSemaphore = createSemaphore();
+	vk::Semaphore imageAvailableSemaphore = createSemaphore();
+	vk::Semaphore drawFinishedSemaphore = createSemaphore();
 	
 	vk::CommandBuffer commandBuffer = VK_NULL_HANDLE;
 	
@@ -281,14 +293,14 @@ int main (int argc, char **argv) {
 			uint32_t count = 0;
 			for(Object& obj : objectStorage.objects){
 				for(ObjectPart& part : obj.parts){
-					((VkDrawIndexedIndirectCommand*)stagingBuffer->data)[commandCount++] = {part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count};
+					((vk::DrawIndexedIndirectCommand*)stagingBuffer->data)[commandCount++] = {part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count};
 				}
 				count += obj.instances.size();
 			}
 		}
-		stagingOffset += sizeof(VkDrawIndexedIndirectCommand) * commandCount;
+		stagingOffset += sizeof(vk::DrawIndexedIndirectCommand) * commandCount;
 		
-		copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, commandOffset, 0, sizeof(VkDrawIndexedIndirectCommand)*commandCount,
+		copyBuffer(stagingBuffer->buffer, indirectCommandBuffer.buffer, commandOffset, 0, sizeof(vk::DrawIndexedIndirectCommand)*commandCount,
 			VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT, VK_ACCESS_HOST_WRITE_BIT);
 		
 		uint32_t instanceCount = 0;
@@ -380,11 +392,11 @@ int main (int argc, char **argv) {
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 			//commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr)
 			vk::Buffer vertexBuffers[] = {vertexBuffer.buffer, instanceBuffer.buffer};
-			VkDeviceSize offsets[] = {0, 0};
+			vk::DeviceSize offsets[] = {0, 0};
 			commandBuffer.bindVertexBuffers(0, 2, vertexBuffers, offsets);
 			commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
 			
-			commandBuffer.drawIndexedIndirect(indirectCommandBuffer.buffer, 0, commandCount, sizeof(VkDrawIndexedIndirectCommand));
+			commandBuffer.drawIndexedIndirect(indirectCommandBuffer.buffer, 0, commandCount, sizeof(vk::DrawIndexedIndirectCommand));
 			
 			commandBuffer.endRenderPass();
 			

@@ -10,57 +10,56 @@ void VWindow::initializeWindow(){
 	
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	window = glfwCreateWindow(640, 640, "Vulkan Test", NULL, NULL);
-	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, &surface), {
-		printf("Creation of Surface failed");
-	});
+	VkSurfaceKHR surfaces[] = {surface};
+	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, surfaces), printf("Creation of Surface failed"));
 	
 	imageAvailableGuardSem = createSemaphore();
 	
 	{
 		{
 			uint32_t formatCount;
-			vkGetPhysicalDeviceSurfaceFormatsKHR(vGlobal.physicalDevice, surface, &formatCount, nullptr);
+			vGlobal.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, nullptr);
 			if (formatCount != 0) {
-				VkSurfaceFormatKHR formats[formatCount];
-				vkGetPhysicalDeviceSurfaceFormatsKHR(vGlobal.physicalDevice, surface, &formatCount, formats);
+				vk::SurfaceFormatKHR formats[formatCount];
+				vGlobal.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, formats);
 				
 				presentSwapFormat = formats[0];
 				
-				if (formatCount == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
-					presentSwapFormat = {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+				if (formatCount == 1 && formats[0].format == vk::Format::eUndefined) {
+					presentSwapFormat = {vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
 				}
 				for (size_t i = 0; i < formatCount; i++) {
-					if (formats[i].format == VK_FORMAT_B8G8R8A8_UNORM && formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+					if (formats[i].format == vk::Format::eB8G8R8A8Unorm && formats[i].colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
 						presentSwapFormat = formats[i];
 						break;
 					}
 				}
 			}
 		}
-		VkPresentModeKHR chosenPresentationMode = VK_PRESENT_MODE_FIFO_KHR;//can be turned into global flags of what is supported
+		vk::PresentModeKHR chosenPresentationMode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 		{
 			uint32_t presentModeCount;
 			vkGetPhysicalDeviceSurfacePresentModesKHR(vGlobal.physicalDevice, surface, &presentModeCount, nullptr);
 			if (presentModeCount != 0) {
-				VkPresentModeKHR presentModes[presentModeCount];
-				vkGetPhysicalDeviceSurfacePresentModesKHR(vGlobal.physicalDevice, surface, &presentModeCount, presentModes);
-				chosenPresentationMode = VK_PRESENT_MODE_FIFO_KHR;
+				vk::PresentModeKHR presentModes[presentModeCount];
+				vGlobal.physicalDevice.getSurfacePresentModesKHR(surface, &presentModeCount, presentModes);
+				chosenPresentationMode = vk::PresentModeKHR::eFifo;
 				for (size_t i = 0; i < presentModeCount; i++) {
-					if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-						chosenPresentationMode = VK_PRESENT_MODE_MAILBOX_KHR;
+					if (presentModes[i] == vk::PresentModeKHR::eMailbox) {
+						chosenPresentationMode = vk::PresentModeKHR::eMailbox;
 						break;
-					}else if(presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR){
-						chosenPresentationMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+					}else if(presentModes[i] == vk::PresentModeKHR::eImmediate){
+						chosenPresentationMode = vk::PresentModeKHR::eImmediate;
 					}
 				}
 			}
 		}
-		VkSurfaceCapabilitiesKHR capabilities;//can be saved globally for each physicaldevice
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vGlobal.physicalDevice, surface, &capabilities);
+		vk::SurfaceCapabilitiesKHR capabilities;//can be saved globally for each physicaldevice
+		vGlobal.physicalDevice.getSurfaceCapabilitiesKHR(surface, &capabilities);
 		{
 			int width, height;
 			glfwGetWindowSize(window, &width , &height);
-			VkExtent2D actualExtent = {width, height};
+			vk::Extent2D actualExtent = {width, height};
 			if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 				swapChainExtend = capabilities.currentExtent;
 			} else {
@@ -75,25 +74,15 @@ void VWindow::initializeWindow(){
 		if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
 			imageCount = std::max<uint32_t>(capabilities.maxImageCount, V_MAX_PRESENTIMAGE_COUNT);
 		}
-		VkSwapchainCreateInfoKHR swapchainCreateInfo;
-		swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		swapchainCreateInfo.pNext = nullptr;
-		swapchainCreateInfo.flags = 0;
-		swapchainCreateInfo.surface = surface;
-		swapchainCreateInfo.minImageCount = imageCount;
-		swapchainCreateInfo.imageFormat = presentSwapFormat.format;
-		swapchainCreateInfo.imageColorSpace = presentSwapFormat.colorSpace;
-		swapchainCreateInfo.imageExtent = swapChainExtend;
-		swapchainCreateInfo.imageArrayLayers = 1;
-		swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		vk::SwapchainCreateInfoKHR swapchainCreateInfo(vk::SwapchainCreateFlagsKHR(), surface, imageCount, presentSwapFormat.format, presentSwapFormat.colorSpace, swapChainExtend, 1, vk::ImageUsageFlagBits::eColorAttachment);
 
 		if (pgcQueue->combinedPGQ) {
-			swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
 			uint32_t queueFamilyIndices[] = {pgcQueue->presentQId};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices; // Optional
 		} else {
-			swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 			swapchainCreateInfo.queueFamilyIndexCount = 2;
 			uint32_t queueFamilyIndices[] = {pgcQueue->presentQId, pgcQueue->graphicsQId};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -104,7 +93,7 @@ void VWindow::initializeWindow(){
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 		swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 		
-		VkBool32 supported;
+		vk::Bool32 supported;
 		VCHECKCALL(vkGetPhysicalDeviceSurfaceSupportKHR(vGlobal.physicalDevice, pgcQueue->presentQId, surface, &supported), {
 			printf("Surface Not supported");
 		});
@@ -116,7 +105,7 @@ void VWindow::initializeWindow(){
 	uint32_t swapImageCount;
 	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, nullptr);
 	printf("SwapImageCount %d\n", swapImageCount);
-	VkImage swapChainImages[swapImageCount];
+	vk::Image swapChainImages[swapImageCount];
 	vkGetSwapchainImagesKHR(vGlobal.deviceWrapper.device, swapChain, &swapImageCount, swapChainImages);
 	presentImages.resize(swapImageCount);
 	

@@ -78,70 +78,70 @@ struct ObjectStorage {
 };
 	
 struct PipelineInfos{
-	VkPipeline pipeline;
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-	std::vector<VkDescriptorSet> descriptorSets;
+	vk::Pipeline pipeline;
+	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+	std::vector<vk::DescriptorSet> descriptorSets;
 };
 
-extern std::set<VkDeviceMemory> memories;
+extern std::set<vk::DeviceMemory> memories;
 
-extern VkCommandPool singleTransferCommandPool;
-extern VkCommandPool singleImageTransitionCommandPool;
-extern VkCommandBuffer singleTransferCommandBuffer;
-extern VkCommandBuffer singleImageTransitionBuffer;
+extern vk::CommandPool singleTransferCommandPool;
+extern vk::CommandPool singleImageTransitionCommandPool;
+extern vk::CommandBuffer singleTransferCommandBuffer;
+extern vk::CommandBuffer singleImageTransitionBuffer;
 
 vk::CommandPool createCommandPool(uint32_t queueId, vk::CommandPoolCreateFlags createFlags);
-void destroyCommandPool(VkCommandPool commandPool);
+void destroyCommandPool(vk::CommandPool commandPool);
 
-vk::CommandBuffer createCommandBuffer(VkCommandPool commandPool, vk::CommandBufferLevel bufferLevel);
-void deleteCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer);
+vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel);
+void deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer);
 
-void copyData(const void* srcData, VkDeviceMemory dstMemory, VkDeviceSize offset, VkDeviceSize size);
-void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size,
-	VkPipelineStageFlags inputPipelineStageFlags, VkAccessFlags inputAccessFlag, VkPipelineStageFlags outputPipelineStageFlags, VkAccessFlags outputAccessFlag);
+void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
+void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag);
 
-void transferData(const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size, VkPipelineStageFlags usePipelineFlags, VkAccessFlags useFlag);
-void transferData(const void* srcData, VkImage targetimage, VkExtent3D offset, VkExtent3D size);
+void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag);
+void transferData(const void* srcData, vk::Image targetimage, vk::Extent3D offset, vk::Extent3D size);
 
-VkFormat findDepthFormat();
-VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-bool hasStencilComponent(VkFormat format);
-
-
-uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
-void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended, VkBuffer* buffer, VkDeviceMemory* bufferMemory);
-void destroyBuffer(VkBuffer buffer, VkDeviceMemory bufferMemory);
+vk::Format findDepthFormat();
+vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+bool hasStencilComponent(vk::Format format);
 
 
-VkDeviceMemory allocateMemory(VkMemoryRequirements memoryRequirement, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
-VkDeviceMemory allocateImageMemory(VkImage image, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
-VkDeviceMemory allocateBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
+uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-VkImageView createImageView2D(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Buffer* buffer, vk::DeviceMemory* bufferMemory);
+void destroyBuffer(vk::Buffer buffer, vk::DeviceMemory bufferMemory);
 
-void createImage(VkExtent3D size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended,  VkImage* image, VkDeviceMemory* imageMemory);
-void destroyImage(VkImage image, VkDeviceMemory imageMemory);
-void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlags aspectMask);
 
-VkPipeline createStandardPipeline(VkExtent2D viewport, VkPipelineLayout pipelineLayout, VkRenderPass renderPass);
+vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+vk::DeviceMemory allocateImageMemory(vk::Image image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+vk::DeviceMemory allocateBufferMemory(vk::Buffer buffer, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+
+vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
+
+void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Image* image, vk::DeviceMemory* imageMemory);
+void destroyImage(vk::Image image, vk::DeviceMemory imageMemory);
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask);
+
+vk::Pipeline createStandardPipeline(vk::Extent2D viewport, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass);
 void destroyStandardPipeline();
-void destroyPipeline(VkPipeline pipeline);
+void destroyPipeline(vk::Pipeline pipeline);
 
-VkPipelineLayout createStandardPipelineLayout(std::vector<VkDescriptorSetLayout>* descriptorSetLayouts = nullptr, std::vector<VkPushConstantRange>* pushConstRanges = nullptr);
+vk::PipelineLayout createStandardPipelineLayout(std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts = nullptr, std::vector<vk::PushConstantRange>* pushConstRanges = nullptr);
 void destroyStandardPipelineLayout();
-void destroyPipelineLayout(VkPipelineLayout pipelineLayout);
+void destroyPipelineLayout(vk::PipelineLayout pipelineLayout);
 
-VkRenderPass createStandardRenderPass(VkFormat format);
+vk::RenderPass createStandardRenderPass(vk::Format format);
 void destroyStandardRenderPass();
-void destroyRenderPass(VkRenderPass renderpass);
+void destroyRenderPass(vk::RenderPass renderpass);
 
-std::vector<VkDescriptorSetLayout> createStandardDescriptorSetLayouts();
+std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts();
 
-VkDescriptorPool createStandardDescriptorSetPool();
-void createStandardDescriptorSet(VkDescriptorPool descriptorSetPool, std::vector<VkDescriptorSetLayout>* descriptorSetLayouts, std::vector<VkDescriptorSet>* descriptorSets);
+vk::DescriptorPool createStandardDescriptorSetPool();
+void createStandardDescriptorSet(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::DescriptorSet>* descriptorSets);
 
-VkShaderModule loadShaderFromFile(const char* filename);
+vk::ShaderModule loadShaderFromFile(const char* filename);
 
 vk::Semaphore createSemaphore();
 void destroySemaphore(vk::Semaphore semaphore);

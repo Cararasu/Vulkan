@@ -12,16 +12,16 @@
 VGlobal vGlobal;
 
 
-bool operator==(VkLayerProperties& lhs, VkLayerProperties& rhs){
+bool operator==(vk::LayerProperties& lhs, vk::LayerProperties& rhs){
 	return !strcmp(lhs.layerName, rhs.layerName);
 }
-bool operator==(VkExtensionProperties& lhs, VkExtensionProperties& rhs){
+bool operator==(vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs){
 	return !strcmp(lhs.extensionName, rhs.extensionName);
 }
 
-void addExtension(std::vector<VkExtensionProperties>* propList, VkExtensionProperties prop){
+void addExtension(std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop){
 	bool found = false;
-	for(VkExtensionProperties& it : *propList){
+	for(vk::ExtensionProperties& it : *propList){
 		if(it == prop){
 			found = true;
 			break;
@@ -32,68 +32,44 @@ void addExtension(std::vector<VkExtensionProperties>* propList, VkExtensionPrope
 	}
 }
 
-void gatherExtLayer(VkPhysicalDevice device, std::vector<VkLayerProperties>* layers, std::vector<VkExtensionProperties>* extensions){
+void gatherExtLayer(vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions){
 	
 	uint32_t count;
-	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, nullptr), {
-			printf("Could not get Extension-count");
-		});
+	if(!device){
+		V_CHECKCALL(vk::enumerateInstanceExtensionProperties (nullptr, &count, nullptr), printf("Could not get Extension-count"));
 	}else{
-		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, nullptr), {
-			printf("Could not get Extension-count");
-		});
+		V_CHECKCALL(device.enumerateDeviceExtensionProperties(nullptr, &count, nullptr), printf("Could not get Extension-count"));
 	}
 	extensions->resize(count);
-	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), {
-			printf("Could not get Extensions");
-		});
+	if(!device){
+		V_CHECKCALL(vk::enumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), printf("Could not get Extensions"));
 	}else{
-		VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, nullptr, &count, extensions->data()), {
-			printf("Could not get Extensions");
-		});
+		V_CHECKCALL(device.enumerateDeviceExtensionProperties (nullptr, &count, extensions->data()), printf("Could not get Extensions"));
 	}
 	
-	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, nullptr), {
-			printf("Could not get Layer-count");
-		});
+	if(!device){
+		V_CHECKCALL(vk::enumerateInstanceLayerProperties(&count, nullptr), printf("Could not get Layer-count"));
 	}else{
-		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, nullptr), {
-			printf("Could not get Layer-count");
-		});
+		V_CHECKCALL(device.enumerateDeviceLayerProperties (&count, nullptr), printf("Could not get Layer-count"));
 	}
 	layers->resize(count);
-	if(device == VK_NULL_HANDLE){
-		VCHECKCALL(vkEnumerateInstanceLayerProperties (&count, layers->data()), {
-			printf("Could not get Layers");
-		});
+	if(!device){
+		V_CHECKCALL(vk::enumerateInstanceLayerProperties (&count, layers->data()), printf("Could not get Layers"));
 	}else{
-		VCHECKCALL(vkEnumerateDeviceLayerProperties (device, &count, layers->data()), {
-			printf("Could not get Layers");
-		});
+		V_CHECKCALL(device.enumerateDeviceLayerProperties(&count, layers->data()), printf("Could not get Layers"));
 	}
-	for(VkLayerProperties& layerProp : *layers){
+	for(vk::LayerProperties& layerProp : *layers){
 		
-		if(device == VK_NULL_HANDLE){
-			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), {
-				printf("Could not get Extension-count");
-			});
+		if(!device){
+			V_CHECKCALL(vk::enumerateInstanceExtensionProperties(layerProp.layerName, &count, nullptr), printf("Could not get Extension-count"));
 		}else{
-			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, nullptr), {
-				printf("Could not get Extension-count");
-			});
+			V_CHECKCALL(device.enumerateDeviceExtensionProperties(layerProp.layerName, &count, nullptr), printf("Could not get Extension-count"));
 		}
-		VkExtensionProperties extensionArray[count];
-		if(device == VK_NULL_HANDLE){
-			VCHECKCALL(vkEnumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), {
-				printf("Could not get Extensions");
-			});
+		vk::ExtensionProperties extensionArray[count];
+		if(!device){
+			V_CHECKCALL(vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), printf("Could not get Extensions"));
 		}else{
-			VCHECKCALL(vkEnumerateDeviceExtensionProperties (device, layerProp.layerName, &count, extensionArray), {
-				printf("Could not get Extensions");
-			});
+			V_CHECKCALL(device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, extensionArray), printf("Could not get Extensions"));
 		}
 		for(size_t i = 0; i < count; ++i){
 			addExtension(extensions, extensionArray[i]);
@@ -111,7 +87,7 @@ bool VGlobal::preInitialize(){
 		printf ("Vulkan not supported\n");
 		return false;
 	}
-	gatherExtLayer(VK_NULL_HANDLE, &instExtLayers.availableLayers, &instExtLayers.availableExtensions);
+	gatherExtLayer(vk::PhysicalDevice(), &instExtLayers.availableLayers, &instExtLayers.availableExtensions);
 	
 	return true;
 }
@@ -125,37 +101,34 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 	V_CHECKCALL(vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf("Instance Creation Failed\n"));
 	
 	uint32_t devicecount = 0;
-	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, nullptr), {
-		printf("Get physical-device count Failed\n");
-	});
-	VkPhysicalDevice physDevices[devicecount];
+	V_CHECKCALL(vkinstance.enumeratePhysicalDevices(&devicecount, nullptr), printf("Get physical-device count Failed\n"));
+
+	vk::PhysicalDevice physDevices[devicecount];
 	physicalDevices.resize(devicecount);
-	VCHECKCALL(vkEnumeratePhysicalDevices (vkinstance, &devicecount, physDevices), {
-		printf("Get physical-devicec Failed\n");
-	});
+	V_CHECKCALL(vkinstance.enumeratePhysicalDevices(&devicecount, physDevices), printf("Get physical-devicec Failed\n"));
 
 	for (size_t i = 0; i < devicecount; i++) {
 		VPhysDeviceProps& prop = physicalDevices[i];
 		prop.physicalDevice = physDevices[i];
-		vkGetPhysicalDeviceProperties (physDevices[i], &prop.vkPhysDevProps);
-		vkGetPhysicalDeviceFeatures (physDevices[i], &prop.vkPhysDevFeaturess);
+		physDevices[i].getProperties(&prop.vkPhysDevProps);
+		physDevices[i].getFeatures(&prop.vkPhysDevFeatures);
 		
 		gatherExtLayer(physDevices[i], &prop.availableLayers, &prop.availableExtensions);
 		
 		uint32_t count;
-		vkGetPhysicalDeviceQueueFamilyProperties(prop.physicalDevice, &count, nullptr);
+		prop.physicalDevice.getQueueFamilyProperties(&count, nullptr);
 		prop.queueFamilyProps.resize(count);
-		vkGetPhysicalDeviceQueueFamilyProperties(prop.physicalDevice, &count, prop.queueFamilyProps.data());
+		prop.physicalDevice.getQueueFamilyProperties(&count, prop.queueFamilyProps.data());
 		
 		{//rate a physicalDevice
 			prop.rating = 0;
-			if (prop.vkPhysDevProps.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			if (prop.vkPhysDevProps.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 				prop.rating += 1000;
 			}
 			// Maximum possible size of textures affects graphics quality
 			prop.rating += prop.vkPhysDevProps.limits.maxImageDimension2D;
 			// Application can't function without geometry shaders
-			if (!prop.vkPhysDevFeaturess.geometryShader) {
+			if (!prop.vkPhysDevFeatures.geometryShader) {
 				prop.rating = 0;
 			}
 			bool canPresent = false;
@@ -208,10 +181,10 @@ bool VGlobal::initializeDevice(){
 		uint32_t rating = 0;
 		
 		bool present = glfwGetPhysicalDevicePresentationSupport (vkinstance, devProps.physicalDevice, j);
-		bool graphics = devProps.queueFamilyProps[j].queueFlags & VK_QUEUE_GRAPHICS_BIT;
-		bool compute = devProps.queueFamilyProps[j].queueFlags & VK_QUEUE_COMPUTE_BIT;
-		bool transfer = devProps.queueFamilyProps[j].queueFlags & VK_QUEUE_TRANSFER_BIT;
-		bool sparse = devProps.queueFamilyProps[j].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT;
+		bool graphics = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics);
+		bool compute = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute);
+		bool transfer = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eTransfer);
+		bool sparse = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding);
 		if(present) rating++;
 		if(graphics) rating++;
 		if(compute) rating++;
@@ -318,9 +291,8 @@ bool VGlobal::initializeDevice(){
 	
 	currentIndex = 0;
 	if(separateTransferQueue){
-		VkQueue tQueue;
-		vkGetDeviceQueue(deviceWrapper.device, tId, 0, &tQueue);
-		
+		vk::Queue tQueue;
+		deviceWrapper.device.getQueue(tId, 0, &tQueue);
 		deviceWrapper.tqueue = new VTQueue(tId, tQueue);
 	}
 	for(size_t i = 0; i < pgcCount; ++i){
@@ -364,7 +336,7 @@ void VGlobal::terminate(){
 }
 bool VExtLayerStruct::activateLayer(const char* name){
 	bool found = false;
-	for(VkLayerProperties& layer : availableLayers){
+	for(vk::LayerProperties& layer : availableLayers){
 		if(!strcmp(layer.layerName, name)){
 			found = true;
 			break;
@@ -382,7 +354,7 @@ bool VExtLayerStruct::activateLayer(const char* name){
 }
 bool VExtLayerStruct::activateExtension(const char* name){
 	bool found = false;
-	for(VkExtensionProperties& ext : availableExtensions){
+	for(vk::ExtensionProperties& ext : availableExtensions){
 		if(!strcmp(ext.extensionName, name)){
 			found = true;
 			break;

@@ -2,60 +2,51 @@
 #include "VHeader.h"
 #include "VGlobal.h"
 
-VkRenderPass standardRenderPass = VK_NULL_HANDLE;
+vk::RenderPass standardRenderPass = VK_NULL_HANDLE;
 
-VkRenderPass createStandardRenderPass(VkFormat targetFormat){
+vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 	
 	destroyStandardRenderPass();
 	
-	VkAttachmentDescription attachments[2] = {};//attachment reference for target image
-	attachments[0].format = targetFormat;
-	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	vk::AttachmentDescription attachments[2] = {
+		vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
+			targetFormat, vk::SampleCountFlagBits::e1,
+			vk::AttachmentLoadOp::eClear,
+			vk::AttachmentStoreOp::eStore,
+			vk::AttachmentLoadOp::eDontCare,
+			vk::AttachmentStoreOp::eDontCare,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::ePresentSrcKHR
+		),
+		vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
+			targetFormat, vk::SampleCountFlagBits::e1,
+			vk::AttachmentLoadOp::eClear,
+			vk::AttachmentStoreOp::eDontCare,
+			vk::AttachmentLoadOp::eDontCare,
+			vk::AttachmentStoreOp::eDontCare,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal
+		)
+	};
 	
-	attachments[1].format = findDepthFormat();
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
 	
-	VkAttachmentReference depthAttachmentRef = {};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	vk::SubpassDescription subpass(vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics, 0, nullptr/*inputAttackment*/, 1, &colorAttachmentRef/*colorAttachment*/, &depthAttachmentRef/*depthAttackment*/);
 	
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 2;
-	renderPassInfo.pAttachments = attachments;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
+	vk::RenderPassCreateInfo renderPassInfo(vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/);
 
-	VCHECKCALL(vkCreateRenderPass(vGlobal.deviceWrapper.device, &renderPassInfo, nullptr, &standardRenderPass), printf("Creation of RenderPass failed\n"));
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createRenderPass(&renderPassInfo, nullptr, &standardRenderPass), printf("Creation of RenderPass failed\n"));
+	
 	return standardRenderPass;
 }
 void destroyStandardRenderPass(){
-	if(standardRenderPass != VK_NULL_HANDLE)
+	if(standardRenderPass)
 		destroyRenderPass(standardRenderPass);
 	standardRenderPass = VK_NULL_HANDLE;
 }
-void destroyRenderPass(VkRenderPass renderpass){
+void destroyRenderPass(vk::RenderPass renderpass){
 	vkDestroyRenderPass(vGlobal.deviceWrapper.device, renderpass, nullptr);
 }

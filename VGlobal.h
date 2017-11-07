@@ -8,8 +8,8 @@
 #include "VDevice.h"
 
 struct VExtLayerStruct{
-	std::vector<VkLayerProperties> availableLayers;
-	std::vector<VkExtensionProperties> availableExtensions;
+	std::vector<vk::LayerProperties> availableLayers;
+	std::vector<vk::ExtensionProperties> availableExtensions;
 	std::vector<const char*> neededLayers;
 	std::vector<const char*> neededExtensions;
 	
@@ -20,11 +20,11 @@ struct VExtLayerStruct{
 struct VPhysDeviceProps{
 	vk::PhysicalDevice physicalDevice;
 	int rating = 0;
-	std::vector<VkExtensionProperties> availableExtensions;
-	std::vector<VkLayerProperties> availableLayers;
-	std::vector<VkQueueFamilyProperties> queueFamilyProps;
-	VkPhysicalDeviceProperties vkPhysDevProps;
-	VkPhysicalDeviceFeatures  vkPhysDevFeaturess;
+	std::vector<vk::ExtensionProperties> availableExtensions;
+	std::vector<vk::LayerProperties> availableLayers;
+	std::vector<vk::QueueFamilyProperties> queueFamilyProps;
+	vk::PhysicalDeviceProperties vkPhysDevProps;
+	vk::PhysicalDeviceFeatures  vkPhysDevFeatures;
 };
 
 

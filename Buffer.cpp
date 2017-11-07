@@ -3,21 +3,17 @@
 #include "VGlobal.h"
 #include "DataWrapper.h"
 
-VkCommandPool singleTransferCommandPool = VK_NULL_HANDLE;
-VkCommandPool transferCommandBuffer = VK_NULL_HANDLE;
-VkCommandBuffer singleTransferCommandBuffer = VK_NULL_HANDLE;
-VkCommandBuffer singleImageTransitionBuffer = VK_NULL_HANDLE;
+vk::CommandPool singleTransferCommandPool = vk::CommandPool();
+vk::CommandPool transferCommandBuffer = vk::CommandPool();
+vk::CommandBuffer singleTransferCommandBuffer = vk::CommandBuffer();
+vk::CommandBuffer singleImageTransitionBuffer = vk::CommandBuffer();
 
 
 
-void createBuffer ( VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended, VkBuffer* buffer, VkDeviceMemory* bufferMemory ) {
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+void createBuffer ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Buffer* buffer, vk::DeviceMemory* bufferMemory ) {
+	vk::BufferCreateInfo bufferInfo(size, usage, vk::SharingMode::eExclusive);
 
-	VCHECKCALL ( vkCreateBuffer ( vGlobal.deviceWrapper.device, &bufferInfo, nullptr, buffer ), printf ( "Failed To Create Buffer\n" ) );
+	VCHECKCALL ( vGlobal.deviceWrapper.device.createBuffer(&bufferInfo, nullptr, buffer), printf ( "Failed To Create Buffer\n" ) );
 
 	printf ( "Create Buffer of size %d\n", size );
 
@@ -25,13 +21,13 @@ void createBuffer ( VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropert
 
 	vkBindBufferMemory ( vGlobal.deviceWrapper.device, *buffer, *bufferMemory, 0 );
 }
-void destroyBuffer ( VkBuffer buffer, VkDeviceMemory bufferMemory ) {
+void destroyBuffer ( vk::Buffer buffer, vk::DeviceMemory bufferMemory ) {
 	vkDestroyBuffer ( vGlobal.deviceWrapper.device, buffer, nullptr );
 	vkFreeMemory ( vGlobal.deviceWrapper.device, bufferMemory, nullptr );
 }
 
-void copyBuffer ( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size,
-		VkPipelineStageFlags inputPipelineStageFlags, VkAccessFlags inputAccessFlag, VkPipelineStageFlags outputPipelineStageFlags, VkAccessFlags outputAccessFlag) {
+void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+		vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag) {
 
 	if ( singleTransferCommandPool == VK_NULL_HANDLE ) {
 		VTQueue* queue = vGlobal.deviceWrapper.requestTransferQueue();
@@ -41,20 +37,20 @@ void copyBuffer ( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset
 			singleTransferCommandPool = createCommandPool ( vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient)  );
 	}
 
-	VkCommandBuffer commandBuffer = createCommandBuffer ( singleTransferCommandPool, vk::CommandBufferLevel::ePrimary );
+	vk::CommandBuffer commandBuffer = createCommandBuffer ( singleTransferCommandPool, vk::CommandBufferLevel::ePrimary );
 
-	VkCommandBufferBeginInfo beginInfo = {};
+	vk::CommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vkBeginCommandBuffer ( commandBuffer, &beginInfo );
 
-	VkBufferCopy copyRegion = {};
+	vk::BufferCopy copyRegion = {};
 	copyRegion.srcOffset = srcOffset; // Optional
 	copyRegion.dstOffset = dstOffset; // Optional
 	copyRegion.size = size;
 	
-	VkBufferMemoryBarrier bufferMemoryBarriers[2];
+	vk::BufferMemoryBarrier bufferMemoryBarriers[2];
 	bufferMemoryBarriers[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 	bufferMemoryBarriers[0].pNext = nullptr;
 	bufferMemoryBarriers[0].srcAccessMask = inputAccessFlag;
@@ -94,7 +90,7 @@ void copyBuffer ( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset
 
 	vkEndCommandBuffer ( commandBuffer );
 
-	VkSubmitInfo submitInfo = {};
+	vk::SubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
@@ -110,7 +106,7 @@ void copyBuffer ( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize srcOffset
 	deleteCommandBuffer ( singleTransferCommandPool, commandBuffer );
 }
 
-void transferData ( const void* srcData, VkBuffer targetBuffer, VkDeviceSize offset, VkDeviceSize size, VkPipelineStageFlags usePipelineFlags, VkAccessFlags useFlags) {
+void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags) {
 	if ( !stagingBuffer ) {
 		printf ( "Creating Staging-Buffer\n" );
 		stagingBuffer = new MappedBufferWrapper ( V_MAX_STAGINGBUFFER_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );

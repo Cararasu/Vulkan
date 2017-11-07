@@ -6,28 +6,26 @@
 #include "VGlobal.h"
 
 
-VkDeviceMemory allocateMemory(VkMemoryRequirements memoryRequirement, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended){
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memoryRequirement.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memoryRequirement.memoryTypeBits, needed | recommended);
+vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
+	vk::MemoryAllocateInfo allocInfo(memoryRequirement.size, findMemoryType(memoryRequirement.memoryTypeBits, needed | recommended));
+
 	if(allocInfo.memoryTypeIndex == -1){
 		allocInfo.memoryTypeIndex = findMemoryType(memoryRequirement.memoryTypeBits, needed);
 	}
 	printf("Allocate %d Bytes\n", memoryRequirement.size);
 
-	VkDeviceMemory memory;
-	VCHECKCALL(vkAllocateMemory(vGlobal.deviceWrapper.device, &allocInfo, nullptr, &memory), printf("Failed To Create Image Memory\n"));
+	vk::DeviceMemory memory;
+	V_CHECKCALL(vGlobal.deviceWrapper.device.allocateMemory(&allocInfo, nullptr, &memory), printf("Failed To Create Image Memory\n"));
 	return memory;
 }
-VkDeviceMemory allocateImageMemory(VkImage image, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended){
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(vGlobal.deviceWrapper.device, image, &memRequirements);
+vk::DeviceMemory allocateImageMemory(vk::Image image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
+	vk::MemoryRequirements memRequirements;
+	vGlobal.deviceWrapper.device.getImageMemoryRequirements(image, &memRequirements);
 	return allocateMemory(memRequirements, needed, recommended);
 }
-VkDeviceMemory allocateBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended){
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(vGlobal.deviceWrapper.device, buffer, &memRequirements);
+vk::DeviceMemory allocateBufferMemory(vk::Buffer buffer, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
+	vk::MemoryRequirements memRequirements;
+	vGlobal.deviceWrapper.device.getBufferMemoryRequirements(buffer, &memRequirements);
 	return allocateMemory(memRequirements, needed, recommended);
 }
 
@@ -38,7 +36,7 @@ vk::CommandPool createCommandPool(uint32_t queueId, vk::CommandPoolCreateFlags c
 	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
 	return commandPool;
 }
-void destroyCommandPool(VkCommandPool commandPool){
+void destroyCommandPool(vk::CommandPool commandPool){
 	vkDestroyCommandPool(vGlobal.deviceWrapper.device, commandPool, nullptr);
 }
 vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel){
@@ -48,20 +46,20 @@ vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBu
 	vGlobal.deviceWrapper.device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
     return commandBuffer;
 }
-void deleteCommandBuffer(VkCommandPool commandPool, VkCommandBuffer commandBuffer){
-	vkFreeCommandBuffers(vGlobal.deviceWrapper.device, commandPool, 1, &commandBuffer);
+void deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer){
+	vGlobal.deviceWrapper.device.freeCommandBuffers(commandPool, 1, &commandBuffer);
 }
 
-void copyData(const void* srcData, VkDeviceMemory dstMemory, VkDeviceSize offset, VkDeviceSize size) {
+void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size) {
 	void* data;
 	vkMapMemory(vGlobal.deviceWrapper.device, dstMemory, offset, size, 0, &data);
 		memcpy(data, srcData, size);
 	vkUnmapMemory(vGlobal.deviceWrapper.device, dstMemory);
 }
 
-uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(vGlobal.physicalDevice, &memProperties);
+uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
+	vk::PhysicalDeviceMemoryProperties memProperties;
+	vGlobal.physicalDevice.getMemoryProperties(&memProperties);
 	
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -71,29 +69,29 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 	return -1;
 }
 
-VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-	for (VkFormat format : candidates) {
-		VkFormatProperties props;
-		vkGetPhysicalDeviceFormatProperties(vGlobal.physicalDevice, format, &props);
-		if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
+	for (vk::Format format : candidates) {
+		vk::FormatProperties props;
+		vGlobal.physicalDevice.getFormatProperties(format, &props);
+		if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
 			return format;
-		} else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+		} else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
 			return format;
 		}
 	}
 	assert(false);
-	return VK_FORMAT_UNDEFINED;
+	return vk::Format::eUndefined;
 }
 
-bool hasStencilComponent(VkFormat format) {
-	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+bool hasStencilComponent(vk::Format format) {
+	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }
 
-VkFormat findDepthFormat() {
+vk::Format findDepthFormat() {
     return findSupportedFormat(
-        {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT},
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        {vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
+        vk::ImageTiling::eOptimal,
+        vk::FormatFeatureFlagBits::eDepthStencilAttachment
     );
 }
 

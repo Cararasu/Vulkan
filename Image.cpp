@@ -2,12 +2,12 @@
 #include "VGlobal.h"
 #include "VHeader.h"
 
-VkCommandPool singleImageTransitionCommandPool = VK_NULL_HANDLE;
+vk::CommandPool singleImageTransitionCommandPool = VK_NULL_HANDLE;
 
 
-void createImage(VkExtent3D size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended,  VkImage* image, VkDeviceMemory* imageMemory){
+void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed,  vk::Image* image, vk::DeviceMemory* imageMemory){
 	
-	VkImageCreateInfo imageInfo = {};
+	vk::ImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	
 	if(size.height != 1)
@@ -34,17 +34,17 @@ void createImage(VkExtent3D size, VkFormat format, VkImageTiling tiling, VkImage
 
 	printf("Create Image of dimensions %dx%dx%d\n", size.width, size.height, size.depth);
 	
-	*imageMemory = allocateImageMemory(*image, needed, recommended);
+	*imageMemory = allocateImageMemory(*image, properties);
 	
 	vkBindImageMemory(vGlobal.deviceWrapper.device, *image, *imageMemory, 0);
 }
-void destroyImage(VkImage image, VkDeviceMemory imageMemory){
+void destroyImage(vk::Image image, vk::DeviceMemory imageMemory){
 	vkDestroyImage(vGlobal.deviceWrapper.device, image, nullptr);
 	vkFreeMemory(vGlobal.deviceWrapper.device, imageMemory, nullptr);
 }
-VkImageView createImageView2D(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags) {
    
-	VkImageViewCreateInfo imageViewCreateInfo = {};
+	vk::ImageViewCreateInfo imageViewCreateInfo = {};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	imageViewCreateInfo.image = image;
 	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -59,14 +59,14 @@ VkImageView createImageView2D(VkImage image, VkFormat format, VkImageAspectFlags
 	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 	imageViewCreateInfo.subresourceRange.layerCount = 1;
 	
-	VkImageView imageView;
+	vk::ImageView imageView;
 	
 	VCHECKCALL(vkCreateImageView(vGlobal.deviceWrapper.device, &imageViewCreateInfo, nullptr, &imageView), {
 		printf("Creation of ImageView failed\n");
 	});
 	return imageView;
 }
-void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExtent3D extent) {
+void copyBufferToImage(vk::Buffer buffer, vk::Image image, vk::Offset3D offset, vk::Extent3D extent) {
 	if(singleTransferCommandPool == VK_NULL_HANDLE){
 		VTQueue* queue = vGlobal.deviceWrapper.requestTransferQueue();
 		if(queue)
@@ -75,14 +75,14 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExte
 			singleTransferCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	}
 	
-    VkCommandBuffer commandBuffer = createCommandBuffer(singleTransferCommandPool, vk::CommandBufferLevel::ePrimary);
+    vk::CommandBuffer commandBuffer = createCommandBuffer(singleTransferCommandPool, vk::CommandBufferLevel::ePrimary);
 
-    VkCommandBufferBeginInfo beginInfo = {};
+    vk::CommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	
-	VkBufferImageCopy region = {};
+	vk::BufferImageCopy region = {};
 	region.bufferOffset = 0;
 	region.bufferRowLength = 0;
 	region.bufferImageHeight = 0;
@@ -98,7 +98,7 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExte
 	
 	vkEndCommandBuffer(commandBuffer);
 	
-	VkSubmitInfo submitInfo = {};
+	vk::SubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
@@ -113,22 +113,22 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, VkOffset3D offset, VkExte
 	}
 	deleteCommandBuffer(singleTransferCommandPool, commandBuffer);
 }
-void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlags aspectMask) {
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask) {
 	if(singleImageTransitionCommandPool == VK_NULL_HANDLE){
 		singleImageTransitionCommandPool = createCommandPool(vGlobal.deviceWrapper.getPGCQueue()->graphicsQId, vk::CommandPoolCreateFlags(vk::CommandPoolCreateFlagBits::eTransient) );
 	}
 	
-    VkCommandBuffer commandBuffer = createCommandBuffer(singleImageTransitionCommandPool, vk::CommandBufferLevel::ePrimary);
+    vk::CommandBuffer commandBuffer = createCommandBuffer(singleImageTransitionCommandPool, vk::CommandBufferLevel::ePrimary);
 	
-    VkCommandBufferBeginInfo beginInfo = {};
+    vk::CommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
+	vk::PipelineStageFlags sourceStage;
+	vk::PipelineStageFlags destinationStage;
 
-	VkImageMemoryBarrier barrier = {};
+	vk::ImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
@@ -175,7 +175,7 @@ void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayo
 	);
 	
 	vkEndCommandBuffer(commandBuffer);
-	VkSubmitInfo submitInfo = {};
+	vk::SubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
@@ -184,7 +184,7 @@ void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayo
 	vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();
 	deleteCommandBuffer(singleImageTransitionCommandPool, commandBuffer);
 }
-void transferData(const void* srcData, VkImage targetImage, VkDeviceSize size, VkOffset3D offset, VkExtent3D extent){
+void transferData(const void* srcData, vk::Image targetImage, vk::DeviceSize size, vk::Offset3D offset, vk::Extent3D extent){
 	if(stagingBuffer){
 		if(stagingBuffer->bufferSize < size){
 			printf("Recreate New Staging-Buffer\n");

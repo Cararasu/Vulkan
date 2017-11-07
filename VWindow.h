@@ -13,15 +13,15 @@
 struct VWindow{
 	GLFWwindow* window;
 	VPGCQueue* pgcQueue;
-	VkExtent2D windowExtend;
-	VkExtent2D swapChainExtend;
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
-	VkSemaphore imageAvailableGuardSem = VK_NULL_HANDLE;
+	vk::Extent2D windowExtend;
+	vk::Extent2D swapChainExtend;
+	vk::SurfaceKHR surface = VK_NULL_HANDLE;
+	vk::SwapchainKHR swapChain = VK_NULL_HANDLE;
+	vk::Semaphore imageAvailableGuardSem = VK_NULL_HANDLE;
 	
-	VkSurfaceFormatKHR presentSwapFormat;
+	vk::SurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;
-	std::vector<VkImageView> presentImages;
+	std::vector<vk::ImageView> presentImages;
 	
 	~VWindow();
 	

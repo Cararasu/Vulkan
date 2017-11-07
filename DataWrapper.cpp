@@ -4,15 +4,15 @@
 
 MappedBufferWrapper* stagingBuffer = nullptr;
 
-BufferWrapper::BufferWrapper(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended): 
+BufferWrapper::BufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
 	bufferSize(size), buffer(VK_NULL_HANDLE), backedMemory(VK_NULL_HANDLE){
-	createBuffer(size, usage, needed, recommended, &buffer, &backedMemory);
+	createBuffer(size, usage, needed, &buffer, &backedMemory);
 }
 BufferWrapper::~BufferWrapper(){
 	destroyBuffer(buffer, backedMemory);
 }
-MappedBufferWrapper::MappedBufferWrapper(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended): 
-	BufferWrapper(size, usage, needed, recommended){
+MappedBufferWrapper::MappedBufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
+	BufferWrapper(size, usage, needed){
 	printf("Map %d Bytes of Memory\n", bufferSize);
 	vkMapMemory(vGlobal.deviceWrapper.device, backedMemory, 0, bufferSize, 0, &data);
 }
@@ -21,7 +21,7 @@ MappedBufferWrapper::~MappedBufferWrapper(){
 	vkUnmapMemory(vGlobal.deviceWrapper.device, backedMemory);
 }
 
-ImageWrapper::ImageWrapper(VkExtent3D size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended): 
+ImageWrapper::ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
 	imageSize(size), imageFormat(format), image(VK_NULL_HANDLE), backedMemory(VK_NULL_HANDLE){
 	if(imageSize.height == 1)
 		imageType = VK_IMAGE_TYPE_1D;
@@ -29,7 +29,7 @@ ImageWrapper::ImageWrapper(VkExtent3D size, VkFormat format, VkImageTiling tilin
 		imageType = VK_IMAGE_TYPE_2D;
 	else
 		imageType = VK_IMAGE_TYPE_3D;
-	createImage(size, format, tiling, usage, needed, recommended, &image, &backedMemory);
+	createImage(size, format, tiling, usage, needed, &image, &backedMemory);
 }
 ImageWrapper::~ImageWrapper(){
 	destroyImage(image, backedMemory);

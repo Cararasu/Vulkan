@@ -5,30 +5,30 @@
 
 
 struct BufferWrapper{
-	VkDeviceSize bufferSize;
-	VkBuffer buffer;
-	VkDeviceMemory backedMemory;
+	vk::DeviceSize bufferSize;
+	vk::Buffer buffer;
+	vk::DeviceMemory backedMemory;
 	
-	BufferWrapper(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
+	BufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~BufferWrapper();
 };
 
 struct MappedBufferWrapper : public BufferWrapper{
 	void* data;
 	
-	MappedBufferWrapper(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
+	MappedBufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~MappedBufferWrapper();
 };
 extern MappedBufferWrapper* stagingBuffer;
 
 struct ImageWrapper{
-	VkImageType imageType;
-	VkExtent3D imageSize;
-	VkFormat imageFormat;
-	VkImage image = VK_NULL_HANDLE;
-	VkDeviceMemory backedMemory = VK_NULL_HANDLE;
+	vk::ImageType imageType;
+	vk::Extent3D imageSize;
+	vk::Format imageFormat;
+	vk::Image image = VK_NULL_HANDLE;
+	vk::DeviceMemory backedMemory = VK_NULL_HANDLE;
 	
-	ImageWrapper(VkExtent3D size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags needed, VkMemoryPropertyFlags recommended = 0);
+	ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~ImageWrapper();
 	
 };

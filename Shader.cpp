@@ -22,9 +22,13 @@ static std::vector<char> readFile(const char* filename) {
 
 	return buffer;
 }
-VkShaderModule loadShaderFromFile(const char* filename){
+vk::ShaderModule loadShaderFromFile(const char* filename){
 	
 	std::vector<char> shaderCode = readFile(filename);
 	
-	return ShaderBuilder().setShaderCode(shaderCode).build();
+	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.data(), shaderCode.size());
+	
+	vk::ShaderModule shadermodule;
+	V_CHECKCALL (vGlobal.deviceWrapper.device.createShaderModule(&createInfo, nullptr, &shadermodule), printf ("Creation of Shadermodule failed\n"));
+	return shadermodule;
 }
