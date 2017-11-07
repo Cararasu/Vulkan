@@ -10,37 +10,40 @@ vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 	
 	vk::AttachmentDescription attachments[2] = {
 		vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
-			targetFormat, vk::SampleCountFlagBits::e1,
-			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eStore,
-			vk::AttachmentLoadOp::eDontCare,
-			vk::AttachmentStoreOp::eDontCare,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::ePresentSrcKHR
+			targetFormat, vk::SampleCountFlagBits::e1,//format, samples
+			vk::AttachmentLoadOp::eClear,//loadOp
+			vk::AttachmentStoreOp::eStore,//storeOp
+			vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+			vk::ImageLayout::eUndefined,//initialLaylout
+			vk::ImageLayout::ePresentSrcKHR//finalLayout
 		),
 		vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
-			targetFormat, vk::SampleCountFlagBits::e1,
-			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eDontCare,
-			vk::AttachmentLoadOp::eDontCare,
-			vk::AttachmentStoreOp::eDontCare,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eDepthStencilAttachmentOptimal
+			findDepthFormat(), vk::SampleCountFlagBits::e1,//format, samples
+			vk::AttachmentLoadOp::eClear,//loadOp
+			vk::AttachmentStoreOp::eDontCare,//storeOp
+			vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+			vk::ImageLayout::eUndefined,//initialLaylout
+			vk::ImageLayout::eDepthStencilAttachmentOptimal//finalLayout
 		)
 	};
 	
-	
 	vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
-	
 	vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 	
-	vk::SubpassDescription subpass(vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics, 0, nullptr/*inputAttackment*/, 1, &colorAttachmentRef/*colorAttachment*/, &depthAttachmentRef/*depthAttackment*/);
+	vk::SubpassDescription subpass(
+			vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
+			0, nullptr/*inputAttackments*/, 
+			1, &colorAttachmentRef/*colorAttachments*/, 
+			nullptr,/*resolveAttachments*/
+			&depthAttachmentRef,/*depthAttackment*/
+			0, nullptr/*preserveAttachments*/
+		);
 	
 	vk::RenderPassCreateInfo renderPassInfo(vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/);
-
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createRenderPass(&renderPassInfo, nullptr, &standardRenderPass), printf("Creation of RenderPass failed\n"));
 	
-	return standardRenderPass;
+	return standardRenderPass = vGlobal.deviceWrapper.device.createRenderPass(renderPassInfo, nullptr);
 }
 void destroyStandardRenderPass(){
 	if(standardRenderPass)

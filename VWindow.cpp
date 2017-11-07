@@ -10,8 +10,7 @@ void VWindow::initializeWindow(){
 	
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	window = glfwCreateWindow(640, 640, "Vulkan Test", NULL, NULL);
-	VkSurfaceKHR surfaces[] = {surface};
-	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, surfaces), printf("Creation of Surface failed"));
+	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, (VkSurfaceKHR*)&surface), printf("Creation of Surface failed"));
 	
 	imageAvailableGuardSem = createSemaphore();
 	
@@ -103,7 +102,7 @@ void VWindow::initializeWindow(){
 	for(size_t i = 0; i < swapChainImages.size(); i++){
 		presentImages[i] = createImageView2D(swapChainImages[i], presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
 	}
-	vkAcquireNextImageKHR(vGlobal.deviceWrapper.device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, VK_NULL_HANDLE, &presentImageIndex);
+	vGlobal.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 }
 void VWindow::showNextImage(uint32_t waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores){
 	
@@ -112,6 +111,18 @@ void VWindow::showNextImage(uint32_t waitSemaphoreCount, const vk::Semaphore* pW
 
 	pgcQueue->presentQueue.presentKHR(&presentInfo);
 	vGlobal.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	
+	//vGlobal.deviceWrapper.requestTransferQueue()->waitForFinish();
+	//pgcQueue->waitForFinish();
+	
+	printf("Destroy TransferPool %d\n", presentImageIndex);
+	vGlobal.deviceWrapper.device.destroyCommandPool(tranferQCommandPools[presentImageIndex], nullptr);
+	tranferQCommandPools[presentImageIndex] = createTransferCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
+	printf("---------\n");
+	printf("Destroy GraphicsPool %d\n", presentImageIndex);
+	vGlobal.deviceWrapper.device.destroyCommandPool(graphicQCommandPools[presentImageIndex], nullptr);
+	graphicQCommandPools[presentImageIndex] = createGraphicsCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
+	printf("---------\n");
 }
 VWindow::~VWindow(){
 	destroySemaphore(imageAvailableGuardSem);

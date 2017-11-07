@@ -10,27 +10,22 @@ vk::PipelineLayout standardPipelineLayout = vk::PipelineLayout();
 vk::PipelineLayout createStandardPipelineLayout (std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::PushConstantRange>* pushConstRanges) {
 
 	destroyStandardPipelineLayout();
-
-	vk::PipelineLayoutCreateInfo createInfo;
+	vk::PipelineLayoutCreateInfo createInfo(
+			vk::PipelineLayoutCreateFlags(),
+			0, nullptr,/*setLayouts*/
+			0, nullptr/*pushConstRanges*/
+		);
 
 	if (descriptorSetLayouts) {
 		createInfo.setLayoutCount = descriptorSetLayouts->size();
 		createInfo.pSetLayouts = descriptorSetLayouts->data();
-	} else {
-		createInfo.setLayoutCount = 0;
-		createInfo.pSetLayouts = nullptr;
 	}
 	if (pushConstRanges) {
 		createInfo.pushConstantRangeCount = pushConstRanges->size();
 		createInfo.pPushConstantRanges = pushConstRanges->data();
-	} else {
-		createInfo.pushConstantRangeCount = 0;
-		createInfo.pPushConstantRanges = nullptr;
 	}
 
-	V_CHECKCALL (vGlobal.deviceWrapper.device.createPipelineLayout (&createInfo, nullptr, &standardPipelineLayout), printf ("Creation of standard PipelineLayout failed\n"));
-
-	return standardPipelineLayout;
+	return standardPipelineLayout = vGlobal.deviceWrapper.device.createPipelineLayout (createInfo, nullptr);
 }
 
 void destroyStandardPipelineLayout() {

@@ -32,6 +32,7 @@
     <File Name="ViewPort.h"/>
     <File Name="Image.cpp"/>
     <File Name="DataWrapper.cpp"/>
+    <File Name="DescriptorSet.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

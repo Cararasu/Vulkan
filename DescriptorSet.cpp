@@ -5,56 +5,37 @@
 
 
 std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts(){
-	vk::DescriptorSetLayoutCreateInfo createInfo = {};
 	
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.pNext = nullptr;
-	createInfo.flags = 0;
-	
-	vk::DescriptorSetLayoutBinding bindings[1];
-	bindings[0].binding = 0;
-	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	bindings[0].descriptorCount = 1;
-	bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	bindings[0].pImmutableSamplers = nullptr;
-	
-	createInfo.bindingCount = 1;
-	createInfo.pBindings = bindings;
+	vk::DescriptorSetLayoutBinding bindings[] = {
+		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, nullptr)
+	};
+	vk::DescriptorSetLayoutCreateInfo createInfo(vk::DescriptorSetLayoutCreateFlags(), 1, bindings);
 	
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 	descriptorSetLayouts.resize(1);
-	VCHECKCALL(vkCreateDescriptorSetLayout(vGlobal.deviceWrapper.device, &createInfo, nullptr, descriptorSetLayouts.data()),printf("Creation of DescriptorSetLayout failed\n"));
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createDescriptorSetLayout(&createInfo, nullptr, descriptorSetLayouts.data()), printf("Creation of DescriptorSetLayout failed\n"));
+	
 	return descriptorSetLayouts;
 }
 void destroyDescriptorSetLayout(vk::DescriptorSetLayout layout){
-	vkDestroyDescriptorSetLayout(vGlobal.deviceWrapper.device, layout, nullptr);
+	vGlobal.deviceWrapper.device.destroyDescriptorSetLayout(layout);
 }
 vk::DescriptorPool createStandardDescriptorSetPool(){
-	vk::DescriptorPoolCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.flags = 0;
-    createInfo.maxSets = 10;
-    createInfo.poolSizeCount = 1;
-	vk::DescriptorPoolSize poolSize[1];
-	poolSize[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize[0].descriptorCount = 10;
-    createInfo.pPoolSizes = poolSize;
 	
-	vk::DescriptorPool descriptorPool;;
-	VCHECKCALL(vkCreateDescriptorPool(vGlobal.deviceWrapper.device, &createInfo, nullptr, &descriptorPool),printf("Creation of DescriptorSetPool failed\n"));
+	std::array<vk::DescriptorPoolSize, 1> poolSize = {vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 10)};
+	
+	vk::DescriptorPoolCreateInfo createInfo(vk::DescriptorPoolCreateFlags(), 10, poolSize.size(), poolSize.data());
+
+	
+	vk::DescriptorPool descriptorPool;
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createDescriptorPool(&createInfo, nullptr, &descriptorPool), printf("Creation of DescriptorSetPool failed\n"));
 	return descriptorPool;
 }
 void createStandardDescriptorSet(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::DescriptorSet>* descriptorSets){
 	
-	vk::DescriptorSetAllocateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.descriptorPool = descriptorSetPool;
-    createInfo.descriptorSetCount = descriptorSetLayouts->size();
-    createInfo.pSetLayouts = descriptorSetLayouts->data();
+	vk::DescriptorSetAllocateInfo createInfo(descriptorSetPool, descriptorSetLayouts->size(), descriptorSetLayouts->data());
 	
 	descriptorSets->resize(descriptorSetLayouts->size());
 	
-	VCHECKCALL(vkAllocateDescriptorSets(vGlobal.deviceWrapper.device, &createInfo, descriptorSets->data()),printf("Creation of DescriptorSetPool failed\n"));
+	V_CHECKCALL(vGlobal.deviceWrapper.device.allocateDescriptorSets(&createInfo, descriptorSets->data()), printf("Creation of DescriptorSetPool failed\n"));
 }

@@ -29,8 +29,20 @@ vk::DeviceMemory allocateBufferMemory(vk::Buffer buffer, vk::MemoryPropertyFlags
 	return allocateMemory(memRequirements, needed, recommended);
 }
 
-vk::CommandPool createCommandPool(uint32_t queueId, vk::CommandPoolCreateFlags createFlags){
-	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), queueId);
+vk::CommandPool createTransferCommandPool(vk::CommandPoolCreateFlags createFlags){
+	uint32_t qId;
+	if(vGlobal.deviceWrapper.transfQId)
+		qId = vGlobal.deviceWrapper.transfQId;
+	else
+		qId = vGlobal.deviceWrapper.graphQId;
+	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), qId);
+	
+	vk::CommandPool commandPool;
+	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
+	return commandPool;
+}
+vk::CommandPool createGraphicsCommandPool(vk::CommandPoolCreateFlags createFlags){
+	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), vGlobal.deviceWrapper.graphQId);
 	
 	vk::CommandPool commandPool;
 	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));

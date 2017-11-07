@@ -191,37 +191,37 @@ bool VGlobal::initializeDevice(){
 		if(transfer) rating++;
 		if(sparse) rating++;
 		
-		if(present && graphics && compute && (pgcId == -1 || rating > highestRate)){
+		if(present && graphics && compute && (pgcId == (uint32_t)-1 || rating > highestRate)){
 			pgcId = j;
 		}
-		if(present && graphics && (pgId == -1 || rating > highestRate)){
+		if(present && graphics && (pgId == (uint32_t)-1 || rating > highestRate)){
 			pgId = j;
 		}
-		if(present && (pId == -1 || rating > highestRate)){
+		if(present && (pId == (uint32_t)-1 || rating > highestRate)){
 			pId = j;
 		}
-		if(graphics && (gId == -1 || rating > highestRate)){
+		if(graphics && (gId == (uint32_t)-1 || rating > highestRate)){
 			gId = j;
 		}
-		if(compute && (cId == -1 || rating > highestRate)){
+		if(compute && (cId == (uint32_t)-1 || rating > highestRate)){
 			cId = j;
 		}
-		if(transfer && (tId == -1 && rating == 1)){//for nvidia 1 transfer queue
+		if(transfer && (tId == (uint32_t)-1 && rating == 1)){//for nvidia 1 transfer queue
 			tId = j;
 		}
 		if(rating > highestRate)
 			highestRate = rating;
 	}
 	size_t queueFamilyCount = 0;
-	if(tId != -1) 
+	if(tId != (uint32_t)-1) 
 		queueFamilyCount++;
 	
-	if(pgcId != -1) {
+	if(pgcId != (uint32_t)-1) {
 		pId = pgcId;
 		gId = pgcId;
 		cId = pgcId;
 		queueFamilyCount++;
-	}else if(pgId != -1){
+	}else if(pgId != (uint32_t)-1){
 		pId = pgId;
 		gId = pgId;
 		queueFamilyCount+=2;
@@ -233,20 +233,20 @@ bool VGlobal::initializeDevice(){
 	size_t currentIndex = 0;
 	size_t pgcCount = 0;
 	bool separateTransferQueue = false;
-	if(tId != -1 && devProps.queueFamilyProps[tId].queueCount <= 1){
+	if(tId != (uint32_t)-1 && devProps.queueFamilyProps[tId].queueCount <= 1){
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), tId, 1, &priority);
 		devProps.queueFamilyProps[tId].queueCount--;
 		currentIndex++;
 		separateTransferQueue = true;
 	}
-	if(pgcId != -1){
+	if(pgcId != (uint32_t)-1){
 		pgcCount = devProps.queueFamilyProps[pgcId].queueCount;
 		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 		assert(pgcCount);
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority);
 		devProps.queueFamilyProps[pgcId].queueCount -= pgcCount;
 		currentIndex+=1;
-	}else if(pgId != -1){
+	}else if(pgId != (uint32_t)-1){
 		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount);
 		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
 		assert(pgcCount);
@@ -297,12 +297,12 @@ bool VGlobal::initializeDevice(){
 	}
 	for(size_t i = 0; i < pgcCount; ++i){
 		VPGCQueue* queue;
-		if(pgcId != -1){
+		if(pgcId != (uint32_t)-1){
 			queue = new VCombinedPGCQueue();
 			deviceWrapper.device.getQueue(pgcId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
 			queue->computeQueue = queue->presentQueue;
-		}else if(pgId != -1){
+		}else if(pgId != (uint32_t)-1){
 			queue = new VPartlyPGCQueue();
 			deviceWrapper.device.getQueue(pgId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;

@@ -22,6 +22,10 @@ struct VWindow{
 	vk::SurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;
 	std::vector<vk::ImageView> presentImages;
+	std::vector<vk::Framebuffer> framebuffers;
+	
+	std::vector<vk::CommandPool> tranferQCommandPools;
+	std::vector<vk::CommandPool> graphicQCommandPools;
 	
 	~VWindow();
 	
