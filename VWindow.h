@@ -10,6 +10,16 @@
 
 #define V_MAX_PRESENTIMAGE_COUNT (3)
 
+struct WindowPerPresentImageData{
+	vk::Image presentImage;
+	vk::ImageView presentImageView;
+	vk::Framebuffer framebuffer;
+	bool firstShow = true;
+	
+	vk::Fence fence;
+	vk::CommandPool graphicQCommandPool;
+};
+
 struct VWindow{
 	GLFWwindow* window;
 	VPGCQueue* pgcQueue;
@@ -21,11 +31,8 @@ struct VWindow{
 	
 	vk::SurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;
-	std::vector<vk::ImageView> presentImages;
-	std::vector<vk::Framebuffer> framebuffers;
 	
-	std::vector<vk::CommandPool> tranferQCommandPools;
-	std::vector<vk::CommandPool> graphicQCommandPools;
+	std::vector<WindowPerPresentImageData> perPresentImageDatas;
 	
 	~VWindow();
 	
@@ -35,6 +42,11 @@ struct VWindow{
 	
 	bool isOpen(){
 		return !glfwWindowShouldClose(window);
+	}
+	
+	
+	vk::CommandPool getCurrentGraphicsCommandPool(){
+		return perPresentImageDatas[presentImageIndex].graphicQCommandPool;
 	}
 };
 

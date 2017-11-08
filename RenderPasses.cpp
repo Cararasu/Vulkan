@@ -2,11 +2,7 @@
 #include "VHeader.h"
 #include "VGlobal.h"
 
-vk::RenderPass standardRenderPass = vk::RenderPass();
-
 vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
-	
-	destroyStandardRenderPass();
 	
 	vk::AttachmentDescription attachments[2] = {
 		vk::AttachmentDescription(vk::AttachmentDescriptionFlags(),
@@ -43,13 +39,8 @@ vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 	
 	vk::RenderPassCreateInfo renderPassInfo(vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/);
 	
-	return standardRenderPass = vGlobal.deviceWrapper.device.createRenderPass(renderPassInfo, nullptr);
-}
-void destroyStandardRenderPass(){
-	if(standardRenderPass)
-		destroyRenderPass(standardRenderPass);
-	standardRenderPass = vk::RenderPass();
+	return global.deviceWrapper.device.createRenderPass(renderPassInfo, nullptr);
 }
 void destroyRenderPass(vk::RenderPass renderpass){
-	vkDestroyRenderPass(vGlobal.deviceWrapper.device, renderpass, nullptr);
+	vkDestroyRenderPass(global.deviceWrapper.device, renderpass, nullptr);
 }

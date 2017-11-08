@@ -4,7 +4,7 @@
 #include <VHeader.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-
+#include <glm/ext.hpp>
 
 template<typename T>
 struct PerspectiveViewPort {
@@ -19,7 +19,7 @@ struct PerspectiveViewPort {
 	T m_near;
 	T m_far;
 
-	PerspectiveViewPort() : m_fov (M_PI * 3 / 4), m_aspect (1.0), m_near (1.0), m_far (2.0) {}
+	PerspectiveViewPort() : m_fov (glm::pi<T>() * 3 / 4), m_aspect (1.0), m_near (1.0), m_far (2.0) {}
 	~PerspectiveViewPort() {}
 
 	glm::tmat4x4<T> createWorldToScreenSpaceMatrix() {

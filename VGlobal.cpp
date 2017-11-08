@@ -9,7 +9,19 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 
-VGlobal vGlobal;
+VGlobal global;
+
+
+VkBool32 VKAPI_PTR debugLogger (
+    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+    uint64_t object, size_t location, int32_t messageCode,
+    const char* pLayerPrefix, const char* pMessage, void* pUserData) {
+	printf ("Layer: %s - Message: %s\n", pLayerPrefix, pMessage);
+	return VK_TRUE;
+}
+
+PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
+PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
 
 
 bool operator==(vk::LayerProperties& lhs, vk::LayerProperties& rhs){
@@ -100,6 +112,21 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 		instExtLayers.neededExtensions.size(), instExtLayers.neededExtensions.data());
 	V_CHECKCALL(vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf("Instance Creation Failed\n"));
 	
+	pfn_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) glfwGetInstanceProcAddress (vkinstance, "vkCreateDebugReportCallbackEXT");
+	pfn_vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT) glfwGetInstanceProcAddress (vkinstance, "vkDestroyDebugReportCallbackEXT");
+
+	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo (
+	    vk::DebugReportFlagsEXT (
+	        vk::DebugReportFlagBitsEXT::eInformation |
+	        vk::DebugReportFlagBitsEXT::eWarning |
+	        vk::DebugReportFlagBitsEXT::ePerformanceWarning |
+	        vk::DebugReportFlagBitsEXT::eError |
+	        vk::DebugReportFlagBitsEXT::eDebug),
+	    &debugLogger,
+	    nullptr
+	);
+	pfn_vkCreateDebugReportCallbackEXT (vkinstance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> (&debugReportCallbackCreateInfo), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> (&debugReportCallbackEXT));
+
 	uint32_t devicecount = 0;
 	V_CHECKCALL(vkinstance.enumeratePhysicalDevices(&devicecount, nullptr), printf("Get physical-device count Failed\n"));
 
@@ -327,10 +354,36 @@ bool VGlobal::initializeDevice(){
 	
 	return true;
 }
+
+void VGlobal::buildStandardPipeline(vk::Format format, VkExtent2D extent){
+	
+	shadermodule.standardShaderVert = loadShaderFromFile ("../workingdir/shader/tri.vert");
+	shadermodule.standardShaderFrag = loadShaderFromFile ("../workingdir/shader/tri.frag");
+	
+	renderpass.standardRenderPass = createStandardRenderPass (format);
+	descriptorsetlayout.standardDescriptorSetLayouts = createStandardDescriptorSetLayouts();
+	pipelinelayout.standardPipelineLayout = createStandardPipelineLayout (&descriptorsetlayout.standardDescriptorSetLayouts);
+	pipeline.standardPipeline = createStandardPipeline (extent, pipelinelayout.standardPipelineLayout, renderpass.standardRenderPass);
+	
+	assert(pipeline.standardPipeline);
+}
+
+
 void VGlobal::terminate(){
 	
+	deviceWrapper.device.destroyPipeline(pipeline.standardPipeline);
+	deviceWrapper.device.destroyPipelineLayout(pipelinelayout.standardPipelineLayout);
+	for(vk::DescriptorSetLayout layout : descriptorsetlayout.standardDescriptorSetLayouts){
+		deviceWrapper.device.destroyDescriptorSetLayout(layout);
+	}
+	deviceWrapper.device.destroyRenderPass(renderpass.standardRenderPass);
+	deviceWrapper.device.destroyShaderModule(shadermodule.standardShaderVert);
+	deviceWrapper.device.destroyShaderModule(shadermodule.standardShaderFrag);
 	
-	vkDestroyInstance(vkinstance, nullptr);
+	deviceWrapper.device.destroy(nullptr);
+	pfn_vkDestroyDebugReportCallbackEXT(vkinstance, debugReportCallbackEXT, nullptr);
+	
+	vkinstance.destroy(nullptr);
 	glfwTerminate();
 	return;
 }

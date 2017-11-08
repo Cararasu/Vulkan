@@ -14,11 +14,11 @@ BufferWrapper::~BufferWrapper(){
 MappedBufferWrapper::MappedBufferWrapper(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
 	BufferWrapper(size, usage, needed){
 	printf("Map %d Bytes of Memory\n", bufferSize);
-	vkMapMemory(vGlobal.deviceWrapper.device, backedMemory, 0, bufferSize, 0, &data);
+	vkMapMemory(global.deviceWrapper.device, backedMemory, 0, bufferSize, 0, &data);
 }
 MappedBufferWrapper::~MappedBufferWrapper(){
 	printf("Unmap %d Bytes of Memory\n", bufferSize);
-	vkUnmapMemory(vGlobal.deviceWrapper.device, backedMemory);
+	vkUnmapMemory(global.deviceWrapper.device, backedMemory);
 }
 
 ImageWrapper::ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 

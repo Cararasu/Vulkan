@@ -36,13 +36,12 @@ struct VGlobal{
 	vk::PhysicalDevice physicalDevice;
 	VExtLayerStruct devExtLayers;
 	
+	vk::DebugReportCallbackEXT debugReportCallbackEXT;
+	
 	uint32_t chosenDeviceId = -1;
 	
 	VDevice deviceWrapper;
 	
-	struct {
-		
-	}pipelines;
 	
 	std::vector<VPhysDeviceProps> physicalDevices;
 	
@@ -51,11 +50,36 @@ struct VGlobal{
 	bool choseBestDevice();
 	bool choseDevice(uint32_t index);
 	bool initializeDevice();
+	
+
+	struct{
+		vk::RenderPass standardRenderPass;
+	} renderpass;
+	
+	struct{
+		vk::PipelineLayout standardPipelineLayout;
+	} pipelinelayout;
+	
+	struct{
+		vk::ShaderModule standardShaderVert;
+		vk::ShaderModule standardShaderFrag;
+	} shadermodule;
+	
+	struct{
+		vk::Pipeline standardPipeline;
+	} pipeline;
+	
+	struct{
+		std::vector<vk::DescriptorSetLayout> standardDescriptorSetLayouts;
+	} descriptorsetlayout;
+	
+	void buildStandardPipeline(vk::Format format, VkExtent2D extent);
+	
 	void terminate();
 	
 };
 
-extern VGlobal vGlobal;
+extern VGlobal global;
 
 
 

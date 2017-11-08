@@ -88,12 +88,7 @@ struct ObjectStorage {
 	std::vector<uint32_t> indices;
 	//textureview
 };
-	
-struct PipelineInfos{
-	vk::Pipeline pipeline;
-	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-	std::vector<vk::DescriptorSet> descriptorSets;
-};
+
 
 extern std::set<vk::DeviceMemory> memories;
 
@@ -104,12 +99,15 @@ void destroyCommandPool(vk::CommandPool commandPool);
 vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel);
 void deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer);
 
-void copyData(vk::CommandPool commandPool, const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
-void copyBuffer(vk::CommandPool commandPool, vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
-	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag);
+void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
+void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
 
-void transferData(vk::CommandPool commandPool, const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag);
-void transferData(vk::CommandPool commandPool, const void* srcData, vk::Image targetimage, vk::Extent3D offset, vk::Extent3D size);
+void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
+void transferData(const void* srcData, vk::Image targetimage, vk::Extent3D offset, vk::Extent3D size,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
 
 vk::Format findDepthFormat();
 vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
@@ -122,32 +120,28 @@ void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPro
 void destroyBuffer(vk::Buffer buffer, vk::DeviceMemory bufferMemory);
 
 
-vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
-vk::DeviceMemory allocateImageMemory(vk::Image image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
-vk::DeviceMemory allocateBufferMemory(vk::Buffer buffer, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties);
 
 vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 
 void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Image* image, vk::DeviceMemory* imageMemory);
 void destroyImage(vk::Image image, vk::DeviceMemory imageMemory);
-void transitionImageLayout(vk::CommandPool commandPool, vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask);
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
 
 vk::Pipeline createStandardPipeline(vk::Extent2D viewport, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass);
-void destroyStandardPipeline();
 void destroyPipeline(vk::Pipeline pipeline);
 
 vk::PipelineLayout createStandardPipelineLayout(std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts = nullptr, std::vector<vk::PushConstantRange>* pushConstRanges = nullptr);
-void destroyStandardPipelineLayout();
 void destroyPipelineLayout(vk::PipelineLayout pipelineLayout);
 
 vk::RenderPass createStandardRenderPass(vk::Format format);
-void destroyStandardRenderPass();
 void destroyRenderPass(vk::RenderPass renderpass);
 
 std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts();
 
 vk::DescriptorPool createStandardDescriptorSetPool();
-void createStandardDescriptorSet(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::DescriptorSet>* descriptorSets);
+std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts);
 
 vk::ShaderModule loadShaderFromFile(const char* filename);
 

@@ -28,6 +28,7 @@ struct ImageWrapper{
 	vk::Image image = vk::Image();
 	vk::DeviceMemory backedMemory = vk::DeviceMemory();
 	
+	ImageWrapper(){}
 	ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~ImageWrapper();
 	

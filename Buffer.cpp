@@ -7,21 +7,26 @@
 void createBuffer ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Buffer* buffer, vk::DeviceMemory* bufferMemory ) {
 	vk::BufferCreateInfo bufferInfo(vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive);
 
-	V_CHECKCALL ( vGlobal.deviceWrapper.device.createBuffer(&bufferInfo, nullptr, buffer), printf ( "Failed To Create Buffer\n" ) );
+	V_CHECKCALL ( global.deviceWrapper.device.createBuffer(&bufferInfo, nullptr, buffer), printf ( "Failed To Create Buffer\n" ) );
 
 	printf ( "Create Buffer of size %d\n", size );
+	
+	vk::MemoryRequirements memRequirements;
+	global.deviceWrapper.device.getBufferMemoryRequirements(*buffer, &memRequirements);
+	*bufferMemory = allocateMemory(memRequirements, needed | recommended);
+	if(!*bufferMemory)
+		*bufferMemory = allocateMemory(memRequirements, needed);
 
-	*bufferMemory = allocateBufferMemory ( *buffer, needed, recommended );
-
-	vkBindBufferMemory ( vGlobal.deviceWrapper.device, *buffer, *bufferMemory, 0 );
+	vkBindBufferMemory ( global.deviceWrapper.device, *buffer, *bufferMemory, 0 );
 }
 void destroyBuffer ( vk::Buffer buffer, vk::DeviceMemory bufferMemory ) {
-	vkDestroyBuffer ( vGlobal.deviceWrapper.device, buffer, nullptr );
-	vkFreeMemory ( vGlobal.deviceWrapper.device, bufferMemory, nullptr );
+	vkDestroyBuffer ( global.deviceWrapper.device, buffer, nullptr );
+	vkFreeMemory ( global.deviceWrapper.device, bufferMemory, nullptr );
 }
 
-void copyBuffer ( vk::CommandPool commandPool, vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
-		vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag) {
+void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+		vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+		vk::CommandPool commandPool, vk::Queue submitQueue) {
 	
 	vk::CommandBuffer commandBuffer =  createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
 	
@@ -40,7 +45,7 @@ void copyBuffer ( vk::CommandPool commandPool, vk::Buffer srcBuffer, vk::Buffer 
 			{
 				vk::BufferMemoryBarrier(
 					inputAccessFlag, vk::AccessFlagBits::eTransferRead,
-					vGlobal.deviceWrapper.transfQId, vGlobal.deviceWrapper.transfQId,
+					global.deviceWrapper.transfQId, global.deviceWrapper.transfQId,
 					srcBuffer,
 					srcOffset, size
 				)
@@ -58,7 +63,7 @@ void copyBuffer ( vk::CommandPool commandPool, vk::Buffer srcBuffer, vk::Buffer 
 			{
 				vk::BufferMemoryBarrier(
 					vk::AccessFlagBits::eTransferWrite, outputAccessFlag,
-					vGlobal.deviceWrapper.transfQId, vGlobal.deviceWrapper.transfQId,
+					global.deviceWrapper.transfQId, global.deviceWrapper.transfQId,
 					srcBuffer,
 					srcOffset, size
 				)
@@ -75,17 +80,11 @@ void copyBuffer ( vk::CommandPool commandPool, vk::Buffer srcBuffer, vk::Buffer 
 		1, &commandBuffer,
 		0, nullptr//signalsemaphores
 		);
-	VTQueue* vtQueue = vGlobal.deviceWrapper.requestTransferQueue();
-	if ( vtQueue ) {
-		vtQueue->submitTransfer ( 1, &submitInfo );
-		//vtQueue->waitForFinish();
-	} else {
-		vGlobal.deviceWrapper.getPGCQueue()->submitGraphics ( 1, &submitInfo );
-		//vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();
-	}
+	submitQueue.submit({submitInfo}, vk::Fence());
 }
 
-void transferData ( vk::CommandPool transferCommandPool, const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags) {
+void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags,
+		vk::CommandPool commandPool, vk::Queue submitQueue) {
 	if ( !stagingBuffer ) {
 		printf ( "Creating Staging-Buffer\n" );
 		stagingBuffer = new MappedBufferWrapper ( V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc, 
@@ -99,8 +98,8 @@ void transferData ( vk::CommandPool transferCommandPool, const void* srcData, vk
 		transferBuffer = stagingBuffer;
 	}
 	memcpy ( transferBuffer->data, srcData, size );
-	copyBuffer ( transferCommandPool, transferBuffer->buffer, targetBuffer, 0, offset, size,
-		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlags);
+	copyBuffer ( transferBuffer->buffer, targetBuffer, 0, offset, size,
+		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlags, commandPool, submitQueue);
 
 	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
 		delete transferBuffer;

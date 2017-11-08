@@ -5,7 +5,7 @@
 vk::CommandPool singleImageTransitionCommandPool = vk::CommandPool();
 
 
-void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags preferred, vk::Image* image, vk::DeviceMemory* imageMemory){
+void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Image* image, vk::DeviceMemory* imageMemory){
 	
 	vk::ImageCreateInfo imageInfo;
 	
@@ -29,17 +29,21 @@ void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, v
 	imageInfo.samples = vk::SampleCountFlagBits::e1;
 	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createImage(&imageInfo, nullptr, image), printf("Failed To Create Image\n"));
+	V_CHECKCALL(global.deviceWrapper.device.createImage(&imageInfo, nullptr, image), printf("Failed To Create Image\n"));
 
 	printf("Create Image of dimensions %dx%dx%d\n", size.width, size.height, size.depth);
 	
-	*imageMemory = allocateImageMemory(*image, needed, preferred);
+	vk::MemoryRequirements memRequirements;
+	global.deviceWrapper.device.getImageMemoryRequirements(*image, &memRequirements);
+	*imageMemory = allocateMemory(memRequirements, needed | recommended);
+	if(!*imageMemory)
+		*imageMemory = allocateMemory(memRequirements, needed);
 	
-	vkBindImageMemory(vGlobal.deviceWrapper.device, *image, *imageMemory, 0);
+	vkBindImageMemory(global.deviceWrapper.device, *image, *imageMemory, 0);
 }
 void destroyImage(vk::Image image, vk::DeviceMemory imageMemory){
-	vkDestroyImage(vGlobal.deviceWrapper.device, image, nullptr);
-	vkFreeMemory(vGlobal.deviceWrapper.device, imageMemory, nullptr);
+	vkDestroyImage(global.deviceWrapper.device, image, nullptr);
+	vkFreeMemory(global.deviceWrapper.device, imageMemory, nullptr);
 }
 vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags) {
    
@@ -53,7 +57,7 @@ vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAsp
 	
 	vk::ImageView imageView;
 	
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createImageView(&imageViewCreateInfo, nullptr, &imageView), printf("Creation of ImageView failed\n"));
+	V_CHECKCALL(global.deviceWrapper.device.createImageView(&imageViewCreateInfo, nullptr, &imageView), printf("Creation of ImageView failed\n"));
 	
 	return imageView;
 }
@@ -80,16 +84,17 @@ void copyBufferToImage(vk::CommandPool commandPool, vk::Buffer buffer, vk::Image
 		0, nullptr//signalsemaphores
 		);
 
-	VTQueue* vtQueue = vGlobal.deviceWrapper.requestTransferQueue();
+	VTQueue* vtQueue = global.deviceWrapper.requestTransferQueue();
 	if(vtQueue){
 		vtQueue->submitTransfer(1,&submitInfo);
 		vtQueue->waitForFinish();
 	}else{
-		vGlobal.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo);
-		vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();
+		global.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo);
+		global.deviceWrapper.getPGCQueue()->waitForFinish();
 	}
 }
-void transitionImageLayout(vk::CommandPool commandPool, vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask) {
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
+		vk::CommandPool commandPool, vk::Queue submitQueue) {
 
     vk::CommandBuffer commandBuffer = createCommandBuffer(commandPool, vk::CommandBufferLevel::ePrimary);
 	
@@ -129,7 +134,7 @@ void transitionImageLayout(vk::CommandPool commandPool, vk::Image image, vk::For
 			vk::ImageMemoryBarrier(
 				srcAccessMask, dstAccessMask,
 				oldLayout, newLayout,
-				vGlobal.deviceWrapper.graphQId, vGlobal.deviceWrapper.graphQId,
+				global.deviceWrapper.graphQId, global.deviceWrapper.graphQId,
 				image,
 				vk::ImageSubresourceRange(aspectMask, 0, 1, 0, 1)
 			)
@@ -143,9 +148,7 @@ void transitionImageLayout(vk::CommandPool commandPool, vk::Image image, vk::For
 		1, &commandBuffer,
 		0, nullptr//signalsemaphores
 		);
-
-	vGlobal.deviceWrapper.getPGCQueue()->submitGraphics(1,&submitInfo);
-	vGlobal.deviceWrapper.getPGCQueue()->waitForFinish();
+	submitQueue.submit({submitInfo}, vk::Fence());
 }
 void transferData(vk::CommandPool commandPool, const void* srcData, vk::Image targetImage, vk::DeviceSize size, vk::Offset3D offset, vk::Extent3D extent){
 	if(stagingBuffer){

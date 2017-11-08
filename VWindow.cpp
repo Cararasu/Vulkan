@@ -6,21 +6,21 @@
 
 void VWindow::initializeWindow(){
 	
-	pgcQueue = vGlobal.deviceWrapper.requestPGCQueue();
+	pgcQueue = global.deviceWrapper.requestPGCQueue();
 	
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	window = glfwCreateWindow(640, 640, "Vulkan Test", NULL, NULL);
-	VCHECKCALL(glfwCreateWindowSurface(vGlobal.vkinstance, window, NULL, (VkSurfaceKHR*)&surface), printf("Creation of Surface failed"));
+	VCHECKCALL(glfwCreateWindowSurface(global.vkinstance, window, NULL, (VkSurfaceKHR*)&surface), printf("Creation of Surface failed"));
 	
 	imageAvailableGuardSem = createSemaphore();
 	
 	{
 		{
 			uint32_t formatCount;
-			vGlobal.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, nullptr);
+			global.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, nullptr);
 			if (formatCount != 0) {
 				vk::SurfaceFormatKHR formats[formatCount];
-				vGlobal.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, formats);
+				global.physicalDevice.getSurfaceFormatsKHR(surface, &formatCount, formats);
 				
 				presentSwapFormat = formats[0];
 				
@@ -38,10 +38,10 @@ void VWindow::initializeWindow(){
 		vk::PresentModeKHR chosenPresentationMode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 		{
 			uint32_t presentModeCount;
-			vkGetPhysicalDeviceSurfacePresentModesKHR(vGlobal.physicalDevice, surface, &presentModeCount, nullptr);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(global.physicalDevice, surface, &presentModeCount, nullptr);
 			if (presentModeCount != 0) {
 				vk::PresentModeKHR presentModes[presentModeCount];
-				vGlobal.physicalDevice.getSurfacePresentModesKHR(surface, &presentModeCount, presentModes);
+				global.physicalDevice.getSurfacePresentModesKHR(surface, &presentModeCount, presentModes);
 				chosenPresentationMode = vk::PresentModeKHR::eFifo;
 				for (size_t i = 0; i < presentModeCount; i++) {
 					if (presentModes[i] == vk::PresentModeKHR::eMailbox) {
@@ -54,7 +54,7 @@ void VWindow::initializeWindow(){
 			}
 		}
 		vk::SurfaceCapabilitiesKHR capabilities;//can be saved globally for each physicaldevice
-		vGlobal.physicalDevice.getSurfaceCapabilitiesKHR(surface, &capabilities);
+		global.physicalDevice.getSurfaceCapabilitiesKHR(surface, &capabilities);
 		{
 			int width, height;
 			glfwGetWindowSize(window, &width , &height);
@@ -92,38 +92,62 @@ void VWindow::initializeWindow(){
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 		swapchainCreateInfo.oldSwapchain = vk::SwapchainKHR();
 		
-		printf("SUPPORTED %d\n", vGlobal.physicalDevice.getSurfaceSupportKHR(pgcQueue->presentQId, surface));
+		printf("SUPPORTED %d\n", global.physicalDevice.getSurfaceSupportKHR(pgcQueue->presentQId, surface));
 		
-		V_CHECKCALL(vGlobal.deviceWrapper.device.createSwapchainKHR(&swapchainCreateInfo, nullptr, &swapChain), printf("Creation of Swapchain failed\n"));
+		V_CHECKCALL(global.deviceWrapper.device.createSwapchainKHR(&swapchainCreateInfo, nullptr, &swapChain), printf("Creation of Swapchain failed\n"));
 	}
-	std::vector<vk::Image> swapChainImages = vGlobal.deviceWrapper.device.getSwapchainImagesKHR(swapChain);
+	std::vector<vk::Image> swapChainImages = global.deviceWrapper.device.getSwapchainImagesKHR(swapChain);
 	
-	presentImages.resize(swapChainImages.size());
+	perPresentImageDatas.resize(swapChainImages.size());
+	
 	for(size_t i = 0; i < swapChainImages.size(); i++){
-		presentImages[i] = createImageView2D(swapChainImages[i], presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
+		perPresentImageDatas[i].presentImage = swapChainImages[i];
+		perPresentImageDatas[i].presentImageView = createImageView2D(swapChainImages[i], presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
+		
+		perPresentImageDatas[i].graphicQCommandPool = createGraphicsCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
+		
+		perPresentImageDatas[i].fence = global.deviceWrapper.device.createFence(vk::FenceCreateFlags());
 	}
-	vGlobal.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	global.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	perPresentImageDatas[presentImageIndex].firstShow = false;
 }
 void VWindow::showNextImage(uint32_t waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores){
 	
 	vk::SwapchainKHR swapChains[] = {swapChain};
 	vk::PresentInfoKHR presentInfo(waitSemaphoreCount, pWaitSemaphores, 1, swapChains, &presentImageIndex, nullptr);
 
+	WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
+	
 	pgcQueue->presentQueue.presentKHR(&presentInfo);
-	vGlobal.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 	
-	//vGlobal.deviceWrapper.requestTransferQueue()->waitForFinish();
-	//pgcQueue->waitForFinish();
+	pgcQueue->graphicsQueue.submit({}, data->fence);
 	
-	printf("Destroy TransferPool %d\n", presentImageIndex);
-	vGlobal.deviceWrapper.device.destroyCommandPool(tranferQCommandPools[presentImageIndex], nullptr);
-	tranferQCommandPools[presentImageIndex] = createTransferCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
-	printf("---------\n");
-	printf("Destroy GraphicsPool %d\n", presentImageIndex);
-	vGlobal.deviceWrapper.device.destroyCommandPool(graphicQCommandPools[presentImageIndex], nullptr);
-	graphicQCommandPools[presentImageIndex] = createGraphicsCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
-	printf("---------\n");
+	global.deviceWrapper.device.acquireNextImageKHR(swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	
+	data = &perPresentImageDatas[presentImageIndex];
+	
+	if(!data->firstShow){
+		global.deviceWrapper.device.waitForFences({data->fence}, true, std::numeric_limits<uint64_t>::max());
+		global.deviceWrapper.device.resetFences({data->fence});
+	}else
+		data->firstShow = false;
+	
+	global.deviceWrapper.device.destroyCommandPool(data->graphicQCommandPool, nullptr);
+	data->graphicQCommandPool = createGraphicsCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
 }
+
+
 VWindow::~VWindow(){
+	for(size_t i = 0; i < perPresentImageDatas.size(); i++){
+		global.deviceWrapper.device.destroyCommandPool(perPresentImageDatas[i].graphicQCommandPool, nullptr);
+		global.deviceWrapper.device.destroyFramebuffer(perPresentImageDatas[i].framebuffer, nullptr);
+		if(i != presentImageIndex)
+			global.deviceWrapper.device.waitForFences({perPresentImageDatas[i].fence}, true, std::numeric_limits<uint64_t>::max());
+		global.deviceWrapper.device.destroyFence(perPresentImageDatas[i].fence, nullptr);
+		global.deviceWrapper.device.destroyImageView(perPresentImageDatas[i].presentImageView, nullptr);
+	}
 	destroySemaphore(imageAvailableGuardSem);
+	
+	glfwDestroyWindow (window);
+	global.deviceWrapper.device.destroySwapchainKHR(swapChain);
 }

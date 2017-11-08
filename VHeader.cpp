@@ -6,72 +6,62 @@
 #include "VGlobal.h"
 
 
-vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
-	vk::MemoryAllocateInfo allocInfo(memoryRequirement.size, findMemoryType(memoryRequirement.memoryTypeBits, needed | recommended));
-
-	if(allocInfo.memoryTypeIndex == -1){
-		allocInfo.memoryTypeIndex = findMemoryType(memoryRequirement.memoryTypeBits, needed);
-	}
+vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties){
+	uint32_t memoryType = findMemoryType(memoryRequirement.memoryTypeBits, properties);
+	if(memoryType == -1)
+		return vk::DeviceMemory();
+		
+	vk::MemoryAllocateInfo allocInfo(memoryRequirement.size, memoryType);
 	printf("Allocate %d Bytes\n", memoryRequirement.size);
 
 	vk::DeviceMemory memory;
-	V_CHECKCALL(vGlobal.deviceWrapper.device.allocateMemory(&allocInfo, nullptr, &memory), printf("Failed To Create Image Memory\n"));
+	V_CHECKCALL(global.deviceWrapper.device.allocateMemory(&allocInfo, nullptr, &memory), printf("Failed To Create Image Memory\n"));
 	return memory;
-}
-vk::DeviceMemory allocateImageMemory(vk::Image image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
-	vk::MemoryRequirements memRequirements;
-	vGlobal.deviceWrapper.device.getImageMemoryRequirements(image, &memRequirements);
-	return allocateMemory(memRequirements, needed, recommended);
-}
-vk::DeviceMemory allocateBufferMemory(vk::Buffer buffer, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended){
-	vk::MemoryRequirements memRequirements;
-	vGlobal.deviceWrapper.device.getBufferMemoryRequirements(buffer, &memRequirements);
-	return allocateMemory(memRequirements, needed, recommended);
 }
 
 vk::CommandPool createTransferCommandPool(vk::CommandPoolCreateFlags createFlags){
 	uint32_t qId;
-	if(vGlobal.deviceWrapper.transfQId)
-		qId = vGlobal.deviceWrapper.transfQId;
+	if(global.deviceWrapper.transfQId)
+		qId = global.deviceWrapper.transfQId;
 	else
-		qId = vGlobal.deviceWrapper.graphQId;
+		qId = global.deviceWrapper.graphQId;
 	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), qId);
 	
 	vk::CommandPool commandPool;
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
+	V_CHECKCALL(global.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
 	return commandPool;
 }
 vk::CommandPool createGraphicsCommandPool(vk::CommandPoolCreateFlags createFlags){
-	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), vGlobal.deviceWrapper.graphQId);
+	vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlags(createFlags), global.deviceWrapper.graphQId);
 	
 	vk::CommandPool commandPool;
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
+	V_CHECKCALL(global.deviceWrapper.device.createCommandPool(&createInfo, nullptr, &commandPool), printf("Creation of transfer CommandPool Failed\n"));
 	return commandPool;
 }
 void destroyCommandPool(vk::CommandPool commandPool){
-	vkDestroyCommandPool(vGlobal.deviceWrapper.device, commandPool, nullptr);
+	vkDestroyCommandPool(global.deviceWrapper.device, commandPool, nullptr);
 }
 vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel){
 	vk::CommandBufferAllocateInfo allocateInfo(commandPool, bufferLevel, 1);
 	
     vk::CommandBuffer commandBuffer;
-	vGlobal.deviceWrapper.device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
+	global.deviceWrapper.device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
     return commandBuffer;
 }
 void deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer){
-	vGlobal.deviceWrapper.device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+	global.deviceWrapper.device.freeCommandBuffers(commandPool, 1, &commandBuffer);
 }
 
 void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size) {
 	void* data;
-	vkMapMemory(vGlobal.deviceWrapper.device, dstMemory, offset, size, 0, &data);
+	vkMapMemory(global.deviceWrapper.device, dstMemory, offset, size, 0, &data);
 		memcpy(data, srcData, size);
-	vkUnmapMemory(vGlobal.deviceWrapper.device, dstMemory);
+	vkUnmapMemory(global.deviceWrapper.device, dstMemory);
 }
 
 uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
-	vGlobal.physicalDevice.getMemoryProperties(&memProperties);
+	global.physicalDevice.getMemoryProperties(&memProperties);
 	
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -84,7 +74,7 @@ uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
 vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
 	for (vk::Format format : candidates) {
 		vk::FormatProperties props;
-		vGlobal.physicalDevice.getFormatProperties(format, &props);
+		global.physicalDevice.getFormatProperties(format, &props);
 		if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
 			return format;
 		} else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
@@ -108,14 +98,11 @@ vk::Format findDepthFormat() {
 }
 
 vk::Semaphore createSemaphore(){
-	vk::SemaphoreCreateInfo semaphoreCreateInfo;
-	vk::Semaphore sem;
-	V_CHECKCALL(vGlobal.deviceWrapper.device.createSemaphore(&semaphoreCreateInfo, nullptr, &sem), printf("Creation of Semaphore failed\n"));
-	return sem;
+	return global.deviceWrapper.device.createSemaphore(vk::SemaphoreCreateInfo(), nullptr);
 }
 
 void destroySemaphore(vk::Semaphore semaphore){
-	vGlobal.deviceWrapper.device.destroySemaphore(semaphore, nullptr);
+	global.deviceWrapper.device.destroySemaphore(semaphore, nullptr);
 }
 
 void printError(VkResult res){
@@ -211,7 +198,7 @@ void printError(VkResult res){
 		printf("Other Error 0x%x\n", res);
 	}
 	if(res < 0){
-		vGlobal.terminate();
+		global.terminate();
 		glfwTerminate();
 		exit(res);
 	}

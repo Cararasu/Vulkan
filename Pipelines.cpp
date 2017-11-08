@@ -3,13 +3,8 @@
 #include "VBuilders.h"
 #include "VGlobal.h"
 
-vk::Pipeline standardPipeline = vk::Pipeline();
-
-vk::PipelineLayout standardPipelineLayout = vk::PipelineLayout();
-
 vk::PipelineLayout createStandardPipelineLayout (std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts, std::vector<vk::PushConstantRange>* pushConstRanges) {
 
-	destroyStandardPipelineLayout();
 	vk::PipelineLayoutCreateInfo createInfo(
 			vk::PipelineLayoutCreateFlags(),
 			0, nullptr,/*setLayouts*/
@@ -25,23 +20,15 @@ vk::PipelineLayout createStandardPipelineLayout (std::vector<vk::DescriptorSetLa
 		createInfo.pPushConstantRanges = pushConstRanges->data();
 	}
 
-	return standardPipelineLayout = vGlobal.deviceWrapper.device.createPipelineLayout (createInfo, nullptr);
-}
-
-void destroyStandardPipelineLayout() {
-	if (standardPipelineLayout)
-		destroyPipelineLayout (standardPipelineLayout);
-	standardPipelineLayout = vk::PipelineLayout();
+	return global.deviceWrapper.device.createPipelineLayout (createInfo, nullptr);
 }
 
 void destroyPipelineLayout (vk::PipelineLayout pipelineLayout) {
-	vkDestroyPipelineLayout (vGlobal.deviceWrapper.device, pipelineLayout, nullptr);
+	vkDestroyPipelineLayout (global.deviceWrapper.device, pipelineLayout, nullptr);
 }
 
+
 vk::Pipeline createStandardPipeline (vk::Extent2D viewportExtend, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass) {
-
-	destroyStandardPipeline();
-
 	vk::VertexInputBindingDescription vertexInputBindings[] = {
 		vk::VertexInputBindingDescription (0, sizeof (Vertex), vk::VertexInputRate::eVertex),
 		vk::VertexInputBindingDescription (1, sizeof (Instance), vk::VertexInputRate::eInstance)
@@ -120,12 +107,12 @@ vk::Pipeline createStandardPipeline (vk::Extent2D viewportExtend, vk::PipelineLa
 	vk::PipelineShaderStageCreateInfo shaderStages[2] = {
 		vk::PipelineShaderStageCreateInfo(
 			vk::PipelineShaderStageCreateFlags(),
-			vk::ShaderStageFlagBits::eVertex, loadShaderFromFile ("../workingdir/shader/tri.vert"),
+			vk::ShaderStageFlagBits::eVertex, global.shadermodule.standardShaderVert,
 			"main", nullptr//name, specialization
 		),
 		vk::PipelineShaderStageCreateInfo(
 			vk::PipelineShaderStageCreateFlags(),
-			vk::ShaderStageFlagBits::eFragment, loadShaderFromFile ("../workingdir/shader/tri.frag"),
+			vk::ShaderStageFlagBits::eFragment, global.shadermodule.standardShaderFrag,
 			"main", nullptr//name, specialization
 		),
 	};
@@ -141,18 +128,10 @@ vk::Pipeline createStandardPipeline (vk::Extent2D viewportExtend, vk::PipelineLa
 		vk::Pipeline(),
 		-1
 	);
-
-	V_CHECKCALL (vGlobal.deviceWrapper.device.createGraphicsPipelines(vk::PipelineCache(), 1, &pipelineInfo, nullptr, &standardPipeline), printf ("Creation of standard Pipeline failed\n"));
 	
-	return standardPipeline;
-}
-
-void destroyStandardPipeline() {
-	if (standardPipeline)
-		destroyPipeline (standardPipeline);
-	standardPipeline = vk::Pipeline();
+	return global.deviceWrapper.device.createGraphicsPipelines(vk::PipelineCache(), {pipelineInfo}, nullptr)[0];
 }
 
 void destroyPipeline (vk::Pipeline pipeline) {
-	vkDestroyPipeline (vGlobal.deviceWrapper.device, pipeline, nullptr);
+	vkDestroyPipeline (global.deviceWrapper.device, pipeline, nullptr);
 }
