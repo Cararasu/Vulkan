@@ -22,15 +22,22 @@ struct MappedBufferWrapper : public BufferWrapper{
 extern MappedBufferWrapper* stagingBuffer;
 
 struct ImageWrapper{
-	vk::ImageType imageType;
-	vk::Extent3D imageSize;
-	vk::Format imageFormat;
-	vk::Image image = vk::Image();
-	vk::DeviceMemory backedMemory = vk::DeviceMemory();
+	vk::Image image;
+	vk::DeviceMemory backedMemory;
+	vk::Extent3D extent;
+	vk::Format format;
+	vk::ImageTiling tiling;
+	vk::ImageUsageFlags usage;
+	vk::ImageType type;
+	vk::ImageLayout layout;
+	vk::ImageAspectFlags aspectFlags;
 	
 	ImageWrapper(){}
-	ImageWrapper(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+	
+	ImageWrapper(vk::Extent3D extent, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~ImageWrapper();
+	
+	void transitionImageLayout(vk::ImageLayout imageLayout, vk::CommandPool commandPool, vk::Queue submitQueue);
 	
 };
 

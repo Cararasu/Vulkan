@@ -39,7 +39,7 @@ vk::Pipeline createStandardPipeline (vk::Extent2D viewportExtend, vk::PipelineLa
 		vk::VertexInputAttributeDescription (1, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, color)),
 		vk::VertexInputAttributeDescription (2, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, uv)),
 		vk::VertexInputAttributeDescription (3, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, normal)),
-
+		
 		vk::VertexInputAttributeDescription (4, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix)),
 		vk::VertexInputAttributeDescription (5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4)),
 		vk::VertexInputAttributeDescription (6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 2),

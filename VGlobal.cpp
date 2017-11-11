@@ -117,7 +117,7 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 
 	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo (
 	    vk::DebugReportFlagsEXT (
-	        vk::DebugReportFlagBitsEXT::eInformation |
+	        //vk::DebugReportFlagBitsEXT::eInformation |
 	        vk::DebugReportFlagBitsEXT::eWarning |
 	        vk::DebugReportFlagBitsEXT::ePerformanceWarning |
 	        vk::DebugReportFlagBitsEXT::eError |

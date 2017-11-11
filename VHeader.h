@@ -103,10 +103,14 @@ void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize of
 void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
 	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
+	
+void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
 
 void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
-void transferData(const void* srcData, vk::Image targetimage, vk::Extent3D offset, vk::Extent3D size,
+void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
 
 vk::Format findDepthFormat();
@@ -124,8 +128,6 @@ vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::Me
 
 vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 
-void createImage(vk::Extent3D size, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Image* image, vk::DeviceMemory* imageMemory);
-void destroyImage(vk::Image image, vk::DeviceMemory imageMemory);
 void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
 

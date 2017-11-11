@@ -7,17 +7,13 @@ layout(location = 1) in vec3 col;
 layout(location = 2) in vec3 uv;
 layout(location = 3) in vec3 normal;
 
-//per-model
-//materialinfo
-//diffuse-texture
-//diffuse-texture
-
 //per-instance
 layout(location = 4) in mat4 m2wMatrix;
 
+out vec3 texCoord;
 out vec3 fragColor;
 
-layout (set=0, binding=0) uniform cameraUniformBuffer {
+layout (set=0, binding = 0) uniform cameraUniformBuffer {
 	mat4 w2sMatrix;
 };
 
@@ -27,5 +23,6 @@ out gl_PerVertex {
 
 void main() {
     gl_Position = w2sMatrix * m2wMatrix * vec4(pos, 1.0f);
+	texCoord = uv;
 	fragColor = normal;
 }

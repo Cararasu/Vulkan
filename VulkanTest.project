@@ -102,6 +102,7 @@
         <IncludePath Value="libs/glfw-3.2.1.bin.WIN64\include"/>
         <IncludePath Value="libs/glm-0.9.9-a1"/>
         <IncludePath Value="C:\Program Files\VulkanSDK\1.0.61.1\Include"/>
+        <IncludePath Value="libs/stb"/>
       </Compiler>
       <Linker Options="" Required="yes">
         <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>

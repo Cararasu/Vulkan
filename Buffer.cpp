@@ -102,6 +102,7 @@ void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize
 		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlags, commandPool, submitQueue);
 
 	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
+		submitQueue.waitIdle();
 		delete transferBuffer;
 	}
 
