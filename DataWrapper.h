@@ -25,6 +25,7 @@ struct ImageWrapper{
 	vk::Image image;
 	vk::DeviceMemory backedMemory;
 	vk::Extent3D extent;
+	uint32_t arraySize;
 	vk::Format format;
 	vk::ImageTiling tiling;
 	vk::ImageUsageFlags usage;
@@ -34,7 +35,7 @@ struct ImageWrapper{
 	
 	ImageWrapper(){}
 	
-	ImageWrapper(vk::Extent3D extent, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+	ImageWrapper(vk::Extent3D extent, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~ImageWrapper();
 	
 	void transitionImageLayout(vk::ImageLayout imageLayout, vk::CommandPool commandPool, vk::Queue submitQueue);

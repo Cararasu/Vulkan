@@ -68,7 +68,7 @@ void loadDataFile (std::string file, Object* object) {
 }
 
 
-ImageWrapper* loadImage (std::string file, vk::CommandPool commandPool, vk::Queue queue) {
+ImageWrapper* loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load (file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -77,16 +77,10 @@ ImageWrapper* loadImage (std::string file, vk::CommandPool commandPool, vk::Queu
 		throw std::runtime_error ("failed to load texture image!");
 	}
 	vk::Extent3D imageExtent = vk::Extent3D (texWidth, texHeight, 1);
-	vk::Format imageFormat = findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
-	ImageWrapper * imageWrapper = new ImageWrapper (imageExtent, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
-	        vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
-
-	imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, commandPool, queue);
-	transferData (pixels, imageWrapper->image, vk::Offset3D (0, 0, 0), imageExtent, imageSize,
+	transferData (pixels, imageWrapper->image, vk::Offset3D (0, 0, 0), imageExtent, index, imageSize,
 	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue);
 
 	stbi_image_free (pixels);
-	return imageWrapper;
 }
 
 int main (int argc, char **argv) {
@@ -205,7 +199,7 @@ int main (int argc, char **argv) {
 
 	vk::Format depthFormat = findDepthFormat();
 	vk::Extent3D extent (vWindow->swapChainExtend.width, vWindow->swapChainExtend.height, 1);
-	ImageWrapper *depthImage = new ImageWrapper (extent, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
+	ImageWrapper *depthImage = new ImageWrapper (extent, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
 	        vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 	vk::ImageView depthImageView = createImageView2D (depthImage->image, depthFormat, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 	transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
@@ -220,9 +214,7 @@ int main (int argc, char **argv) {
 		vWindow->perPresentImageDatas[i].framebuffer = global.deviceWrapper.device.createFramebuffer (framebufferInfo, nullptr);
 	}
 
-	std::vector<vk::DescriptorSet> descriptorSets1 = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
-	std::vector<vk::DescriptorSet> descriptorSets2 = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
-	std::vector<vk::DescriptorSet> descriptorSets3 = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
+	std::vector<vk::DescriptorSet> descriptorSets = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
 
 	vk::CommandPool transferCommandPool = createTransferCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
 
@@ -236,22 +228,27 @@ int main (int argc, char **argv) {
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	transferData (objectStorage.indices.data(), indexBuffer->buffer, 0, sizeof (objectStorage.indices[0]) * objectStorage.indices.size(),
 	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+	
+	VkExtent3D imageExtent = {4096, 4096, 1};
+	vk::Format imageFormat = findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
+	ImageWrapper * imageWrapper = new ImageWrapper (imageExtent, 3, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
+	        vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
+	{
+		imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+		
+		loadImage ("../workingdir/assets/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage ("../workingdir/assets/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage ("../workingdir/assets/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		
+		imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+	}
 
-	ImageWrapper *fighterBodyImage = loadImage ("../workingdir/assets/Tie_Fighter_Body_Diffuse.png", transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-	ImageWrapper *fighterArmImage = loadImage ("../workingdir/assets/Tie_Fighter_Arm_Diffuse.png", transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-	ImageWrapper *fighterWingImage = loadImage ("../workingdir/assets/Tie_Fighter_Wing_Diffuse.png", transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, 3, imageWrapper->format, imageWrapper->aspectFlags);
+	
 
 	//TODO Memory Barrier for graphics queue
 	global.deviceWrapper.tqueue->waitForFinish();
 	vWindow->pgcQueue->waitForFinish();
-
-	fighterBodyImage->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-	fighterArmImage->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-	fighterWingImage->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-
-	vk::ImageView fighterBodyImageView = createImageView2D (fighterBodyImage->image, fighterBodyImage->format, fighterBodyImage->aspectFlags);
-	vk::ImageView fighterArmImageView = createImageView2D (fighterArmImage->image, fighterArmImage->format, fighterArmImage->aspectFlags);
-	vk::ImageView fighterWingImageView = createImageView2D (fighterWingImage->image, fighterWingImage->format, fighterWingImage->aspectFlags);
 
 	vk::Sampler sampler;
 	{
@@ -285,55 +282,23 @@ int main (int argc, char **argv) {
 	vk::DescriptorBufferInfo bufferInfo (uniformBuffer->buffer, offsetof (Camera, w2sMatrix), sizeof (glm::mat4));
 	{
 		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo (sampler);
-		vk::DescriptorImageInfo imageSetInfo1 = vk::DescriptorImageInfo (vk::Sampler(), fighterBodyImageView, fighterArmImage->layout);
-		vk::DescriptorImageInfo imageSetInfo2 = vk::DescriptorImageInfo (vk::Sampler(), fighterArmImageView, fighterArmImage->layout);
-		vk::DescriptorImageInfo imageSetInfo3 = vk::DescriptorImageInfo (vk::Sampler(), fighterWingImageView, fighterArmImage->layout);
+		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo (vk::Sampler(), fighterImageView, imageWrapper->layout);
 		global.deviceWrapper.device.updateDescriptorSets ({
-			vk::WriteDescriptorSet (descriptorSets1[0],
+			vk::WriteDescriptorSet (descriptorSets[0],
 			                        0, 0, //dstBinding, dstArrayElement
 			                        1, //descriptorCount
 			                        vk::DescriptorType::eUniformBuffer, //descriptorType
 			                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets1[1],
+			vk::WriteDescriptorSet (descriptorSets[1],
 			                        0, 0, //dstBinding, dstArrayElement
 			                        1, //descriptorCount
 			                        vk::DescriptorType::eSampler, //descriptorType
 			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets1[1],
+			vk::WriteDescriptorSet (descriptorSets[1],
 			                        1, 0, //dstBinding, dstArrayElement
 			                        1, //descriptorCount
 			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo1, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets2[0],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eUniformBuffer, //descriptorType
-			                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets2[1],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampler, //descriptorType
-			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets2[1],
-			                        1, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo2, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets3[0],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eUniformBuffer, //descriptorType
-			                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets3[1],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampler, //descriptorType
-			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets3[1],
-			                        1, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo3, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
+			                        &imageSetInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
 		}, {});
 
 	}
@@ -469,16 +434,18 @@ int main (int argc, char **argv) {
 			commandBuffer.bindVertexBuffers (0, {vertexBuffer->buffer, instanceBuffer->buffer}, {0, 0});
 			commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
 
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets1, {});
-
+			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets, {});
+			
+			uint32_t materialId = 0;
+			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
 			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, 0, 1, sizeof (vk::DrawIndexedIndirectCommand));
 
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets2, {});
-
+			materialId = 1;
+			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
 			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, sizeof (vk::DrawIndexedIndirectCommand), 2, sizeof (vk::DrawIndexedIndirectCommand));
 
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets3, {});
-
+			materialId = 2;
+			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
 			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, sizeof (vk::DrawIndexedIndirectCommand) * 3, 2, sizeof (vk::DrawIndexedIndirectCommand));
 
 			commandBuffer.endRenderPass();
@@ -520,13 +487,9 @@ int main (int argc, char **argv) {
 	if (stagingBuffer)
 		delete stagingBuffer;
 
-	global.deviceWrapper.device.destroyImageView (fighterArmImageView, nullptr);
-	global.deviceWrapper.device.destroyImageView (fighterBodyImageView, nullptr);
-	global.deviceWrapper.device.destroyImageView (fighterWingImageView, nullptr);
+	global.deviceWrapper.device.destroyImageView (fighterImageView, nullptr);
 
-	delete fighterArmImage;
-	delete fighterBodyImage;
-	delete fighterWingImage;
+	delete imageWrapper;
 
 
 	delete vertexBuffer;

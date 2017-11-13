@@ -11,7 +11,7 @@ std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts(){
 	};
 	vk::DescriptorSetLayoutBinding bindings2[] = {
 		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eSampler, 1, vk::ShaderStageFlagBits::eFragment, nullptr),
-		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eSampledImage, 1, vk::ShaderStageFlagBits::eFragment, nullptr)
+		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eSampledImage, 3, vk::ShaderStageFlagBits::eFragment, nullptr)
 	};
 	
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = {

@@ -20,7 +20,23 @@ vk::ImageView createImageView2D(vk::Image image, vk::Format format, vk::ImageAsp
 	
 	return imageView;
 }
-void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent,
+vk::ImageView createImageView2DArray(vk::Image image, uint32_t offset, uint32_t size, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+	
+	vk::ImageViewCreateInfo imageViewCreateInfo(
+		vk::ImageViewCreateFlags(),
+		image, 
+		vk::ImageViewType::e2DArray, format, 
+		vk::ComponentMapping(vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity),
+		vk::ImageSubresourceRange(aspectFlags, 0, 1, offset, size)
+		);
+	
+	vk::ImageView imageView;
+	
+	V_CHECKCALL(global.deviceWrapper.device.createImageView(&imageViewCreateInfo, nullptr, &imageView), printf("Creation of ImageView failed\n"));
+	
+	return imageView;
+}
+void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
 	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue){
 	
@@ -47,8 +63,8 @@ void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize 
 		);
 	}
 	vk::BufferImageCopy region(
-		srcOffset,0,0,//buffer- Offset, -RowLength, -ImageHeight
-		vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
+		srcOffset,0,0,//buffer -Offset, -RowLength, -ImageHeight
+		vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, index, 1),
 		dstOffset, extent);
 		
 	commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, 1, &region);
@@ -138,7 +154,7 @@ void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout o
 		);
 	submitQueue.submit({submitInfo}, vk::Fence());
 }
-void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue){
 	if ( !stagingBuffer ) {
 		printf ( "Creating Staging-Buffer\n" );
@@ -154,7 +170,7 @@ void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offse
 	}
 	
 	memcpy(transferBuffer->data, srcData, size);
-	copyBufferToImage(transferBuffer->buffer, targetImage, 0, offset, extent, 
+	copyBufferToImage(transferBuffer->buffer, targetImage, 0, offset, extent, index,
 		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlag, commandPool, submitQueue);
 	
 	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {

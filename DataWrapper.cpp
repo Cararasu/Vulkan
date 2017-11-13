@@ -21,8 +21,8 @@ MappedBufferWrapper::~MappedBufferWrapper(){
 	vkUnmapMemory(global.deviceWrapper.device, backedMemory);
 }
 
-ImageWrapper::ImageWrapper(vk::Extent3D extent, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
-	image(), backedMemory(), extent(extent), format(format), tiling(tiling), usage(usage), type(), layout(vk::ImageLayout::eUndefined), aspectFlags(aspectFlags){
+ImageWrapper::ImageWrapper(vk::Extent3D extent, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended): 
+	image(), backedMemory(), extent(extent), arraySize(arraySize), format(format), tiling(tiling), usage(usage), type(), layout(vk::ImageLayout::eUndefined), aspectFlags(aspectFlags){
 	if(extent.height == 1)
 		type = vk::ImageType::e1D;
 	else if(extent.depth == 1)
@@ -30,7 +30,7 @@ ImageWrapper::ImageWrapper(vk::Extent3D extent, vk::Format format, vk::ImageTili
 	else
 		type = vk::ImageType::e3D;
 		
-	vk::ImageCreateInfo imageInfo(vk::ImageCreateFlags(), type, format, extent, 1, 1, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, layout);
+	vk::ImageCreateInfo imageInfo(vk::ImageCreateFlags(), type, format, extent, 1, arraySize, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, layout);
 
 	V_CHECKCALL(global.deviceWrapper.device.createImage(&imageInfo, nullptr, &image), printf("Failed To Create Image\n"));
 
@@ -92,7 +92,7 @@ void ImageWrapper::transitionImageLayout(vk::ImageLayout newLayout, vk::CommandP
 				layout, newLayout,
 				global.deviceWrapper.graphQId, global.deviceWrapper.graphQId,
 				image,
-				vk::ImageSubresourceRange(aspectFlags, 0, 1, 0, 1)
+				vk::ImageSubresourceRange(aspectFlags, 0, 1, 0, arraySize)
 			)
 		}//imageBarriers
 	);
