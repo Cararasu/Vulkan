@@ -25,6 +25,7 @@ struct ImageWrapper{
 	vk::Image image;
 	vk::DeviceMemory backedMemory;
 	vk::Extent3D extent;
+	uint32_t mipMapLevels;
 	uint32_t arraySize;
 	vk::Format format;
 	vk::ImageTiling tiling;
@@ -35,11 +36,28 @@ struct ImageWrapper{
 	
 	ImageWrapper(){}
 	
-	ImageWrapper(vk::Extent3D extent, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+	ImageWrapper(vk::Extent3D extent, uint32_t mipMapLevels, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~ImageWrapper();
 	
-	void transitionImageLayout(vk::ImageLayout imageLayout, vk::CommandPool commandPool, vk::Queue submitQueue);
+	void transitionImageLayout(vk::ImageLayout newLayout, uint32_t mipbase, uint32_t mipcount, uint32_t arrayIndex, uint32_t arrayCount, vk::CommandBuffer commandBuffer);
+	void transitionImageLayout(vk::ImageLayout newLayout, uint32_t mipbase, uint32_t mipcount, uint32_t arrayIndex, uint32_t arrayCount, vk::CommandPool commandPool, vk::Queue submitQueue);
 	
+	inline void transitionImageLayout(vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer){
+		transitionImageLayout(newLayout, 0, mipMapLevels, 0, arraySize, commandBuffer);
+	}
+	inline void transitionImageLayout(vk::ImageLayout newLayout, vk::CommandPool commandPool, vk::Queue submitQueue){
+		transitionImageLayout(newLayout, 0, mipMapLevels, 0, arraySize, commandPool, submitQueue);
+	}
+	
+	void generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer);
+	void generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue);
+	
+	inline void generateMipmaps(uint32_t baseLevel, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer){
+		generateMipmaps(baseLevel, mipMapLevels, 0, arraySize, targetLayout, commandBuffer);
+	}
+	inline void generateMipmaps(uint32_t baseLevel, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue){
+		generateMipmaps(baseLevel, mipMapLevels, 0, arraySize, targetLayout, commandPool, submitQueue);
+	}
 };
 
 

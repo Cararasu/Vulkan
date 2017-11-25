@@ -1,22 +1,24 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-in vec3 fragColor;
+//input
 in vec3 texCoord;
 
-layout(location = 0) out vec4 outColor;
-
+//texture-aggregates
 layout (set=1, binding=0) uniform sampler sampler;
 layout (set=1, binding=1) uniform texture2DArray diffuseTexture;
 
+//per-material
 layout(push_constant) uniform Data {
-	uint textureId;
+	uint matId;
+	uint diffuseTexId;
+	uint specularTexId;
+	uint normalTexId;
 };
 
+//output
+layout(location = 0) out vec4 outColor;
+
 void main() {
-	vec3 lookupCoord;
-	lookupCoord.xy = texCoord.xy * vec2(1.0f, -1.0f);
-	lookupCoord.z = float(textureId);
-	outColor = texture(sampler2DArray(diffuseTexture, sampler), lookupCoord);
-	//outColor = vec4(texCoord, 0.0f);
+	outColor = textureLod(sampler2DArray(diffuseTexture, sampler), vec3(texCoord.x, -1.0f * texCoord.y, float(diffuseTexId)), 10.0f);
 }

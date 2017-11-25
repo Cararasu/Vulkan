@@ -102,7 +102,7 @@ void VWindow::initializeWindow(){
 	
 	for(size_t i = 0; i < swapChainImages.size(); i++){
 		perPresentImageDatas[i].presentImage = swapChainImages[i];
-		perPresentImageDatas[i].presentImageView = createImageView2D(swapChainImages[i], presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
+		perPresentImageDatas[i].presentImageView = createImageView2D(swapChainImages[i], 0, 1, presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
 		
 		perPresentImageDatas[i].graphicQCommandPool = createGraphicsCommandPool(vk::CommandPoolCreateFlagBits::eTransient);
 		

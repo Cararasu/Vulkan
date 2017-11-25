@@ -2,6 +2,14 @@
 #include "VHeader.h"
 #include "VGlobal.h"
 
+
+/*
+Light: B10G11R11_UFLOAT_PACK32
+Albedo: RGBA8
+Normal: RGB10A2
+PBR/Misc: RGBA8
+ * */
+
 vk::RenderPass createStandardRenderPass(vk::Format targetFormat){
 	
 	vk::AttachmentDescription attachments[2] = {

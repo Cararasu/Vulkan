@@ -48,8 +48,6 @@ void loadDataFile (std::string file, Object* object) {
 		input.read (reinterpret_cast<char*> (&v.uv[2]), sizeof (float));
 		input.read (reinterpret_cast<char*> (&v.normal[2]), sizeof (float));
 
-		v.color = {0.0f, 1.0f, 0.0f};
-
 		objectStorage.vertices[baseVertexIndex + i] = v;
 	}
 	uint32_t indexCount;
@@ -68,7 +66,7 @@ void loadDataFile (std::string file, Object* object) {
 }
 
 
-ImageWrapper* loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
+void loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load (file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -89,22 +87,42 @@ int main (int argc, char **argv) {
 	{
 		Object& obj = objectStorage.objects.back();
 
-		loadDataFile ("../workingdir/assets/Tie_Fighter_Body.data", &obj);
+		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", &obj);
 		obj.parts.back().data.diffuseTexId = 0;
-		loadDataFile ("../workingdir/assets/Tie_Fighter_Arm_L.data", &obj);
+		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", &obj);
 		obj.parts.back().data.diffuseTexId = 1;
-		loadDataFile ("../workingdir/assets/Tie_Fighter_Arm_R.data", &obj);
+		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", &obj);
 		obj.parts.back().data.diffuseTexId = 1;
-		loadDataFile ("../workingdir/assets/Tie_Fighter_Wing_L.data", &obj);
+		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", &obj);
 		obj.parts.back().data.diffuseTexId = 2;
-		loadDataFile ("../workingdir/assets/Tie_Fighter_Wing_R.data", &obj);
+		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", &obj);
 		obj.parts.back().data.diffuseTexId = 2;
 		//loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &obj);
+		//obj.parts.back().data.diffuseTexId = 2;
 
-		obj.instances.push_back ({glm::translate (glm::vec3 (2.0f, 0.0f, 0.0f)) * glm::rotate (1.0f, glm::vec3 (0.0f, 1.0f, 0.0f)) });
 		obj.instances.push_back ({glm::translate (glm::vec3 (0.0f, 0.0f, 0.0f)) });
 		obj.instances.push_back ({glm::translate (glm::vec3 (-1.0f, -1.0f, -2.0f)) });
 		obj.instances.push_back ({glm::translate (glm::vec3 (-2.0f, 0.0f, 0.0f)) });
+	}
+	objectStorage.objects.emplace_back();
+	{
+		Object& obj = objectStorage.objects.back();
+
+		loadDataFile ("../workingdir/assets/X/XWing_Body.data", &obj);
+		obj.parts.back().data.diffuseTexId = 3;
+		//loadDataFile ("../workingdir/assets/X/XWing_Windows.data", &obj);
+		//obj.parts.back().data.diffuseTexId = 3;
+		loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", &obj);
+		obj.parts.back().data.diffuseTexId = 3;
+		loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", &obj);
+		obj.parts.back().data.diffuseTexId = 3;
+		loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", &obj);
+		obj.parts.back().data.diffuseTexId = 3;
+		loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", &obj);
+		obj.parts.back().data.diffuseTexId = 3;
+		//loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &obj);
+
+		obj.instances.push_back ({glm::translate (glm::vec3 (2.0f, 0.0f, 0.0f)) * glm::rotate (1.0f, glm::vec3 (0.0f, 1.0f, 0.0f)) });
 	}
 
 	PerspectiveViewPort<float> viewport;
@@ -199,9 +217,9 @@ int main (int argc, char **argv) {
 
 	vk::Format depthFormat = findDepthFormat();
 	vk::Extent3D extent (vWindow->swapChainExtend.width, vWindow->swapChainExtend.height, 1);
-	ImageWrapper *depthImage = new ImageWrapper (extent, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
+	ImageWrapper *depthImage = new ImageWrapper (extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
 	        vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
-	vk::ImageView depthImageView = createImageView2D (depthImage->image, depthFormat, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+	vk::ImageView depthImageView = createImageView2D (depthImage->image, 0, depthImage->mipMapLevels, depthImage->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 	transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
 	                       vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 
@@ -228,27 +246,30 @@ int main (int argc, char **argv) {
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	transferData (objectStorage.indices.data(), indexBuffer->buffer, 0, sizeof (objectStorage.indices[0]) * objectStorage.indices.size(),
 	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-	
+
 	VkExtent3D imageExtent = {4096, 4096, 1};
 	vk::Format imageFormat = findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
-	ImageWrapper * imageWrapper = new ImageWrapper (imageExtent, 3, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst),
+	ImageWrapper * imageWrapper = new ImageWrapper (imageExtent, 12, 4, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc),
 	        vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 	{
 		imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+
+		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage ("../workingdir/assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
 		
-		loadImage ("../workingdir/assets/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-		loadImage ("../workingdir/assets/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-		loadImage ("../workingdir/assets/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		imageWrapper->generateMipmaps(0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 		
-		imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+		//imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
-	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, 3, imageWrapper->format, imageWrapper->aspectFlags);
-	
+	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
+
 
 	//TODO Memory Barrier for graphics queue
-	global.deviceWrapper.tqueue->waitForFinish();
-	vWindow->pgcQueue->waitForFinish();
+	//global.deviceWrapper.tqueue->waitForFinish();
+	//vWindow->pgcQueue->waitForFinish();
 
 	vk::Sampler sampler;
 	{
@@ -319,7 +340,7 @@ int main (int argc, char **argv) {
 
 
 		uint32_t stagingOffset = 0;
-
+/*
 		uint32_t commandOffset = stagingOffset;
 		uint32_t commandCount = 0;
 		{
@@ -335,7 +356,7 @@ int main (int argc, char **argv) {
 
 		copyBuffer (stagingBuffer->buffer, indirectCommandBuffer->buffer, commandOffset, 0, sizeof (vk::DrawIndexedIndirectCommand) *commandCount,
 		            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);*/
 
 		uint32_t instanceCount = 0;
 		uint32_t instanceOffset = stagingOffset;
@@ -377,19 +398,19 @@ int main (int argc, char **argv) {
 
 		{
 			commandBuffer.begin (&beginInfo);
-
-			commandBuffer.pipelineBarrier (
-			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eDrawIndirect),
-			    vk::DependencyFlags(),
-			{}/*memoryBarrier*/, {
-				vk::BufferMemoryBarrier (
-				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eIndirectCommandRead,
-				    global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
-				    indirectCommandBuffer->buffer, 0, indirectCommandBuffer->bufferSize
-				)
-			}/*bufferBarrier*/,
-			{}/*imageBarrier*/
-			);
+			
+			//commandBuffer.pipelineBarrier (
+			//    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eDrawIndirect),
+			//    vk::DependencyFlags(),
+			//{}/*memoryBarrier*/, {
+			//	vk::BufferMemoryBarrier (
+			//	    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eIndirectCommandRead,
+			//	    global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
+			//	    indirectCommandBuffer->buffer, 0, indirectCommandBuffer->bufferSize
+			//	)
+			//}/*bufferBarrier*/,
+			//{}/*imageBarrier*/
+			//);
 			commandBuffer.pipelineBarrier (
 			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
 			    vk::DependencyFlags(),
@@ -435,18 +456,17 @@ int main (int argc, char **argv) {
 			commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
 
 			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets, {});
-			
-			uint32_t materialId = 0;
-			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
-			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, 0, 1, sizeof (vk::DrawIndexedIndirectCommand));
 
-			materialId = 1;
-			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
-			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, sizeof (vk::DrawIndexedIndirectCommand), 2, sizeof (vk::DrawIndexedIndirectCommand));
-
-			materialId = 2;
-			commandBuffer.pushConstants(global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(uint32_t), &materialId);
-			commandBuffer.drawIndexedIndirect (indirectCommandBuffer->buffer, sizeof (vk::DrawIndexedIndirectCommand) * 3, 2, sizeof (vk::DrawIndexedIndirectCommand));
+			{
+				uint32_t count = 0;
+				for (Object& obj : objectStorage.objects) {
+					for (ObjectPart& part : obj.parts) {
+						commandBuffer.pushConstants (global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &part.data);
+						commandBuffer.drawIndexed(part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count);
+					}
+					count += obj.instances.size();
+				}
+			}
 
 			commandBuffer.endRenderPass();
 

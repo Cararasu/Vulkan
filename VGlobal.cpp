@@ -363,7 +363,7 @@ void VGlobal::buildStandardPipeline(vk::Format format, VkExtent2D extent){
 	renderpass.standardRenderPass = createStandardRenderPass (format);
 	descriptorsetlayout.standardDescriptorSetLayouts = createStandardDescriptorSetLayouts();
 	
-	std::vector<vk::PushConstantRange> pushConstants = {vk::PushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, 4)};
+	std::vector<vk::PushConstantRange> pushConstants = {vk::PushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(ObjectPartData))};
 	
 	pipelinelayout.standardPipelineLayout = createStandardPipelineLayout (&descriptorsetlayout.standardDescriptorSetLayouts, &pushConstants);
 	pipeline.standardPipeline = createStandardPipeline (extent, pipelinelayout.standardPipelineLayout, renderpass.standardRenderPass);
