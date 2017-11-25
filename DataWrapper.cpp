@@ -126,15 +126,16 @@ void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mi
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
 void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer) {
-	vk::ImageLayout oldLayout = layout;
-	transitionImageLayout (vk::ImageLayout::eTransferSrcOptimal, baseLevel, 1, arrayIndex, arrayCount, commandBuffer);
-	layout = oldLayout;
-	transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, baseLevel + 1, generateLevels - 1, arrayIndex, arrayCount, commandBuffer);
 		
 	if (generateLevels == 0)
 		generateLevels = mipMapLevels - baseLevel;
 	if (arrayCount == 0)
 		arrayCount = arraySize;
+		
+	vk::ImageLayout oldLayout = layout;
+	transitionImageLayout (vk::ImageLayout::eTransferSrcOptimal, baseLevel, 1, arrayIndex, arrayCount, commandBuffer);
+	layout = oldLayout;
+	transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, baseLevel + 1, generateLevels - 1, arrayIndex, arrayCount, commandBuffer);
 		
 	for (unsigned i = 1; i < generateLevels; i++) {
 		uint32_t index = i + baseLevel;
@@ -148,7 +149,7 @@ void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels,
 		layout = vk::ImageLayout::eTransferDstOptimal;
 		transitionImageLayout(vk::ImageLayout::eTransferSrcOptimal, index, 1, arrayIndex, arrayCount, commandBuffer);
 	}
-	transitionImageLayout(targetLayout, commandBuffer);
+	transitionImageLayout(targetLayout, baseLevel, generateLevels, arrayIndex, arrayCount, commandBuffer);
 	
 }
 void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue) {

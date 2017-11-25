@@ -264,7 +264,7 @@ int main (int argc, char **argv) {
 		//imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
-	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
+	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, 12, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
 
 
 	//TODO Memory Barrier for graphics queue
@@ -279,7 +279,7 @@ int main (int argc, char **argv) {
 		    0.0f,
 		    VK_TRUE, 16, //anisotrophic
 		    VK_FALSE, vk::CompareOp::eAlways, //compare
-		    0.0f, 0.0f, //lod
+		    0.0f, 12.0f, //lod
 		    vk::BorderColor::eFloatOpaqueBlack, VK_FALSE
 		);
 
