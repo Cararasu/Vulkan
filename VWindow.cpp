@@ -141,7 +141,7 @@ VWindow::~VWindow(){
 	for(size_t i = 0; i < perPresentImageDatas.size(); i++){
 		global.deviceWrapper.device.destroyCommandPool(perPresentImageDatas[i].graphicQCommandPool, nullptr);
 		global.deviceWrapper.device.destroyFramebuffer(perPresentImageDatas[i].framebuffer, nullptr);
-		if(i != presentImageIndex)
+		if(i != presentImageIndex && perPresentImageDatas[presentImageIndex].firstShow)
 			global.deviceWrapper.device.waitForFences({perPresentImageDatas[i].fence}, true, std::numeric_limits<uint64_t>::max());
 		global.deviceWrapper.device.destroyFence(perPresentImageDatas[i].fence, nullptr);
 		global.deviceWrapper.device.destroyImageView(perPresentImageDatas[i].presentImageView, nullptr);

@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Thomas
-Date                   :=25/11/2017
+Date                   :=26/11/2017
 CodeLitePath           :="C:/Program Files/CodeLite"
 LinkerName             :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe"
 SharedObjectLinkerName :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe" -shared -fPIC
@@ -63,7 +63,7 @@ AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw6
 ##
 CodeLiteDir:=C:\Program Files\CodeLite
 Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IntermediateDirectory)/VGlobal.cpp$(ObjectSuffix) $(IntermediateDirectory)/VDevice.cpp$(ObjectSuffix) $(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) $(IntermediateDirectory)/RenderPasses.cpp$(ObjectSuffix) $(IntermediateDirectory)/Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) 
+	$(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) 
 
 
 
@@ -197,6 +197,14 @@ $(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix): DescriptorSet.cpp
 
 $(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix): DescriptorSet.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix) DescriptorSet.cpp
+
+$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix): Dispatcher.cpp $(IntermediateDirectory)/Dispatcher.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Dispatcher.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/Dispatcher.cpp$(DependSuffix): Dispatcher.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/Dispatcher.cpp$(DependSuffix) -MM Dispatcher.cpp
+
+$(IntermediateDirectory)/Dispatcher.cpp$(PreprocessSuffix): Dispatcher.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Dispatcher.cpp$(PreprocessSuffix) Dispatcher.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

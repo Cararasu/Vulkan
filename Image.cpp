@@ -153,16 +153,17 @@ void transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout 
 }
 void transferData (const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
                    vk::CommandPool commandPool, vk::Queue submitQueue) {
-	if (!stagingBuffer) {
-		printf ("Creating Staging-Buffer\n");
-		stagingBuffer = new MappedBufferWrapper (V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc,
-		        vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-	}
+
 	MappedBufferWrapper* transferBuffer;
 	if (V_MAX_STAGINGBUFFER_SIZE < size) {
 		printf ("Stagingbuffer not big enough -> create template\n");
 		transferBuffer = new MappedBufferWrapper (size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 	} else {
+		if (!stagingBuffer) {
+			printf ("Creating Staging-Buffer\n");
+			stagingBuffer = new MappedBufferWrapper (V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc,
+					vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		}
 		transferBuffer = stagingBuffer;
 	}
 

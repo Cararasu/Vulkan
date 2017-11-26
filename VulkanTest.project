@@ -33,6 +33,8 @@
     <File Name="Image.cpp"/>
     <File Name="DataWrapper.cpp"/>
     <File Name="DescriptorSet.cpp"/>
+    <File Name="Dispatcher.h"/>
+    <File Name="Dispatcher.cpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

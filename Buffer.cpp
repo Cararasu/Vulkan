@@ -32,6 +32,22 @@ void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize src
 	
 	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
 	
+	copyBuffer(srcBuffer, dstBuffer, srcOffset, dstOffset, size, inputPipelineStageFlags, inputAccessFlag, outputPipelineStageFlags, outputAccessFlag, commandBuffer);
+
+	commandBuffer.end();
+
+	vk::SubmitInfo submitInfo(
+		0, nullptr,//waitsemaphores
+		nullptr,//pWaitDstStageMask
+		1, &commandBuffer,
+		0, nullptr//signalsemaphores
+		);
+	submitQueue.submit({submitInfo}, vk::Fence());
+}
+void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+	vk::CommandBuffer commandBuffer){
+	
 	vk::BufferCopy copyRegion = {};
 	copyRegion.srcOffset = srcOffset; // Optional
 	copyRegion.dstOffset = dstOffset; // Optional
@@ -71,6 +87,37 @@ void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize src
 			{}
 		);
 	}
+}
+void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags, vk::CommandBuffer commandBuffer) {
+	MappedBufferWrapper* transferBuffer;
+	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
+		printf ( "Stagingbuffer not big enough -> create template\n" );
+		transferBuffer = new MappedBufferWrapper ( size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) );
+	}else{	
+		if ( !stagingBuffer ) {
+			printf ( "Creating Staging-Buffer\n" );
+			stagingBuffer = new MappedBufferWrapper ( V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc, 
+				vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) );
+		}
+		transferBuffer = stagingBuffer;
+	}
+	memcpy ( transferBuffer->data, srcData, size );
+	copyBuffer ( transferBuffer->buffer, targetBuffer, 0, offset, size,
+		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlags, commandBuffer);
+
+	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
+		delete transferBuffer;
+	}
+}
+
+void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags,
+		vk::CommandPool commandPool, vk::Queue submitQueue) {
+
+	vk::CommandBuffer commandBuffer =  createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
+	
+	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
+	
+	transferData(srcData, targetBuffer, offset, size, usePipelineFlags, useFlags, commandBuffer);
 
 	commandBuffer.end();
 
@@ -81,29 +128,4 @@ void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize src
 		0, nullptr//signalsemaphores
 		);
 	submitQueue.submit({submitInfo}, vk::Fence());
-}
-
-void transferData ( const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlags,
-		vk::CommandPool commandPool, vk::Queue submitQueue) {
-	if ( !stagingBuffer ) {
-		printf ( "Creating Staging-Buffer\n" );
-		stagingBuffer = new MappedBufferWrapper ( V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc, 
-			vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) );
-	}
-	MappedBufferWrapper* transferBuffer;
-	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
-		printf ( "Stagingbuffer not big enough -> create template\n" );
-		transferBuffer = new MappedBufferWrapper ( size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) );
-	}else{
-		transferBuffer = stagingBuffer;
-	}
-	memcpy ( transferBuffer->data, srcData, size );
-	copyBuffer ( transferBuffer->buffer, targetBuffer, 0, offset, size,
-		vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, usePipelineFlags, useFlags, commandPool, submitQueue);
-
-	if ( V_MAX_STAGINGBUFFER_SIZE < size ) {
-		submitQueue.waitIdle();
-		delete transferBuffer;
-	}
-
 }

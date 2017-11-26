@@ -64,28 +64,10 @@ struct Material {
 	
 };
 struct ObjectPartData{// the data
-	uint32_t matId;
+	uint32_t objectId;
 	uint32_t diffuseTexId;
 	uint32_t specularTexId;
 	uint32_t normalTexId;
-};
-struct ObjectPart{// one part of the object
-	ObjectPartData data;
-	uint32_t indexOffset;
-	uint32_t indexCount;
-	int32_t vertexOffset;
-};
-struct Object {// one complete object
-	std::vector<ObjectPart> parts;
-	std::vector<Instance> instances;
-};
-
-struct ObjectStorage {
-	std::vector<Object> objects;
-	std::vector<Material> materials;
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-	//textureview
 };
 
 struct ImageWrapper;
@@ -103,6 +85,9 @@ void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize of
 void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
 	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
+void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+	vk::CommandBuffer commandBuffer);
 	
 void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
 	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
@@ -112,6 +97,7 @@ void generateMipmaps(ImageWrapper* image, uint32_t baseLevel, uint32_t arrayInde
 	
 void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
+void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag, vk::CommandBuffer commandBuffer);
 void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
 

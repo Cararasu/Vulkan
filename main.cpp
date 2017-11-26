@@ -11,6 +11,7 @@
 #include "VBuilders.h"
 #include "ViewPort.h"
 #include "DataWrapper.h"
+#include "Dispatcher.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -21,9 +22,7 @@
 
 #include <fstream>
 
-ObjectStorage objectStorage;
-
-void loadDataFile (std::string file, Object* object) {
+void loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 
 	std::ifstream input (file, std::ios::binary);
 
@@ -32,8 +31,8 @@ void loadDataFile (std::string file, Object* object) {
 	uint32_t vertexCount = 0;
 	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (uint32_t));
 
-	uint32_t baseVertexIndex = objectStorage.vertices.size();
-	objectStorage.vertices.resize (baseVertexIndex + vertexCount);
+	std::vector<Vertex> vs;
+	vs.resize (vertexCount);
 	for (size_t i = 0; i < vertexCount; i++) {
 		Vertex v;
 		input.read (reinterpret_cast<char*> (&v.pos[0]), sizeof (float));
@@ -48,21 +47,19 @@ void loadDataFile (std::string file, Object* object) {
 		input.read (reinterpret_cast<char*> (&v.uv[2]), sizeof (float));
 		input.read (reinterpret_cast<char*> (&v.normal[2]), sizeof (float));
 
-		objectStorage.vertices[baseVertexIndex + i] = v;
+		vs[i] = v;
 	}
 	uint32_t indexCount;
 	input.read (reinterpret_cast<char*> (&indexCount), sizeof (uint32_t));
 
-	uint32_t baseIndexIndex = objectStorage.indices.size();
-	objectStorage.indices.resize (baseIndexIndex + indexCount);
+	std::vector<uint32_t> is;
+	is.resize (indexCount);
 
-	input.read (reinterpret_cast<char*> (&objectStorage.indices[baseIndexIndex]), sizeof (uint32_t) *indexCount);
-
-	object->parts.emplace_back();
-	ObjectPart& part = object->parts.back();
-	part.indexCount = indexCount;
-	part.indexOffset = baseIndexIndex;
-	part.vertexOffset = baseVertexIndex;
+	input.read (reinterpret_cast<char*> (is.data()), sizeof (uint32_t) *indexCount);
+	
+	ObjectPartData data;
+	data.diffuseTexId = 0;
+	dispatcher->add_object(vs, is, data);
 }
 
 
@@ -82,48 +79,37 @@ void loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, v
 }
 
 int main (int argc, char **argv) {
-
-	objectStorage.objects.emplace_back();
-	{
-		Object& obj = objectStorage.objects.back();
-
-		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", &obj);
-		obj.parts.back().data.diffuseTexId = 0;
-		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", &obj);
-		obj.parts.back().data.diffuseTexId = 1;
-		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", &obj);
-		obj.parts.back().data.diffuseTexId = 1;
-		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", &obj);
-		obj.parts.back().data.diffuseTexId = 2;
-		loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", &obj);
-		obj.parts.back().data.diffuseTexId = 2;
-		//loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &obj);
-		//obj.parts.back().data.diffuseTexId = 2;
-
-		obj.instances.push_back ({glm::translate (glm::vec3 (0.0f, 0.0f, 0.0f)) });
-		obj.instances.push_back ({glm::translate (glm::vec3 (-1.0f, -1.0f, -2.0f)) });
-		obj.instances.push_back ({glm::translate (glm::vec3 (-2.0f, 0.0f, 0.0f)) });
-	}
-	objectStorage.objects.emplace_back();
-	{
-		Object& obj = objectStorage.objects.back();
-
-		loadDataFile ("../workingdir/assets/X/XWing_Body.data", &obj);
-		obj.parts.back().data.diffuseTexId = 3;
-		//loadDataFile ("../workingdir/assets/X/XWing_Windows.data", &obj);
-		//obj.parts.back().data.diffuseTexId = 3;
-		loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", &obj);
-		obj.parts.back().data.diffuseTexId = 3;
-		loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", &obj);
-		obj.parts.back().data.diffuseTexId = 3;
-		loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", &obj);
-		obj.parts.back().data.diffuseTexId = 3;
-		loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", &obj);
-		obj.parts.back().data.diffuseTexId = 3;
-		//loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &obj);
-
-		obj.instances.push_back ({glm::translate (glm::vec3 (2.0f, 0.0f, 0.0f)) * glm::rotate (1.0f, glm::vec3 (0.0f, 1.0f, 0.0f)) });
-	}
+	
+	
+	OpaqueObjectDispatcher* dispatcher = new OpaqueObjectDispatcher();
+	
+	std::vector<uint32_t> TiePartIds = {0,1,2,3,4,5};
+	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 0;
+	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 1;
+	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 1;
+	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 2;
+	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 2;
+	loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 2;
+	
+	std::vector<uint32_t> XPartIds = {6,7,8,9,10,11};
+	loadDataFile ("../workingdir/assets/X/XWing_Body.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
+	loadDataFile ("../workingdir/assets/X/XWing_Windows.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
+	loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
+	loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
+	loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
+	loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", dispatcher);
+	dispatcher->parts.back().data.diffuseTexId = 3;
 
 	PerspectiveViewPort<float> viewport;
 
@@ -234,18 +220,11 @@ int main (int argc, char **argv) {
 
 	std::vector<vk::DescriptorSet> descriptorSets = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
 
+	dispatcher->set_descriptor_set(descriptorSets[1]);
+
 	vk::CommandPool transferCommandPool = createTransferCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
 
-	BufferWrapper *vertexBuffer = new BufferWrapper (sizeof (objectStorage.vertices[0]) * objectStorage.vertices.size(),
-	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	transferData (objectStorage.vertices.data(), vertexBuffer->buffer, 0, sizeof (objectStorage.vertices[0]) * objectStorage.vertices.size(),
-	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-	//global.deviceWrapper.tqueue->waitForFinish();
-
-	BufferWrapper *indexBuffer = new BufferWrapper (sizeof (objectStorage.indices[0]) * objectStorage.indices.size(),
-	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	transferData (objectStorage.indices.data(), indexBuffer->buffer, 0, sizeof (objectStorage.indices[0]) * objectStorage.indices.size(),
-	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+	dispatcher->upload_data(transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
 
 	VkExtent3D imageExtent = {4096, 4096, 1};
 	vk::Format imageFormat = findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
@@ -264,8 +243,7 @@ int main (int argc, char **argv) {
 		//imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
-	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, 12, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
-
+	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
 
 	//TODO Memory Barrier for graphics queue
 	//global.deviceWrapper.tqueue->waitForFinish();
@@ -286,16 +264,10 @@ int main (int argc, char **argv) {
 		global.deviceWrapper.device.createSampler (&samplerInfo, nullptr, &sampler);
 	}
 
+	dispatcher->set_image_array(imageWrapper, sampler);
 
 	uint32_t MAX_COMMAND_COUNT = 100;
-	uint32_t MAX_INSTANCE_COUNT = 100;
 
-	BufferWrapper *indirectCommandBuffer = new BufferWrapper (sizeof (vk::DrawIndexedIndirectCommand) * MAX_COMMAND_COUNT,
-	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndirectBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	BufferWrapper *instanceBuffer = new BufferWrapper (sizeof (Instance) * MAX_INSTANCE_COUNT,
-	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	BufferWrapper *partInstanceBuffer = new BufferWrapper (sizeof (ObjectPartData) * MAX_INSTANCE_COUNT,
-	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	BufferWrapper *uniformBuffer = new BufferWrapper (sizeof (Camera),
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
@@ -332,93 +304,48 @@ int main (int argc, char **argv) {
 		printf ("PresetImageId: %d\n", vWindow->presentImageIndex);
 
 		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, viewport.m_upvector);
-
+		
+		/*
 		glm::vec3 rotVec = glm::cross (viewport.m_viewvector, viewport.m_upvector);
 		viewport.m_upvector = glm::rotate (viewport.m_upvector, 0.005f, rotVec);
 		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, rotVec);
-		viewport.m_upvector = glm::rotate (viewport.m_upvector, 0.005f, viewport.m_viewvector);
+		viewport.m_upvector = glm::rotate (viewport.m_upvector, 0.005f, viewport.m_viewvector);*/
 
-
-		uint32_t stagingOffset = 0;
-/*
-		uint32_t commandOffset = stagingOffset;
-		uint32_t commandCount = 0;
-		{
-			uint32_t count = 0;
-			for (Object& obj : objectStorage.objects) {
-				for (ObjectPart& part : obj.parts) {
-					( (vk::DrawIndexedIndirectCommand*) stagingBuffer->data) [commandCount++] = vk::DrawIndexedIndirectCommand (part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count);
-				}
-				count += obj.instances.size();
-			}
-		}
-		stagingOffset += sizeof (vk::DrawIndexedIndirectCommand) * commandCount;
-
-		copyBuffer (stagingBuffer->buffer, indirectCommandBuffer->buffer, commandOffset, 0, sizeof (vk::DrawIndexedIndirectCommand) *commandCount,
-		            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);*/
-
-		uint32_t instanceCount = 0;
-		uint32_t instanceOffset = stagingOffset;
-		for (Object& obj : objectStorage.objects) {
-			Instance* instanceArray = (Instance*) (stagingBuffer->data + stagingOffset);
-			memcpy (& (instanceArray[instanceCount]), obj.instances.data(), sizeof (Instance) *obj.instances.size());
-			instanceCount += obj.instances.size();
-		}
-		stagingOffset += sizeof (Instance) * instanceCount;
-
-		copyBuffer (stagingBuffer->buffer, instanceBuffer->buffer, instanceOffset, 0, sizeof (Instance) *instanceCount,
-		            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-
-		uint32_t partInstanceCount = 0;
-		uint32_t partInstanceOffset = stagingOffset;
-		for (Object& obj : objectStorage.objects) {
-			for (ObjectPart& part : obj.parts) {
-				( (ObjectPartData*) (stagingBuffer->data + stagingOffset)) [partInstanceCount++] = part.data;
-			}
-		}
-		stagingOffset += sizeof (ObjectPartData) * partInstanceCount;
-
-		copyBuffer (stagingBuffer->buffer, partInstanceBuffer->buffer, partInstanceOffset, 0, sizeof (ObjectPartData) *partInstanceCount,
-		            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-
-		uint32_t uniformOffset = stagingOffset;
-		( (Camera*) (stagingBuffer->data + stagingOffset)) [0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
-		stagingOffset += sizeof (Camera);
-
-		copyBuffer (stagingBuffer->buffer, uniformBuffer->buffer, uniformOffset, 0, sizeof (Camera),
-		            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-		            vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-
+		Instance inst1 = {glm::translate(glm::vec3(1.0f, 1.0f, 1.0f))};
+		Instance inst2 = {glm::translate(glm::vec3(0.0f, 0.0f, 0.0f))};
+		dispatcher->reset_instances();
+		dispatcher->push_instance(TiePartIds, inst1);
+		
+		dispatcher->push_instance(XPartIds, inst2);
+		
 
 		vk::CommandBuffer commandBuffer = createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
 		vk::CommandBufferBeginInfo beginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
-
+		
+		
 		{
 			commandBuffer.begin (&beginInfo);
 			
-			//commandBuffer.pipelineBarrier (
-			//    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eDrawIndirect),
-			//    vk::DependencyFlags(),
-			//{}/*memoryBarrier*/, {
-			//	vk::BufferMemoryBarrier (
-			//	    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eIndirectCommandRead,
-			//	    global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
-			//	    indirectCommandBuffer->buffer, 0, indirectCommandBuffer->bufferSize
-			//	)
-			//}/*bufferBarrier*/,
-			//{}/*imageBarrier*/
-			//);
+			uint32_t stagingOffset = 0;
+
+			uint32_t uniformOffset = stagingOffset;
+			( (Camera*) (stagingBuffer->data + stagingOffset)) [0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
+			stagingOffset += sizeof (Camera);
+
+			copyBuffer (stagingBuffer->buffer, uniformBuffer->buffer, uniformOffset, 0, sizeof (Camera),
+						vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
+						commandBuffer);
+			
+			stagingOffset = dispatcher->setup(stagingBuffer, stagingOffset, commandBuffer);
+			
 			commandBuffer.pipelineBarrier (
-			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
-			    vk::DependencyFlags(),
+				vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
+				vk::DependencyFlags(),
 			{}/*memoryBarrier*/, {
 				vk::BufferMemoryBarrier (
-				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-				    global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
-				    instanceBuffer->buffer, 0, instanceBuffer->bufferSize
+					vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+					global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
+					dispatcher->instanceBuffer->buffer, 0, dispatcher->instanceBuffer->bufferSize
 				)
 			}/*bufferBarrier*/,
 			{}/*imageBarrier*/
@@ -435,7 +362,6 @@ int main (int argc, char **argv) {
 			}/*bufferBarrier*/,
 			{}/*imageBarrier*/
 			);
-
 			vk::ClearValue clearColors[2] = {
 				vk::ClearValue (vk::ClearColorValue (std::array<float, 4> ({0.0f, 0.0f, 0.5f, 1.0f}))),
 				vk::ClearValue (vk::ClearDepthStencilValue (1.0f, 0)),
@@ -449,24 +375,12 @@ int main (int argc, char **argv) {
 			    ),
 			    vk::SubpassContents::eInline
 			);
-
+			
 			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, global.pipeline.standardPipeline);
 
-			commandBuffer.bindVertexBuffers (0, {vertexBuffer->buffer, instanceBuffer->buffer}, {0, 0});
-			commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
-
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets, {});
-
-			{
-				uint32_t count = 0;
-				for (Object& obj : objectStorage.objects) {
-					for (ObjectPart& part : obj.parts) {
-						commandBuffer.pushConstants (global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &part.data);
-						commandBuffer.drawIndexed(part.indexCount, obj.instances.size(), part.indexOffset, part.vertexOffset, count);
-					}
-					count += obj.instances.size();
-				}
-			}
+			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets[0], {});
+			
+			dispatcher->dispatch(commandBuffer);
 
 			commandBuffer.endRenderPass();
 
@@ -501,6 +415,8 @@ int main (int argc, char **argv) {
 	destroySemaphore (imageAvailableSemaphore);
 	destroySemaphore (drawFinishedSemaphore);
 
+	global.deviceWrapper.device.destroySampler(sampler);
+
 	delete vWindow;
 	global.deviceWrapper.device.destroyImageView (depthImageView, nullptr);
 	delete depthImage;
@@ -510,13 +426,9 @@ int main (int argc, char **argv) {
 	global.deviceWrapper.device.destroyImageView (fighterImageView, nullptr);
 
 	delete imageWrapper;
-
-
-	delete vertexBuffer;
-	delete indexBuffer;
-
-	delete indirectCommandBuffer;
-	delete instanceBuffer;
+	
+	delete dispatcher;
+	
 	delete uniformBuffer;
 
 	global.deviceWrapper.device.destroyDescriptorPool (descriptorSetPool, nullptr);
