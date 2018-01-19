@@ -20,5 +20,5 @@ layout(push_constant) uniform Data {
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	outColor = textureLod(sampler2DArray(diffuseTexture, sampler), vec3(texCoord.x, -1.0f * texCoord.y, float(diffuseTexId)), 5.0f);
+	outColor = textureLod(sampler2DArray(diffuseTexture, sampler), vec3(texCoord.x, -1.0f * texCoord.y, float(diffuseTexId)), 0.0f);
 }

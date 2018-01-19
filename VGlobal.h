@@ -1,11 +1,12 @@
 #ifndef VINSTANCE_H
 #define VINSTANCE_H
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string.h>
 #include "VHeader.h"
 #include "VDevice.h"
+#include "PipelineModule.h"
 
 struct VExtLayerStruct{
 	std::vector<vk::LayerProperties> availableLayers;
@@ -42,6 +43,10 @@ struct VGlobal{
 	
 	VDevice deviceWrapper;
 	
+	struct{
+		vk::ShaderModule standardShaderVert;
+		vk::ShaderModule standardShaderFrag;
+	} shadermodule;
 	
 	std::vector<VPhysDeviceProps> physicalDevices;
 	
@@ -51,29 +56,12 @@ struct VGlobal{
 	bool choseDevice(uint32_t index);
 	bool initializeDevice();
 	
-
 	struct{
-		vk::RenderPass standardRenderPass;
-	} renderpass;
-	
+		StandardPipelineModuleBuilder standard;
+	}pipeline_module_builders;
 	struct{
-		vk::PipelineLayout standardPipelineLayout;
-	} pipelinelayout;
-	
-	struct{
-		vk::ShaderModule standardShaderVert;
-		vk::ShaderModule standardShaderFrag;
-	} shadermodule;
-	
-	struct{
-		vk::Pipeline standardPipeline;
-	} pipeline;
-	
-	struct{
-		std::vector<vk::DescriptorSetLayout> standardDescriptorSetLayouts;
-	} descriptorsetlayout;
-	
-	void buildStandardPipeline(vk::Format format, VkExtent2D extent);
+		PipelineModuleLayout standard;
+	}pipeline_module_layouts;
 	
 	void terminate();
 	

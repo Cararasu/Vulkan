@@ -120,13 +120,10 @@ vk::ImageView createImageView2DArray(vk::Image images, uint32_t mipBase, uint32_
 void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
 
-vk::Pipeline createStandardPipeline(vk::Extent2D viewport, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass);
 void destroyPipeline(vk::Pipeline pipeline);
 
-vk::PipelineLayout createStandardPipelineLayout(std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts = nullptr, std::vector<vk::PushConstantRange>* pushConstRanges = nullptr);
 void destroyPipelineLayout(vk::PipelineLayout pipelineLayout);
 
-vk::RenderPass createStandardRenderPass(vk::Format format);
 void destroyRenderPass(vk::RenderPass renderpass);
 
 std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts();

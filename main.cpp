@@ -195,30 +195,14 @@ int main (int argc, char **argv) {
 
 	VWindow* vWindow = new VWindow();
 
+	global.pipeline_module_layouts.standard = createPipelineModuleLayout(&global.pipeline_module_builders.standard);
+
 	vWindow->initializeWindow();
 
-	global.buildStandardPipeline (vWindow->presentSwapFormat.format, vWindow->swapChainExtend);
 
 	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool();
 
-	vk::Format depthFormat = findDepthFormat();
-	vk::Extent3D extent (vWindow->swapChainExtend.width, vWindow->swapChainExtend.height, 1);
-	ImageWrapper *depthImage = new ImageWrapper (extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
-	        vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
-	vk::ImageView depthImageView = createImageView2D (depthImage->image, 0, depthImage->mipMapLevels, depthImage->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
-	transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
-	                       vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-
-	for (size_t i = 0; i < vWindow->perPresentImageDatas.size(); i++) {
-		vk::ImageView attachments[2] = {
-			vWindow->perPresentImageDatas[i].presentImageView,
-			depthImageView
-		};
-		vk::FramebufferCreateInfo framebufferInfo (vk::FramebufferCreateFlags(), global.renderpass.standardRenderPass, 2, attachments, vWindow->swapChainExtend.width, vWindow->swapChainExtend.height, 1);
-		vWindow->perPresentImageDatas[i].framebuffer = global.deviceWrapper.device.createFramebuffer (framebufferInfo, nullptr);
-	}
-
-	std::vector<vk::DescriptorSet> descriptorSets = createDescriptorSets (descriptorSetPool, &global.descriptorsetlayout.standardDescriptorSetLayouts);
+	std::vector<vk::DescriptorSet> descriptorSets = createDescriptorSets (descriptorSetPool, &global.pipeline_module_layouts.standard.descriptorSetLayouts);
 
 	dispatcher->set_descriptor_set(descriptorSets[1]);
 
@@ -242,8 +226,6 @@ int main (int argc, char **argv) {
 		
 		//imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
-
-	vk::ImageView fighterImageView = createImageView2DArray (imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
 
 	//TODO Memory Barrier for graphics queue
 	//global.deviceWrapper.tqueue->waitForFinish();
@@ -274,24 +256,12 @@ int main (int argc, char **argv) {
 
 	vk::DescriptorBufferInfo bufferInfo (uniformBuffer->buffer, offsetof (Camera, w2sMatrix), sizeof (glm::mat4));
 	{
-		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo (sampler);
-		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo (vk::Sampler(), fighterImageView, imageWrapper->layout);
 		global.deviceWrapper.device.updateDescriptorSets ({
 			vk::WriteDescriptorSet (descriptorSets[0],
 			                        0, 0, //dstBinding, dstArrayElement
 			                        1, //descriptorCount
 			                        vk::DescriptorType::eUniformBuffer, //descriptorType
 			                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets[1],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampler, //descriptorType
-			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (descriptorSets[1],
-			                        1, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
 		}, {});
 
 	}
@@ -300,6 +270,8 @@ int main (int argc, char **argv) {
 	vk::Semaphore drawFinishedSemaphore = createSemaphore();
 
 	while (vWindow->isOpen()) {
+		
+		vWindow->setupFrame();
 		printf ("--------------- FrameBoundary ---------------\n");
 		printf ("PresetImageId: %d\n", vWindow->presentImageIndex);
 
@@ -313,15 +285,15 @@ int main (int argc, char **argv) {
 
 		Instance inst1 = {glm::translate(glm::vec3(1.0f, 1.0f, 1.0f))};
 		Instance inst2 = {glm::translate(glm::vec3(0.0f, 0.0f, 0.0f))};
+		Instance inst3 = {glm::translate(glm::vec3(-3.0f, 0.0f, 0.0f))};
 		dispatcher->reset_instances();
 		dispatcher->push_instance(TiePartIds, inst1);
+		dispatcher->push_instance(TiePartIds, inst3);
 		
 		dispatcher->push_instance(XPartIds, inst2);
 		
-
 		vk::CommandBuffer commandBuffer = createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
 		vk::CommandBufferBeginInfo beginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
-		
 		
 		{
 			commandBuffer.begin (&beginInfo);
@@ -368,7 +340,7 @@ int main (int argc, char **argv) {
 			};
 			commandBuffer.beginRenderPass (
 			    vk::RenderPassBeginInfo (
-			        global.renderpass.standardRenderPass,
+					vWindow->standardmodule.renderPass,
 			        vWindow->perPresentImageDatas[vWindow->presentImageIndex].framebuffer,
 			        vk::Rect2D (vk::Offset2D (0, 0), vWindow->swapChainExtend),
 			        2, clearColors
@@ -376,9 +348,9 @@ int main (int argc, char **argv) {
 			    vk::SubpassContents::eInline
 			);
 			
-			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, global.pipeline.standardPipeline);
+			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, vWindow->standardmodule.pipeline);
 
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 0, descriptorSets[0], {});
+			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipeline_module_layouts.standard.pipelineLayout, 0, descriptorSets[0], {});
 			
 			dispatcher->dispatch(commandBuffer);
 
@@ -396,7 +368,7 @@ int main (int argc, char **argv) {
 
 		vWindow->pgcQueue->submitGraphics (1, &submitInfo);
 
-		vWindow->showNextImage (1, signalSemaphores);
+		vWindow->showNextFrame (1, signalSemaphores);
 		glfwPollEvents();
 
 		std::this_thread::sleep_for (std::chrono::nanoseconds (10000000));
@@ -418,12 +390,8 @@ int main (int argc, char **argv) {
 	global.deviceWrapper.device.destroySampler(sampler);
 
 	delete vWindow;
-	global.deviceWrapper.device.destroyImageView (depthImageView, nullptr);
-	delete depthImage;
 	if (stagingBuffer)
 		delete stagingBuffer;
-
-	global.deviceWrapper.device.destroyImageView (fighterImageView, nullptr);
 
 	delete imageWrapper;
 	

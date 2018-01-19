@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include "VHeader.h"
 #include "VDevice.h"
+#include "PipelineModule.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -19,18 +20,32 @@ struct WindowPerPresentImageData{
 	vk::Fence fence;
 	vk::CommandPool graphicQCommandPool;
 };
-
+enum class WindowState{
+	eUninitialized,
+	eInitialized,
+	eFramePrepared,
+	eFramePresented,
+	eResized
+};
 struct VWindow{
 	GLFWwindow* window;
 	VPGCQueue* pgcQueue;
-	vk::Extent2D windowExtend;
+	vk::PresentModeKHR chosenPresentationMode;
+	vk::SurfaceCapabilitiesKHR capabilities;
 	vk::Extent2D swapChainExtend;
-	vk::SurfaceKHR surface = vk::SurfaceKHR();
-	vk::SwapchainKHR swapChain = vk::SwapchainKHR();
-	vk::Semaphore imageAvailableGuardSem = vk::Semaphore();
+	vk::SurfaceKHR surface;
+	vk::SwapchainKHR swapChain;
+	vk::Semaphore imageAvailableGuardSem;
+	
+	WindowState windowState = WindowState::eUninitialized;
+	
+	vk::ImageView depthImageView;
+	ImageWrapper *depthImage = nullptr;
 	
 	vk::SurfaceFormatKHR presentSwapFormat;
 	uint32_t presentImageIndex;
+	
+	PipelineModule standardmodule;
 	
 	std::vector<WindowPerPresentImageData> perPresentImageDatas;
 	
@@ -38,7 +53,13 @@ struct VWindow{
 	
 	void initializeWindow();
 	
-	void showNextImage(uint32_t waitSemaphoreCount = 0, const vk::Semaphore* pWaitSemaphores = nullptr);
+	void createSwapchain();
+	
+	void setupFrame();
+	
+	void showNextFrame(uint32_t waitSemaphoreCount = 0, const vk::Semaphore* pWaitSemaphores = nullptr);
+	
+	void handleResize(uint32_t width, uint32_t height);
 	
 	bool isOpen(){
 		return !glfwWindowShouldClose(window);

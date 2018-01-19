@@ -4,22 +4,6 @@
 
 
 
-std::vector<vk::DescriptorSetLayout> createStandardDescriptorSetLayouts(){
-	
-	vk::DescriptorSetLayoutBinding bindings1[] = {
-		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, nullptr),
-	};
-	vk::DescriptorSetLayoutBinding bindings2[] = {
-		vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eSampler, 1, vk::ShaderStageFlagBits::eFragment, nullptr),
-		vk::DescriptorSetLayoutBinding(1, vk::DescriptorType::eSampledImage, 3, vk::ShaderStageFlagBits::eFragment, nullptr)
-	};
-	
-	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = {
-		global.deviceWrapper.device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags(), 1, bindings1), nullptr),
-		global.deviceWrapper.device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags(), 2, bindings2), nullptr)
-	};
-	return descriptorSetLayouts;
-}
 void destroyDescriptorSetLayout(vk::DescriptorSetLayout layout){
 	global.deviceWrapper.device.destroyDescriptorSetLayout(layout);
 }

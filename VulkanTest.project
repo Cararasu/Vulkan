@@ -8,6 +8,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="PipelineModule.cpp"/>
+    <File Name="PipelineModule.h"/>
     <File Name="main.cpp"/>
     <VirtualDirectory Name="shaders">
       <File Name="workingdir/shader/tri.frag"/>
@@ -25,7 +27,6 @@
     <File Name="ShaderInputAbstraction.h"/>
     <File Name="ShaderInputAbstraction.cpp"/>
     <File Name="Pipelines.cpp"/>
-    <File Name="RenderPasses.cpp"/>
     <File Name="Shader.cpp"/>
     <File Name="DataWrapper.h"/>
     <File Name="Buffer.cpp"/>

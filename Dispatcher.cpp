@@ -79,41 +79,38 @@ void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue
 		delete indexBuffer;
 		indexBuffer = nullptr;
 	}
-	vertexBuffer = new BufferWrapper (sizeof (vertices[0]) * vertices.size(),
-	                                  vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	vertexBuffer = new BufferWrapper (sizeof (vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	transferData (vertices.data(), vertexBuffer->buffer, 0, sizeof (vertices[0]) * vertices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
 
-	transferData (vertices.data(), vertexBuffer->buffer, 0, sizeof (vertices[0]) * vertices.size(),
-	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
-
-
-	indexBuffer = new BufferWrapper (sizeof (indices[0]) * indices.size(),
-	                                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	transferData (indices.data(), indexBuffer->buffer, 0, sizeof (indices[0]) * indices.size(),
-	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
+	indexBuffer = new BufferWrapper (sizeof (indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	transferData (indices.data(), indexBuffer->buffer, 0, sizeof (indices[0]) * indices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
+	
+	vertices.clear();
+	indices.clear();
 }
 void OpaqueObjectDispatcher::push_instance (uint32_t objectId, Instance& inst) {
 	instances.push_back ({objectId, inst});
 }
 void OpaqueObjectDispatcher::push_instance (std::vector<uint32_t>& objectIds, Instance& inst) {
-	for(uint32_t objectId : objectIds)
+	for (uint32_t objectId : objectIds)
 		instances.push_back ({objectId, inst});
 }
-uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandPool commandPool, vk::Queue submitQueue){
-	vk::CommandBuffer commandBuffer =  createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
-	
-	commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
-	
-	setup(stagingBuffer, offset, commandBuffer);
+uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
+	vk::CommandBuffer commandBuffer =  createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
+
+	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
+
+	setup (stagingBuffer, offset, commandBuffer);
 
 	commandBuffer.end();
 
-	vk::SubmitInfo submitInfo(
-		0, nullptr,//waitsemaphores
-		nullptr,//pWaitDstStageMask
-		1, &commandBuffer,
-		0, nullptr//signalsemaphores
-		);
-	submitQueue.submit({submitInfo}, vk::Fence());
+	vk::SubmitInfo submitInfo (
+	    0, nullptr,//waitsemaphores
+	    nullptr,//pWaitDstStageMask
+	    1, &commandBuffer,
+	    0, nullptr//signalsemaphores
+	);
+	submitQueue.submit ({submitInfo}, vk::Fence());
 }
 uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandBuffer commandBuffer) {
 	if (!desciptorSet) {
@@ -123,7 +120,7 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 	if (instanceBuffer && instanceBuffer->bufferSize < neededSize) {
 		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->bufferSize, neededSize);
 		delete instanceBuffer;
-		instanceBuffer == nullptr;
+		instanceBuffer = nullptr;
 	}
 	if (!instanceBuffer) {
 		instanceBuffer = new BufferWrapper (sizeof (instances[0]) * (instances.size() + (instances.size() / 4)),
@@ -163,14 +160,15 @@ void OpaqueObjectDispatcher::dispatch (vk::CommandBuffer commandBuffer) {
 		assert (false);
 	}
 
-	commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipelinelayout.standardPipelineLayout, 1, desciptorSet, {});
+	commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipeline_module_layouts.standard.pipelineLayout, 1, desciptorSet, {});
 
 	commandBuffer.bindVertexBuffers (0, {vertexBuffer->buffer, instanceBuffer->buffer}, {0, 0});
+	
 	commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
 
 	uint32_t count = 0;
 	for (OpaqueObject& opObj : parts) {
-		commandBuffer.pushConstants (global.pipelinelayout.standardPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &opObj.data);
+		commandBuffer.pushConstants (global.pipeline_module_layouts.standard.pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &opObj.data);
 		commandBuffer.drawIndexed (opObj.indexCount, opObj.count, opObj.indexOffset, opObj.vertexOffset, count);
 		count += opObj.count;
 	}

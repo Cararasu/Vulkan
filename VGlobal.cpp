@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <algorithm>
+#include "PipelineModule.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -24,73 +25,73 @@ PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
 
 
-bool operator==(vk::LayerProperties& lhs, vk::LayerProperties& rhs){
-	return !strcmp(lhs.layerName, rhs.layerName);
+bool operator== (vk::LayerProperties& lhs, vk::LayerProperties& rhs) {
+	return !strcmp (lhs.layerName, rhs.layerName);
 }
-bool operator==(vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs){
-	return !strcmp(lhs.extensionName, rhs.extensionName);
+bool operator== (vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs) {
+	return !strcmp (lhs.extensionName, rhs.extensionName);
 }
 
-void addExtension(std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop){
+void addExtension (std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop) {
 	bool found = false;
-	for(vk::ExtensionProperties& it : *propList){
-		if(it == prop){
+	for (vk::ExtensionProperties& it : *propList) {
+		if (it == prop) {
 			found = true;
 			break;
 		}
 	}
-	if(!found){
-		propList->push_back(prop);
+	if (!found) {
+		propList->push_back (prop);
 	}
 }
 
-void gatherExtLayer(vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions){
-	
+void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions) {
+
 	uint32_t count;
-	if(!device){
-		V_CHECKCALL(vk::enumerateInstanceExtensionProperties (nullptr, &count, nullptr), printf("Could not get Extension-count"));
-	}else{
-		V_CHECKCALL(device.enumerateDeviceExtensionProperties(nullptr, &count, nullptr), printf("Could not get Extension-count"));
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
 	}
-	extensions->resize(count);
-	if(!device){
-		V_CHECKCALL(vk::enumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), printf("Could not get Extensions"));
-	}else{
-		V_CHECKCALL(device.enumerateDeviceExtensionProperties (nullptr, &count, extensions->data()), printf("Could not get Extensions"));
+	extensions->resize (count);
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
 	}
-	
-	if(!device){
-		V_CHECKCALL(vk::enumerateInstanceLayerProperties(&count, nullptr), printf("Could not get Layer-count"));
-	}else{
-		V_CHECKCALL(device.enumerateDeviceLayerProperties (&count, nullptr), printf("Could not get Layer-count"));
+
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
 	}
-	layers->resize(count);
-	if(!device){
-		V_CHECKCALL(vk::enumerateInstanceLayerProperties (&count, layers->data()), printf("Could not get Layers"));
-	}else{
-		V_CHECKCALL(device.enumerateDeviceLayerProperties(&count, layers->data()), printf("Could not get Layers"));
+	layers->resize (count);
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
 	}
-	for(vk::LayerProperties& layerProp : *layers){
-		
-		if(!device){
-			V_CHECKCALL(vk::enumerateInstanceExtensionProperties(layerProp.layerName, &count, nullptr), printf("Could not get Extension-count"));
-		}else{
-			V_CHECKCALL(device.enumerateDeviceExtensionProperties(layerProp.layerName, &count, nullptr), printf("Could not get Extension-count"));
+	for (vk::LayerProperties& layerProp : *layers) {
+
+		if (!device) {
+			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
+		} else {
+			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
 		}
 		vk::ExtensionProperties extensionArray[count];
-		if(!device){
-			V_CHECKCALL(vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), printf("Could not get Extensions"));
-		}else{
-			V_CHECKCALL(device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, extensionArray), printf("Could not get Extensions"));
+		if (!device) {
+			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
+		} else {
+			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
 		}
-		for(size_t i = 0; i < count; ++i){
-			addExtension(extensions, extensionArray[i]);
+		for (size_t i = 0; i < count; ++i) {
+			addExtension (extensions, extensionArray[i]);
 		}
 	}
 }
 
-bool VGlobal::preInitialize(){
-	
+bool VGlobal::preInitialize() {
+
 	if (glfwVulkanSupported()) {
 		printf ("Vulkan supported\n");
 		// Vulkan is available, at least for compute
@@ -99,19 +100,19 @@ bool VGlobal::preInitialize(){
 		printf ("Vulkan not supported\n");
 		return false;
 	}
-	gatherExtLayer(vk::PhysicalDevice(), &instExtLayers.availableLayers, &instExtLayers.availableExtensions);
-	
+	gatherExtLayer (vk::PhysicalDevice(), &instExtLayers.availableLayers, &instExtLayers.availableExtensions);
+
 	return true;
 }
-bool VGlobal::initializeInstance(const char* appName, const char* engineName){
-	
-	vk::ApplicationInfo appInfo(appName, VK_MAKE_VERSION (1, 0, 0), engineName, VK_MAKE_VERSION (1, 0, 0), VK_MAKE_VERSION (1, 0, 61));
-	
-	vk::InstanceCreateInfo instanceCreateInfo(vk::InstanceCreateFlags(), &appInfo,
-		instExtLayers.neededLayers.size(), instExtLayers.neededLayers.data(),
-		instExtLayers.neededExtensions.size(), instExtLayers.neededExtensions.data());
-	V_CHECKCALL(vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf("Instance Creation Failed\n"));
-	
+bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
+
+	vk::ApplicationInfo appInfo (appName, VK_MAKE_VERSION (1, 0, 0), engineName, VK_MAKE_VERSION (1, 0, 0), VK_MAKE_VERSION (1, 0, 61));
+
+	vk::InstanceCreateInfo instanceCreateInfo (vk::InstanceCreateFlags(), &appInfo,
+	        instExtLayers.neededLayers.size(), instExtLayers.neededLayers.data(),
+	        instExtLayers.neededExtensions.size(), instExtLayers.neededExtensions.data());
+	V_CHECKCALL (vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf ("Instance Creation Failed\n"));
+
 	pfn_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) glfwGetInstanceProcAddress (vkinstance, "vkCreateDebugReportCallbackEXT");
 	pfn_vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT) glfwGetInstanceProcAddress (vkinstance, "vkDestroyDebugReportCallbackEXT");
 
@@ -128,26 +129,27 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 	pfn_vkCreateDebugReportCallbackEXT (vkinstance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> (&debugReportCallbackCreateInfo), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> (&debugReportCallbackEXT));
 
 	uint32_t devicecount = 0;
-	V_CHECKCALL(vkinstance.enumeratePhysicalDevices(&devicecount, nullptr), printf("Get physical-device count Failed\n"));
+	V_CHECKCALL (vkinstance.enumeratePhysicalDevices (&devicecount, nullptr), printf ("Get physical-device count Failed\n"));
 
 	vk::PhysicalDevice physDevices[devicecount];
-	physicalDevices.resize(devicecount);
-	V_CHECKCALL(vkinstance.enumeratePhysicalDevices(&devicecount, physDevices), printf("Get physical-devicec Failed\n"));
+	physicalDevices.resize (devicecount);
+	V_CHECKCALL (vkinstance.enumeratePhysicalDevices (&devicecount, physDevices), printf ("Get physical-devicec Failed\n"));
 
 	for (size_t i = 0; i < devicecount; i++) {
 		VPhysDeviceProps& prop = physicalDevices[i];
 		prop.physicalDevice = physDevices[i];
-		physDevices[i].getProperties(&prop.vkPhysDevProps);
-		physDevices[i].getFeatures(&prop.vkPhysDevFeatures);
-		
-		gatherExtLayer(physDevices[i], &prop.availableLayers, &prop.availableExtensions);
-		
+		physDevices[i].getProperties (&prop.vkPhysDevProps);
+		physDevices[i].getFeatures (&prop.vkPhysDevFeatures);
+
+		gatherExtLayer (physDevices[i], &prop.availableLayers, &prop.availableExtensions);
+
 		uint32_t count;
-		prop.physicalDevice.getQueueFamilyProperties(&count, nullptr);
-		prop.queueFamilyProps.resize(count);
-		prop.physicalDevice.getQueueFamilyProperties(&count, prop.queueFamilyProps.data());
-		
-		{//rate a physicalDevice
+		prop.physicalDevice.getQueueFamilyProperties (&count, nullptr);
+		prop.queueFamilyProps.resize (count);
+		prop.physicalDevice.getQueueFamilyProperties (&count, prop.queueFamilyProps.data());
+
+		{
+			//rate a physicalDevice
 			prop.rating = 0;
 			if (prop.vkPhysDevProps.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
 				prop.rating += 1000;
@@ -159,270 +161,254 @@ bool VGlobal::initializeInstance(const char* appName, const char* engineName){
 				prop.rating = 0;
 			}
 			bool canPresent = false;
-			for(size_t j = 0; j < prop.queueFamilyProps.size(); j++){
-				if(glfwGetPhysicalDevicePresentationSupport (vkinstance, physDevices[i], j)){
+			for (size_t j = 0; j < prop.queueFamilyProps.size(); j++) {
+				if (glfwGetPhysicalDevicePresentationSupport (vkinstance, physDevices[i], j)) {
 					canPresent = true;
 					break;
 				}
 			}
-			if(!canPresent)
+			if (!canPresent)
 				prop.rating = 0;
 		}
 	}
-	
-	std::sort(physicalDevices.begin(), physicalDevices.end(), [](VPhysDeviceProps& lhs, VPhysDeviceProps& rhs){return lhs.rating > rhs.rating;});
-	
+
+	std::sort (physicalDevices.begin(), physicalDevices.end(), [] (VPhysDeviceProps & lhs, VPhysDeviceProps & rhs) {
+		return lhs.rating > rhs.rating;
+	});
+
 	return true;
 }
-bool VGlobal::choseBestDevice(){
-	return choseDevice(0);
+bool VGlobal::choseBestDevice() {
+	return choseDevice (0);
 }
-bool VGlobal::choseDevice(uint32_t index){
-	
-	if(index >= physicalDevices.size())
+bool VGlobal::choseDevice (uint32_t index) {
+
+	if (index >= physicalDevices.size())
 		return false;
 	chosenDeviceId = index;
 	devExtLayers.availableExtensions = physicalDevices[chosenDeviceId].availableExtensions;
 	devExtLayers.availableLayers = physicalDevices[chosenDeviceId].availableLayers;
 	devExtLayers.neededExtensions.clear();
 	devExtLayers.neededLayers.clear();
-	
+
 	physicalDevice = physicalDevices[chosenDeviceId].physicalDevice;
 	return true;
 }
-bool VGlobal::initializeDevice(){
-	
+bool VGlobal::initializeDevice() {
+
 	const float priority = 1.0f;
-	
+
 	VPhysDeviceProps& devProps = physicalDevices[chosenDeviceId];
-	
+
 	uint32_t pgcId = -1;
 	uint32_t pgId = -1;
 	uint32_t pId = -1;
 	uint32_t gId = -1;
 	uint32_t cId = -1;
 	uint32_t tId = -1;
-	
+
 	uint32_t highestRate = 0;
-	for(size_t j = 0; j < devProps.queueFamilyProps.size(); ++j){
+	for (size_t j = 0; j < devProps.queueFamilyProps.size(); ++j) {
 		uint32_t rating = 0;
-		
+
 		bool present = glfwGetPhysicalDevicePresentationSupport (vkinstance, devProps.physicalDevice, j);
-		bool graphics = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics);
-		bool compute = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute);
-		bool transfer = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eTransfer);
-		bool sparse = (bool)vk::QueueFlags(devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding);
-		if(present) rating++;
-		if(graphics) rating++;
-		if(compute) rating++;
-		if(transfer) rating++;
-		if(sparse) rating++;
-		
-		if(present && graphics && compute && (pgcId == (uint32_t)-1 || rating > highestRate)){
+		bool graphics = (bool) vk::QueueFlags (devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics);
+		bool compute = (bool) vk::QueueFlags (devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute);
+		bool transfer = (bool) vk::QueueFlags (devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eTransfer);
+		bool sparse = (bool) vk::QueueFlags (devProps.queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding);
+		if (present) rating++;
+		if (graphics) rating++;
+		if (compute) rating++;
+		if (transfer) rating++;
+		if (sparse) rating++;
+
+		if (present && graphics && compute && (pgcId == (uint32_t) - 1 || rating > highestRate)) {
 			pgcId = j;
 		}
-		if(present && graphics && (pgId == (uint32_t)-1 || rating > highestRate)){
+		if (present && graphics && (pgId == (uint32_t) - 1 || rating > highestRate)) {
 			pgId = j;
 		}
-		if(present && (pId == (uint32_t)-1 || rating > highestRate)){
+		if (present && (pId == (uint32_t) - 1 || rating > highestRate)) {
 			pId = j;
 		}
-		if(graphics && (gId == (uint32_t)-1 || rating > highestRate)){
+		if (graphics && (gId == (uint32_t) - 1 || rating > highestRate)) {
 			gId = j;
 		}
-		if(compute && (cId == (uint32_t)-1 || rating > highestRate)){
+		if (compute && (cId == (uint32_t) - 1 || rating > highestRate)) {
 			cId = j;
 		}
-		if(transfer && (tId == (uint32_t)-1 && rating == 1)){//for nvidia 1 transfer queue
+		if (transfer && (tId == (uint32_t) - 1 && rating == 1)) { //for nvidia 1 transfer queue
 			tId = j;
 		}
-		if(rating > highestRate)
+		if (rating > highestRate)
 			highestRate = rating;
 	}
 	size_t queueFamilyCount = 0;
-	if(tId != (uint32_t)-1) 
+	if (tId != (uint32_t) - 1)
 		queueFamilyCount++;
-	
-	if(pgcId != (uint32_t)-1) {
+
+	if (pgcId != (uint32_t) - 1) {
 		pId = pgcId;
 		gId = pgcId;
 		cId = pgcId;
 		queueFamilyCount++;
-	}else if(pgId != (uint32_t)-1){
+	} else if (pgId != (uint32_t) - 1) {
 		pId = pgId;
 		gId = pgId;
-		queueFamilyCount+=2;
-	}else{
-		queueFamilyCount+=3;
+		queueFamilyCount += 2;
+	} else {
+		queueFamilyCount += 3;
 	}
-	
+
 	vk::DeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount];
 	size_t currentIndex = 0;
 	size_t pgcCount = 0;
 	bool separateTransferQueue = false;
-	if(tId != (uint32_t)-1 && devProps.queueFamilyProps[tId].queueCount <= 1){
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), tId, 1, &priority);
+	if (tId != (uint32_t) - 1 && devProps.queueFamilyProps[tId].queueCount <= 1) {
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), tId, 1, &priority);
 		devProps.queueFamilyProps[tId].queueCount--;
 		currentIndex++;
 		separateTransferQueue = true;
 	}
-	if(pgcId != (uint32_t)-1){
+	if (pgcId != (uint32_t) - 1) {
 		pgcCount = devProps.queueFamilyProps[pgcId].queueCount;
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
-		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority);
+		pgcCount = std::min<uint32_t> (V_MAX_PGCQUEUE_COUNT, pgcCount);
+		assert (pgcCount);
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority);
 		devProps.queueFamilyProps[pgcId].queueCount -= pgcCount;
-		currentIndex+=1;
-	}else if(pgId != (uint32_t)-1){
-		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount);
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
-		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pgId, pgcCount, &priority);
+		currentIndex += 1;
+	} else if (pgId != (uint32_t) - 1) {
+		pgcCount = std::min<uint32_t> (devProps.queueFamilyProps[pgId].queueCount, devProps.queueFamilyProps[cId].queueCount);
+		pgcCount = std::min<uint32_t> (V_MAX_PGCQUEUE_COUNT, pgcCount);
+		assert (pgcCount);
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), pgId, pgcCount, &priority);
 		devProps.queueFamilyProps[pgId].queueCount -= pgcCount;
 		currentIndex++;
-		
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
+
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex++;
-	}else{
-		pgcCount = std::min<uint32_t>(devProps.queueFamilyProps[pId].queueCount, 
-				std::min<uint32_t>(devProps.queueFamilyProps[gId].queueCount, devProps.queueFamilyProps[cId].queueCount));
-		pgcCount = std::min<uint32_t>(V_MAX_PGCQUEUE_COUNT, pgcCount);
-		assert(pgcCount);
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority);
+	} else {
+		pgcCount = std::min<uint32_t> (devProps.queueFamilyProps[pId].queueCount,
+		                               std::min<uint32_t> (devProps.queueFamilyProps[gId].queueCount, devProps.queueFamilyProps[cId].queueCount));
+		pgcCount = std::min<uint32_t> (V_MAX_PGCQUEUE_COUNT, pgcCount);
+		assert (pgcCount);
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority);
 		devProps.queueFamilyProps[pId].queueCount -= pgcCount;
 		currentIndex++;
 		//TODO problem if gId == cId
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority);
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority);
 		devProps.queueFamilyProps[gId].queueCount -= pgcCount;
 		currentIndex++;
-		
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
+
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority);
 		devProps.queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex++;
 	}
 
-	printf("Create %d Present-Graphics-Compute Queues\n",pgcCount);
-	
+	printf ("Create %d Present-Graphics-Compute Queues\n", pgcCount);
+
 	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
-	
-	vk::DeviceCreateInfo deviceCreateInfo(vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos, 
-			devExtLayers.neededLayers.size(), devExtLayers.neededLayers.data(), 
-			devExtLayers.neededExtensions.size(), devExtLayers.neededExtensions.data(),
-			&physicalDeviceFeatures);
-	
-	V_CHECKCALL (physicalDevice.createDevice(&deviceCreateInfo, nullptr, &deviceWrapper.device), printf("Device Creation Failed\n"));
-	
+
+	vk::DeviceCreateInfo deviceCreateInfo (vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos,
+	                                       devExtLayers.neededLayers.size(), devExtLayers.neededLayers.data(),
+	                                       devExtLayers.neededExtensions.size(), devExtLayers.neededExtensions.data(),
+	                                       &physicalDeviceFeatures);
+
+	V_CHECKCALL (physicalDevice.createDevice (&deviceCreateInfo, nullptr, &deviceWrapper.device), printf ("Device Creation Failed\n"));
+
 	currentIndex = 0;
-	if(separateTransferQueue){
+	if (separateTransferQueue) {
 		vk::Queue tQueue;
-		deviceWrapper.device.getQueue(tId, 0, &tQueue);
-		deviceWrapper.tqueue = new VTQueue(tId, tQueue);
+		deviceWrapper.device.getQueue (tId, 0, &tQueue);
+		deviceWrapper.tqueue = new VTQueue (tId, tQueue);
 	}
-	for(size_t i = 0; i < pgcCount; ++i){
+	for (size_t i = 0; i < pgcCount; ++i) {
 		VPGCQueue* queue;
-		if(pgcId != (uint32_t)-1){
+		if (pgcId != (uint32_t) - 1) {
 			queue = new VCombinedPGCQueue();
-			deviceWrapper.device.getQueue(pgcId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue (pgcId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
 			queue->computeQueue = queue->presentQueue;
-		}else if(pgId != (uint32_t)-1){
+		} else if (pgId != (uint32_t) - 1) {
 			queue = new VPartlyPGCQueue();
-			deviceWrapper.device.getQueue(pgId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue (pgId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
-			deviceWrapper.device.getQueue(cId, i, &queue->computeQueue);
-		}else{
+			deviceWrapper.device.getQueue (cId, i, &queue->computeQueue);
+		} else {
 			queue = new VSinglePGCQueue();
-			deviceWrapper.device.getQueue(pId, i, &queue->presentQueue);
-			deviceWrapper.device.getQueue(gId, i, &queue->graphicsQueue);
-			deviceWrapper.device.getQueue(cId, i, &queue->computeQueue);
+			deviceWrapper.device.getQueue (pId, i, &queue->presentQueue);
+			deviceWrapper.device.getQueue (gId, i, &queue->graphicsQueue);
+			deviceWrapper.device.getQueue (cId, i, &queue->computeQueue);
 		}
 		queue->presentQId = pId;
 		queue->graphicsQId = gId;
 		queue->computeQId = cId;
 		queue->combinedPGQ = (pId == gId);
 		queue->combinedGCQ = (gId == cId);
-		deviceWrapper.pgcQueues.push_back(queue);
+		deviceWrapper.pgcQueues.push_back (queue);
 	}
 	deviceWrapper.compQId = cId;
 	deviceWrapper.presentQId = pId;
 	deviceWrapper.graphQId = gId;
 	deviceWrapper.transfQId = tId;
-	
+
 	return true;
 }
 
-void VGlobal::buildStandardPipeline(vk::Format format, VkExtent2D extent){
-	
-	shadermodule.standardShaderVert = loadShaderFromFile ("../workingdir/shader/tri.vert");
-	shadermodule.standardShaderFrag = loadShaderFromFile ("../workingdir/shader/tri.frag");
-	
-	renderpass.standardRenderPass = createStandardRenderPass (format);
-	descriptorsetlayout.standardDescriptorSetLayouts = createStandardDescriptorSetLayouts();
-	
-	std::vector<vk::PushConstantRange> pushConstants = {vk::PushConstantRange(vk::ShaderStageFlagBits::eFragment, 0, sizeof(ObjectPartData))};
-	
-	pipelinelayout.standardPipelineLayout = createStandardPipelineLayout (&descriptorsetlayout.standardDescriptorSetLayouts, &pushConstants);
-	pipeline.standardPipeline = createStandardPipeline (extent, pipelinelayout.standardPipelineLayout, renderpass.standardRenderPass);
-	
-	assert(pipeline.standardPipeline);
-}
 
 
-void VGlobal::terminate(){
+void VGlobal::terminate() {
+
 	
-	deviceWrapper.device.destroyPipeline(pipeline.standardPipeline);
-	deviceWrapper.device.destroyPipelineLayout(pipelinelayout.standardPipelineLayout);
-	for(vk::DescriptorSetLayout layout : descriptorsetlayout.standardDescriptorSetLayouts){
-		deviceWrapper.device.destroyDescriptorSetLayout(layout);
-	}
-	deviceWrapper.device.destroyRenderPass(renderpass.standardRenderPass);
-	deviceWrapper.device.destroyShaderModule(shadermodule.standardShaderVert);
-	deviceWrapper.device.destroyShaderModule(shadermodule.standardShaderFrag);
+	deletePipelineModuleLayout(&pipeline_module_builders.standard, pipeline_module_layouts.standard);
 	
-	deviceWrapper.device.destroy(nullptr);
-	pfn_vkDestroyDebugReportCallbackEXT(vkinstance, debugReportCallbackEXT, nullptr);
-	
-	vkinstance.destroy(nullptr);
+	deviceWrapper.device.destroyShaderModule (shadermodule.standardShaderVert);
+	deviceWrapper.device.destroyShaderModule (shadermodule.standardShaderFrag);
+
+	deviceWrapper.device.destroy (nullptr);
+	pfn_vkDestroyDebugReportCallbackEXT (vkinstance, debugReportCallbackEXT, nullptr);
+
+	vkinstance.destroy (nullptr);
 	glfwTerminate();
 	return;
 }
-bool VExtLayerStruct::activateLayer(const char* name){
+bool VExtLayerStruct::activateLayer (const char* name) {
 	bool found = false;
-	for(vk::LayerProperties& layer : availableLayers){
-		if(!strcmp(layer.layerName, name)){
+	for (vk::LayerProperties& layer : availableLayers) {
+		if (!strcmp (layer.layerName, name)) {
 			found = true;
 			break;
 		}
 	}
-	if(!found)
+	if (!found)
 		return false;
-	for(const char* layName : neededLayers){
-		if(!strcmp(layName, name)){
+	for (const char* layName : neededLayers) {
+		if (!strcmp (layName, name)) {
 			return true;
 		}
 	}
-	neededLayers.push_back(name);
+	neededLayers.push_back (name);
 	return true;
 }
-bool VExtLayerStruct::activateExtension(const char* name){
+bool VExtLayerStruct::activateExtension (const char* name) {
 	bool found = false;
-	for(vk::ExtensionProperties& ext : availableExtensions){
-		if(!strcmp(ext.extensionName, name)){
+	for (vk::ExtensionProperties& ext : availableExtensions) {
+		if (!strcmp (ext.extensionName, name)) {
 			found = true;
 			break;
 		}
 	}
-	if(!found)
+	if (!found)
 		return false;
-	for(const char* extName : neededExtensions){
-		if(!strcmp(extName, name)){
+	for (const char* extName : neededExtensions) {
+		if (!strcmp (extName, name)) {
 			return true;
 		}
 	}
-	neededExtensions.push_back(name);
+	neededExtensions.push_back (name);
 	return true;
 }
