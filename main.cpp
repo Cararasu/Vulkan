@@ -349,7 +349,6 @@ int main (int argc, char **argv) {
 			);
 			
 			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, vWindow->standardmodule.pipeline);
-
 			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipeline_module_layouts.standard.pipelineLayout, 0, descriptorSets[0], {});
 			
 			dispatcher->dispatch(commandBuffer);
@@ -358,7 +357,6 @@ int main (int argc, char **argv) {
 
 			V_CHECKCALL_MAYBE (commandBuffer.end(), printf ("Recording of CommandBuffer failed\n"));
 		}
-
 
 		vk::Semaphore waitSemaphores[] = {vWindow->imageAvailableGuardSem};
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
@@ -369,18 +367,16 @@ int main (int argc, char **argv) {
 		vWindow->pgcQueue->submitGraphics (1, &submitInfo);
 
 		vWindow->showNextFrame (1, signalSemaphores);
+		printf ("---------------   EndFrame    ---------------\n");
 		glfwPollEvents();
 
 		std::this_thread::sleep_for (std::chrono::nanoseconds (10000000));
 	}
 
-
 	global.deviceWrapper.device.waitIdle();
-
 
 	V_CHECKCALL_MAYBE (vWindow->pgcQueue->presentQueue.waitIdle(), printf ("Failed to wait for Present-Queue\n"));
 	V_CHECKCALL_MAYBE (global.deviceWrapper.device.waitIdle(), printf ("Failed to wait for Device\n"));
-
 
 	global.deviceWrapper.device.destroyCommandPool (transferCommandPool);
 

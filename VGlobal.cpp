@@ -18,6 +18,7 @@ VkBool32 VKAPI_PTR debugLogger (
     uint64_t object, size_t location, int32_t messageCode,
     const char* pLayerPrefix, const char* pMessage, void* pUserData) {
 	printf ("Layer: %s - Message: %s\n", pLayerPrefix, pMessage);
+	fflush(stdout);
 	return VK_TRUE;
 }
 

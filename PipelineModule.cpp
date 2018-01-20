@@ -38,6 +38,8 @@ vk::PipelineLayout StandardPipelineModuleBuilder::createPipelineLayout (std::vec
 }
 vk::RenderPass StandardPipelineModuleBuilder::createRenderPass (vk::Format format) {
 
+	global.shadermodule.standardShaderVert = loadShaderFromFile (this->shader_files[0]);
+	global.shadermodule.standardShaderFrag = loadShaderFromFile (this->shader_files[1]);
 	vk::AttachmentDescription attachments[2] = {
 		vk::AttachmentDescription (vk::AttachmentDescriptionFlags(),
 		                           format, vk::SampleCountFlagBits::e1,//format, samples
@@ -155,8 +157,6 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 	{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 	);
 
-	global.shadermodule.standardShaderVert = loadShaderFromFile (this->shader_files[0]);
-	global.shadermodule.standardShaderFrag = loadShaderFromFile (this->shader_files[1]);
 	vk::PipelineShaderStageCreateInfo shaderStages[2] = {
 		vk::PipelineShaderStageCreateInfo (
 		    vk::PipelineShaderStageCreateFlags(),
