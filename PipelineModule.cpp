@@ -1,6 +1,7 @@
 
 #include "PipelineModule.h"
 #include "VGlobal.h"
+#include "VInstance.h"
 
 std::vector<vk::DescriptorSetLayout> StandardPipelineModuleBuilder::createDescriptorSetLayouts() {
 	vk::DescriptorSetLayoutBinding bindings1[] = {
@@ -12,8 +13,8 @@ std::vector<vk::DescriptorSetLayout> StandardPipelineModuleBuilder::createDescri
 	};
 
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = {
-		global.deviceWrapper.device.createDescriptorSetLayout (vk::DescriptorSetLayoutCreateInfo (vk::DescriptorSetLayoutCreateFlags(), 1, bindings1), nullptr),
-		global.deviceWrapper.device.createDescriptorSetLayout (vk::DescriptorSetLayoutCreateInfo (vk::DescriptorSetLayoutCreateFlags(), 2, bindings2), nullptr)
+		instance->device.createDescriptorSetLayout (vk::DescriptorSetLayoutCreateInfo (vk::DescriptorSetLayoutCreateFlags(), 1, bindings1), nullptr),
+		instance->device.createDescriptorSetLayout (vk::DescriptorSetLayoutCreateInfo (vk::DescriptorSetLayoutCreateFlags(), 2, bindings2), nullptr)
 	};
 	return descriptorSetLayouts;
 }
@@ -34,12 +35,12 @@ vk::PipelineLayout StandardPipelineModuleBuilder::createPipelineLayout (std::vec
 		createInfo.pushConstantRangeCount = pushConstRanges.size();
 		createInfo.pPushConstantRanges = pushConstRanges.data();
 	}
-	return global.deviceWrapper.device.createPipelineLayout (createInfo, nullptr);
+	return instance->device.createPipelineLayout (createInfo, nullptr);
 }
 vk::RenderPass StandardPipelineModuleBuilder::createRenderPass (vk::Format format) {
-
-	global.shadermodule.standardShaderVert = loadShaderFromFile (this->shader_files[0]);
-	global.shadermodule.standardShaderFrag = loadShaderFromFile (this->shader_files[1]);
+	
+	global.shadermodule.standardShaderVert = instance->loadShaderFromFile (this->shader_files[0]);
+	global.shadermodule.standardShaderFrag = instance->loadShaderFromFile (this->shader_files[1]);
 	vk::AttachmentDescription attachments[2] = {
 		vk::AttachmentDescription (vk::AttachmentDescriptionFlags(),
 		                           format, vk::SampleCountFlagBits::e1,//format, samples
@@ -51,7 +52,7 @@ vk::RenderPass StandardPipelineModuleBuilder::createRenderPass (vk::Format forma
 		                           vk::ImageLayout::ePresentSrcKHR//finalLayout
 		                          ),
 		vk::AttachmentDescription (vk::AttachmentDescriptionFlags(),
-		                           findDepthFormat(), vk::SampleCountFlagBits::e1,//format, samples
+		                           instance->findDepthFormat(), vk::SampleCountFlagBits::e1,//format, samples
 		                           vk::AttachmentLoadOp::eClear,//loadOp
 		                           vk::AttachmentStoreOp::eDontCare,//storeOp
 		                           vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -75,7 +76,7 @@ vk::RenderPass StandardPipelineModuleBuilder::createRenderPass (vk::Format forma
 
 	vk::RenderPassCreateInfo renderPassInfo (vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/);
 
-	return global.deviceWrapper.device.createRenderPass (renderPassInfo, nullptr);
+	return instance->device.createRenderPass (renderPassInfo, nullptr);
 }
 vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent, vk::RenderPass renderPass, vk::PipelineLayout layout) {
 
@@ -84,7 +85,7 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 		vk::VertexInputBindingDescription (1, sizeof (Instance), vk::VertexInputRate::eInstance)
 	};
 
-	std::array<vk::VertexInputAttributeDescription, 11> vertexInputAttributes = {
+	std::array<vk::VertexInputAttributeDescription, 7> vertexInputAttributes = {
 		vk::VertexInputAttributeDescription (0, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, pos)),
 		vk::VertexInputAttributeDescription (1, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, uv)),
 		vk::VertexInputAttributeDescription (2, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, normal)),
@@ -93,10 +94,10 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 		vk::VertexInputAttributeDescription (5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4)),
 		vk::VertexInputAttributeDescription (6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 2),
 		vk::VertexInputAttributeDescription (7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		vk::VertexInputAttributeDescription (8, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		vk::VertexInputAttributeDescription (9, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		vk::VertexInputAttributeDescription (10, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		vk::VertexInputAttributeDescription (11, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (8, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (9, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (10, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (11, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo (vk::PipelineVertexInputStateCreateFlags(), vertexInputBindings.size(), vertexInputBindings.data(), vertexInputAttributes.size(), vertexInputAttributes.data());
@@ -181,19 +182,19 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 	    -1
 	);
 
-	return global.deviceWrapper.device.createGraphicsPipelines (vk::PipelineCache(), {pipelineInfo}, nullptr) [0];
+	return instance->device.createGraphicsPipelines (vk::PipelineCache(), {pipelineInfo}, nullptr) [0];
 }
 void StandardPipelineModuleBuilder::destroyDescriptorSetLayouts (std::vector<vk::DescriptorSetLayout> descriptorSetLayouts) {
 	for (vk::DescriptorSetLayout dsl : descriptorSetLayouts){
-		global.deviceWrapper.device.destroyDescriptorSetLayout(dsl);
+		instance->device.destroyDescriptorSetLayout(dsl);
 	}
 }
 void StandardPipelineModuleBuilder::destroyPipelineLayout (vk::PipelineLayout pipelineLayout) {
-	global.deviceWrapper.device.destroyPipelineLayout(pipelineLayout);
+	instance->device.destroyPipelineLayout(pipelineLayout);
 }
 void StandardPipelineModuleBuilder::destroyRenderPass (vk::RenderPass renderPass) {
-	global.deviceWrapper.device.destroyRenderPass(renderPass);
+	instance->device.destroyRenderPass(renderPass);
 }
 void StandardPipelineModuleBuilder::destroyPipeline (vk::Pipeline pipeline) {
-	global.deviceWrapper.device.destroyPipeline(pipeline);
+	instance->device.destroyPipeline(pipeline);
 }

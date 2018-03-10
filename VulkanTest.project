@@ -8,6 +8,12 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VInstance.cpp"/>
+    <File Name="VInstance.h"/>
+    <File Name="RenderEnvironment.cpp"/>
+    <File Name="RenderEnvironment.h"/>
+    <File Name="DrawDispatcher.cpp"/>
+    <File Name="DrawDispatcher.h"/>
     <File Name="PipelineModule.cpp"/>
     <File Name="PipelineModule.h"/>
     <File Name="main.cpp"/>
@@ -23,11 +29,9 @@
     <File Name="VDevice.cpp"/>
     <File Name="VWindow.h"/>
     <File Name="VWindow.cpp"/>
-    <File Name="VBuilders.h"/>
     <File Name="ShaderInputAbstraction.h"/>
     <File Name="ShaderInputAbstraction.cpp"/>
     <File Name="Pipelines.cpp"/>
-    <File Name="Shader.cpp"/>
     <File Name="DataWrapper.h"/>
     <File Name="Buffer.cpp"/>
     <File Name="ViewPort.h"/>

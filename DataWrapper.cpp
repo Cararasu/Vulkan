@@ -4,25 +4,29 @@
 
 MappedBufferWrapper* stagingBuffer = nullptr;
 
-BufferWrapper::BufferWrapper (vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
+BufferWrapper::BufferWrapper (VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
 	bufferSize (size), buffer (vk::Buffer()), backedMemory (vk::DeviceMemory()) {
-	createBuffer (size, usage, needed, recommended, &buffer, &backedMemory);
+	instance->createBuffer (size, usage, needed, recommended, &buffer, &backedMemory);
+}
+void BufferWrapper::destroy(VInstance* instance){
+	instance->destroyBuffer (buffer, backedMemory);
 }
 BufferWrapper::~BufferWrapper() {
-	destroyBuffer (buffer, backedMemory);
 }
-MappedBufferWrapper::MappedBufferWrapper (vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
-	BufferWrapper (size, usage, needed) {
+MappedBufferWrapper::MappedBufferWrapper (VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
+	BufferWrapper (instance, size, usage, needed) {
 	printf ("Map %d Bytes of Memory\n", bufferSize);
-	vkMapMemory (global.deviceWrapper.device, backedMemory, 0, bufferSize, 0, &data);
+	vkMapMemory (instance->device, backedMemory, 0, bufferSize, 0, &data);
+}
+void MappedBufferWrapper::destroy(VInstance* instance){
+	printf ("Unmap %d Bytes of Memory\n", bufferSize);
+	vkUnmapMemory (instance->device, backedMemory);
 }
 MappedBufferWrapper::~MappedBufferWrapper() {
-	printf ("Unmap %d Bytes of Memory\n", bufferSize);
-	vkUnmapMemory (global.deviceWrapper.device, backedMemory);
 }
 
-ImageWrapper::ImageWrapper (vk::Extent3D extent, uint32_t mipMapLevels, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
-	image(), backedMemory(), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layout (vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
+ImageWrapper::ImageWrapper (VInstance* instance, vk::Extent3D extent, uint32_t mipMapLevels, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
+	instance(instance), image(), backedMemory(), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layout (vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
 	if (extent.height == 1)
 		type = vk::ImageType::e1D;
 	else if (extent.depth == 1)
@@ -32,21 +36,23 @@ ImageWrapper::ImageWrapper (vk::Extent3D extent, uint32_t mipMapLevels, uint32_t
 
 	vk::ImageCreateInfo imageInfo (vk::ImageCreateFlags(), type, format, extent, mipMapLevels, arraySize, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, layout);
 
-	V_CHECKCALL (global.deviceWrapper.device.createImage (&imageInfo, nullptr, &image), printf ("Failed To Create Image\n"));
+	V_CHECKCALL (instance->device.createImage (&imageInfo, nullptr, &image), printf ("Failed To Create Image\n"));
 
 	printf ("Create Image of dimensions %dx%dx%d\n", extent.width, extent.height, extent.depth);
 
 	vk::MemoryRequirements memRequirements;
-	global.deviceWrapper.device.getImageMemoryRequirements (image, &memRequirements);
-	backedMemory = allocateMemory (memRequirements, needed | recommended);
+	instance->device.getImageMemoryRequirements (image, &memRequirements);
+	backedMemory = instance->allocateMemory (memRequirements, needed | recommended);
 	if (!backedMemory)
-		backedMemory = allocateMemory (memRequirements, needed);
+		backedMemory = instance->allocateMemory (memRequirements, needed);
 
-	vkBindImageMemory (global.deviceWrapper.device, image, backedMemory, 0);
+	vkBindImageMemory (instance->device, image, backedMemory, 0);
 }
 ImageWrapper::~ImageWrapper() {
-	vkDestroyImage (global.deviceWrapper.device, image, nullptr);
-	vkFreeMemory (global.deviceWrapper.device, backedMemory, nullptr);
+}
+void ImageWrapper::destroy(){
+	vkDestroyImage (instance->device, image, nullptr);
+	vkFreeMemory (instance->device, backedMemory, nullptr);
 }
 
 
@@ -99,7 +105,7 @@ void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mi
 		vk::ImageMemoryBarrier (
 		    srcAccessMask, dstAccessMask,
 		    layout, newLayout,
-		    global.deviceWrapper.graphQId, global.deviceWrapper.graphQId,
+		    instance->graphQId, instance->graphQId,
 		    image,
 		    vk::ImageSubresourceRange (aspectFlags, mipbase, mipcount == 0 ? this->mipMapLevels : mipcount, arrayIndex, arrayCount == 0 ? this->arraySize : arrayCount)
 		)
@@ -110,7 +116,7 @@ void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mi
 
 void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mipbase, uint32_t mipcount, uint32_t arrayIndex, uint32_t arrayCount, vk::CommandPool commandPool, vk::Queue submitQueue) {
 
-	vk::CommandBuffer commandBuffer = createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
+	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 
 	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 
@@ -154,7 +160,7 @@ void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels,
 }
 void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue) {
 
-	vk::CommandBuffer commandBuffer = createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
+	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 
 	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
 

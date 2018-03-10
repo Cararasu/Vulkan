@@ -28,6 +28,7 @@ enum class WindowState{
 	eResized
 };
 struct VWindow{
+	VInstance* instance;
 	GLFWwindow* window;
 	VPGCQueue* pgcQueue;
 	vk::PresentModeKHR chosenPresentationMode;
@@ -51,7 +52,7 @@ struct VWindow{
 	
 	~VWindow();
 	
-	void initializeWindow();
+	void initializeWindow(VInstance* instance);
 	
 	void createSwapchain();
 	

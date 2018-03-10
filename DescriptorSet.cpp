@@ -1,13 +1,14 @@
 
 #include "VHeader.h"
 #include "VGlobal.h"
+#include "VInstance.h"
 
 
 
-void destroyDescriptorSetLayout(vk::DescriptorSetLayout layout){
-	global.deviceWrapper.device.destroyDescriptorSetLayout(layout);
+void VInstance::destroyDescriptorSetLayout(vk::DescriptorSetLayout layout){
+	device.destroyDescriptorSetLayout(layout);
 }
-vk::DescriptorPool createStandardDescriptorSetPool(){
+vk::DescriptorPool createStandardDescriptorSetPool(VInstance* instance){
 	
 	std::array<vk::DescriptorPoolSize, 3> poolSize = {
 		vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 10),
@@ -19,10 +20,10 @@ vk::DescriptorPool createStandardDescriptorSetPool(){
 
 	
 	vk::DescriptorPool descriptorPool;
-	V_CHECKCALL(global.deviceWrapper.device.createDescriptorPool(&createInfo, nullptr, &descriptorPool), printf("Creation of DescriptorSetPool failed\n"));
+	V_CHECKCALL(instance->device.createDescriptorPool(&createInfo, nullptr, &descriptorPool), printf("Creation of DescriptorSetPool failed\n"));
 	return descriptorPool;
 }
-std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts){
+std::vector<vk::DescriptorSet> VInstance::createDescriptorSets(vk::DescriptorPool descriptorSetPool, std::vector<vk::DescriptorSetLayout>* descriptorSetLayouts){
 	
-	return global.deviceWrapper.device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(descriptorSetPool, descriptorSetLayouts->size(), descriptorSetLayouts->data()));
+	return device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(descriptorSetPool, descriptorSetLayouts->size(), descriptorSetLayouts->data()));
 }

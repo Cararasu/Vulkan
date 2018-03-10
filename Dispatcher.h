@@ -1,8 +1,10 @@
 #ifndef DISPATCHER_H
 #define DISPATCHER_H
 
+#include "VGlobal.h"
 #include "VHeader.h"
 #include <vector>
+#include "DataWrapper.h"
 
 struct OpaqueInstance {
 	uint32_t objIndex;
@@ -18,6 +20,7 @@ struct OpaqueObject {
 
 struct OpaqueObjectDispatcher {
 
+	VInstance* instance;
 	std::vector<OpaqueObject> parts;
 	std::vector<OpaqueInstance> instances;
 	std::vector<Vertex> vertices;
@@ -50,7 +53,27 @@ struct OpaqueObjectDispatcher {
 	void dispatch (vk::CommandBuffer commandBuffer);
 
 	void reset_instances();
-	void hard_reset_instances();
+	
+	void init(){
+		
+	}
+	
+	void finit(VInstance* instance){
+		if (vertexBuffer) {
+			delete vertexBuffer;
+			vertexBuffer = nullptr;
+		}
+		if (indexBuffer) {
+			delete indexBuffer;
+			indexBuffer = nullptr;
+		}
+		if (instanceBuffer) {
+			delete instanceBuffer;
+			instanceBuffer = nullptr;
+		}
+		if (imageView)
+			instance->device.destroyImageView (imageView);
+	}
 };
 
 

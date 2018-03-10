@@ -9,6 +9,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include "VInstance.h"
 
 VGlobal global;
 
@@ -101,7 +102,7 @@ bool VGlobal::preInitialize() {
 		printf ("Vulkan not supported\n");
 		return false;
 	}
-	gatherExtLayer (vk::PhysicalDevice(), &instExtLayers.availableLayers, &instExtLayers.availableExtensions);
+	gatherExtLayer (vk::PhysicalDevice(), &extLayers.availableLayers, &extLayers.availableExtensions);
 
 	return true;
 }
@@ -110,8 +111,8 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 	vk::ApplicationInfo appInfo (appName, VK_MAKE_VERSION (1, 0, 0), engineName, VK_MAKE_VERSION (1, 0, 0), VK_MAKE_VERSION (1, 0, 61));
 
 	vk::InstanceCreateInfo instanceCreateInfo (vk::InstanceCreateFlags(), &appInfo,
-	        instExtLayers.neededLayers.size(), instExtLayers.neededLayers.data(),
-	        instExtLayers.neededExtensions.size(), instExtLayers.neededExtensions.data());
+	        extLayers.neededLayers.size(), extLayers.neededLayers.data(),
+	        extLayers.neededExtensions.size(), extLayers.neededExtensions.data());
 	V_CHECKCALL (vk::createInstance (&instanceCreateInfo, nullptr, &vkinstance), printf ("Instance Creation Failed\n"));
 
 	pfn_vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) glfwGetInstanceProcAddress (vkinstance, "vkCreateDebugReportCallbackEXT");
@@ -176,31 +177,28 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 	std::sort (physicalDevices.begin(), physicalDevices.end(), [] (VPhysDeviceProps & lhs, VPhysDeviceProps & rhs) {
 		return lhs.rating > rhs.rating;
 	});
-
+	for(auto& dev : physicalDevices)
+		printf("WWW: %s\n", dev.vkPhysDevProps.deviceName);
 	return true;
 }
-bool VGlobal::choseBestDevice() {
-	return choseDevice (0);
-}
-bool VGlobal::choseDevice (uint32_t index) {
+VInstance* VGlobal::createInstance(uint32_t GPUIndex){
 
-	if (index >= physicalDevices.size())
-		return false;
-	chosenDeviceId = index;
-	devExtLayers.availableExtensions = physicalDevices[chosenDeviceId].availableExtensions;
-	devExtLayers.availableLayers = physicalDevices[chosenDeviceId].availableLayers;
-	devExtLayers.neededExtensions.clear();
-	devExtLayers.neededLayers.clear();
-
-	physicalDevice = physicalDevices[chosenDeviceId].physicalDevice;
-	return true;
+	if (GPUIndex >= physicalDevices.size())
+		return nullptr;
+	VInstance* instance = new VInstance(physicalDevices[GPUIndex].physicalDevice, GPUIndex);
+	instance->extLayers.availableExtensions = physicalDevices[GPUIndex].availableExtensions;
+	instance->extLayers.availableLayers = physicalDevices[GPUIndex].availableLayers;
+	instance->extLayers.neededExtensions.clear();
+	instance->extLayers.neededLayers.clear();
+	return instance;
 }
-bool VGlobal::initializeDevice() {
+bool VGlobal::initializeDevice(VInstance* instance) {
 
 	const float priority = 1.0f;
-
+	
+	uint32_t chosenDeviceId = instance->deviceId;
 	VPhysDeviceProps& devProps = physicalDevices[chosenDeviceId];
-
+	instance->physicalDevice = devProps.physicalDevice;
 	uint32_t pgcId = -1;
 	uint32_t pgId = -1;
 	uint32_t pId = -1;
@@ -315,47 +313,47 @@ bool VGlobal::initializeDevice() {
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
 
 	vk::DeviceCreateInfo deviceCreateInfo (vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos,
-	                                       devExtLayers.neededLayers.size(), devExtLayers.neededLayers.data(),
-	                                       devExtLayers.neededExtensions.size(), devExtLayers.neededExtensions.data(),
+	                                       instance->extLayers.neededLayers.size(), instance->extLayers.neededLayers.data(),
+	                                       instance->extLayers.neededExtensions.size(), instance->extLayers.neededExtensions.data(),
 	                                       &physicalDeviceFeatures);
 
-	V_CHECKCALL (physicalDevice.createDevice (&deviceCreateInfo, nullptr, &deviceWrapper.device), printf ("Device Creation Failed\n"));
+	V_CHECKCALL (instance->physicalDevice.createDevice (&deviceCreateInfo, nullptr, &instance->device), printf ("Device Creation Failed\n"));
 
 	currentIndex = 0;
 	if (separateTransferQueue) {
 		vk::Queue tQueue;
-		deviceWrapper.device.getQueue (tId, 0, &tQueue);
-		deviceWrapper.tqueue = new VTQueue (tId, tQueue);
+		instance->device.getQueue (tId, 0, &tQueue);
+		instance->tqueue = new VTQueue (tId, tQueue);
 	}
 	for (size_t i = 0; i < pgcCount; ++i) {
 		VPGCQueue* queue;
 		if (pgcId != (uint32_t) - 1) {
 			queue = new VCombinedPGCQueue();
-			deviceWrapper.device.getQueue (pgcId, i, &queue->presentQueue);
+			instance->device.getQueue (pgcId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
 			queue->computeQueue = queue->presentQueue;
 		} else if (pgId != (uint32_t) - 1) {
 			queue = new VPartlyPGCQueue();
-			deviceWrapper.device.getQueue (pgId, i, &queue->presentQueue);
+			instance->device.getQueue (pgId, i, &queue->presentQueue);
 			queue->graphicsQueue = queue->presentQueue;
-			deviceWrapper.device.getQueue (cId, i, &queue->computeQueue);
+			instance->device.getQueue (cId, i, &queue->computeQueue);
 		} else {
 			queue = new VSinglePGCQueue();
-			deviceWrapper.device.getQueue (pId, i, &queue->presentQueue);
-			deviceWrapper.device.getQueue (gId, i, &queue->graphicsQueue);
-			deviceWrapper.device.getQueue (cId, i, &queue->computeQueue);
+			instance->device.getQueue (pId, i, &queue->presentQueue);
+			instance->device.getQueue (gId, i, &queue->graphicsQueue);
+			instance->device.getQueue (cId, i, &queue->computeQueue);
 		}
 		queue->presentQId = pId;
 		queue->graphicsQId = gId;
 		queue->computeQId = cId;
 		queue->combinedPGQ = (pId == gId);
 		queue->combinedGCQ = (gId == cId);
-		deviceWrapper.pgcQueues.push_back (queue);
+		instance->pgcQueues.push_back (queue);
 	}
-	deviceWrapper.compQId = cId;
-	deviceWrapper.presentQId = pId;
-	deviceWrapper.graphQId = gId;
-	deviceWrapper.transfQId = tId;
+	instance->compQId = cId;
+	instance->presentQId = pId;
+	instance->graphQId = gId;
+	instance->transfQId = tId;
 
 	return true;
 }
@@ -363,14 +361,7 @@ bool VGlobal::initializeDevice() {
 
 
 void VGlobal::terminate() {
-
 	
-	deletePipelineModuleLayout(&pipeline_module_builders.standard, pipeline_module_layouts.standard);
-	
-	deviceWrapper.device.destroyShaderModule (shadermodule.standardShaderVert);
-	deviceWrapper.device.destroyShaderModule (shadermodule.standardShaderFrag);
-
-	deviceWrapper.device.destroy (nullptr);
 	pfn_vkDestroyDebugReportCallbackEXT (vkinstance, debugReportCallbackEXT, nullptr);
 
 	vkinstance.destroy (nullptr);

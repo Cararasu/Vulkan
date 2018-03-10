@@ -4,6 +4,7 @@
 #include <limits>
 #include <algorithm>
 #include <map>
+#include "DataWrapper.h"
 
 
 std::map<GLFWwindow*, VWindow*> windowMap;
@@ -20,9 +21,9 @@ void VWindow::handleResize (uint32_t width, uint32_t height) {
 	windowState = WindowState::eResized;
 }
 
-void VWindow::initializeWindow() {
-
-	pgcQueue = global.deviceWrapper.requestPGCQueue();
+void VWindow::initializeWindow(VInstance* instance) {
+	this->instance = instance;
+	pgcQueue = instance->requestPGCQueue();
 
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	window = glfwCreateWindow (640, 640, "Vulkan Test", NULL, NULL);
@@ -31,14 +32,14 @@ void VWindow::initializeWindow() {
 	windowMap.insert (std::make_pair (window, this));
 	glfwSetFramebufferSizeCallback (window, framebuffer_size_callback);
 
-	imageAvailableGuardSem = createSemaphore();
+	imageAvailableGuardSem = instance->createSemaphore();
 
 	{
 		uint32_t formatCount;
-		global.physicalDevice.getSurfaceFormatsKHR (surface, &formatCount, nullptr);
+		instance->physicalDevice.getSurfaceFormatsKHR (surface, &formatCount, nullptr);
 		if (formatCount != 0) {
 			vk::SurfaceFormatKHR formats[formatCount];
-			global.physicalDevice.getSurfaceFormatsKHR (surface, &formatCount, formats);
+			instance->physicalDevice.getSurfaceFormatsKHR (surface, &formatCount, formats);
 
 			presentSwapFormat = formats[0];
 
@@ -56,10 +57,10 @@ void VWindow::initializeWindow() {
 	chosenPresentationMode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 	{
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR (global.physicalDevice, surface, &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR (instance->physicalDevice, surface, &presentModeCount, nullptr);
 		if (presentModeCount != 0) {
 			vk::PresentModeKHR presentModes[presentModeCount];
-			global.physicalDevice.getSurfacePresentModesKHR (surface, &presentModeCount, presentModes);
+			instance->physicalDevice.getSurfacePresentModesKHR (surface, &presentModeCount, presentModes);
 			chosenPresentationMode = vk::PresentModeKHR::eFifo;
 			for (size_t i = 0; i < presentModeCount; i++) {
 				if (presentModes[i] == vk::PresentModeKHR::eMailbox) {
@@ -71,7 +72,7 @@ void VWindow::initializeWindow() {
 			}
 		}
 	}
-	capabilities = global.physicalDevice.getSurfaceCapabilitiesKHR (surface);
+	capabilities = instance->physicalDevice.getSurfaceCapabilitiesKHR (surface);
 	{
 		int width, height;
 		glfwGetWindowSize (window, &width, &height);
@@ -99,8 +100,8 @@ void VWindow::createSwapchain() {
 
 	for (WindowPerPresentImageData& data : perPresentImageDatas) {
 		if (!data.firstShow) {
-			global.deviceWrapper.device.waitForFences ({data.fence}, true, std::numeric_limits<uint64_t>::max());
-			global.deviceWrapper.device.resetFences ({data.fence});
+			instance->device.waitForFences ({data.fence}, true, std::numeric_limits<uint64_t>::max());
+			instance->device.resetFences ({data.fence});
 			data.firstShow = true;
 		}
 	}
@@ -125,75 +126,75 @@ void VWindow::createSwapchain() {
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 		swapchainCreateInfo.oldSwapchain = swapChain;
 
-		printf ("SUPPORTED %d\n", global.physicalDevice.getSurfaceSupportKHR (pgcQueue->presentQId, surface));
+		printf ("SUPPORTED %d\n", instance->physicalDevice.getSurfaceSupportKHR (pgcQueue->presentQId, surface));
 
-		V_CHECKCALL (global.deviceWrapper.device.createSwapchainKHR (&swapchainCreateInfo, nullptr, &swapChain), printf ("Creation of Swapchain failed\n"));
-		global.deviceWrapper.device.destroySwapchainKHR (swapchainCreateInfo.oldSwapchain);
+		V_CHECKCALL (instance->device.createSwapchainKHR (&swapchainCreateInfo, nullptr, &swapChain), printf ("Creation of Swapchain failed\n"));
+		instance->device.destroySwapchainKHR (swapchainCreateInfo.oldSwapchain);
 	}
 
 	for (WindowPerPresentImageData& data : perPresentImageDatas) {
 		if (data.graphicQCommandPool) {
-			global.deviceWrapper.device.destroyCommandPool (data.graphicQCommandPool);
+			instance->device.destroyCommandPool (data.graphicQCommandPool);
 			data.graphicQCommandPool = vk::CommandPool();
 		}
 		if (data.fence) {
-			global.deviceWrapper.device.destroyFence (data.fence);
+			instance->device.destroyFence (data.fence);
 			data.fence = vk::Fence();
 		}
 
-		global.deviceWrapper.device.destroyImageView (data.presentImageView);
-		global.deviceWrapper.device.destroyFramebuffer (data.framebuffer);
+		instance->device.destroyImageView (data.presentImageView);
+		instance->device.destroyFramebuffer (data.framebuffer);
 	}
 
-	std::vector<vk::Image> swapChainImages = global.deviceWrapper.device.getSwapchainImagesKHR (swapChain);
+	std::vector<vk::Image> swapChainImages = instance->device.getSwapchainImagesKHR (swapChain);
 
 	perPresentImageDatas.resize (swapChainImages.size());
 
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
 		perPresentImageDatas[i].presentImage = swapChainImages[i];
-		perPresentImageDatas[i].graphicQCommandPool = createGraphicsCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
-		perPresentImageDatas[i].fence = global.deviceWrapper.device.createFence (vk::FenceCreateFlags());
+		perPresentImageDatas[i].graphicQCommandPool = instance->createGraphicsCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
+		perPresentImageDatas[i].fence = instance->device.createFence (vk::FenceCreateFlags());
 	}
 	swapChainExtend = capabilities.maxImageExtent;
-	global.deviceWrapper.device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 
 	{
 		//create/recreate depth image
 		if (depthImageView) {
-			global.deviceWrapper.device.destroyImageView (depthImageView);
+			instance->device.destroyImageView (depthImageView);
 		}
 		if (depthImage) {
 			delete depthImage;
 		}
-		vk::Format depthFormat = findDepthFormat();
+		vk::Format depthFormat = instance->findDepthFormat();
 
 		vk::Extent3D extent (swapChainExtend.width, swapChainExtend.height, 1);
-		depthImage = new ImageWrapper (extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
+		depthImage = new ImageWrapper (instance, extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
 		                               vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
-		depthImageView = createImageView2D (depthImage->image, 0, depthImage->mipMapLevels, depthImage->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
-		transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
+		depthImageView = instance->createImageView2D (depthImage->image, 0, depthImage->mipMapLevels, depthImage->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+		instance->transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
 		                       vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), getCurrentGraphicsCommandPool(), pgcQueue->graphicsQueue);
 
 	}
 
 	if (standardmodule.pipeline) {
-		updateExtent (&global.pipeline_module_builders.standard, &standardmodule, swapChainExtend);
+		updateExtent (&instance->pipeline_module_builders.standard, &standardmodule, swapChainExtend);
 	} else {
-		standardmodule = createPipelineModule (&global.pipeline_module_builders.standard, &global.pipeline_module_layouts.standard, presentSwapFormat.format, swapChainExtend);
+		standardmodule = createPipelineModule (&instance->pipeline_module_builders.standard, &instance->pipeline_module_layouts.standard, presentSwapFormat.format, swapChainExtend);
 	}
 	for (WindowPerPresentImageData& data : perPresentImageDatas) {
-		data.presentImageView = createImageView2D (data.presentImage, 0, 1, presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
+		data.presentImageView = instance->createImageView2D (data.presentImage, 0, 1, presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
 		data.firstShow = true;
 		vk::ImageView attachments[2] = {data.presentImageView, depthImageView};
 		vk::FramebufferCreateInfo framebufferInfo (vk::FramebufferCreateFlags(), standardmodule.renderPass, 2, attachments, swapChainExtend.width, swapChainExtend.height, 1);
-		data.framebuffer = global.deviceWrapper.device.createFramebuffer (framebufferInfo, nullptr);
+		data.framebuffer = instance->device.createFramebuffer (framebufferInfo, nullptr);
 	}
 	WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
 	
 	pgcQueue->graphicsQueue.submit ({}, data->fence);
 	data->firstShow = false;
-	global.deviceWrapper.device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
-	global.deviceWrapper.device.resetFences ({data->fence});
+	instance->device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
+	instance->device.resetFences ({data->fence});
 }
 void VWindow::setupFrame() {
 
@@ -210,7 +211,7 @@ void VWindow::setupFrame() {
 
 	} break;
 	case WindowState::eResized: {
-		capabilities = global.physicalDevice.getSurfaceCapabilitiesKHR (surface);
+		capabilities = instance->physicalDevice.getSurfaceCapabilitiesKHR (surface);
 		if (capabilities.maxImageExtent != swapChainExtend) {
 			printf ("WaslNats %dx%d\n", capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
 			swapChainExtend = capabilities.maxImageExtent;
@@ -220,17 +221,17 @@ void VWindow::setupFrame() {
 	}
 	case WindowState::eFramePresented: {
 
-		global.deviceWrapper.device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+		instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 
 		WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
 		if (data->firstShow) {
 			data->firstShow = false;
 		} else {
-			global.deviceWrapper.device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
-			global.deviceWrapper.device.resetFences ({data->fence});
+			instance->device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
+			instance->device.resetFences ({data->fence});
 		}
-		global.deviceWrapper.device.destroyCommandPool (data->graphicQCommandPool, nullptr);
-		data->graphicQCommandPool = createGraphicsCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
+		instance->device.destroyCommandPool (data->graphicQCommandPool, nullptr);
+		data->graphicQCommandPool = instance->createGraphicsCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
 	}
 	break;
 	}
@@ -253,22 +254,22 @@ void VWindow::showNextFrame (uint32_t waitSemaphoreCount, const vk::Semaphore* p
 
 VWindow::~VWindow() {
 
-	global.deviceWrapper.device.destroyImageView (depthImageView, nullptr);
+	instance->device.destroyImageView (depthImageView, nullptr);
 	delete depthImage;
 
 	for (size_t i = 0; i < perPresentImageDatas.size(); i++) {
-		global.deviceWrapper.device.destroyCommandPool (perPresentImageDatas[i].graphicQCommandPool, nullptr);
-		global.deviceWrapper.device.destroyFramebuffer (perPresentImageDatas[i].framebuffer, nullptr);
+		instance->device.destroyCommandPool (perPresentImageDatas[i].graphicQCommandPool, nullptr);
+		instance->device.destroyFramebuffer (perPresentImageDatas[i].framebuffer, nullptr);
 		if (i != presentImageIndex && perPresentImageDatas[presentImageIndex].firstShow)
-			global.deviceWrapper.device.waitForFences ({perPresentImageDatas[i].fence}, true, std::numeric_limits<uint64_t>::max());
-		global.deviceWrapper.device.destroyFence (perPresentImageDatas[i].fence, nullptr);
-		global.deviceWrapper.device.destroyImageView (perPresentImageDatas[i].presentImageView, nullptr);
+			instance->device.waitForFences ({perPresentImageDatas[i].fence}, true, std::numeric_limits<uint64_t>::max());
+		instance->device.destroyFence (perPresentImageDatas[i].fence, nullptr);
+		instance->device.destroyImageView (perPresentImageDatas[i].presentImageView, nullptr);
 	}
 
-	deletePipelineModule (&global.pipeline_module_builders.standard, standardmodule);
+	deletePipelineModule (&instance->pipeline_module_builders.standard, standardmodule);
 
-	destroySemaphore (imageAvailableGuardSem);
+	instance->destroySemaphore (imageAvailableGuardSem);
 
 	glfwDestroyWindow (window);
-	global.deviceWrapper.device.destroySwapchainKHR (swapChain);
+	instance->device.destroySwapchainKHR (swapChain);
 }

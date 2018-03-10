@@ -8,10 +8,9 @@
 #include "VGlobal.h"
 #include "VHeader.h"
 #include "VWindow.h"
-#include "VBuilders.h"
 #include "ViewPort.h"
 #include "DataWrapper.h"
-#include "Dispatcher.h"
+#include "RenderEnvironment.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -55,93 +54,10 @@ struct ProxyObject{
 
 #include <stdint.h>
 
-struct ObjId{
-	int id, index;
-};
+#include "DrawDispatcher.h"
 
-template<int ID, typename... OBJDATAs> struct ObjStore;
-
-template<int TYPEID>
-struct ObjStore <TYPEID>{
-	template<typename TOBJDATA>
-	inline ObjId insert(TOBJDATA& data){
-		assert(false);//Type not defined
-		return {-1,-1};
-	}
-	inline bool delete_obj(ObjId objId){
-		return false;
-	}
-	inline void clean() {}
-	inline void update() {}
-};
-template<int TYPEID, typename OBJDATA, typename... OBJDATAs>
-struct ObjStore <TYPEID, OBJDATA, OBJDATAs...>{
-	std::vector<std::pair<OBJDATA, bool>> obj_list;
-	ObjStore<TYPEID + 1, OBJDATAs...> subStore;
-	template<typename TOBJDATA>
-	inline ObjId insert(TOBJDATA& data){
-		return subStore.insert(data);
-	}
-	inline ObjId insert(OBJDATA& data){
-		for(auto it = obj_list.begin(); it != obj_list.end(); it++) {
-			if(!it->second){
-				it->first = data;
-				return {TYPEID, (int)std::distance(obj_list.begin(), it)};
-			}
-		}
-		obj_list.push_back(std::make_pair(data, true));
-		return {TYPEID, (int)obj_list.size() - 1};
-	}
-	inline bool delete_obj(ObjId objId){
-		if(objId.id == TYPEID){
-			obj_list[objId.index].second = false;
-			return true;
-		}
-		return subStore.delete_obj(objId);
-	}
-	inline void clean(){
-		obj_list.clean();
-		subStore.clean();
-	}
-	inline void update(){
-		for(std::pair<OBJDATA, bool>& p : obj_list){
-			if(p.second) p.first.proxy_obj.update();
-		}
-		subStore.update();
-	}
-};
-
-template< typename... OBJDATAs>
-struct ObjectStore {
-	ObjStore<0, OBJDATAs...> inner_store;
-
-	template<typename OBJDATA>
-	inline ObjId insert(OBJDATA& data){
-		return inner_store.insert(data);
-	}
-	inline bool delete_obj(ObjId objId){
-		return inner_store.delete_obj(objId);
-	}
-	inline void clean(){
-		inner_store.clean();
-	}
-	inline void update(){
-		inner_store.update();
-	}
-};
 struct DefDrawData{
 	glm::dvec3 pos, rot, scale;
-};
-template<uint32_t ID, typename OBJDATA>
-struct DrawObject{
-	const static uint32_t id = ID;
-	
-	ProxyObject<OBJDATA> proxy_obj;
-	uint64_t instanceId;
-	int m_bounding_box;//2x glm::dvec3
-	bool enabled;
-	
-	virtual void draw() = 0;
 };
 struct CullingStrategy {
 //CameraFlagList
@@ -162,19 +78,8 @@ struct RenderContext {
 	void removeObject(uint64_t id);
 };
 
-thread_local struct RenderEnvironment{
-	//update one object at a time
-	template<typename DRAWOBJECT>
-	void update(DRAWOBJECT* obj);
-	//do a partial flush, submit in parts, does not need to be invoked and can be invoked by update
-	template<typename DRAWOBJECT>
-	void partialFinish(DRAWOBJECT* obj);
-	//finish the frame
-	void finish();
-} g_render_environment;
 
-
-void loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
+uint32_t loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 
 	std::ifstream input (file, std::ios::binary);
 
@@ -211,11 +116,51 @@ void loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 	
 	ObjectPartData data;
 	data.diffuseTexId = 0;
-	dispatcher->add_object(vs, is, data);
+	return g_thread_data.dispatcher.add_object(vs, is, data);
+}
+
+LoadedObjectData<Vertex, uint32_t> loadDataFile (std::string file, ObjectVertexData<Vertex, uint32_t>& vertex_data) {
+
+	std::ifstream input (file, std::ios::binary);
+
+	std::string str;
+	std::getline (input, str, '\0');
+	uint32_t vertexCount = 0;
+	LoadedObjectData<Vertex, uint32_t> objData;
+	objData.vertex_offset = vertex_data.vertices.size();
+	objData.index_offset = vertex_data.indices.size();
+	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (uint32_t));
+	
+
+	vertex_data.vertices.resize (vertex_data.vertices.size() + vertexCount);
+	for (size_t i = 0; i < vertexCount; i++) {
+		Vertex v;
+		input.read (reinterpret_cast<char*> (&v.pos[0]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.uv[0]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.normal[0]), sizeof (float));
+
+		input.read (reinterpret_cast<char*> (&v.pos[1]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.uv[1]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.normal[1]), sizeof (float));
+
+		input.read (reinterpret_cast<char*> (&v.pos[2]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.uv[2]), sizeof (float));
+		input.read (reinterpret_cast<char*> (&v.normal[2]), sizeof (float));
+
+		vertex_data.vertices[i] = v;
+	}
+	uint32_t indexCount;
+	input.read (reinterpret_cast<char*> (&indexCount), sizeof (uint32_t));
+	objData.index_size = indexCount;
+	std::vector<uint32_t> is;
+	vertex_data.indices.resize (vertex_data.indices.size() + indexCount);
+
+	input.read (reinterpret_cast<char*> (&vertex_data.indices[objData.index_offset]), sizeof (uint32_t) *indexCount);
+	return objData;
 }
 
 
-void loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
+void loadImage (VInstance* instance, std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load (file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -224,65 +169,97 @@ void loadImage (std::string file, ImageWrapper * imageWrapper, uint32_t index, v
 		throw std::runtime_error ("failed to load texture image!");
 	}
 	vk::Extent3D imageExtent = vk::Extent3D (texWidth, texHeight, 1);
-	transferData (pixels, imageWrapper->image, vk::Offset3D (0, 0, 0), imageExtent, index, imageSize,
+	instance->transferData (pixels, imageWrapper->image, vk::Offset3D (0, 0, 0), imageExtent, index, imageSize,
 	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue);
 
 	stbi_image_free (pixels);
 }
 
-struct WWW{
-	ProxyObject<int> proxy_obj;
+struct Orientation{
+	glm::dvec3 position, rotation, scale;
 };
+struct BoundingBox{
+	glm::dvec3 pos_size, neg_size;
+};
+struct SimpleObject{
+	Orientation orientation;
+	BoundingBox bounding_box;
+};
+
+struct WWW{
+	ProxyObject<SimpleObject> proxy_obj;
+	uint32_t objectId;
+	std::vector<uint32_t> parts;
+	void update(ThreadRenderEnvironment* renderEnv){//gets called after ProxyObject update in the update Phase
+		printf("Update Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
+	}
+	void execute(ThreadRenderEnvironment* renderEnv){//gets called during the execute Phase
+		Instance instance;
+		instance.m2wMatrix = glm::translate(proxy_obj.obj.orientation.position);
+		renderEnv->dispatcher.push_instance(parts, instance);
+		printf("Dispatch Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
+		for(uint32_t id : parts) 
+			printf("%d, ", id);
+		printf("\n");
+	}
+};
+
+/*
+ * VGlobal
+ * 		VGlobal -> creates -> VInstance
+ * VInstance - Device, Renderpasses, Queues, Vulkan-Object-Definitions, ...
+ * 		VInstance -> creates -> RenderEnvironment
+ * RenderEnvironment - Buffers, Descriptorsets, Objects, ...
+ * 		RenderEnvironment -> creates -> PerFrameStuff
+ * PerFrameStuff - OnEnd-Functions(After the Frame is definetly over(Fence)) they are called and clean up
+ * 		PerFrameStuff -> creates -> PerThreadStuff
+ * PerThreadStuff - Instances, ...
+ * */
+
+/*
+ * Data organisation
+ *     ObjectStorage has the Objects with BoundingBoxes and the Orientation
+ *         Organised by Type
+ *         update calls update the proxyobject and then call individual update
+ *         execute calls execute on every object
+ *         create VertexInputAttributeDescription for per Object stuff
+ *     VerticesIndicesStorage
+ *         Organised maybe also by type but organised in different buffers, bufferid/offset/count
+ *         
+ *         generate VertexInputAttributeDescriptions from this
+ * */
 
 int main (int argc, char **argv) {
 	
-	ObjectStore<WWW> store;
-	WWW ww1;
-	WWW ww2;
-	WWW ww3;
-	WWW ww4;
-	ObjId id1 = store.insert(ww1);
-	printf("Id: %d Index: %d\n", id1.id, id1.index);
-	ObjId id2 = store.insert(ww2);
-	printf("Id: %d Index: %d\n", id2.id, id2.index);
-	ObjId id3 = store.insert(ww3);
-	printf("Id: %d Index: %d\n", id3.id, id3.index);
-	ObjId id4 = store.insert(ww4);
-	printf("Id: %d Index: %d\n", id4.id, id4.index); 
+	std::vector<uint32_t> TiePartIds;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
+	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
 	
-	store.delete_obj(id4);
+	std::vector<uint32_t> XPartIds;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
+	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
 	
-	store.update();
 	
-	OpaqueObjectDispatcher* dispatcher = new OpaqueObjectDispatcher();
-	
-	std::vector<uint32_t> TiePartIds = {0,1,2,3,4,5};
-	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 0;
-	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 1;
-	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 1;
-	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 2;
-	loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 2;
-	loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 2;
-	
-	std::vector<uint32_t> XPartIds = {6,7,8,9,10,11};
-	loadDataFile ("../workingdir/assets/X/XWing_Body.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
-	loadDataFile ("../workingdir/assets/X/XWing_Windows.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
-	loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
-	loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
-	loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
-	loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", dispatcher);
-	dispatcher->parts.back().data.diffuseTexId = 3;
 
 	PerspectiveViewPort<float> viewport;
 
@@ -301,19 +278,19 @@ int main (int argc, char **argv) {
 	global.preInitialize();
 
 	printf ("Instance Extensions:\n");
-	for (vk::ExtensionProperties& extProp : global.instExtLayers.availableExtensions) {
+	for (vk::ExtensionProperties& extProp : global.extLayers.availableExtensions) {
 		printf ("\t%s\n", extProp.extensionName);
 	}
 	printf ("Instance Layers:\n");
-	for (vk::LayerProperties& layerProp : global.instExtLayers.availableLayers) {
+	for (vk::LayerProperties& layerProp : global.extLayers.availableLayers) {
 		printf ("\t%s\n", layerProp.layerName);
 		printf ("\t\tDesc: %s\n", layerProp.description);
 	}
 
-	if (!global.instExtLayers.activateLayer ("VK_LAYER_LUNARG_standard_validation")) {
+	if (!global.extLayers.activateLayer ("VK_LAYER_LUNARG_standard_validation")) {
 		printf ("Layer VK_LAYER_LUNARG_standard_validation not available\n");
 	}
-	if (!global.instExtLayers.activateLayer ("VK_LAYER_LUNARG_swapchain")) {
+	if (!global.extLayers.activateLayer ("VK_LAYER_LUNARG_swapchain")) {
 		printf ("Layer VK_LAYER_LUNARG_swapchain not available\n");
 	}
 
@@ -326,82 +303,113 @@ int main (int argc, char **argv) {
 	uint32_t instanceExtCount;
 	const char** glfwReqInstanceExt = glfwGetRequiredInstanceExtensions (&instanceExtCount);
 	for (size_t i = 0; i < instanceExtCount; i++) {
-		if (!global.instExtLayers.activateExtension (glfwReqInstanceExt[i])) {
+		if (!global.extLayers.activateExtension (glfwReqInstanceExt[i])) {
 			printf ("Extension %s not available\n", glfwReqInstanceExt[i]);
+		}else{
+			printf ("Activate Extension %s\n", glfwReqInstanceExt[i]);
 		}
 	}
-	if (!global.instExtLayers.activateExtension (VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
+	if (!global.extLayers.activateExtension (VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
 		printf ("Extension %s not available\n", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	}
 
 	printf ("Instance Extensions available:\n");
-	for (vk::ExtensionProperties& prop : global.instExtLayers.availableExtensions) {
+	for (vk::ExtensionProperties& prop : global.extLayers.availableExtensions) {
 		printf ("\t%s\n", prop.extensionName);
 	}
 	printf ("Instance Layers available:\n");
-	for (vk::LayerProperties& prop : global.instExtLayers.availableLayers) {
+	for (vk::LayerProperties& prop : global.extLayers.availableLayers) {
 		printf ("\t%s\n", prop.layerName);
 	}
 
-	global.initializeInstance ("Blabla", "wuwu Engine");
+	global.initializeInstance ("Blabla", "WUWU Engine");
 
-	global.choseBestDevice();
+	
+	{
+		LoadedObjectWrapper<Vertex, uint32_t> obj_wrap;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 0;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 1;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 1;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 2;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 2;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 2;
+		
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
+		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.back().diffuseTexId = 3;
 
+		g_render_environment.objects.push_back(obj_wrap);
+	}
+	//global.devExtLayers.activateExtension(VK_NV_GLSL_SHADER_EXTENSION_NAME);
+	VInstance* instance = global.createInstance();
 	printf ("Device Extensions available:\n");
-	for (vk::ExtensionProperties& prop : global.devExtLayers.availableExtensions) {
+	for (vk::ExtensionProperties& prop : instance->extLayers.availableExtensions) {
 		printf ("\t%s\n", prop.extensionName);
 	}
 	printf ("Device Layers available:\n");
-	for (vk::LayerProperties& prop : global.devExtLayers.availableLayers) {
+	for (vk::LayerProperties& prop : instance->extLayers.availableLayers) {
 		printf ("\t%s\n", prop.layerName);
 	}
 
-	if (!global.devExtLayers.activateExtension (VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+	if (!instance->extLayers.activateExtension (VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
 		printf ("Extension %s not available\n", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
-	if (!global.devExtLayers.activateExtension (VK_NV_GLSL_SHADER_EXTENSION_NAME)) {
+	if (!instance->extLayers.activateExtension (VK_NV_GLSL_SHADER_EXTENSION_NAME)) {
 		printf ("Extension %s not available\n", VK_NV_GLSL_SHADER_EXTENSION_NAME);
 	}
-	//global.devExtLayers.activateExtension(VK_NV_GLSL_SHADER_EXTENSION_NAME);
-
-	global.initializeDevice();
+	global.initializeDevice(instance);
+	instance->pipeline_module_builders.standard.instance = instance;
+	g_thread_data.init(&g_render_environment);
 
 	VWindow* vWindow = new VWindow();
 
-	global.pipeline_module_layouts.standard = createPipelineModuleLayout(&global.pipeline_module_builders.standard);
+	instance->pipeline_module_layouts.standard = createPipelineModuleLayout(&instance->pipeline_module_builders.standard);
 
-	vWindow->initializeWindow();
+	vWindow->initializeWindow(instance);
 
 
-	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool();
+	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool(instance);
 
-	std::vector<vk::DescriptorSet> descriptorSets = createDescriptorSets (descriptorSetPool, &global.pipeline_module_layouts.standard.descriptorSetLayouts);
+	std::vector<vk::DescriptorSet> descriptorSets = instance->createDescriptorSets (descriptorSetPool, &instance->pipeline_module_layouts.standard.descriptorSetLayouts);
 
-	dispatcher->set_descriptor_set(descriptorSets[1]);
+	g_thread_data.dispatcher.set_descriptor_set(descriptorSets[1]);
 
-	vk::CommandPool transferCommandPool = createTransferCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
+	vk::CommandPool transferCommandPool = instance->createTransferCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
 
-	dispatcher->upload_data(transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+	g_thread_data.dispatcher.upload_data(transferCommandPool, instance->tqueue->transferQueue);
 
 	VkExtent3D imageExtent = {4096, 4096, 1};
-	vk::Format imageFormat = findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
-	ImageWrapper * imageWrapper = new ImageWrapper (imageExtent, 12, 4, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc),
+	vk::Format imageFormat = instance->findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
+	ImageWrapper* imageWrapper = new ImageWrapper (instance, imageExtent, 12, 4, imageFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc),
 	        vk::ImageAspectFlagBits::eColor, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 	{
 		imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 
-		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-		loadImage ("../workingdir/assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
-		loadImage ("../workingdir/assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, global.deviceWrapper.tqueue->transferQueue);
+		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "../workingdir/assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
 		
 		imageWrapper->generateMipmaps(0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-		
-		//imageWrapper->transitionImageLayout (vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
 	//TODO Memory Barrier for graphics queue
-	//global.deviceWrapper.tqueue->waitForFinish();
+	//instance->tqueue->waitForFinish();
 	//vWindow->pgcQueue->waitForFinish();
 
 	vk::Sampler sampler;
@@ -416,57 +424,70 @@ int main (int argc, char **argv) {
 		    vk::BorderColor::eFloatOpaqueBlack, VK_FALSE
 		);
 
-		global.deviceWrapper.device.createSampler (&samplerInfo, nullptr, &sampler);
+		instance->device.createSampler (&samplerInfo, nullptr, &sampler);
 	}
 
-	dispatcher->set_image_array(imageWrapper, sampler);
+	g_thread_data.dispatcher.set_image_array(imageWrapper, sampler);
 
 	uint32_t MAX_COMMAND_COUNT = 100;
 
-	BufferWrapper *uniformBuffer = new BufferWrapper (sizeof (Camera),
+	BufferWrapper *uniformBuffer = new BufferWrapper (instance, sizeof (Camera),
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 
 	vk::DescriptorBufferInfo bufferInfo (uniformBuffer->buffer, offsetof (Camera, w2sMatrix), sizeof (glm::mat4));
-	{
-		global.deviceWrapper.device.updateDescriptorSets ({
-			vk::WriteDescriptorSet (descriptorSets[0],
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eUniformBuffer, //descriptorType
-			                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-		}, {});
+	instance->device.updateDescriptorSets ({
+		vk::WriteDescriptorSet (descriptorSets[0],
+								0, 0, //dstBinding, dstArrayElement
+								1, //descriptorCount
+								vk::DescriptorType::eUniformBuffer, //descriptorType
+								nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
+	}, {});
 
-	}
+	vk::Semaphore drawFinishedSemaphore = instance->createSemaphore();
 
-	vk::Semaphore imageAvailableSemaphore = createSemaphore();
-	vk::Semaphore drawFinishedSemaphore = createSemaphore();
-
+	ObjectStore<WWW> store;
+	SimpleObject obj1;
+	SimpleObject obj2;
+	SimpleObject obj3;
+	WWW ww1;
+	WWW ww2;
+	WWW ww3;
+	ww1.proxy_obj.proxyObj = &obj1;
+	ww1.parts = XPartIds;
+	
+	ww2.proxy_obj.proxyObj = &obj2;
+	ww2.parts = TiePartIds;
+	
+	ww3.proxy_obj.proxyObj = &obj3;
+	ww3.parts = TiePartIds;
+	
+	obj1.orientation.position = glm::vec3(0.0f, 0.0f, 0.0f);
+	obj2.orientation.position = glm::vec3(1.0f, 1.0f, 1.0f);
+	obj3.orientation.position = glm::vec3(-3.0f, 0.0f, 0.0f);
+	
+	ObjId id1 = store.insert(ww1);
+	printf("Id: %d Index: %d\n", id1.id, id1.index);
+	ObjId id2 = store.insert(ww2);
+	printf("Id: %d Index: %d\n", id2.id, id2.index);
+	ObjId id3 = store.insert(ww3);
+	printf("Id: %d Index: %d\n", id3.id, id3.index);
+	
 	
 	while (vWindow->isOpen()) {
 		
+		obj1.orientation.position.x += 0.01f;
 		vWindow->setupFrame();
 		printf ("--------------- FrameBoundary ---------------\n");
 		printf ("PresetImageId: %d\n", vWindow->presentImageIndex);
 
 		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, viewport.m_upvector);
 		
-		/*
-		glm::vec3 rotVec = glm::cross (viewport.m_viewvector, viewport.m_upvector);
-		viewport.m_upvector = glm::rotate (viewport.m_upvector, 0.005f, rotVec);
-		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, rotVec);
-		viewport.m_upvector = glm::rotate (viewport.m_upvector, 0.005f, viewport.m_viewvector);*/
-
-		Instance inst1 = {glm::translate(glm::vec3(1.0f, 1.0f, 1.0f))};
-		Instance inst2 = {glm::translate(glm::vec3(0.0f, 0.0f, 0.0f))};
-		Instance inst3 = {glm::translate(glm::vec3(-3.0f, 0.0f, 0.0f))};
-		dispatcher->reset_instances();
-		dispatcher->push_instance(TiePartIds, inst1);
-		dispatcher->push_instance(TiePartIds, inst3);
+		g_thread_data.reset();
+		store.update(&g_thread_data);
+		store.execute(&g_thread_data);
 		
-		dispatcher->push_instance(XPartIds, inst2);
-		
-		vk::CommandBuffer commandBuffer = createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
+		vk::CommandBuffer commandBuffer = instance->createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
 		vk::CommandBufferBeginInfo beginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
 		
 		{
@@ -478,11 +499,11 @@ int main (int argc, char **argv) {
 			( (Camera*) (stagingBuffer->data + stagingOffset)) [0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
 			stagingOffset += sizeof (Camera);
 
-			copyBuffer (stagingBuffer->buffer, uniformBuffer->buffer, uniformOffset, 0, sizeof (Camera),
+			instance->copyBuffer (stagingBuffer->buffer, uniformBuffer->buffer, uniformOffset, 0, sizeof (Camera),
 						vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
 						commandBuffer);
 			
-			stagingOffset = dispatcher->setup(stagingBuffer, stagingOffset, commandBuffer);
+			stagingOffset = g_thread_data.dispatcher.setup(stagingBuffer, stagingOffset, commandBuffer);
 			
 			commandBuffer.pipelineBarrier (
 				vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
@@ -490,24 +511,20 @@ int main (int argc, char **argv) {
 			{}/*memoryBarrier*/, {
 				vk::BufferMemoryBarrier (
 					vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-					global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
-					dispatcher->instanceBuffer->buffer, 0, dispatcher->instanceBuffer->bufferSize
+					instance->transfQId, instance->graphQId,
+					g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->bufferSize
 				)
-			}/*bufferBarrier*/,
-			{}/*imageBarrier*/
-			);
+			}/*bufferBarrier*/, {}/*imageBarrier*/);
 			commandBuffer.pipelineBarrier (
 			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexShader),
 			    vk::DependencyFlags(),
 			{}/*memoryBarrier*/, {
 				vk::BufferMemoryBarrier (
 				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead,
-				    global.deviceWrapper.transfQId, global.deviceWrapper.graphQId,
+				    instance->transfQId, instance->graphQId,
 				    uniformBuffer->buffer, 0, uniformBuffer->bufferSize
 				)
-			}/*bufferBarrier*/,
-			{}/*imageBarrier*/
-			);
+			}/*bufferBarrier*/, {}/*imageBarrier*/);
 			vk::ClearValue clearColors[2] = {
 				vk::ClearValue (vk::ClearColorValue (std::array<float, 4> ({0.0f, 0.0f, 0.5f, 1.0f}))),
 				vk::ClearValue (vk::ClearDepthStencilValue (1.0f, 0)),
@@ -523,9 +540,9 @@ int main (int argc, char **argv) {
 			);
 			
 			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, vWindow->standardmodule.pipeline);
-			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, global.pipeline_module_layouts.standard.pipelineLayout, 0, descriptorSets[0], {});
+			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, instance->pipeline_module_layouts.standard.pipelineLayout, 0, descriptorSets[0], {});
 			
-			dispatcher->dispatch(commandBuffer);
+			g_thread_data.dispatcher.dispatch(commandBuffer);
 
 			commandBuffer.endRenderPass();
 
@@ -547,29 +564,28 @@ int main (int argc, char **argv) {
 		std::this_thread::sleep_for (std::chrono::nanoseconds (10000000));
 	}
 
-	global.deviceWrapper.device.waitIdle();
+	instance->device.waitIdle();
 
 	V_CHECKCALL_MAYBE (vWindow->pgcQueue->presentQueue.waitIdle(), printf ("Failed to wait for Present-Queue\n"));
-	V_CHECKCALL_MAYBE (global.deviceWrapper.device.waitIdle(), printf ("Failed to wait for Device\n"));
+	V_CHECKCALL_MAYBE (instance->device.waitIdle(), printf ("Failed to wait for Device\n"));
 
-	global.deviceWrapper.device.destroyCommandPool (transferCommandPool);
+	instance->device.destroyCommandPool (transferCommandPool);
 
-	destroySemaphore (imageAvailableSemaphore);
-	destroySemaphore (drawFinishedSemaphore);
+	instance->destroySemaphore (drawFinishedSemaphore);
 
-	global.deviceWrapper.device.destroySampler(sampler);
+	instance->device.destroySampler(sampler);
 
+	g_thread_data.finit(instance);
+	
 	delete vWindow;
 	if (stagingBuffer)
 		delete stagingBuffer;
 
 	delete imageWrapper;
 	
-	delete dispatcher;
-	
 	delete uniformBuffer;
 
-	global.deviceWrapper.device.destroyDescriptorPool (descriptorSetPool, nullptr);
+	instance->device.destroyDescriptorPool (descriptorSetPool, nullptr);
 
 	glfwTerminate();
 	global.terminate();

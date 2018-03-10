@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
+struct VInstance;
+
 struct PipelineModuleLayout {
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 	std::vector<vk::PushConstantRange> pushConstRanges;
@@ -76,6 +78,7 @@ void deletePipelineModuleLayout (BUILDER* builder, PipelineModuleLayout moduleLa
 
 
 struct StandardPipelineModuleBuilder {
+	VInstance* instance;
 	std::vector<const char*> shader_files = {"../workingdir/shader/tri.vert", "../workingdir/shader/tri.frag"};//or shader_names
 
 	std::vector<vk::DescriptorSetLayout> createDescriptorSetLayouts();

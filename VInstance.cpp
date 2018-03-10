@@ -1,8 +1,21 @@
+#include "VInstance.h"
 
-#include "VHeader.h"
 #include <vector>
 #include <fstream>
-#include "VBuilders.h"
+#include "VGlobal.h"
+
+VInstance::VInstance(vk::PhysicalDevice physicalDevice, uint32_t deviceId) :physicalDevice(physicalDevice), deviceId(deviceId){
+}
+
+VInstance::~VInstance() {
+	
+	deletePipelineModuleLayout(&pipeline_module_builders.standard, pipeline_module_layouts.standard);
+	
+	device.destroyShaderModule (global.shadermodule.standardShaderVert);
+	device.destroyShaderModule (global.shadermodule.standardShaderFrag);
+
+	device.destroy (nullptr);
+}
 
 static std::vector<char> readFile(const char* filename) {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -22,13 +35,13 @@ static std::vector<char> readFile(const char* filename) {
 
 	return buffer;
 }
-vk::ShaderModule loadShaderFromFile(const char* filename){
+vk::ShaderModule VInstance::loadShaderFromFile(const char* filename){
 	
 	std::vector<char> shaderCode = readFile(filename);
 	
 	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.size(), (const uint32_t*)shaderCode.data());
 	
 	vk::ShaderModule shadermodule;
-	V_CHECKCALL (global.deviceWrapper.device.createShaderModule(&createInfo, nullptr, &shadermodule), printf ("Creation of Shadermodule failed\n"));
+	V_CHECKCALL (device.createShaderModule(&createInfo, nullptr, &shadermodule), printf ("Creation of Shadermodule failed\n"));
 	return shadermodule;
 }

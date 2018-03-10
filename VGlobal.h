@@ -1,12 +1,9 @@
-#ifndef VINSTANCE_H
-#define VINSTANCE_H
+#pragma once
 
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string.h>
 #include "VHeader.h"
-#include "VDevice.h"
-#include "PipelineModule.h"
 
 struct VExtLayerStruct{
 	std::vector<vk::LayerProperties> availableLayers;
@@ -28,20 +25,14 @@ struct VPhysDeviceProps{
 	vk::PhysicalDeviceFeatures  vkPhysDevFeatures;
 };
 
+struct VInstance;
 
 struct VGlobal{
 	
 	vk::Instance vkinstance;
-	VExtLayerStruct instExtLayers;
-	
-	vk::PhysicalDevice physicalDevice;
-	VExtLayerStruct devExtLayers;
+	VExtLayerStruct extLayers;
 	
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
-	
-	uint32_t chosenDeviceId = -1;
-	
-	VDevice deviceWrapper;
 	
 	struct{
 		vk::ShaderModule standardShaderVert;
@@ -52,16 +43,10 @@ struct VGlobal{
 	
 	bool preInitialize();
 	bool initializeInstance(const char* appName = nullptr, const char* engineName = nullptr);
-	bool choseBestDevice();
-	bool choseDevice(uint32_t index);
-	bool initializeDevice();
 	
-	struct{
-		StandardPipelineModuleBuilder standard;
-	}pipeline_module_builders;
-	struct{
-		PipelineModuleLayout standard;
-	}pipeline_module_layouts;
+	//List getGPUs
+	VInstance* createInstance(uint32_t GPUIndex = 0);
+	bool initializeDevice(VInstance* instance);
 	
 	void terminate();
 	
@@ -69,7 +54,3 @@ struct VGlobal{
 
 extern VGlobal global;
 
-
-
-
-#endif // VINSTANCE_H

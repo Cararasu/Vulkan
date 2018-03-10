@@ -1,8 +1,7 @@
-#ifndef VDEVICE_H
-#define VDEVICE_H
+#pragma once
 
-#include <vector>
 #include "VHeader.h"
+#include <vector>
 
 #define V_MAX_PGCQUEUE_COUNT (4)
 
@@ -21,6 +20,7 @@ struct VPGCQueue{
 	virtual void submitCompute(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence = vk::Fence()) = 0;
 	virtual void waitForFinish() = 0;
 };
+
 struct VSinglePGCQueue : VPGCQueue{
 	virtual void submitPresent(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence){
 		V_CHECKCALL(presentQueue.submit(count, submitInfo, fence), printf("Submit to Present Queue Failed\n"));
@@ -81,26 +81,3 @@ struct VTQueue{
 	//submit(vk::SubmitInfo, vk::Fence)
 	//waitForFinish
 };
-
-struct VDevice{
-	vk::Device device;
-	size_t pgcIndex = 0;
-	std::vector<VPGCQueue*> pgcQueues;
-	VTQueue* tqueue = nullptr;
-	
-	uint32_t compQId = -1, graphQId = -1, presentQId = -1, transfQId = -1;
-	
-	VTQueue* requestTransferQueue(){
-		return tqueue;
-	}
-	VPGCQueue* requestPGCQueue(){//TODO synch
-		VPGCQueue* queue = pgcQueues[pgcIndex];
-		pgcIndex = (pgcIndex + 1) % pgcQueues.size();
-		return queue;
-	}
-	VPGCQueue* getPGCQueue(){//TODO synch
-		return pgcQueues[pgcIndex];
-	}
-};
-
-#endif // VDEVICE_H

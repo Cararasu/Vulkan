@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Thomas
-Date                   :=01/03/2018
+Date                   :=10/03/2018
 CodeLitePath           :="C:/Program Files/CodeLite"
 LinkerName             :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe"
 SharedObjectLinkerName :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe" -shared -fPIC
@@ -62,8 +62,8 @@ AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw6
 ## User defined environment variables
 ##
 CodeLiteDir:=C:\Program Files\CodeLite
-Objects0=$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/VGlobal.cpp$(ObjectSuffix) $(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/VDevice.cpp$(ObjectSuffix) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) $(IntermediateDirectory)/Shader.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix) $(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/VInstance.cpp$(ObjectSuffix) $(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/VGlobal.cpp$(ObjectSuffix) $(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix) $(IntermediateDirectory)/VDevice.cpp$(ObjectSuffix) 
 
 
 
@@ -102,14 +102,6 @@ $(IntermediateDirectory)/Dispatcher.cpp$(DependSuffix): Dispatcher.cpp
 $(IntermediateDirectory)/Dispatcher.cpp$(PreprocessSuffix): Dispatcher.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Dispatcher.cpp$(PreprocessSuffix) Dispatcher.cpp
 
-$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix): DescriptorSet.cpp $(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/DescriptorSet.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix): DescriptorSet.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix) -MM DescriptorSet.cpp
-
-$(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix): DescriptorSet.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix) DescriptorSet.cpp
-
 $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix): DataWrapper.cpp $(IntermediateDirectory)/DataWrapper.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/DataWrapper.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/DataWrapper.cpp$(DependSuffix): DataWrapper.cpp
@@ -126,13 +118,21 @@ $(IntermediateDirectory)/Buffer.cpp$(DependSuffix): Buffer.cpp
 $(IntermediateDirectory)/Buffer.cpp$(PreprocessSuffix): Buffer.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Buffer.cpp$(PreprocessSuffix) Buffer.cpp
 
-$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix): VHeader.cpp $(IntermediateDirectory)/VHeader.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/VHeader.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/VHeader.cpp$(DependSuffix): VHeader.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/VHeader.cpp$(DependSuffix) -MM VHeader.cpp
+$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix): Pipelines.cpp $(IntermediateDirectory)/Pipelines.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Pipelines.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/Pipelines.cpp$(DependSuffix): Pipelines.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/Pipelines.cpp$(DependSuffix) -MM Pipelines.cpp
 
-$(IntermediateDirectory)/VHeader.cpp$(PreprocessSuffix): VHeader.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/VHeader.cpp$(PreprocessSuffix) VHeader.cpp
+$(IntermediateDirectory)/Pipelines.cpp$(PreprocessSuffix): Pipelines.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Pipelines.cpp$(PreprocessSuffix) Pipelines.cpp
+
+$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix): ShaderInputAbstraction.cpp $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/ShaderInputAbstraction.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix): ShaderInputAbstraction.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix) -MM ShaderInputAbstraction.cpp
+
+$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(PreprocessSuffix): ShaderInputAbstraction.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(PreprocessSuffix) ShaderInputAbstraction.cpp
 
 $(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix): VWindow.cpp $(IntermediateDirectory)/VWindow.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/VWindow.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix) $(IncludePath)
@@ -142,6 +142,22 @@ $(IntermediateDirectory)/VWindow.cpp$(DependSuffix): VWindow.cpp
 $(IntermediateDirectory)/VWindow.cpp$(PreprocessSuffix): VWindow.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/VWindow.cpp$(PreprocessSuffix) VWindow.cpp
 
+$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix): DescriptorSet.cpp $(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/DescriptorSet.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix): DescriptorSet.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/DescriptorSet.cpp$(DependSuffix) -MM DescriptorSet.cpp
+
+$(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix): DescriptorSet.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/DescriptorSet.cpp$(PreprocessSuffix) DescriptorSet.cpp
+
+$(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix): RenderEnvironment.cpp $(IntermediateDirectory)/RenderEnvironment.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/RenderEnvironment.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/RenderEnvironment.cpp$(DependSuffix): RenderEnvironment.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/RenderEnvironment.cpp$(DependSuffix) -MM RenderEnvironment.cpp
+
+$(IntermediateDirectory)/RenderEnvironment.cpp$(PreprocessSuffix): RenderEnvironment.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/RenderEnvironment.cpp$(PreprocessSuffix) RenderEnvironment.cpp
+
 $(IntermediateDirectory)/Image.cpp$(ObjectSuffix): Image.cpp $(IntermediateDirectory)/Image.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Image.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/Image.cpp$(DependSuffix): Image.cpp
@@ -149,6 +165,30 @@ $(IntermediateDirectory)/Image.cpp$(DependSuffix): Image.cpp
 
 $(IntermediateDirectory)/Image.cpp$(PreprocessSuffix): Image.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Image.cpp$(PreprocessSuffix) Image.cpp
+
+$(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix): DrawDispatcher.cpp $(IntermediateDirectory)/DrawDispatcher.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/DrawDispatcher.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/DrawDispatcher.cpp$(DependSuffix): DrawDispatcher.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/DrawDispatcher.cpp$(DependSuffix) -MM DrawDispatcher.cpp
+
+$(IntermediateDirectory)/DrawDispatcher.cpp$(PreprocessSuffix): DrawDispatcher.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/DrawDispatcher.cpp$(PreprocessSuffix) DrawDispatcher.cpp
+
+$(IntermediateDirectory)/VInstance.cpp$(ObjectSuffix): VInstance.cpp $(IntermediateDirectory)/VInstance.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/VInstance.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/VInstance.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/VInstance.cpp$(DependSuffix): VInstance.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/VInstance.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/VInstance.cpp$(DependSuffix) -MM VInstance.cpp
+
+$(IntermediateDirectory)/VInstance.cpp$(PreprocessSuffix): VInstance.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/VInstance.cpp$(PreprocessSuffix) VInstance.cpp
+
+$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix): VHeader.cpp $(IntermediateDirectory)/VHeader.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/VHeader.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/VHeader.cpp$(DependSuffix): VHeader.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/VHeader.cpp$(DependSuffix) -MM VHeader.cpp
+
+$(IntermediateDirectory)/VHeader.cpp$(PreprocessSuffix): VHeader.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/VHeader.cpp$(PreprocessSuffix) VHeader.cpp
 
 $(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
@@ -181,30 +221,6 @@ $(IntermediateDirectory)/VDevice.cpp$(DependSuffix): VDevice.cpp
 
 $(IntermediateDirectory)/VDevice.cpp$(PreprocessSuffix): VDevice.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/VDevice.cpp$(PreprocessSuffix) VDevice.cpp
-
-$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix): ShaderInputAbstraction.cpp $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/ShaderInputAbstraction.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix): ShaderInputAbstraction.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(DependSuffix) -MM ShaderInputAbstraction.cpp
-
-$(IntermediateDirectory)/ShaderInputAbstraction.cpp$(PreprocessSuffix): ShaderInputAbstraction.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(PreprocessSuffix) ShaderInputAbstraction.cpp
-
-$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix): Pipelines.cpp $(IntermediateDirectory)/Pipelines.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Pipelines.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/Pipelines.cpp$(DependSuffix): Pipelines.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/Pipelines.cpp$(DependSuffix) -MM Pipelines.cpp
-
-$(IntermediateDirectory)/Pipelines.cpp$(PreprocessSuffix): Pipelines.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Pipelines.cpp$(PreprocessSuffix) Pipelines.cpp
-
-$(IntermediateDirectory)/Shader.cpp$(ObjectSuffix): Shader.cpp $(IntermediateDirectory)/Shader.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Shader.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Shader.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/Shader.cpp$(DependSuffix): Shader.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/Shader.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/Shader.cpp$(DependSuffix) -MM Shader.cpp
-
-$(IntermediateDirectory)/Shader.cpp$(PreprocessSuffix): Shader.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Shader.cpp$(PreprocessSuffix) Shader.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

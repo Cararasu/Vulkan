@@ -1,10 +1,11 @@
 
-#include "VGlobal.h"
 #include "VHeader.h"
+#include "VGlobal.h"
+#include "DataWrapper.h"
 
 vk::CommandPool singleImageTransitionCommandPool = vk::CommandPool();
 
-vk::ImageView createImageView2D (vk::Image image, uint32_t mipBase, uint32_t mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VInstance::createImageView2D (vk::Image image, uint32_t mipBase, uint32_t mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -16,11 +17,11 @@ vk::ImageView createImageView2D (vk::Image image, uint32_t mipBase, uint32_t mip
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL (global.deviceWrapper.device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
+	V_CHECKCALL (device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
 
 	return imageView;
 }
-vk::ImageView createImageView2DArray (vk::Image image, uint32_t mipBase, uint32_t mipOffset, uint32_t arrayOffset, uint32_t arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VInstance::createImageView2DArray (vk::Image image, uint32_t mipBase, uint32_t mipOffset, uint32_t arrayOffset, uint32_t arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -32,11 +33,11 @@ vk::ImageView createImageView2DArray (vk::Image image, uint32_t mipBase, uint32_
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL (global.deviceWrapper.device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
+	V_CHECKCALL (device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
 
 	return imageView;
 }
-void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
+void VInstance::copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
                         vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
                         vk::CommandPool commandPool, vk::Queue submitQueue) {
 
@@ -53,7 +54,7 @@ void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize
 		{}, {
 			vk::BufferMemoryBarrier (
 			    inputAccessFlag, vk::AccessFlagBits::eTransferRead,
-			    global.deviceWrapper.transfQId, global.deviceWrapper.transfQId,
+			    transfQId, transfQId,
 			    srcBuffer,
 			    0, 0
 			)
@@ -75,7 +76,7 @@ void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize
 		{}, {
 			vk::BufferMemoryBarrier (
 			    vk::AccessFlagBits::eTransferWrite, outputAccessFlag,
-			    global.deviceWrapper.transfQId, global.deviceWrapper.transfQId,
+			    transfQId, transfQId,
 			    srcBuffer,
 			    0, 0
 			)
@@ -95,7 +96,7 @@ void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize
 
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
-void transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
+void VInstance::transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
                             vk::CommandPool commandPool, vk::Queue submitQueue) {
 
 	vk::CommandBuffer commandBuffer = createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
@@ -135,7 +136,7 @@ void transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout 
 		vk::ImageMemoryBarrier (
 		    srcAccessMask, dstAccessMask,
 		    oldLayout, newLayout,
-		    global.deviceWrapper.graphQId, global.deviceWrapper.graphQId,
+		    graphQId, graphQId,
 		    image,
 		    vk::ImageSubresourceRange (aspectMask, 0, 1, 0, 1)
 		)
@@ -151,17 +152,17 @@ void transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout 
 	);
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
-void transferData (const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+void VInstance::transferData (const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
                    vk::CommandPool commandPool, vk::Queue submitQueue) {
 
 	MappedBufferWrapper* transferBuffer;
 	if (V_MAX_STAGINGBUFFER_SIZE < size) {
 		printf ("Stagingbuffer not big enough -> create template\n");
-		transferBuffer = new MappedBufferWrapper (size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
+		transferBuffer = new MappedBufferWrapper (this, size, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 	} else {
 		if (!stagingBuffer) {
 			printf ("Creating Staging-Buffer\n");
-			stagingBuffer = new MappedBufferWrapper (V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc,
+			stagingBuffer = new MappedBufferWrapper (this, V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc,
 					vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
 		}
 		transferBuffer = stagingBuffer;
