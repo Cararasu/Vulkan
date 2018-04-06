@@ -4,16 +4,20 @@
 #include "VHeader.h"
 #include "VInstance.h"
 
+struct GPUMemory{
+	vk::DeviceMemory memory;
+	vk::DeviceSize size;
+};
 
 struct BufferWrapper{
-	vk::DeviceSize bufferSize;
+	VInstance* instance;
+	GPUMemory memory;
 	vk::Buffer buffer;
-	vk::DeviceMemory backedMemory;
 	
 	BufferWrapper(VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~BufferWrapper();
 	
-	void destroy(VInstance* instance);
+	void destroy();
 };
 
 struct MappedBufferWrapper : public BufferWrapper{
@@ -22,14 +26,16 @@ struct MappedBufferWrapper : public BufferWrapper{
 	MappedBufferWrapper(VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	~MappedBufferWrapper();
 	
-	void destroy(VInstance* instance);
+	void destroy();
 };
 extern MappedBufferWrapper* stagingBuffer;
 
+void copyBuffer();
+
 struct ImageWrapper{
 	VInstance* instance;
+	GPUMemory memory;
 	vk::Image image;
-	vk::DeviceMemory backedMemory;
 	vk::Extent3D extent;
 	uint32_t mipMapLevels;
 	uint32_t arraySize;

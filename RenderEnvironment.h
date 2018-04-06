@@ -47,9 +47,9 @@ struct ThreadRenderEnvironment{
 	OpaqueObjectDispatcher dispatcher;
 	RenderEnvironment* render_environment;
 	
-	void init(RenderEnvironment* rendEnv){
+	void init(RenderEnvironment* rendEnv, VInstance* instance){
 		render_environment = rendEnv;
-		dispatcher.init();
+		dispatcher.init(instance);
 	}
 	
 	void reset(){

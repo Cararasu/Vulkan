@@ -374,7 +374,7 @@ int main (int argc, char **argv) {
 	}
 	global.initializeDevice(instance);
 	instance->pipeline_module_builders.standard.instance = instance;
-	g_thread_data.init(&g_render_environment);
+	g_thread_data.init(&g_render_environment, instance);
 
 	VWindow* vWindow = new VWindow();
 
@@ -499,7 +499,7 @@ int main (int argc, char **argv) {
 			( (Camera*) (stagingBuffer->data + stagingOffset)) [0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
 			stagingOffset += sizeof (Camera);
 
-			instance->copyBuffer (stagingBuffer->buffer, uniformBuffer->buffer, uniformOffset, 0, sizeof (Camera),
+			copyBuffer (stagingBuffer, uniformBuffer, uniformOffset, 0, sizeof (Camera),
 						vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
 						commandBuffer);
 			
@@ -512,7 +512,7 @@ int main (int argc, char **argv) {
 				vk::BufferMemoryBarrier (
 					vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
 					instance->transfQId, instance->graphQId,
-					g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->bufferSize
+					g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->memory.size
 				)
 			}/*bufferBarrier*/, {}/*imageBarrier*/);
 			commandBuffer.pipelineBarrier (
@@ -522,7 +522,7 @@ int main (int argc, char **argv) {
 				vk::BufferMemoryBarrier (
 				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead,
 				    instance->transfQId, instance->graphQId,
-				    uniformBuffer->buffer, 0, uniformBuffer->bufferSize
+				    uniformBuffer->buffer, 0, uniformBuffer->memory.size
 				)
 			}/*bufferBarrier*/, {}/*imageBarrier*/);
 			vk::ClearValue clearColors[2] = {

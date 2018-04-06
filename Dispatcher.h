@@ -54,8 +54,8 @@ struct OpaqueObjectDispatcher {
 
 	void reset_instances();
 	
-	void init(){
-		
+	void init(VInstance* instance){
+		this->instance = instance;
 	}
 	
 	void finit(VInstance* instance){

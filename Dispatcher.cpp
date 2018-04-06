@@ -65,10 +65,10 @@ void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue
 		indexBuffer = nullptr;
 	}
 	vertexBuffer = new BufferWrapper (instance, sizeof (vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	instance->transferData (vertices.data(), vertexBuffer->buffer, 0, sizeof (vertices[0]) * vertices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
+	transferData (vertices.data(), vertexBuffer, 0, sizeof (vertices[0]) * vertices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
 
 	indexBuffer = new BufferWrapper (instance, sizeof (indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	instance->transferData (indices.data(), indexBuffer->buffer, 0, sizeof (indices[0]) * indices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
+	transferData (indices.data(), indexBuffer, 0, sizeof (indices[0]) * indices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
 	
 	vertices.clear();
 	indices.clear();
@@ -101,8 +101,8 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 		assert (false);
 	}
 	uint32_t neededSize = sizeof (Instance) * instances.size();
-	if (instanceBuffer && instanceBuffer->bufferSize < neededSize) {
-		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->bufferSize, neededSize);
+	if (instanceBuffer && instanceBuffer->memory.size < neededSize) {
+		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->memory.size, neededSize);
 		delete instanceBuffer;
 		instanceBuffer = nullptr;
 	}
@@ -111,10 +111,10 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 		                                    vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
 	}
 
-	if (stagingBuffer->bufferSize < neededSize) {
+	if (stagingBuffer->memory.size < neededSize) {
 		assert (false);
 	}
-	if (stagingBuffer->bufferSize - offset < neededSize) {
+	if (stagingBuffer->memory.size - offset < neededSize) {
 		offset = 0;
 	}
 
@@ -133,7 +133,7 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 		parts[opInst.objIndex].count++;
 	}
 
-	instance->copyBuffer (stagingBuffer->buffer, instanceBuffer->buffer, offset, 0, sizeof (Instance) *instanceCount,
+	copyBuffer (stagingBuffer, instanceBuffer, offset, 0, sizeof (Instance) *instanceCount,
 	            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
 	            commandBuffer);
 

@@ -5,28 +5,28 @@
 MappedBufferWrapper* stagingBuffer = nullptr;
 
 BufferWrapper::BufferWrapper (VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
-	bufferSize (size), buffer (vk::Buffer()), backedMemory (vk::DeviceMemory()) {
-	instance->createBuffer (size, usage, needed, recommended, &buffer, &backedMemory);
+	instance(instance), memory({vk::DeviceMemory(), size}), buffer(vk::Buffer()) {
+	instance->createBuffer (size, usage, needed, recommended, &buffer, &memory.memory);
 }
-void BufferWrapper::destroy(VInstance* instance){
-	instance->destroyBuffer (buffer, backedMemory);
+void BufferWrapper::destroy(){
+	instance->destroyBuffer (buffer, memory.memory);
 }
 BufferWrapper::~BufferWrapper() {
 }
 MappedBufferWrapper::MappedBufferWrapper (VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
 	BufferWrapper (instance, size, usage, needed) {
-	printf ("Map %d Bytes of Memory\n", bufferSize);
-	vkMapMemory (instance->device, backedMemory, 0, bufferSize, 0, &data);
+	printf ("Map %d Bytes of Memory\n", memory.size);
+	vkMapMemory (instance->device, memory.memory, 0, memory.size, 0, &data);
 }
-void MappedBufferWrapper::destroy(VInstance* instance){
-	printf ("Unmap %d Bytes of Memory\n", bufferSize);
-	vkUnmapMemory (instance->device, backedMemory);
+void MappedBufferWrapper::destroy(){
+	printf ("Unmap %d Bytes of Memory\n", memory.size);
+	vkUnmapMemory (instance->device, memory.memory);
 }
 MappedBufferWrapper::~MappedBufferWrapper() {
 }
 
 ImageWrapper::ImageWrapper (VInstance* instance, vk::Extent3D extent, uint32_t mipMapLevels, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
-	instance(instance), image(), backedMemory(), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layout (vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
+	instance(instance), memory(), image(), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layout (vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
 	if (extent.height == 1)
 		type = vk::ImageType::e1D;
 	else if (extent.depth == 1)
@@ -42,17 +42,18 @@ ImageWrapper::ImageWrapper (VInstance* instance, vk::Extent3D extent, uint32_t m
 
 	vk::MemoryRequirements memRequirements;
 	instance->device.getImageMemoryRequirements (image, &memRequirements);
-	backedMemory = instance->allocateMemory (memRequirements, needed | recommended);
-	if (!backedMemory)
-		backedMemory = instance->allocateMemory (memRequirements, needed);
+	memory.memory = instance->allocateMemory (memRequirements, needed | recommended);
+	memory.size = memRequirements.size;
+	if (!memory.memory)
+		memory.memory = instance->allocateMemory (memRequirements, needed);
 
-	vkBindImageMemory (instance->device, image, backedMemory, 0);
+	vkBindImageMemory (instance->device, image, memory.memory, 0);
 }
 ImageWrapper::~ImageWrapper() {
 }
 void ImageWrapper::destroy(){
 	vkDestroyImage (instance->device, image, nullptr);
-	vkFreeMemory (instance->device, backedMemory, nullptr);
+	vkFreeMemory (instance->device, memory.memory, nullptr);
 }
 
 

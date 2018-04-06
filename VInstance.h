@@ -47,19 +47,10 @@ struct VInstance {
 	vk::CommandPool createTransferCommandPool(vk::CommandPoolCreateFlags createFlags);
 	vk::CommandPool createGraphicsCommandPool(vk::CommandPoolCreateFlags createFlags);
 	
-	void copyBuffer ( vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
-			vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
-			vk::CommandPool commandPool, vk::Queue submitQueue);
-	void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
-		vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
-		vk::CommandBuffer commandBuffer);
 	void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
                         vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
                         vk::CommandPool commandPool, vk::Queue submitQueue);
 		
-	void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
-		vk::CommandPool commandPool, vk::Queue submitQueue);
-	void transferData(const void* srcData, vk::Buffer targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag, vk::CommandBuffer commandBuffer);
 	void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 		vk::CommandPool commandPool, vk::Queue submitQueue);
 	
@@ -98,6 +89,19 @@ struct VInstance {
 		vkDestroyRenderPass(device, renderpass, nullptr);
 	}
 };
+struct BufferWrapper;
+
+void transferData(const void* srcData, BufferWrapper* targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+	vk::CommandPool commandPool, vk::Queue submitQueue);
+void transferData(const void* srcData, BufferWrapper* targetBuffer, vk::DeviceSize offset, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag, vk::CommandBuffer commandBuffer);
+
+void copyBuffer (BufferWrapper* srcBuffer, BufferWrapper* dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+		vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+		vk::CommandPool commandPool, vk::Queue submitQueue);
+void copyBuffer (BufferWrapper* srcBuffer, BufferWrapper* dstBuffer, vk::DeviceSize srcOffset, vk::DeviceSize dstOffset, vk::DeviceSize size,
+	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
+	vk::CommandBuffer commandBuffer);
+
 vk::DescriptorPool createStandardDescriptorSetPool(VInstance* instance);
 
 #endif // VINSTANCE_H
