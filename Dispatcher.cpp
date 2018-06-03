@@ -76,9 +76,6 @@ void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue
 void OpaqueObjectDispatcher::push_instance (uint32_t objectId, Instance& inst) {
 	instances.push_back ({objectId, inst});
 }
-void OpaqueObjectDispatcher::push_instance (std::vector<uint32_t>& objectIds, Instance& inst) {
-	for (uint32_t objectId : objectIds) instances.push_back ({objectId, inst});
-}
 uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
 	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 

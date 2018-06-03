@@ -186,20 +186,25 @@ struct SimpleObject{
 	BoundingBox bounding_box;
 };
 
+#define MAX_PART_IDS (8)
+
 struct WWW{
 	ProxyObject<SimpleObject> proxy_obj;
 	uint32_t objectId;
-	std::vector<uint32_t> parts;
+	size_t partcount;
+	std::array<uint32_t, MAX_PART_IDS> parts;
 	void update(ThreadRenderEnvironment* renderEnv){//gets called after ProxyObject update in the update Phase
+		proxy_obj.update();
 		printf("Update Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
 	}
 	void execute(ThreadRenderEnvironment* renderEnv){//gets called during the execute Phase
 		Instance instance;
 		instance.m2wMatrix = glm::translate(proxy_obj.obj.orientation.position);
-		renderEnv->dispatcher.push_instance(parts, instance);
 		printf("Dispatch Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
-		for(uint32_t id : parts) 
-			printf("%d, ", id);
+		for(size_t i = 0; i < partcount; i++){
+			renderEnv->dispatcher.push_instance(parts[i], instance);
+			printf("%d, ", parts[i]);
+		}
 		printf("\n");
 	}
 };
@@ -454,13 +459,19 @@ int main (int argc, char **argv) {
 	WWW ww2;
 	WWW ww3;
 	ww1.proxy_obj.proxyObj = &obj1;
-	ww1.parts = XPartIds;
+	ww1.partcount = XPartIds.size();
+	for(size_t i = 0; i < XPartIds.size(); i++)
+		ww1.parts[i] = XPartIds[i];
 	
 	ww2.proxy_obj.proxyObj = &obj2;
-	ww2.parts = TiePartIds;
+	ww2.partcount = TiePartIds.size();
+	for(size_t i = 0; i < TiePartIds.size(); i++)
+		ww2.parts[i] = TiePartIds[i];
 	
 	ww3.proxy_obj.proxyObj = &obj3;
-	ww3.parts = TiePartIds;
+	ww3.partcount = TiePartIds.size();
+	for(size_t i = 0; i < TiePartIds.size(); i++)
+		ww3.parts[i] = TiePartIds[i];
 	
 	obj1.orientation.position = glm::vec3(0.0f, 0.0f, 0.0f);
 	obj2.orientation.position = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -484,14 +495,22 @@ int main (int argc, char **argv) {
 		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, viewport.m_upvector);
 		
 		g_thread_data.reset();
+		//do stuff serialized
+		//to do this threaded we need to extract the update and execute into another class or scope maybe into ThreadRenderEnvironment itself
 		store.update(&g_thread_data);
 		store.execute(&g_thread_data);
 		
+		//this should be per thread/per frame
 		vk::CommandBuffer commandBuffer = instance->createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
 		vk::CommandBufferBeginInfo beginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
 		
 		{
 			commandBuffer.begin (&beginInfo);
+			
+			
+			//if staginbuffer not big enough to store all global values
+			//	-> error
+			//if staginbuffer big enough to store all global values and not big enough to hold instancedata
 			
 			uint32_t stagingOffset = 0;
 
@@ -547,17 +566,23 @@ int main (int argc, char **argv) {
 			commandBuffer.endRenderPass();
 
 			V_CHECKCALL_MAYBE (commandBuffer.end(), printf ("Recording of CommandBuffer failed\n"));
+			
 		}
 
-		vk::Semaphore waitSemaphores[] = {vWindow->imageAvailableGuardSem};
+
 		vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+		vk::Semaphore waitSemaphores[] = {vWindow->imageAvailableGuardSem};
 		vk::Semaphore signalSemaphores[] = {drawFinishedSemaphore};
+		vk::SubmitInfo submitInfo;
+		if(vWindow->windowState != WindowState::eNotVisible){//otherwise we wait for a guard semaphore, for acquiring the present image
+			submitInfo = vk::SubmitInfo (1, waitSemaphores, waitStages, 1, &commandBuffer, 1, signalSemaphores);
 
-		vk::SubmitInfo submitInfo (1, waitSemaphores, waitStages, 1, &commandBuffer, 1, signalSemaphores);
-
-		vWindow->pgcQueue->submitGraphics (1, &submitInfo);
-
-		vWindow->showNextFrame (1, signalSemaphores);
+			vWindow->pgcQueue->submitGraphics (1, &submitInfo);
+			
+			vWindow->showNextFrame (1, signalSemaphores);
+		}
+		
 		printf ("---------------   EndFrame    ---------------\n");
 		glfwPollEvents();
 

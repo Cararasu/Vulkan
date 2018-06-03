@@ -46,7 +46,6 @@ struct OpaqueObjectDispatcher {
 	void upload_data(vk::CommandPool commandPool, vk::Queue submitQueue);
 
 	void push_instance (uint32_t objectId, Instance& inst);
-	void push_instance (std::vector<uint32_t>& objectIds, Instance& inst);
 
 	uint32_t setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandBuffer commandBuffer);
 	uint32_t setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandPool commandPool, vk::Queue submitQueue);

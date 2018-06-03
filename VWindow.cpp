@@ -198,24 +198,36 @@ void VWindow::createSwapchain() {
 }
 void VWindow::setupFrame() {
 
+	printf("Setup Frame\n");
 	switch (windowState) {
 	case WindowState::eUninitialized:
 		printf ("Need to Initialize before setup\n");
 		assert (false);
 		return;
 	case WindowState::eFramePrepared:
-		printf ("Frame already prepared\n");
+		printf ("Frame %d already prepared\n", presentImageIndex);
 		assert (false);
 		return;
 	case WindowState::eInitialized: {
 
 	} break;
+	case WindowState::eNotVisible: {
+		if(capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0){
+			return;//no change stay at WindowState::eNotVisible
+		}
+	}//fallthrough
 	case WindowState::eResized: {
 		capabilities = instance->physicalDevice.getSurfaceCapabilitiesKHR (surface);
 		if (capabilities.maxImageExtent != swapChainExtend) {
-			printf ("WaslNats %dx%d\n", capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
-			swapChainExtend = capabilities.maxImageExtent;
-			createSwapchain();
+			if(capabilities.maxImageExtent.width > 0 && capabilities.maxImageExtent.height > 0){
+				printf ("WaslNats %dx%d\n", capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
+				swapChainExtend = capabilities.maxImageExtent;
+				createSwapchain();
+			}else{
+				printf ("WaslNats %dx%d\n", capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
+				windowState = WindowState::eNotVisible;
+				return;
+			}
 			break;
 		}
 	}
@@ -238,17 +250,18 @@ void VWindow::setupFrame() {
 	windowState = WindowState::eFramePrepared;
 }
 void VWindow::showNextFrame (uint32_t waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores) {
+	printf("Show Frame\n");
+	if(windowState != WindowState::eNotVisible){
+		vk::SwapchainKHR swapChains[] = {swapChain};
+		vk::PresentInfoKHR presentInfo (waitSemaphoreCount, pWaitSemaphores, 1, swapChains, &presentImageIndex, nullptr);
 
-	vk::SwapchainKHR swapChains[] = {swapChain};
-	vk::PresentInfoKHR presentInfo (waitSemaphoreCount, pWaitSemaphores, 1, swapChains, &presentImageIndex, nullptr);
+		WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
 
-	WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
+		pgcQueue->presentQueue.presentKHR (&presentInfo);
+		pgcQueue->graphicsQueue.submit ({}, data->fence);
 
-	pgcQueue->presentQueue.presentKHR (&presentInfo);
-	pgcQueue->graphicsQueue.submit ({}, data->fence);
-
-
-	windowState = WindowState::eFramePresented;
+		windowState = WindowState::eFramePresented;
+	}
 }
 
 

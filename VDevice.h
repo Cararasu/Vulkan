@@ -43,7 +43,7 @@ struct VPartlyPGCQueue : VPGCQueue{
 		V_CHECKCALL(presentQueue.submit(count, submitInfo, fence), printf("Submit to Present Queue Failed\n"));
 	}
 	virtual void submitGraphics(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence){
-		V_CHECKCALL(presentQueue.submit(count, submitInfo, fence), printf("Submit to Graphics Queue Failed\n"));
+		V_CHECKCALL(graphicsQueue.submit(count, submitInfo, fence), printf("Submit to Graphics Queue Failed\n"));
 	}
 	virtual void submitCompute(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence){
 		V_CHECKCALL(computeQueue.submit(count, submitInfo, fence), printf("Submit to Compute Queue Failed\n"));
@@ -58,7 +58,7 @@ struct VCombinedPGCQueue : VPGCQueue{
 		V_CHECKCALL(presentQueue.submit(count, submitInfo, fence), printf("Submit to Present Queue Failed\n"));
 	}
 	virtual void submitGraphics(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence){
-		V_CHECKCALL(presentQueue.submit(count, submitInfo, fence), printf("Submit to Graphics Queue Failed\n"));
+		V_CHECKCALL(graphicsQueue.submit(count, submitInfo, fence), printf("Submit to Graphics Queue Failed\n"));
 	}
 	virtual void submitCompute(uint32_t count, vk::SubmitInfo* submitInfo, vk::Fence fence){
 	}

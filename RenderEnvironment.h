@@ -44,6 +44,8 @@ extern struct RenderEnvironment{
 
 
 struct ThreadRenderEnvironment{
+	
+	
 	OpaqueObjectDispatcher dispatcher;
 	RenderEnvironment* render_environment;
 	

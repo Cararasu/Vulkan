@@ -25,6 +25,7 @@ enum class WindowState{
 	eInitialized,
 	eFramePrepared,
 	eFramePresented,
+	eNotVisible,
 	eResized
 };
 struct VWindow{
