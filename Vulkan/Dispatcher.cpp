@@ -7,11 +7,11 @@ OpaqueObjectDispatcher::OpaqueObjectDispatcher () {
 OpaqueObjectDispatcher::~OpaqueObjectDispatcher() {
 }
 uint32_t OpaqueObjectDispatcher::add_object (std::vector<Vertex>& vertices_, std::vector<uint32_t>& indices_, ObjectPartData& part_) {
-	uint32_t id = parts.size();
+	uint32_t id = this->parts.size();
 
-	parts.push_back ({0, part_, indices.size(), indices_.size(), vertices_.size() });
-	vertices.insert (vertices.end(), vertices_.begin(), vertices_.end());
-	indices.insert (indices.end(), indices_.begin(), indices_.end());
+	this->parts.push_back ({0, part_, this->indices.size(), indices_.size(), this->vertices.size() });
+	this->vertices.insert (this->vertices.end(), vertices_.begin(), vertices_.end());
+	this->indices.insert (this->indices.end(), indices_.begin(), indices_.end());
 	return id;
 }
 void OpaqueObjectDispatcher::set_image_array (ImageWrapper* imageWrapper, vk::Sampler sampler) {

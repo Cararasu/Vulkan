@@ -21,7 +21,7 @@
 
 #include <fstream>
 
-#include "interface/Window.h"
+#include <render/Window.h>
 
 template<typename T>
 struct ProxyObject{
@@ -238,31 +238,31 @@ struct WWW{
 int main (int argc, char **argv) {
 	
 	std::vector<uint32_t> TiePartIds;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
 	
 	std::vector<uint32_t> XPartIds;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
 	
 	
@@ -333,30 +333,30 @@ int main (int argc, char **argv) {
 	
 	{
 		LoadedObjectWrapper<Vertex, uint32_t> obj_wrap;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 0;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
 		
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
 
 		g_render_environment.objects.push_back(obj_wrap);
@@ -406,13 +406,13 @@ int main (int argc, char **argv) {
 	{
 		imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
 		
 		imageWrapper->generateMipmaps(0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
-	}
+	}wwwww
 
 	//TODO Memory Barrier for graphics queue
 	//instance->tqueue->waitForFinish();

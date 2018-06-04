@@ -5,7 +5,7 @@
 #include "VHeader.h"
 #include "VDevice.h"
 #include "PipelineModule.h"
-#include "interface/Window.h"
+#include <render/Window.h>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

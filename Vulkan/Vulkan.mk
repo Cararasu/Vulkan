@@ -27,7 +27,7 @@ OutputSwitch           :=-o
 LibraryPathSwitch      :=-L
 PreprocessorSwitch     :=-D
 SourceSwitch           :=-c 
-OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
+OutputFile             :=$(IntermediateDirectory)/../../workingdir/$(ProjectName)
 Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
@@ -38,12 +38,12 @@ MakeDirCommand         :=makedir
 RcCmpOptions           := 
 RcCompilerName         :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/windres.exe"
 LinkOptions            :=  
-IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). $(IncludeSwitch)libs/glfw-3.2.1.bin.WIN64\include $(IncludeSwitch)libs/glm-0.9.9-a1 $(IncludeSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Include" $(IncludeSwitch)libs/stb $(IncludeSwitch)..\RendererInterface\include 
+IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). $(IncludeSwitch)../libs/glfw-3.2.1.bin.WIN64\include $(IncludeSwitch)../libs/glm-0.9.9-a1 $(IncludeSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Include" $(IncludeSwitch)../libs/stb $(IncludeSwitch)../RendererInterface/include 
 IncludePCH             := 
 RcIncludePath          := 
 Libs                   := $(LibrarySwitch)glfw3 $(LibrarySwitch)gdi32 $(LibrarySwitch)user32 $(LibrarySwitch)kernel32 $(LibrarySwitch)vulkan-1 
 ArLibs                 :=  "glfw3" "gdi32" "user32" "kernel32" "vulkan-1" 
-LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch)libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64 $(LibraryPathSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Lib" 
+LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch)../libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64 $(LibraryPathSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Lib" 
 
 ##
 ## Common variables

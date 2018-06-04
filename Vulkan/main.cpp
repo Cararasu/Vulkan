@@ -21,7 +21,7 @@
 
 #include <fstream>
 
-#include "interface/Window.h"
+#include <render/Window.h>
 
 template<typename T>
 struct ProxyObject{
