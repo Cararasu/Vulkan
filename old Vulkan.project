@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="VulkanTest" Version="10.0.0" InternalType="Console">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00020001N0005Debug0000000000000001N0013Debug Windows000000000000]]>
+    </Plugin>
+  </Plugins>
+  <Description/>
+  <Dependencies/>
+  <VirtualDirectory Name="src">
+    <File Name="Instance.cpp"/>
+    <VirtualDirectory Name="interface">
+      <File Name="interface/Instance.h"/>
+      <File Name="interface/Header.h"/>
+      <File Name="interface/Window.h"/>
+      <File Name="interface/Monitor.h"/>
+      <File Name="interface/Dimensions.h"/>
+    </VirtualDirectory>
+    <File Name="VInstance.cpp"/>
+    <File Name="VInstance.h"/>
+    <File Name="RenderEnvironment.cpp"/>
+    <File Name="RenderEnvironment.h"/>
+    <File Name="DrawDispatcher.cpp"/>
+    <File Name="DrawDispatcher.h"/>
+    <File Name="PipelineModule.cpp"/>
+    <File Name="PipelineModule.h"/>
+    <File Name="main.cpp"/>
+    <VirtualDirectory Name="shaders">
+      <File Name="workingdir/shader/tri.frag"/>
+      <File Name="workingdir/shader/tri.vert"/>
+    </VirtualDirectory>
+    <File Name="VHeader.h"/>
+    <File Name="VHeader.cpp"/>
+    <File Name="VGlobal.h"/>
+    <File Name="VGlobal.cpp"/>
+    <File Name="VDevice.h"/>
+    <File Name="VDevice.cpp"/>
+    <File Name="VWindow.h"/>
+    <File Name="VWindow.cpp"/>
+    <File Name="ShaderInputAbstraction.h"/>
+    <File Name="ShaderInputAbstraction.cpp"/>
+    <File Name="Pipelines.cpp"/>
+    <File Name="DataWrapper.h"/>
+    <File Name="Buffer.cpp"/>
+    <File Name="ViewPort.h"/>
+    <File Name="Image.cpp"/>
+    <File Name="DataWrapper.cpp"/>
+    <File Name="DescriptorSet.cpp"/>
+    <File Name="Dispatcher.h"/>
+    <File Name="Dispatcher.cpp"/>
+  </VirtualDirectory>
+  <Settings Type="Executable">
+    <GlobalSettings>
+      <Compiler Options="-Wall;-std=c++17" C_Options="-Wall;-std=c99" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-Wall;-std=c++11" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/include"/>
+      </Compiler>
+      <Linker Options="" Required="yes">
+        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
+        <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
+        <Library Value="glfw3"/>
+        <Library Value="vulkan"/>
+        <Library Value="X11"/>
+        <Library Value="Xi"/>
+        <Library Value="Xrandr"/>
+        <Library Value="Xxf86vm"/>
+        <Library Value="Xinerama"/>
+        <Library Value="Xcursor"/>
+        <Library Value="rt"/>
+        <Library Value="pthread"/>
+        <Library Value="dl"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./DebugWind" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <BuildSystem Name="Default"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="."/>
+        <IncludePath Value="libs/glfw-3.2.1.bin.WIN64\include"/>
+        <IncludePath Value="libs/glm-0.9.9-a1"/>
+        <IncludePath Value="C:\Program Files\VulkanSDK\1.0.61.1\Include"/>
+        <IncludePath Value="libs/stb"/>
+      </Compiler>
+      <Linker Options="" Required="yes">
+        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
+        <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
+        <Library Value="glfw3"/>
+        <Library Value="gdi32"/>
+        <Library Value="user32"/>
+        <Library Value="kernel32"/>
+        <Library Value="vulkan-1"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <BuildSystem Name="Default"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2;-Wall" C_Options="-O2;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="."/>
+        <Preprocessor Value="NDEBUG"/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <BuildSystem Name="Default"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+</CodeLite_Project>
