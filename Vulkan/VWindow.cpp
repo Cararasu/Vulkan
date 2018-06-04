@@ -16,7 +16,7 @@ void framebuffer_size_callback (GLFWwindow* window, int width, int height) {
 	}
 }
 
-void VWindow::handleResize (uint32_t width, uint32_t height) {
+void VWindow::handleResize (u32 width, u32 height) {
 
 	windowState = WindowState::eResized;
 }
@@ -57,7 +57,7 @@ void VWindow::initializeWindow (VInstance* instance) {
 	imageAvailableGuardSem = instance->createSemaphore();
 
 	{
-		uint32_t formatCount;
+		u32 formatCount;
 		instance->physicalDevice.getSurfaceFormatsKHR (surface, &formatCount, nullptr);
 		if (formatCount != 0) {
 			vk::SurfaceFormatKHR formats[formatCount];
@@ -78,7 +78,7 @@ void VWindow::initializeWindow (VInstance* instance) {
 	}
 	chosenPresentationMode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 	{
-		uint32_t presentModeCount;
+		u32 presentModeCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR (instance->physicalDevice, surface, &presentModeCount, nullptr);
 		if (presentModeCount != 0) {
 			vk::PresentModeKHR presentModes[presentModeCount];
@@ -99,7 +99,7 @@ void VWindow::initializeWindow (VInstance* instance) {
 		int width, height;
 		glfwGetWindowSize (window, &width, &height);
 		vk::Extent2D actualExtent = {width, height};
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
 			swapChainExtend = capabilities.currentExtent;
 		} else {
 
@@ -109,9 +109,9 @@ void VWindow::initializeWindow (VInstance* instance) {
 			swapChainExtend = actualExtent;
 		}
 	}
-	uint32_t imageCount = capabilities.minImageCount + 1;
+	u32 imageCount = capabilities.minImageCount + 1;
 	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
-		imageCount = std::max<uint32_t> (capabilities.maxImageCount, V_MAX_PRESENTIMAGE_COUNT);
+		imageCount = std::max<u32> (capabilities.maxImageCount, V_MAX_PRESENTIMAGE_COUNT);
 	}
 	perPresentImageDatas.resize (imageCount);
 	createSwapchain();
@@ -122,7 +122,7 @@ void VWindow::createSwapchain() {
 
 	for (WindowPerPresentImageData& data : perPresentImageDatas) {
 		if (!data.firstShow) {
-			instance->device.waitForFences ({data.fence}, true, std::numeric_limits<uint64_t>::max());
+			instance->device.waitForFences ({data.fence}, true, std::numeric_limits<u64>::max());
 			instance->device.resetFences ({data.fence});
 			data.firstShow = true;
 		}
@@ -134,12 +134,12 @@ void VWindow::createSwapchain() {
 		if (pgcQueue->combinedPGQ) {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
-			uint32_t queueFamilyIndices[] = {pgcQueue->presentQId};
+			u32 queueFamilyIndices[] = {pgcQueue->presentQId};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices; // Optional
 		} else {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 			swapchainCreateInfo.queueFamilyIndexCount = 2;
-			uint32_t queueFamilyIndices[] = {pgcQueue->presentQId, pgcQueue->graphicsQId};
+			u32 queueFamilyIndices[] = {pgcQueue->presentQId, pgcQueue->graphicsQId};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		}
 		swapchainCreateInfo.preTransform = capabilities.currentTransform;//VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR??
@@ -178,7 +178,7 @@ void VWindow::createSwapchain() {
 		perPresentImageDatas[i].fence = instance->device.createFence (vk::FenceCreateFlags());
 	}
 	swapChainExtend = capabilities.maxImageExtent;
-	instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+	instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<u64>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 
 	{
 		//create/recreate depth image
@@ -215,7 +215,7 @@ void VWindow::createSwapchain() {
 
 	pgcQueue->graphicsQueue.submit ({}, data->fence);
 	data->firstShow = false;
-	instance->device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
+	instance->device.waitForFences ({data->fence}, true, std::numeric_limits<u64>::max());
 	instance->device.resetFences ({data->fence});
 }
 void VWindow::setupFrame() {
@@ -255,13 +255,13 @@ void VWindow::setupFrame() {
 	}
 	case WindowState::eFramePresented: {
 
-		instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
+		instance->device.acquireNextImageKHR (swapChain, std::numeric_limits<u64>::max(), imageAvailableGuardSem, vk::Fence(), &presentImageIndex);
 
 		WindowPerPresentImageData* data = &perPresentImageDatas[presentImageIndex];
 		if (data->firstShow) {
 			data->firstShow = false;
 		} else {
-			instance->device.waitForFences ({data->fence}, true, std::numeric_limits<uint64_t>::max());
+			instance->device.waitForFences ({data->fence}, true, std::numeric_limits<u64>::max());
 			instance->device.resetFences ({data->fence});
 		}
 		instance->device.destroyCommandPool (data->graphicQCommandPool, nullptr);
@@ -271,7 +271,7 @@ void VWindow::setupFrame() {
 	}
 	windowState = WindowState::eFramePrepared;
 }
-void VWindow::showNextFrame (uint32_t waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores) {
+void VWindow::showNextFrame (u32 waitSemaphoreCount, const vk::Semaphore* pWaitSemaphores) {
 	printf ("Show Frame\n");
 	if (windowState != WindowState::eNotVisible) {
 		vk::SwapchainKHR swapChains[] = {swapChain};
@@ -296,7 +296,7 @@ VWindow::~VWindow() {
 		instance->device.destroyCommandPool (perPresentImageDatas[i].graphicQCommandPool, nullptr);
 		instance->device.destroyFramebuffer (perPresentImageDatas[i].framebuffer, nullptr);
 		if (i != presentImageIndex && perPresentImageDatas[presentImageIndex].firstShow)
-			instance->device.waitForFences ({perPresentImageDatas[i].fence}, true, std::numeric_limits<uint64_t>::max());
+			instance->device.waitForFences ({perPresentImageDatas[i].fence}, true, std::numeric_limits<u64>::max());
 		instance->device.destroyFence (perPresentImageDatas[i].fence, nullptr);
 		instance->device.destroyImageView (perPresentImageDatas[i].presentImageView, nullptr);
 	}

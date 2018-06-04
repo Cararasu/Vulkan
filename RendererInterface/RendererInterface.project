@@ -7,14 +7,16 @@
   </Plugins>
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="src">
-    <File Name="render/Window.h"/>
-    <File Name="render/Monitor.h"/>
-    <File Name="render/Instance.h"/>
-    <File Name="render/Header.h"/>
-    <File Name="render/Dimensions.h"/>
+  <VirtualDirectory Name="src"/>
+  <VirtualDirectory Name="include">
+    <VirtualDirectory Name="render">
+      <File Name="include/render/Window.h"/>
+      <File Name="include/render/Monitor.h"/>
+      <File Name="include/render/Instance.h"/>
+      <File Name="include/render/Header.h"/>
+      <File Name="include/render/Dimensions.h"/>
+    </VirtualDirectory>
   </VirtualDirectory>
-  <VirtualDirectory Name="include"/>
   <Settings Type="Dynamic Library">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">

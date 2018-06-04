@@ -27,7 +27,7 @@ OutputSwitch           :=-o
 LibraryPathSwitch      :=-L
 PreprocessorSwitch     :=-D
 SourceSwitch           :=-c 
-OutputFile             :=$(IntermediateDirectory)/../../workingdir/$(ProjectName)
+OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
 Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
@@ -38,12 +38,12 @@ MakeDirCommand         :=makedir
 RcCmpOptions           := 
 RcCompilerName         :="C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/windres.exe"
 LinkOptions            :=  
-IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). $(IncludeSwitch)../libs/glfw-3.2.1.bin.WIN64\include $(IncludeSwitch)../libs/glm-0.9.9-a1 $(IncludeSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Include" $(IncludeSwitch)../libs/stb $(IncludeSwitch)../RendererInterface/include 
+IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch)../libs/glfw-3.2.1.bin.WIN64\include $(IncludeSwitch)../libs/glm-0.9.9-a1 $(IncludeSwitch)$(VULKAN_PATH)\Include $(IncludeSwitch)../libs/stb $(IncludeSwitch)../RendererInterface/include 
 IncludePCH             := 
 RcIncludePath          := 
 Libs                   := $(LibrarySwitch)glfw3 $(LibrarySwitch)gdi32 $(LibrarySwitch)user32 $(LibrarySwitch)kernel32 $(LibrarySwitch)vulkan-1 
 ArLibs                 :=  "glfw3" "gdi32" "user32" "kernel32" "vulkan-1" 
-LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch)../libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64 $(LibraryPathSwitch)"C:\Program Files\VulkanSDK\1.0.61.1\Lib" 
+LibPath                := $(LibraryPathSwitch). $(LibraryPathSwitch)../libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64 $(LibraryPathSwitch)$(VULKAN_PATH)\Lib 
 
 ##
 ## Common variables
@@ -61,8 +61,8 @@ AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw6
 ##
 ## User defined environment variables
 ##
-CodeLiteDir:=C:\Program Files\CodeLite
-Objects0=$(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix) $(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix) $(IntermediateDirectory)/Instance.cpp$(ObjectSuffix) $(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix) $(IntermediateDirectory)/VGlobal.cpp$(ObjectSuffix) \
+VULKAN_PATH:="C:\Program Files\VulkanSDK\1.0.61.1"
+Objects0=$(IntermediateDirectory)/vulkanmain.cpp$(ObjectSuffix) $(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) $(IntermediateDirectory)/DataWrapper.cpp$(ObjectSuffix) $(IntermediateDirectory)/DescriptorSet.cpp$(ObjectSuffix) $(IntermediateDirectory)/DrawDispatcher.cpp$(ObjectSuffix) $(IntermediateDirectory)/Image.cpp$(ObjectSuffix) $(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix) $(IntermediateDirectory)/Instance.cpp$(ObjectSuffix) $(IntermediateDirectory)/RenderEnvironment.cpp$(ObjectSuffix) $(IntermediateDirectory)/VGlobal.cpp$(ObjectSuffix) \
 	$(IntermediateDirectory)/Dispatcher.cpp$(ObjectSuffix) $(IntermediateDirectory)/VWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/VHeader.cpp$(ObjectSuffix) $(IntermediateDirectory)/VInstance.cpp$(ObjectSuffix) $(IntermediateDirectory)/VDevice.cpp$(ObjectSuffix) $(IntermediateDirectory)/ShaderInputAbstraction.cpp$(ObjectSuffix) $(IntermediateDirectory)/Pipelines.cpp$(ObjectSuffix) 
 
 
@@ -75,11 +75,18 @@ Objects=$(Objects0)
 .PHONY: all clean PreBuild PrePreBuild PostBuild MakeIntermediateDirs
 all: $(OutputFile)
 
-$(OutputFile): $(IntermediateDirectory)/.d $(Objects) 
+$(OutputFile): $(IntermediateDirectory)/.d "..\.build-debug_windows\MetaBuilder" $(Objects) 
 	@$(MakeDirCommand) $(@D)
 	@echo "" > $(IntermediateDirectory)/.d
 	@echo $(Objects0)  > $(ObjectsFileList)
 	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
+
+"..\.build-debug_windows\MetaBuilder":
+	@$(MakeDirCommand) "..\.build-debug_windows"
+	@echo stam > "..\.build-debug_windows\MetaBuilder"
+
+
+
 
 MakeIntermediateDirs:
 	@$(MakeDirCommand) "./Debug"
@@ -94,6 +101,14 @@ PreBuild:
 ##
 ## Objects
 ##
+$(IntermediateDirectory)/vulkanmain.cpp$(ObjectSuffix): vulkanmain.cpp $(IntermediateDirectory)/vulkanmain.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Vulkan/vulkanmain.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/vulkanmain.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/vulkanmain.cpp$(DependSuffix): vulkanmain.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/vulkanmain.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/vulkanmain.cpp$(DependSuffix) -MM vulkanmain.cpp
+
+$(IntermediateDirectory)/vulkanmain.cpp$(PreprocessSuffix): vulkanmain.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/vulkanmain.cpp$(PreprocessSuffix) vulkanmain.cpp
+
 $(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix): Buffer.cpp $(IntermediateDirectory)/Buffer.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Vulkan/Buffer.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Buffer.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/Buffer.cpp$(DependSuffix): Buffer.cpp
@@ -133,14 +148,6 @@ $(IntermediateDirectory)/Image.cpp$(DependSuffix): Image.cpp
 
 $(IntermediateDirectory)/Image.cpp$(PreprocessSuffix): Image.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Image.cpp$(PreprocessSuffix) Image.cpp
-
-$(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Vulkan/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/main.cpp$(DependSuffix): main.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/main.cpp$(DependSuffix) -MM main.cpp
-
-$(IntermediateDirectory)/main.cpp$(PreprocessSuffix): main.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.cpp$(PreprocessSuffix) main.cpp
 
 $(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix): PipelineModule.cpp $(IntermediateDirectory)/PipelineModule.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Vulkan/PipelineModule.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/PipelineModule.cpp$(ObjectSuffix) $(IncludePath)

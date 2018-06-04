@@ -9,12 +9,12 @@ struct VInstance {
 	VExtLayerStruct extLayers;
 	vk::PhysicalDevice physicalDevice;
 	vk::Device device;
-	uint32_t deviceId;
+	u32 deviceId;
 	size_t pgcIndex = 0;
 	std::vector<VPGCQueue*> pgcQueues;
 	VTQueue* tqueue = nullptr;
 	
-	uint32_t compQId = -1, graphQId = -1, presentQId = -1, transfQId = -1;
+	u32 compQId = -1, graphQId = -1, presentQId = -1, transfQId = -1;
 	
 	struct{
 		StandardPipelineModuleBuilder standard;
@@ -23,7 +23,7 @@ struct VInstance {
 		PipelineModuleLayout standard;
 	}pipeline_module_layouts;
 	
-	VInstance(vk::PhysicalDevice physicalDevice, uint32_t deviceId);
+	VInstance(vk::PhysicalDevice physicalDevice, u32 deviceId);
 	~VInstance();
 
 	VTQueue* requestTransferQueue(){
@@ -41,17 +41,17 @@ struct VInstance {
 	void createBuffer ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, vk::Buffer* buffer, vk::DeviceMemory* bufferMemory );
 	void destroyBuffer ( vk::Buffer buffer, vk::DeviceMemory bufferMemory );
 	
-	vk::ImageView createImageView2D (vk::Image image, uint32_t mipBase, uint32_t mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags);
-	vk::ImageView createImageView2DArray (vk::Image image, uint32_t mipBase, uint32_t mipOffset, uint32_t arrayOffset, uint32_t arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags);
+	vk::ImageView createImageView2D (vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags);
+	vk::ImageView createImageView2DArray (vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags);
 	
 	vk::CommandPool createTransferCommandPool(vk::CommandPoolCreateFlags createFlags);
 	vk::CommandPool createGraphicsCommandPool(vk::CommandPoolCreateFlags createFlags);
 	
-	void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
+	void copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, u32 index,
                         vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
                         vk::CommandPool commandPool, vk::Queue submitQueue);
 		
-	void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+	void transferData(const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, u32 index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
 		vk::CommandPool commandPool, vk::Queue submitQueue);
 	
 	void transitionImageLayout (vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageAspectFlags aspectMask,
@@ -60,7 +60,7 @@ struct VInstance {
 	void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
 
 	vk::Format findDepthFormat();
-	uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
+	u32 findMemoryType(u32 typeFilter, vk::MemoryPropertyFlags properties);
 
 	vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
 	

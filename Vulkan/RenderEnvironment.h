@@ -16,8 +16,8 @@ struct ObjectVertexData{
 
 template<typename VERTEXDATA, typename INDEXTYPE>
 struct LoadedObjectData{
-	uint32_t vertex_offset, index_offset, index_size;
-	uint32_t diffuseTexId;
+	u32 vertex_offset, index_offset, index_size;
+	u32 diffuseTexId;
 };
 
 template<typename VERTEXDATA, typename INDEXTYPE>
@@ -32,7 +32,7 @@ struct LoadedObjectWrapper{
 
 extern struct RenderEnvironment{
 	
-	std::vector<LoadedObjectWrapper<Vertex, uint32_t>> objects;
+	std::vector<LoadedObjectWrapper<Vertex, u32>> objects;
 	
 	//finish the frame
 	void finish(){

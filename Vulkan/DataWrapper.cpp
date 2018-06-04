@@ -25,7 +25,7 @@ void MappedBufferWrapper::destroy(){
 MappedBufferWrapper::~MappedBufferWrapper() {
 }
 
-ImageWrapper::ImageWrapper (VInstance* instance, vk::Extent3D extent, uint32_t mipMapLevels, uint32_t arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
+ImageWrapper::ImageWrapper (VInstance* instance, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
 	instance(instance), memory(), image(), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layout (vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
 	if (extent.height == 1)
 		type = vk::ImageType::e1D;
@@ -57,7 +57,7 @@ void ImageWrapper::destroy(){
 }
 
 
-void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mipbase, uint32_t mipcount, uint32_t arrayIndex, uint32_t arrayCount, vk::CommandBuffer commandBuffer) {
+void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, u32 mipbase, u32 mipcount, u32 arrayIndex, u32 arrayCount, vk::CommandBuffer commandBuffer) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 	vk::PipelineStageFlags sourceStage, destinationStage;
@@ -115,7 +115,7 @@ void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mi
 	layout = newLayout;
 }
 
-void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mipbase, uint32_t mipcount, uint32_t arrayIndex, uint32_t arrayCount, vk::CommandPool commandPool, vk::Queue submitQueue) {
+void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, u32 mipbase, u32 mipcount, u32 arrayIndex, u32 arrayCount, vk::CommandPool commandPool, vk::Queue submitQueue) {
 
 	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 
@@ -132,7 +132,7 @@ void ImageWrapper::transitionImageLayout (vk::ImageLayout newLayout, uint32_t mi
 	);
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
-void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer) {
+void ImageWrapper::generateMipmaps (u32 baseLevel, u32 generateLevels, u32 arrayIndex, u32 arrayCount, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer) {
 		
 	if (generateLevels == 0)
 		generateLevels = mipMapLevels - baseLevel;
@@ -145,7 +145,7 @@ void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels,
 	transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, baseLevel + 1, generateLevels - 1, arrayIndex, arrayCount, commandBuffer);
 		
 	for (unsigned i = 1; i < generateLevels; i++) {
-		uint32_t index = i + baseLevel;
+		u32 index = i + baseLevel;
 		// Set up a blit from previous mip-level to the next.
 		vk::ImageBlit imageBlit(vk::ImageSubresourceLayers (aspectFlags, index - 1, arrayIndex, arrayCount), {
 			vk::Offset3D(0, 0, 0), vk::Offset3D(std::max (int (extent.width >> (index - 1)), 1), std::max (int (extent.height >> (index - 1)), 1), std::max (int (extent.depth >> (index - 1)), 1) )
@@ -159,7 +159,7 @@ void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels,
 	transitionImageLayout(targetLayout, baseLevel, generateLevels, arrayIndex, arrayCount, commandBuffer);
 	
 }
-void ImageWrapper::generateMipmaps (uint32_t baseLevel, uint32_t generateLevels, uint32_t arrayIndex, uint32_t arrayCount, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue) {
+void ImageWrapper::generateMipmaps (u32 baseLevel, u32 generateLevels, u32 arrayIndex, u32 arrayCount, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue) {
 
 	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 

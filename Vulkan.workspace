@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="Vulkan" Database="" Version="10.0.0">
-  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
-  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
   <Project Name="Main" Path="Main/Main.project" Active="No"/>
   <Project Name="RendererInterface" Path="RendererInterface/RendererInterface.project" Active="No"/>
+  <Project Name="MetaBuilder" Path="MetaBuilder/MetaBuilder.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="no">
       <Environment/>
@@ -11,6 +10,7 @@
       <Project Name="Vulkan" ConfigName="Debug"/>
       <Project Name="Main" ConfigName="Debug"/>
       <Project Name="RendererInterface" ConfigName="Debug"/>
+      <Project Name="MetaBuilder" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="no">
       <Environment/>
@@ -18,12 +18,16 @@
       <Project Name="Vulkan" ConfigName="Release"/>
       <Project Name="Main" ConfigName="Release"/>
       <Project Name="RendererInterface" ConfigName="Release"/>
+      <Project Name="MetaBuilder" ConfigName="Release"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Debug Windows" Selected="yes">
       <Environment/>
       <Project Name="Main" ConfigName="DebugWindows"/>
       <Project Name="RendererInterface" ConfigName="DebugWindows"/>
       <Project Name="Vulkan" ConfigName="Debug Windows"/>
+      <Project Name="MetaBuilder" ConfigName="Debug"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
+  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
+  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
 </CodeLite_Workspace>

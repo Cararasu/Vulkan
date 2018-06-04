@@ -4,7 +4,7 @@
 #include <fstream>
 #include "VGlobal.h"
 
-VInstance::VInstance(vk::PhysicalDevice physicalDevice, uint32_t deviceId) :physicalDevice(physicalDevice), deviceId(deviceId){
+VInstance::VInstance(vk::PhysicalDevice physicalDevice, u32 deviceId) :physicalDevice(physicalDevice), deviceId(deviceId){
 }
 
 VInstance::~VInstance() {
@@ -39,7 +39,7 @@ vk::ShaderModule VInstance::loadShaderFromFile(const char* filename){
 	
 	std::vector<char> shaderCode = readFile(filename);
 	
-	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.size(), (const uint32_t*)shaderCode.data());
+	vk::ShaderModuleCreateInfo createInfo(vk::ShaderModuleCreateFlags(), shaderCode.size(), (const u32*)shaderCode.data());
 	
 	vk::ShaderModule shadermodule;
 	V_CHECKCALL (device.createShaderModule(&createInfo, nullptr, &shadermodule), printf ("Creation of Shadermodule failed\n"));

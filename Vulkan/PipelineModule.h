@@ -79,7 +79,7 @@ void deletePipelineModuleLayout (BUILDER* builder, PipelineModuleLayout moduleLa
 
 struct StandardPipelineModuleBuilder {
 	VInstance* instance;
-	std::vector<const char*> shader_files = {"../workingdir/shader/tri.vert", "../workingdir/shader/tri.frag"};//or shader_names
+	std::vector<const char*> shader_files = {"shader/tri.vert", "shader/tri.frag"};//or shader_names
 
 	std::vector<vk::DescriptorSetLayout> createDescriptorSetLayouts();
 	std::vector<vk::PushConstantRange> createPushConstantRanges();

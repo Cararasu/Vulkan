@@ -46,7 +46,7 @@ struct VWindow : public Window {
 	ImageWrapper *depthImage = nullptr;
 
 	vk::SurfaceFormatKHR presentSwapFormat;
-	uint32_t presentImageIndex;
+	u32 presentImageIndex;
 
 	PipelineModule standardmodule;
 
@@ -70,9 +70,9 @@ struct VWindow : public Window {
 
 	void setupFrame();
 
-	void showNextFrame (uint32_t waitSemaphoreCount = 0, const vk::Semaphore* pWaitSemaphores = nullptr);
+	void showNextFrame (u32 waitSemaphoreCount = 0, const vk::Semaphore* pWaitSemaphores = nullptr);
 
-	void handleResize (uint32_t width, uint32_t height);
+	void handleResize (u32 width, u32 height);
 
 	bool isOpen() {
 		return !glfwWindowShouldClose (window);

@@ -52,10 +52,10 @@ struct Material {
 	
 };
 struct ObjectPartData{// the data
-	uint32_t objectId;
-	uint32_t diffuseTexId;
-	uint32_t specularTexId;
-	uint32_t normalTexId;
+	u32 objectId;
+	u32 diffuseTexId;
+	u32 specularTexId;
+	u32 normalTexId;
 };
 
 struct ImageWrapper;
@@ -64,11 +64,11 @@ extern std::set<vk::DeviceMemory> memories;
 
 void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
 	
-void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
+void copyBufferToImage(vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, u32 index,
 	vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
 	vk::CommandPool commandPool, vk::Queue submitQueue);
 
-void generateMipmaps(ImageWrapper* image, uint32_t baseLevel, uint32_t arrayIndex, uint32_t generateLevels, vk::CommandPool commandPool, vk::Queue submitQueue);
+void generateMipmaps(ImageWrapper* image, u32 baseLevel, u32 arrayIndex, u32 generateLevels, vk::CommandPool commandPool, vk::Queue submitQueue);
 
 bool hasStencilComponent(vk::Format format);
 

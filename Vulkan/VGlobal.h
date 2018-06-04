@@ -45,7 +45,7 @@ struct VGlobal{
 	bool initializeInstance(const char* appName = nullptr, const char* engineName = nullptr);
 	
 	//List getGPUs
-	VInstance* createInstance(uint32_t GPUIndex = 0);
+	VInstance* createInstance(u32 GPUIndex = 0);
 	bool initializeDevice(VInstance* instance);
 	
 	void terminate();

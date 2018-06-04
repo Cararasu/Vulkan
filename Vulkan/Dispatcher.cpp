@@ -6,8 +6,8 @@ OpaqueObjectDispatcher::OpaqueObjectDispatcher () {
 }
 OpaqueObjectDispatcher::~OpaqueObjectDispatcher() {
 }
-uint32_t OpaqueObjectDispatcher::add_object (std::vector<Vertex>& vertices_, std::vector<uint32_t>& indices_, ObjectPartData& part_) {
-	uint32_t id = this->parts.size();
+u32 OpaqueObjectDispatcher::add_object (std::vector<Vertex>& vertices_, std::vector<u32>& indices_, ObjectPartData& part_) {
+	u32 id = this->parts.size();
 
 	this->parts.push_back ({0, part_, this->indices.size(), indices_.size(), this->vertices.size() });
 	this->vertices.insert (this->vertices.end(), vertices_.begin(), vertices_.end());
@@ -73,10 +73,10 @@ void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue
 	vertices.clear();
 	indices.clear();
 }
-void OpaqueObjectDispatcher::push_instance (uint32_t objectId, Instance& inst) {
+void OpaqueObjectDispatcher::push_instance (u32 objectId, Instance& inst) {
 	instances.push_back ({objectId, inst});
 }
-uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
+u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
 	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 
 	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
@@ -93,11 +93,11 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 	);
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
-uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint32_t offset, vk::CommandBuffer commandBuffer) {
+u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandBuffer commandBuffer) {
 	if (!desciptorSet) {
 		assert (false);
 	}
-	uint32_t neededSize = sizeof (Instance) * instances.size();
+	u32 neededSize = sizeof (Instance) * instances.size();
 	if (instanceBuffer && instanceBuffer->memory.size < neededSize) {
 		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->memory.size, neededSize);
 		delete instanceBuffer;
@@ -124,7 +124,7 @@ uint32_t OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, uint
 	});
 	Instance* instanceArray = (Instance*) (stagingBuffer->data + offset);
 
-	uint32_t instanceCount = 0;
+	u32 instanceCount = 0;
 	for (OpaqueInstance& opInst : instances) {
 		instanceArray[instanceCount++] = opInst.data;
 		parts[opInst.objIndex].count++;
@@ -147,7 +147,7 @@ void OpaqueObjectDispatcher::dispatch (vk::CommandBuffer commandBuffer) {
 	
 	commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
 
-	uint32_t count = 0;
+	u32 count = 0;
 	for (OpaqueObject& opObj : parts) {
 		commandBuffer.pushConstants (instance->pipeline_module_layouts.standard.pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &opObj.data);
 		commandBuffer.drawIndexed (opObj.indexCount, opObj.count, opObj.indexOffset, opObj.vertexOffset, count);

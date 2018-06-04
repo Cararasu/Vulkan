@@ -6,12 +6,12 @@
 #include <vector>
 
 struct ObjId{
-	uint32_t id, index;
+	u32 id, index;
 };
 
-template<uint32_t TYPEID, typename... OBJDATAs> struct ObjStore;
+template<u32 TYPEID, typename... OBJDATAs> struct ObjStore;
 
-template<uint32_t TYPEID>
+template<u32 TYPEID>
 struct ObjStore <TYPEID>{
 	template<typename TOBJDATA>
 	inline ObjId insert(TOBJDATA& data){
@@ -29,7 +29,7 @@ struct ObjStore <TYPEID>{
 	inline void execute(ThreadRenderEnvironment* renderEnv) {}
 };
 
-template<uint32_t TYPEID, typename OBJDATA, typename... OBJDATAs>
+template<u32 TYPEID, typename OBJDATA, typename... OBJDATAs>
 struct ObjStore <TYPEID, OBJDATA, OBJDATAs...>{
 	std::vector<std::pair<OBJDATA, bool>> obj_list;
 	ObjStore<TYPEID + 1, OBJDATAs...> subStore;
@@ -41,11 +41,11 @@ struct ObjStore <TYPEID, OBJDATA, OBJDATAs...>{
 		for(auto it = obj_list.begin(); it != obj_list.end(); it++) {
 			if(!it->second){
 				it->first = data;
-				return {TYPEID, static_cast<uint32_t>(std::distance(obj_list.begin(), it))};
+				return {TYPEID, static_cast<u32>(std::distance(obj_list.begin(), it))};
 			}
 		}
 		obj_list.push_back(std::make_pair(data, true));
-		return {TYPEID, static_cast<uint32_t>(obj_list.size() - 1)};
+		return {TYPEID, static_cast<u32>(obj_list.size() - 1)};
 	}
 	template<typename TOBJDATA>
 	inline TOBJDATA* get_obj(ObjId objId) const {

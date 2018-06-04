@@ -3,10 +3,10 @@
 ## any manual changes will be erased      
 ##
 ## DebugWindows
-ProjectName            :=Main
+ProjectName            :=RendererInterface
 ConfigurationName      :=DebugWindows
 WorkspacePath          :=E:/GNUProg/Vulkan
-ProjectPath            :=E:/GNUProg/Vulkan/Main
+ProjectPath            :=E:/GNUProg/Vulkan/RendererInterface
 IntermediateDirectory  :=./Debug
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
@@ -27,12 +27,12 @@ OutputSwitch           :=-o
 LibraryPathSwitch      :=-L
 PreprocessorSwitch     :=-D
 SourceSwitch           :=-c 
-OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
+OutputFile             :=$(IntermediateDirectory)/$(ProjectName).dll
 Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
 PreprocessOnlySwitch   :=-E
-ObjectsFileList        :="Main.txt"
+ObjectsFileList        :="RendererInterface.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=makedir
 RcCmpOptions           := 
@@ -52,8 +52,8 @@ LibPath                := $(LibraryPathSwitch).
 AR       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/ar.exe" rcu
 CXX      := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe"
 CC       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/gcc.exe"
-CXXFLAGS := -Wall -std=c++17 -g -O0 -Wall $(Preprocessors)
-CFLAGS   := -Wall -std=c99 -g -O0 -Wall $(Preprocessors)
+CXXFLAGS :=  -g $(Preprocessors)
+CFLAGS   :=  -g $(Preprocessors)
 ASFLAGS  := 
 AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/as.exe"
 
@@ -62,11 +62,9 @@ AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw6
 ## User defined environment variables
 ##
 VULKAN_PATH:="C:\Program Files\VulkanSDK\1.0.61.1"
-Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) 
 
 
-
-Objects=$(Objects0) 
+Objects=
 
 ##
 ## Main Build Targets 
@@ -74,23 +72,12 @@ Objects=$(Objects0)
 .PHONY: all clean PreBuild PrePreBuild PostBuild MakeIntermediateDirs
 all: $(OutputFile)
 
-$(OutputFile): $(IntermediateDirectory)/.d "..\.build-debug_windows\MetaBuilder" "..\.build-debug_windows\Vulkan" $(Objects) 
+$(OutputFile): $(IntermediateDirectory)/.d $(Objects) 
 	@$(MakeDirCommand) $(@D)
 	@echo "" > $(IntermediateDirectory)/.d
-	@echo $(Objects0)  > $(ObjectsFileList)
-	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
-
-"..\.build-debug_windows\MetaBuilder":
-	@$(MakeDirCommand) "..\.build-debug_windows"
-	@echo stam > "..\.build-debug_windows\MetaBuilder"
-
-
-"..\.build-debug_windows\Vulkan":
-	@$(MakeDirCommand) "..\.build-debug_windows"
-	@echo stam > "..\.build-debug_windows\Vulkan"
-
-
-
+	$(SharedObjectLinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
+	@$(MakeDirCommand) "E:\GNUProg\Vulkan/.build-debug_windows"
+	@echo rebuilt > "E:\GNUProg\Vulkan/.build-debug_windows/RendererInterface"
 
 MakeIntermediateDirs:
 	@$(MakeDirCommand) "./Debug"
@@ -105,14 +92,6 @@ PreBuild:
 ##
 ## Objects
 ##
-$(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Main/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/main.cpp$(DependSuffix): main.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/main.cpp$(DependSuffix) -MM main.cpp
-
-$(IntermediateDirectory)/main.cpp$(PreprocessSuffix): main.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.cpp$(PreprocessSuffix) main.cpp
-
 
 -include $(IntermediateDirectory)/*$(DependSuffix)
 ##

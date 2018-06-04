@@ -26,19 +26,19 @@ class InputDefinition{
 class IDSampler : public InputDefinition{
 	
 };
-template<typename BASETYPE, uint32_t BITSIZE, uint32_t HEIGHT, uint32_t WIDTH, uint32_t DIMENSION, bool ARRAY>
+template<typename BASETYPE, u32 BITSIZE, u32 HEIGHT, u32 WIDTH, u32 DIMENSION, bool ARRAY>
 class IDSampledImage : public InputDefinition{
 	
 };
-template<typename BASETYPE, uint32_t BITSIZE, uint32_t HEIGHT, uint32_t WIDTH, uint32_t DIMENSION, bool ARRAY, bool WRITABLE>
+template<typename BASETYPE, u32 BITSIZE, u32 HEIGHT, u32 WIDTH, u32 DIMENSION, bool ARRAY, bool WRITABLE>
 class IDImage : public InputDefinition{
 	
 };
-template<typename BASETYPE, uint32_t BITSIZE, uint32_t HEIGHT, uint32_t WIDTH, bool WRITABLE>
+template<typename BASETYPE, u32 BITSIZE, u32 HEIGHT, u32 WIDTH, bool WRITABLE>
 class IDBuffer : public InputDefinition{
 	
 };
-template<typename BASETYPE, uint32_t BITSIZE, uint32_t HEIGHT, uint32_t WIDTH, bool WRITABLE>
+template<typename BASETYPE, u32 BITSIZE, u32 HEIGHT, u32 WIDTH, bool WRITABLE>
 class PixelBuffer : public InputDefinition{
 	
 };

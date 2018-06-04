@@ -2,11 +2,11 @@
 ## Auto Generated makefile by CodeLite IDE
 ## any manual changes will be erased      
 ##
-## DebugWindows
-ProjectName            :=Main
-ConfigurationName      :=DebugWindows
+## Debug
+ProjectName            :=MetaBuilder
+ConfigurationName      :=Debug
 WorkspacePath          :=E:/GNUProg/Vulkan
-ProjectPath            :=E:/GNUProg/Vulkan/Main
+ProjectPath            :=E:/GNUProg/Vulkan/MetaBuilder
 IntermediateDirectory  :=./Debug
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
@@ -32,7 +32,7 @@ Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
 PreprocessOnlySwitch   :=-E
-ObjectsFileList        :="Main.txt"
+ObjectsFileList        :="MetaBuilder.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=makedir
 RcCmpOptions           := 
@@ -52,8 +52,8 @@ LibPath                := $(LibraryPathSwitch).
 AR       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/ar.exe" rcu
 CXX      := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/g++.exe"
 CC       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/gcc.exe"
-CXXFLAGS := -Wall -std=c++17 -g -O0 -Wall $(Preprocessors)
-CFLAGS   := -Wall -std=c99 -g -O0 -Wall $(Preprocessors)
+CXXFLAGS :=  -g -O0 -Wall $(Preprocessors)
+CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
 ASFLAGS  := 
 AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw64/bin/as.exe"
 
@@ -62,7 +62,7 @@ AS       := "C:/Program Files/mingw-w64/x86_64-7.1.0-posix-seh-rt_v5-rev2/mingw6
 ## User defined environment variables
 ##
 VULKAN_PATH:="C:\Program Files\VulkanSDK\1.0.61.1"
-Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/metamain.cpp$(ObjectSuffix) 
 
 
 
@@ -74,23 +74,11 @@ Objects=$(Objects0)
 .PHONY: all clean PreBuild PrePreBuild PostBuild MakeIntermediateDirs
 all: $(OutputFile)
 
-$(OutputFile): $(IntermediateDirectory)/.d "..\.build-debug_windows\MetaBuilder" "..\.build-debug_windows\Vulkan" $(Objects) 
+$(OutputFile): $(IntermediateDirectory)/.d $(Objects) 
 	@$(MakeDirCommand) $(@D)
 	@echo "" > $(IntermediateDirectory)/.d
 	@echo $(Objects0)  > $(ObjectsFileList)
 	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
-
-"..\.build-debug_windows\MetaBuilder":
-	@$(MakeDirCommand) "..\.build-debug_windows"
-	@echo stam > "..\.build-debug_windows\MetaBuilder"
-
-
-"..\.build-debug_windows\Vulkan":
-	@$(MakeDirCommand) "..\.build-debug_windows"
-	@echo stam > "..\.build-debug_windows\Vulkan"
-
-
-
 
 MakeIntermediateDirs:
 	@$(MakeDirCommand) "./Debug"
@@ -105,13 +93,13 @@ PreBuild:
 ##
 ## Objects
 ##
-$(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/Main/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/main.cpp$(DependSuffix): main.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/main.cpp$(DependSuffix) -MM main.cpp
+$(IntermediateDirectory)/metamain.cpp$(ObjectSuffix): metamain.cpp $(IntermediateDirectory)/metamain.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "E:/GNUProg/Vulkan/MetaBuilder/metamain.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/metamain.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/metamain.cpp$(DependSuffix): metamain.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/metamain.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/metamain.cpp$(DependSuffix) -MM metamain.cpp
 
-$(IntermediateDirectory)/main.cpp$(PreprocessSuffix): main.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.cpp$(PreprocessSuffix) main.cpp
+$(IntermediateDirectory)/metamain.cpp$(PreprocessSuffix): metamain.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/metamain.cpp$(PreprocessSuffix) metamain.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

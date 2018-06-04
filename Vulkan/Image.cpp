@@ -5,7 +5,7 @@
 
 vk::CommandPool singleImageTransitionCommandPool = vk::CommandPool();
 
-vk::ImageView VInstance::createImageView2D (vk::Image image, uint32_t mipBase, uint32_t mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VInstance::createImageView2D (vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -21,7 +21,7 @@ vk::ImageView VInstance::createImageView2D (vk::Image image, uint32_t mipBase, u
 
 	return imageView;
 }
-vk::ImageView VInstance::createImageView2DArray (vk::Image image, uint32_t mipBase, uint32_t mipOffset, uint32_t arrayOffset, uint32_t arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VInstance::createImageView2DArray (vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -37,7 +37,7 @@ vk::ImageView VInstance::createImageView2DArray (vk::Image image, uint32_t mipBa
 
 	return imageView;
 }
-void VInstance::copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, uint32_t index,
+void VInstance::copyBufferToImage (vk::Buffer srcBuffer, vk::Image dstImage, vk::DeviceSize srcOffset, vk::Offset3D dstOffset, vk::Extent3D extent, u32 index,
                         vk::PipelineStageFlags inputPipelineStageFlags, vk::AccessFlags inputAccessFlag, vk::PipelineStageFlags outputPipelineStageFlags, vk::AccessFlags outputAccessFlag,
                         vk::CommandPool commandPool, vk::Queue submitQueue) {
 
@@ -152,7 +152,7 @@ void VInstance::transitionImageLayout (vk::Image image, vk::Format format, vk::I
 	);
 	submitQueue.submit ({submitInfo}, vk::Fence());
 }
-void VInstance::transferData (const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, uint32_t index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
+void VInstance::transferData (const void* srcData, vk::Image targetImage, vk::Offset3D offset, vk::Extent3D extent, u32 index, vk::DeviceSize size, vk::PipelineStageFlags usePipelineFlags, vk::AccessFlags useFlag,
                    vk::CommandPool commandPool, vk::Queue submitQueue) {
 
 	MappedBufferWrapper* transferBuffer;

@@ -70,24 +70,24 @@ struct CullingStrategy {
 	virtual void removeFromStrat(DefDrawData& obj) = 0;
 };
 struct RenderContext {
-	//ObjectStore<DrawObject, uint32_t> objStore;
+	//ObjectStore<DrawObject, u32> objStore;
 	CullingStrategy* strategy;
 	
 	template<typename OBJDATA>
-	uint64_t createObject();
+	u64 createObject();
 	template<typename OBJDATA>
-	void removeObject(uint64_t id);
+	void removeObject(u64 id);
 };
 
 
-uint32_t loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
+u32 loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 
 	std::ifstream input (file, std::ios::binary);
 
 	std::string str;
 	std::getline (input, str, '\0');
-	uint32_t vertexCount = 0;
-	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (uint32_t));
+	u32 vertexCount = 0;
+	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (u32));
 
 	std::vector<Vertex> vs;
 	vs.resize (vertexCount);
@@ -107,30 +107,30 @@ uint32_t loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 
 		vs[i] = v;
 	}
-	uint32_t indexCount;
-	input.read (reinterpret_cast<char*> (&indexCount), sizeof (uint32_t));
+	u32 indexCount;
+	input.read (reinterpret_cast<char*> (&indexCount), sizeof (u32));
 
-	std::vector<uint32_t> is;
+	std::vector<u32> is;
 	is.resize (indexCount);
 
-	input.read (reinterpret_cast<char*> (is.data()), sizeof (uint32_t) *indexCount);
+	input.read (reinterpret_cast<char*> (is.data()), sizeof (u32) *indexCount);
 	
 	ObjectPartData data;
 	data.diffuseTexId = 0;
 	return g_thread_data.dispatcher.add_object(vs, is, data);
 }
 
-LoadedObjectData<Vertex, uint32_t> loadDataFile (std::string file, ObjectVertexData<Vertex, uint32_t>& vertex_data) {
+LoadedObjectData<Vertex, u32> loadDataFile (std::string file, ObjectVertexData<Vertex, u32>& vertex_data) {
 
 	std::ifstream input (file, std::ios::binary);
 
 	std::string str;
 	std::getline (input, str, '\0');
-	uint32_t vertexCount = 0;
-	LoadedObjectData<Vertex, uint32_t> objData;
+	u32 vertexCount = 0;
+	LoadedObjectData<Vertex, u32> objData;
 	objData.vertex_offset = vertex_data.vertices.size();
 	objData.index_offset = vertex_data.indices.size();
-	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (uint32_t));
+	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (u32));
 	
 
 	vertex_data.vertices.resize (vertex_data.vertices.size() + vertexCount);
@@ -150,18 +150,18 @@ LoadedObjectData<Vertex, uint32_t> loadDataFile (std::string file, ObjectVertexD
 
 		vertex_data.vertices[i] = v;
 	}
-	uint32_t indexCount;
-	input.read (reinterpret_cast<char*> (&indexCount), sizeof (uint32_t));
+	u32 indexCount;
+	input.read (reinterpret_cast<char*> (&indexCount), sizeof (u32));
 	objData.index_size = indexCount;
-	std::vector<uint32_t> is;
+	std::vector<u32> is;
 	vertex_data.indices.resize (vertex_data.indices.size() + indexCount);
 
-	input.read (reinterpret_cast<char*> (&vertex_data.indices[objData.index_offset]), sizeof (uint32_t) *indexCount);
+	input.read (reinterpret_cast<char*> (&vertex_data.indices[objData.index_offset]), sizeof (u32) *indexCount);
 	return objData;
 }
 
 
-void loadImage (VInstance* instance, std::string file, ImageWrapper * imageWrapper, uint32_t index, vk::CommandPool commandPool, vk::Queue queue) {
+void loadImage (VInstance* instance, std::string file, ImageWrapper * imageWrapper, u32 index, vk::CommandPool commandPool, vk::Queue queue) {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load (file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -191,9 +191,9 @@ struct SimpleObject{
 
 struct WWW{
 	ProxyObject<SimpleObject> proxy_obj;
-	uint32_t objectId;
+	u32 objectId;
 	size_t partcount;
-	std::array<uint32_t, MAX_PART_IDS> parts;
+	std::array<u32, MAX_PART_IDS> parts;
 	void update(ThreadRenderEnvironment* renderEnv){//gets called after ProxyObject update in the update Phase
 		proxy_obj.update();
 		printf("Update Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
@@ -237,32 +237,32 @@ struct WWW{
 
 int main (int argc, char **argv) {
 	
-	std::vector<uint32_t> TiePartIds;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
+	std::vector<u32> TiePartIds;
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("../workingdir/assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back(loadDataFile ("assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
 	
-	std::vector<uint32_t> XPartIds;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", &g_thread_data.dispatcher));
+	std::vector<u32> XPartIds;
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
 	
 	
@@ -306,7 +306,7 @@ int main (int argc, char **argv) {
 	if(!global.instExtLayers.activateLayer("VK_LAYER_LUNARG_api_dump")){
 		printf("Extension VK_LAYER_LUNARG_api_dump not available\n");
 	}*/
-	uint32_t instanceExtCount;
+	u32 instanceExtCount;
 	const char** glfwReqInstanceExt = glfwGetRequiredInstanceExtensions (&instanceExtCount);
 	for (size_t i = 0; i < instanceExtCount; i++) {
 		if (!global.extLayers.activateExtension (glfwReqInstanceExt[i])) {
@@ -332,31 +332,31 @@ int main (int argc, char **argv) {
 
 	
 	{
-		LoadedObjectWrapper<Vertex, uint32_t> obj_wrap;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
+		LoadedObjectWrapper<Vertex, u32> obj_wrap;
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 0;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
 		
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("../workingdir/assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
 
 		g_render_environment.objects.push_back(obj_wrap);
@@ -406,10 +406,10 @@ int main (int argc, char **argv) {
 	{
 		imageWrapper->transitionImageLayout (vk::ImageLayout::eTransferDstOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
-		loadImage (instance, "../workingdir/assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
+		loadImage (instance, "assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
 		
 		imageWrapper->generateMipmaps(0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
@@ -435,7 +435,7 @@ int main (int argc, char **argv) {
 
 	g_thread_data.dispatcher.set_image_array(imageWrapper, sampler);
 
-	uint32_t MAX_COMMAND_COUNT = 100;
+	u32 MAX_COMMAND_COUNT = 100;
 
 	BufferWrapper *uniformBuffer = new BufferWrapper (instance, sizeof (Camera),
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
@@ -513,9 +513,9 @@ int main (int argc, char **argv) {
 			//	-> error
 			//if staginbuffer big enough to store all global values and not big enough to hold instancedata
 			
-			uint32_t stagingOffset = 0;
+			u32 stagingOffset = 0;
 
-			uint32_t uniformOffset = stagingOffset;
+			u32 uniformOffset = stagingOffset;
 			( (Camera*) (stagingBuffer->data + stagingOffset)) [0].w2sMatrix = viewport.createWorldToScreenSpaceMatrix();
 			stagingOffset += sizeof (Camera);
 

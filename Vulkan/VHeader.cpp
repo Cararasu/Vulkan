@@ -8,7 +8,7 @@
 
 
 vk::DeviceMemory VInstance::allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties){
-	uint32_t memoryType = findMemoryType(memoryRequirement.memoryTypeBits, properties);
+	u32 memoryType = findMemoryType(memoryRequirement.memoryTypeBits, properties);
 	if(memoryType == -1)
 		return vk::DeviceMemory();
 		
@@ -21,7 +21,7 @@ vk::DeviceMemory VInstance::allocateMemory(vk::MemoryRequirements memoryRequirem
 }
 
 vk::CommandPool VInstance::createTransferCommandPool(vk::CommandPoolCreateFlags createFlags){
-	uint32_t qId;
+	u32 qId;
 	if(transfQId)
 		qId = transfQId;
 	else
@@ -60,11 +60,11 @@ void VInstance::copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::De
 	vkUnmapMemory(device, dstMemory);
 }
 
-uint32_t VInstance::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) {
+u32 VInstance::findMemoryType(u32 typeFilter, vk::MemoryPropertyFlags properties) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
 	physicalDevice.getMemoryProperties(&memProperties);
 	
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+	for (u32 i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
 			return i;
 		}
