@@ -4,6 +4,7 @@
 
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>
+#include <inttypes.h>
 
 void printError(VkResult res);
 
@@ -42,7 +43,7 @@ struct Vertex {
 	glm::vec3 uv;
 	glm::vec3 normal;
 };
-struct Instance {
+struct InstanceObj {
 	glm::mat4 m2wMatrix;
 };
 struct Camera {

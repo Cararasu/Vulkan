@@ -3,6 +3,8 @@
   <Project Name="Main" Path="Main/Main.project" Active="No"/>
   <Project Name="RendererInterface" Path="RendererInterface/RendererInterface.project" Active="No"/>
   <Project Name="MetaBuilder" Path="MetaBuilder/MetaBuilder.project" Active="No"/>
+  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
+  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="no">
       <Environment/>
@@ -23,11 +25,9 @@
     <WorkspaceConfiguration Name="Debug Windows" Selected="yes">
       <Environment/>
       <Project Name="Main" ConfigName="DebugWindows"/>
+      <Project Name="MetaBuilder" ConfigName="Debug"/>
       <Project Name="RendererInterface" ConfigName="DebugWindows"/>
       <Project Name="Vulkan" ConfigName="Debug Windows"/>
-      <Project Name="MetaBuilder" ConfigName="Debug"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
-  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
-  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
 </CodeLite_Workspace>

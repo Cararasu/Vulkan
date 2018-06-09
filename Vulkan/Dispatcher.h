@@ -8,7 +8,7 @@
 
 struct OpaqueInstance {
 	u32 objIndex;
-	Instance data;
+	InstanceObj data;
 };
 struct OpaqueObject {
 	u32 count;
@@ -45,7 +45,7 @@ struct OpaqueObjectDispatcher {
 	
 	void upload_data(vk::CommandPool commandPool, vk::Queue submitQueue);
 
-	void push_instance (u32 objectId, Instance& inst);
+	void push_instance (u32 objectId, InstanceObj& inst);
 
 	u32 setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandBuffer commandBuffer);
 	u32 setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandPool commandPool, vk::Queue submitQueue);

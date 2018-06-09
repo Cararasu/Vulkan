@@ -101,7 +101,7 @@ void transferData ( const void* srcData, BufferWrapper* targetBuffer, vk::Device
 		if ( !stagingBuffer ) {
 			printf ( "Creating Staging-Buffer\n" );
 			stagingBuffer = new MappedBufferWrapper ( targetBuffer->instance, V_MAX_STAGINGBUFFER_SIZE, vk::BufferUsageFlagBits::eTransferSrc, 
-				vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) );
+				vk::MemoryPropertyFlags(vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal) );
 		}
 		transferBuffer = stagingBuffer;
 	}

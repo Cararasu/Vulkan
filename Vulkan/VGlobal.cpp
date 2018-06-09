@@ -13,18 +13,13 @@
 
 VGlobal global;
 
-
 VkBool32 VKAPI_PTR debugLogger (
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
     u64 object, size_t location, int32_t messageCode,
-    const char* pLayerPrefix, const char* pMessage, void* pUserData) {
-	printf ("Layer: %s - Message: %s\n", pLayerPrefix, pMessage);
-	fflush(stdout);
-	return VK_TRUE;
-}
+    const char* pLayerPrefix, const char* pMessage, void* pUserData);
 
-PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
-PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
+extern PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
+extern PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
 
 
 bool operator== (vk::LayerProperties& lhs, vk::LayerProperties& rhs) {
@@ -136,14 +131,44 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 	vk::PhysicalDevice physDevices[devicecount];
 	physicalDevices.resize (devicecount);
 	V_CHECKCALL (vkinstance.enumeratePhysicalDevices (&devicecount, physDevices), printf ("Get physical-devicec Failed\n"));
-
+	
 	for (size_t i = 0; i < devicecount; i++) {
 		VPhysDeviceProps& prop = physicalDevices[i];
+		
 		prop.physicalDevice = physDevices[i];
 		physDevices[i].getProperties (&prop.vkPhysDevProps);
 		physDevices[i].getFeatures (&prop.vkPhysDevFeatures);
 
 		gatherExtLayer (physDevices[i], &prop.availableLayers, &prop.availableExtensions);
+
+		printf("Physical Device %s\n", prop.vkPhysDevProps.deviceName);
+		
+		vk::PhysicalDeviceMemoryProperties memProperties;
+		prop.physicalDevice.getMemoryProperties(&memProperties);
+		
+		for(uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+			printf("Memory %d\n", i);
+			printf("\tHeap Index %d\n", memProperties.memoryTypes[i].heapIndex);
+			if(memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eDeviceLocal)
+				printf("\tDevice Local\n");
+			if(memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostVisible)
+				printf("\tHost Visible\n");
+			if(memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostCoherent)
+				printf("\tHost Coherent\n");
+			if(memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostCached)
+				printf("\tHost Cached\n");
+			if(memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eLazilyAllocated)
+				printf("\tLazily Allocated\n");
+		}
+		for(uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
+			printf("Heap %d\n", i);
+			printf("\tSize %I64u\n", memProperties.memoryHeaps[i].size);
+			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eDeviceLocal)
+				printf("\tDevice Local\n");
+			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eMultiInstanceKHX)
+				printf("\tMulti Instance Visible\n");
+		}
+
 
 		u32 count;
 		prop.physicalDevice.getQueueFamilyProperties (&count, nullptr);

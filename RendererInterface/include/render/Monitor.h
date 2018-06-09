@@ -3,17 +3,18 @@
 #include "Header.h"
 
 struct VideoMode{
-	Extend2D extend;
+	Extend2D<s32> extend;
 	u32 red_bits, green_bits, blue_bits;
 	u32 refresh_rate;
 };
 
 struct Monitor{
-	char* name;
-	Extend2D extend;
-	Offset2D offset;
-	std::vector<VideoMode> videomodes;
+	const char* name;
+	Extend2D<s32> extend;
+	Offset2D<s32> offset;
+	Array<VideoMode> videomodes;
 	
 	virtual ~Monitor(){}
+	
 	//gamma stuff
 };

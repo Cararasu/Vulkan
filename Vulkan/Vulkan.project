@@ -8,6 +8,9 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VulkanInstance.cpp"/>
+    <File Name="VulkanInstance.h"/>
+    <File Name="VulkanRenerers.h"/>
     <File Name="vulkanmain.cpp"/>
     <File Name="VWindow.h"/>
     <File Name="VWindow.cpp"/>
@@ -21,13 +24,11 @@
     <File Name="VDevice.h"/>
     <File Name="VDevice.cpp"/>
     <File Name="ShaderInputAbstraction.h"/>
-    <File Name="ShaderInputAbstraction.cpp"/>
     <File Name="RenderEnvironment.h"/>
     <File Name="RenderEnvironment.cpp"/>
     <File Name="Pipelines.cpp"/>
     <File Name="PipelineModule.h"/>
     <File Name="PipelineModule.cpp"/>
-    <File Name="Instance.cpp"/>
     <File Name="Image.cpp"/>
     <File Name="DrawDispatcher.h"/>
     <File Name="DrawDispatcher.cpp"/>
@@ -123,7 +124,7 @@
         <Library Value="vulkan-1"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="../workingdir/$(ProjectName)" IntermediateDirectory="./DebugWind" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>

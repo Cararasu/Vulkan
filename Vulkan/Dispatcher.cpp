@@ -73,7 +73,7 @@ void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue
 	vertices.clear();
 	indices.clear();
 }
-void OpaqueObjectDispatcher::push_instance (u32 objectId, Instance& inst) {
+void OpaqueObjectDispatcher::push_instance (u32 objectId, InstanceObj& inst) {
 	instances.push_back ({objectId, inst});
 }
 u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
@@ -97,7 +97,7 @@ u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offse
 	if (!desciptorSet) {
 		assert (false);
 	}
-	u32 neededSize = sizeof (Instance) * instances.size();
+	u32 neededSize = sizeof (InstanceObj) * instances.size();
 	if (instanceBuffer && instanceBuffer->memory.size < neededSize) {
 		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->memory.size, neededSize);
 		delete instanceBuffer;
@@ -122,7 +122,7 @@ u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offse
 	std::sort (instances.begin(), instances.end(), [] (OpaqueInstance & lhs, OpaqueInstance & rhs) {
 		return lhs.objIndex < rhs.objIndex;
 	});
-	Instance* instanceArray = (Instance*) (stagingBuffer->data + offset);
+	InstanceObj* instanceArray = (InstanceObj*) (stagingBuffer->data + offset);
 
 	u32 instanceCount = 0;
 	for (OpaqueInstance& opInst : instances) {
@@ -130,7 +130,7 @@ u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offse
 		parts[opInst.objIndex].count++;
 	}
 
-	copyBuffer (stagingBuffer, instanceBuffer, offset, 0, sizeof (Instance) *instanceCount,
+	copyBuffer (stagingBuffer, instanceBuffer, offset, 0, sizeof (InstanceObj) *instanceCount,
 	            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
 	            commandBuffer);
 

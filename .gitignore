@@ -1,3 +1,4 @@
 libs/
 .codelite/*
 .build-debug_windows/
+*.mk

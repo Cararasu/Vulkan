@@ -21,28 +21,6 @@ void VWindow::handleResize (u32 width, u32 height) {
 	windowState = WindowState::eResized;
 }
 
-void VWindow::set_root_section (WindowSection* section) {
-
-}
-
-void VWindow::set_dimensions (Monitor* monitor, Offset2D offset, Extend2D extend) {
-
-}
-
-void VWindow::set_size (Extend2D extend) {
-
-}
-Extend2D VWindow::get_size() {
-
-}
-
-void VWindow::set_offset (Monitor* monitor, Offset2D offset) {
-
-}
-Offset2D VWindow::get_offset (Monitor* monitor) {
-
-}
-
 void VWindow::initializeWindow (VInstance* instance) {
 	this->instance = instance;
 	pgcQueue = instance->requestPGCQueue();

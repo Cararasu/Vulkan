@@ -5,6 +5,7 @@
 #include <string.h>
 #include "VHeader.h"
 
+void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions);
 struct VExtLayerStruct{
 	std::vector<vk::LayerProperties> availableLayers;
 	std::vector<vk::ExtensionProperties> availableExtensions;

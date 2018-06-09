@@ -18,10 +18,10 @@ struct VInstance {
 	
 	struct{
 		StandardPipelineModuleBuilder standard;
-	}pipeline_module_builders;
+	} pipeline_module_builders;
 	struct{
 		PipelineModuleLayout standard;
-	}pipeline_module_layouts;
+	} pipeline_module_layouts;
 	
 	VInstance(vk::PhysicalDevice physicalDevice, u32 deviceId);
 	~VInstance();

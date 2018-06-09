@@ -82,7 +82,7 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 
 	std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
 		vk::VertexInputBindingDescription (0, sizeof (Vertex), vk::VertexInputRate::eVertex),
-		vk::VertexInputBindingDescription (1, sizeof (Instance), vk::VertexInputRate::eInstance)
+		vk::VertexInputBindingDescription (1, sizeof (InstanceObj), vk::VertexInputRate::eInstance)
 	};
 
 	std::array<vk::VertexInputAttributeDescription, 7> vertexInputAttributes = {
@@ -90,14 +90,14 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 		vk::VertexInputAttributeDescription (1, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, uv)),
 		vk::VertexInputAttributeDescription (2, 0, vk::Format::eR32G32B32Sfloat, offsetof (Vertex, normal)),
 
-		vk::VertexInputAttributeDescription (4, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix)),
-		vk::VertexInputAttributeDescription (5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4)),
-		vk::VertexInputAttributeDescription (6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 2),
-		vk::VertexInputAttributeDescription (7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (8, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (9, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (10, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (11, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (Instance, m2wMatrix) + sizeof (glm::vec4) * 3),
+		vk::VertexInputAttributeDescription (4, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix)),
+		vk::VertexInputAttributeDescription (5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4)),
+		vk::VertexInputAttributeDescription (6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 2),
+		vk::VertexInputAttributeDescription (7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (8, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (9, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (10, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
+		//vk::VertexInputAttributeDescription (11, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo (vk::PipelineVertexInputStateCreateFlags(), vertexInputBindings.size(), vertexInputBindings.data(), vertexInputAttributes.size(), vertexInputAttributes.data());

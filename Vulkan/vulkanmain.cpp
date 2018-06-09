@@ -24,13 +24,13 @@
 #include <render/Window.h>
 
 template<typename T>
-struct ProxyObject{
+struct ProxyObject {
 	T obj;
 	T* proxyObj = nullptr;
-	
-	inline void update(){
-		if(proxyObj) memcpy(&obj, proxyObj, sizeof(T));
-		printf("Proxy_update\n");
+
+	inline void update() {
+		if (proxyObj) memcpy (&obj, proxyObj, sizeof (T));
+		printf ("Proxy_update\n");
 	}
 };
 //Job system: Fork -> Meet -> Join ...
@@ -57,7 +57,7 @@ struct ProxyObject{
 
 #include "DrawDispatcher.h"
 
-struct DefDrawData{
+struct DefDrawData {
 	glm::dvec3 pos, rot, scale;
 };
 struct CullingStrategy {
@@ -65,18 +65,18 @@ struct CullingStrategy {
 //QuadTree(Box(Index of Obj))
 
 	//virtual void update(ObjectStore<DrawObject>* objectStore) = 0;
-	
-	virtual void addToStrat(DefDrawData& obj) = 0;
-	virtual void removeFromStrat(DefDrawData& obj) = 0;
+
+	virtual void addToStrat (DefDrawData& obj) = 0;
+	virtual void removeFromStrat (DefDrawData& obj) = 0;
 };
 struct RenderContext {
 	//ObjectStore<DrawObject, u32> objStore;
 	CullingStrategy* strategy;
-	
+
 	template<typename OBJDATA>
 	u64 createObject();
 	template<typename OBJDATA>
-	void removeObject(u64 id);
+	void removeObject (u64 id);
 };
 
 
@@ -114,10 +114,10 @@ u32 loadDataFile (std::string file, OpaqueObjectDispatcher* dispatcher) {
 	is.resize (indexCount);
 
 	input.read (reinterpret_cast<char*> (is.data()), sizeof (u32) *indexCount);
-	
+
 	ObjectPartData data;
 	data.diffuseTexId = 0;
-	return g_thread_data.dispatcher.add_object(vs, is, data);
+	return g_thread_data.dispatcher.add_object (vs, is, data);
 }
 
 LoadedObjectData<Vertex, u32> loadDataFile (std::string file, ObjectVertexData<Vertex, u32>& vertex_data) {
@@ -131,7 +131,7 @@ LoadedObjectData<Vertex, u32> loadDataFile (std::string file, ObjectVertexData<V
 	objData.vertex_offset = vertex_data.vertices.size();
 	objData.index_offset = vertex_data.indices.size();
 	input.read (reinterpret_cast<char*> (&vertexCount), sizeof (u32));
-	
+
 
 	vertex_data.vertices.resize (vertex_data.vertices.size() + vertexCount);
 	for (size_t i = 0; i < vertexCount; i++) {
@@ -171,42 +171,42 @@ void loadImage (VInstance* instance, std::string file, ImageWrapper * imageWrapp
 	}
 	vk::Extent3D imageExtent = vk::Extent3D (texWidth, texHeight, 1);
 	instance->transferData (pixels, imageWrapper->image, vk::Offset3D (0, 0, 0), imageExtent, index, imageSize,
-	              vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue);
+	                        vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue);
 
 	stbi_image_free (pixels);
 }
 
-struct Orientation{
+struct Orientation {
 	glm::dvec3 position, rotation, scale;
 };
-struct BoundingBox{
+struct BoundingBox {
 	glm::dvec3 pos_size, neg_size;
 };
-struct SimpleObject{
+struct SimpleObject {
 	Orientation orientation;
 	BoundingBox bounding_box;
 };
 
 #define MAX_PART_IDS (8)
 
-struct WWW{
+struct WWW {
 	ProxyObject<SimpleObject> proxy_obj;
 	u32 objectId;
 	size_t partcount;
 	std::array<u32, MAX_PART_IDS> parts;
-	void update(ThreadRenderEnvironment* renderEnv){//gets called after ProxyObject update in the update Phase
+	void update (ThreadRenderEnvironment* renderEnv) { //gets called after ProxyObject update in the update Phase
 		proxy_obj.update();
-		printf("Update Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
+		printf ("Update Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
 	}
-	void execute(ThreadRenderEnvironment* renderEnv){//gets called during the execute Phase
-		Instance instance;
-		instance.m2wMatrix = glm::translate(proxy_obj.obj.orientation.position);
-		printf("Dispatch Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
-		for(size_t i = 0; i < partcount; i++){
-			renderEnv->dispatcher.push_instance(parts[i], instance);
-			printf("%d, ", parts[i]);
+	void execute (ThreadRenderEnvironment* renderEnv) { //gets called during the execute Phase
+		InstanceObj instance;
+		instance.m2wMatrix = glm::translate (proxy_obj.obj.orientation.position);
+		printf ("Dispatch Obj pos(%f,%f,%f)\n", proxy_obj.obj.orientation.position.x, proxy_obj.obj.orientation.position.y, proxy_obj.obj.orientation.position.z);
+		for (size_t i = 0; i < partcount; i++) {
+			renderEnv->dispatcher.push_instance (parts[i], instance);
+			printf ("%d, ", parts[i]);
 		}
-		printf("\n");
+		printf ("\n");
 	}
 };
 
@@ -231,41 +231,80 @@ struct WWW{
  *         create VertexInputAttributeDescription for per Object stuff
  *     VerticesIndicesStorage
  *         Organised maybe also by type but organised in different buffers, bufferid/offset/count
- *         
+ *
  *         generate VertexInputAttributeDescriptions from this
  * */
 
+#include <render/Instance.h>
+#include <chrono>
+#include <thread>
+
 int main (int argc, char **argv) {
+
+	Instance* newinstance = initialize_instance ("Vulkan");
 	
+	newinstance->initialize();
+	printf ("%p\n", newinstance);
+	printf ("%s\n", newinstance->get_primary_monitor()->name);
+	
+	Window* window = newinstance->create_window();
+	Monitor* primMonitor = newinstance->get_primary_monitor();
+	
+	printf ("Monitors\n");
+	for(Monitor* monitor : newinstance->get_monitors()){
+		if(monitor == primMonitor)
+			printf ("\tPrimary Monitor | %s %dx%d\n", monitor->name, monitor->extend.x, monitor->extend.y);
+		else
+			printf ("\t%s %dx%d\n", monitor->name, monitor->extend.x, monitor->extend.y);
+	}
+	printf ("Devices\n");
+	for(Device* device : newinstance->get_devices()){
+		printf ("\t%s %d\n", device->name, device->rating);
+	}
+	
+	*window->offset() = primMonitor->offset + ((primMonitor->extend / 2) - 100);
+	*window->size() = {200, 200};
+	*window->visible() = true;
+	
+	window->update();
+	
+	std::this_thread::sleep_for(std::chrono::seconds(4));
+	
+	window->destroy();
+	
+	
+	destroy_instance(newinstance);
+	return 0;
+
 	std::vector<u32> TiePartIds;
-	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
-	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back(loadDataFile ("assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
+	TiePartIds.push_back (loadDataFile ("assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	
+
 	std::vector<u32> XPartIds;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Body.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Body.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Windows.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
+	XPartIds.push_back (loadDataFile ("assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher));
 	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	
-	
+
+
 
 	PerspectiveViewPort<float> viewport;
 
@@ -311,7 +350,7 @@ int main (int argc, char **argv) {
 	for (size_t i = 0; i < instanceExtCount; i++) {
 		if (!global.extLayers.activateExtension (glfwReqInstanceExt[i])) {
 			printf ("Extension %s not available\n", glfwReqInstanceExt[i]);
-		}else{
+		} else {
 			printf ("Activate Extension %s\n", glfwReqInstanceExt[i]);
 		}
 	}
@@ -330,36 +369,36 @@ int main (int argc, char **argv) {
 
 	global.initializeInstance ("Blabla", "WUWU Engine");
 
-	
+
 	{
 		LoadedObjectWrapper<Vertex, u32> obj_wrap;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 0;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Arm_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Arm_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 1;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Wing_L.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Wing_R.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/Tie/Tie_Fighter_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 2;
-		
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Body.data", obj_wrap.vertex_data));
+
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Body.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Windows.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Windows.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Wing_LB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Wing_LT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Wing_RB.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
-		obj_wrap.object_def.push_back(loadDataFile ("assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
+		obj_wrap.object_def.push_back (loadDataFile ("assets/X/XWing_Wing_RT.data", obj_wrap.vertex_data));
 		obj_wrap.object_def.back().diffuseTexId = 3;
 
-		g_render_environment.objects.push_back(obj_wrap);
+		g_render_environment.objects.push_back (obj_wrap);
 	}
 	//global.devExtLayers.activateExtension(VK_NV_GLSL_SHADER_EXTENSION_NAME);
 	VInstance* instance = global.createInstance();
@@ -378,26 +417,26 @@ int main (int argc, char **argv) {
 	if (!instance->extLayers.activateExtension (VK_NV_GLSL_SHADER_EXTENSION_NAME)) {
 		printf ("Extension %s not available\n", VK_NV_GLSL_SHADER_EXTENSION_NAME);
 	}
-	global.initializeDevice(instance);
+	global.initializeDevice (instance);
 	instance->pipeline_module_builders.standard.instance = instance;
-	g_thread_data.init(&g_render_environment, instance);
+	g_thread_data.init (&g_render_environment, instance);
 
 	VWindow* vWindow = new VWindow();
 
-	instance->pipeline_module_layouts.standard = createPipelineModuleLayout(&instance->pipeline_module_builders.standard);
+	instance->pipeline_module_layouts.standard = createPipelineModuleLayout (&instance->pipeline_module_builders.standard);
 
-	vWindow->initializeWindow(instance);
+	vWindow->initializeWindow (instance);
 
 
-	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool(instance);
+	vk::DescriptorPool descriptorSetPool = createStandardDescriptorSetPool (instance);
 
 	std::vector<vk::DescriptorSet> descriptorSets = instance->createDescriptorSets (descriptorSetPool, &instance->pipeline_module_layouts.standard.descriptorSetLayouts);
 
-	g_thread_data.dispatcher.set_descriptor_set(descriptorSets[1]);
+	g_thread_data.dispatcher.set_descriptor_set (descriptorSets[1]);
 
 	vk::CommandPool transferCommandPool = instance->createTransferCommandPool (vk::CommandPoolCreateFlagBits::eTransient);
 
-	g_thread_data.dispatcher.upload_data(transferCommandPool, instance->tqueue->transferQueue);
+	g_thread_data.dispatcher.upload_data (transferCommandPool, instance->tqueue->transferQueue);
 
 	VkExtent3D imageExtent = {4096, 4096, 1};
 	vk::Format imageFormat = instance->findSupportedFormat ({vk::Format::eR8G8B8A8Unorm}, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eSampledImage);
@@ -410,8 +449,8 @@ int main (int argc, char **argv) {
 		loadImage (instance, "assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue);
 		loadImage (instance, "assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue);
 		loadImage (instance, "assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue);
-		
-		imageWrapper->generateMipmaps(0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
+
+		imageWrapper->generateMipmaps (0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
 	//TODO Memory Barrier for graphics queue
@@ -433,7 +472,7 @@ int main (int argc, char **argv) {
 		instance->device.createSampler (&samplerInfo, nullptr, &sampler);
 	}
 
-	g_thread_data.dispatcher.set_image_array(imageWrapper, sampler);
+	g_thread_data.dispatcher.set_image_array (imageWrapper, sampler);
 
 	u32 MAX_COMMAND_COUNT = 100;
 
@@ -444,10 +483,10 @@ int main (int argc, char **argv) {
 	vk::DescriptorBufferInfo bufferInfo (uniformBuffer->buffer, offsetof (Camera, w2sMatrix), sizeof (glm::mat4));
 	instance->device.updateDescriptorSets ({
 		vk::WriteDescriptorSet (descriptorSets[0],
-								0, 0, //dstBinding, dstArrayElement
-								1, //descriptorCount
-								vk::DescriptorType::eUniformBuffer, //descriptorType
-								nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
+		                        0, 0, //dstBinding, dstArrayElement
+		                        1, //descriptorCount
+		                        vk::DescriptorType::eUniformBuffer, //descriptorType
+		                        nullptr, &bufferInfo, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
 	}, {});
 
 	vk::Semaphore drawFinishedSemaphore = instance->createSemaphore();
@@ -461,58 +500,57 @@ int main (int argc, char **argv) {
 	WWW ww3;
 	ww1.proxy_obj.proxyObj = &obj1;
 	ww1.partcount = XPartIds.size();
-	for(size_t i = 0; i < XPartIds.size(); i++)
+	for (size_t i = 0; i < XPartIds.size(); i++)
 		ww1.parts[i] = XPartIds[i];
-	
+
 	ww2.proxy_obj.proxyObj = &obj2;
 	ww2.partcount = TiePartIds.size();
-	for(size_t i = 0; i < TiePartIds.size(); i++)
+	for (size_t i = 0; i < TiePartIds.size(); i++)
 		ww2.parts[i] = TiePartIds[i];
-	
+
 	ww3.proxy_obj.proxyObj = &obj3;
 	ww3.partcount = TiePartIds.size();
-	for(size_t i = 0; i < TiePartIds.size(); i++)
+	for (size_t i = 0; i < TiePartIds.size(); i++)
 		ww3.parts[i] = TiePartIds[i];
-	
-	obj1.orientation.position = glm::vec3(0.0f, 0.0f, 0.0f);
-	obj2.orientation.position = glm::vec3(1.0f, 1.0f, 1.0f);
-	obj3.orientation.position = glm::vec3(-3.0f, 0.0f, 0.0f);
-	
-	ObjId id1 = store.insert(ww1);
-	printf("Id: %d Index: %d\n", id1.id, id1.index);
-	ObjId id2 = store.insert(ww2);
-	printf("Id: %d Index: %d\n", id2.id, id2.index);
-	ObjId id3 = store.insert(ww3);
-	printf("Id: %d Index: %d\n", id3.id, id3.index);
-	
-	
+
+	obj1.orientation.position = glm::vec3 (0.0f, 0.0f, 0.0f);
+	obj2.orientation.position = glm::vec3 (1.0f, 1.0f, 1.0f);
+	obj3.orientation.position = glm::vec3 (-3.0f, 0.0f, 0.0f);
+
+	ObjId id1 = store.insert (ww1);
+	printf ("Id: %d Index: %d\n", id1.id, id1.index);
+	ObjId id2 = store.insert (ww2);
+	printf ("Id: %d Index: %d\n", id2.id, id2.index);
+	ObjId id3 = store.insert (ww3);
+	printf ("Id: %d Index: %d\n", id3.id, id3.index);
+
 	while (vWindow->isOpen()) {
-		
+
 		obj1.orientation.position.x += 0.01f;
 		vWindow->setupFrame();
 		printf ("--------------- FrameBoundary ---------------\n");
 		printf ("PresetImageId: %d\n", vWindow->presentImageIndex);
 
 		viewport.m_viewvector = glm::rotate (viewport.m_viewvector, 0.005f, viewport.m_upvector);
-		
+
 		g_thread_data.reset();
 		//do stuff serialized
 		//to do this threaded we need to extract the update and execute into another class or scope maybe into ThreadRenderEnvironment itself
-		store.update(&g_thread_data);
-		store.execute(&g_thread_data);
-		
+		store.update (&g_thread_data);
+		store.execute (&g_thread_data);
+
 		//this should be per thread/per frame
 		vk::CommandBuffer commandBuffer = instance->createCommandBuffer (vWindow->getCurrentGraphicsCommandPool(), vk::CommandBufferLevel::ePrimary);
 		vk::CommandBufferBeginInfo beginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit), nullptr);
-		
+
 		{
 			commandBuffer.begin (&beginInfo);
-			
-			
+
+
 			//if staginbuffer not big enough to store all global values
 			//	-> error
 			//if staginbuffer big enough to store all global values and not big enough to hold instancedata
-			
+
 			u32 stagingOffset = 0;
 
 			u32 uniformOffset = stagingOffset;
@@ -520,19 +558,19 @@ int main (int argc, char **argv) {
 			stagingOffset += sizeof (Camera);
 
 			copyBuffer (stagingBuffer, uniformBuffer, uniformOffset, 0, sizeof (Camera),
-						vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-						commandBuffer);
-			
-			stagingOffset = g_thread_data.dispatcher.setup(stagingBuffer, stagingOffset, commandBuffer);
-			
+			            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
+			            commandBuffer);
+
+			stagingOffset = g_thread_data.dispatcher.setup (stagingBuffer, stagingOffset, commandBuffer);
+
 			commandBuffer.pipelineBarrier (
-				vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
-				vk::DependencyFlags(),
+			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
+			    vk::DependencyFlags(),
 			{}/*memoryBarrier*/, {
 				vk::BufferMemoryBarrier (
-					vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-					instance->transfQId, instance->graphQId,
-					g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->memory.size
+				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+				    instance->transfQId, instance->graphQId,
+				    g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->memory.size
 				)
 			}/*bufferBarrier*/, {}/*imageBarrier*/);
 			commandBuffer.pipelineBarrier (
@@ -551,23 +589,23 @@ int main (int argc, char **argv) {
 			};
 			commandBuffer.beginRenderPass (
 			    vk::RenderPassBeginInfo (
-					vWindow->standardmodule.renderPass,
+			        vWindow->standardmodule.renderPass,
 			        vWindow->perPresentImageDatas[vWindow->presentImageIndex].framebuffer,
 			        vk::Rect2D (vk::Offset2D (0, 0), vWindow->swapChainExtend),
 			        2, clearColors
 			    ),
 			    vk::SubpassContents::eInline
 			);
-			
+
 			commandBuffer.bindPipeline (vk::PipelineBindPoint::eGraphics, vWindow->standardmodule.pipeline);
 			commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, instance->pipeline_module_layouts.standard.pipelineLayout, 0, descriptorSets[0], {});
-			
-			g_thread_data.dispatcher.dispatch(commandBuffer);
+
+			g_thread_data.dispatcher.dispatch (commandBuffer);
 
 			commandBuffer.endRenderPass();
 
 			V_CHECKCALL_MAYBE (commandBuffer.end(), printf ("Recording of CommandBuffer failed\n"));
-			
+
 		}
 
 
@@ -576,14 +614,14 @@ int main (int argc, char **argv) {
 		vk::Semaphore waitSemaphores[] = {vWindow->imageAvailableGuardSem};
 		vk::Semaphore signalSemaphores[] = {drawFinishedSemaphore};
 		vk::SubmitInfo submitInfo;
-		if(vWindow->windowState != WindowState::eNotVisible){//otherwise we wait for a guard semaphore, for acquiring the present image
+		if (vWindow->windowState != WindowState::eNotVisible) { //otherwise we wait for a guard semaphore, for acquiring the present image
 			submitInfo = vk::SubmitInfo (1, waitSemaphores, waitStages, 1, &commandBuffer, 1, signalSemaphores);
 
 			vWindow->pgcQueue->submitGraphics (1, &submitInfo);
-			
+
 			vWindow->showNextFrame (1, signalSemaphores);
 		}
-		
+
 		printf ("---------------   EndFrame    ---------------\n");
 		glfwPollEvents();
 
@@ -599,16 +637,16 @@ int main (int argc, char **argv) {
 
 	instance->destroySemaphore (drawFinishedSemaphore);
 
-	instance->device.destroySampler(sampler);
+	instance->device.destroySampler (sampler);
 
-	g_thread_data.finit(instance);
-	
+	g_thread_data.finit (instance);
+
 	delete vWindow;
 	if (stagingBuffer)
 		delete stagingBuffer;
 
 	delete imageWrapper;
-	
+
 	delete uniformBuffer;
 
 	instance->device.destroyDescriptorPool (descriptorSetPool, nullptr);
