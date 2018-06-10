@@ -119,7 +119,7 @@ using Range = Extend2D<T>;
 
 template<typename T>
 inline Extend2D<T> max_extend (Extend2D<T> lmode, Extend2D<T> rmode) {
-	return Extend2D (std::max (lmode.x, rmode.x), std::max (lmode.y, rmode.y));
+	return Extend2D<T> (std::max (lmode.x, rmode.x), std::max (lmode.y, rmode.y));
 }
 
 struct Viewport {

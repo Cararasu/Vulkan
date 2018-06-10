@@ -26,6 +26,7 @@ struct VulkanMonitor : public Monitor {
 	VulkanMonitor (GLFWmonitor*);
 	virtual ~VulkanMonitor();
 
+	virtual VideoMode current_mode();
 };
 
 enum class WindowState {
@@ -47,6 +48,7 @@ class VulkanWindow : public Window {
 	WindowState windowstate = WindowState::eUninitialized;
 	FrameState framestate = FrameState::eUninitialized;
 	VulkanInstance* m_instance;
+	GLFWwindow* window;
 	vk::SurfaceKHR surface;
 public:
 	VulkanWindow (VulkanInstance* instance);
@@ -103,6 +105,7 @@ struct VulkanInstance : public Instance {
 	virtual Window* create_window();
 	virtual Array<Monitor*>& get_monitors();
 	virtual Array<Device*>& get_devices();
+	VulkanMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
 	virtual bool destroy_window (Window* window);
 

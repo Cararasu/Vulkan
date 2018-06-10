@@ -47,9 +47,8 @@ protected:
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
 	ChangeableValue<bool> m_resizable = false;
-	ChangeableValue<u32> m_refreshrate = 120;
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
-	ChangeableValue<VideoMode*> m_fullscreen_mode = nullptr;
+	ChangeableValue<VideoMode> m_fullscreen_mode = VideoMode();
 
 public:
 	virtual void set_root_section (WindowSection* section) = 0;
@@ -60,19 +59,16 @@ public:
 	const ChangeableValue<Extend2D<s32>>* size(){
 		return &m_size;
 	}
-	const ChangeableValue<bool>* fullscreen(){
-		return &m_fullscreen;
-	}
 	const ChangeableValue<bool>* minimized(){
 		return &m_minimized;
 	}
 	const ChangeableValue<bool>* visible(){
 		return &m_visible;
 	}
-	const ChangeableValue<u32>* refreshrate(){
-		return &m_refreshrate;
+	const ChangeableValue<Monitor*>* fullscreen_monitor(){
+		return &m_fullscreen_monitor;
 	}
-	const ChangeableValue<VideoMode*>* fullscreen_mode(){
+	const ChangeableValue<VideoMode>* fullscreen_mode(){
 		return &m_fullscreen_mode;
 	}
 

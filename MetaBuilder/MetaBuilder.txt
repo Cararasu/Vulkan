@@ -1,1 +1,1 @@
-./Debug/metamain.cpp.o   
+./Debug/metamain.cpp.o

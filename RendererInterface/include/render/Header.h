@@ -42,10 +42,10 @@ struct ChangeableValue {
 	ChangeableValue (T value) : wanted (value), value(value) { }
 	ChangeableValue (T wanted, T value) : wanted (wanted), value(value) { }
 	
-	void operator=(T& newvalue) const{
+	void operator=(T&& newvalue) const{
 		wanted = newvalue;
 	}
-	void operator=(T newvalue) const{
+	void operator=(T& newvalue) const{
 		wanted = newvalue;
 	}
 	

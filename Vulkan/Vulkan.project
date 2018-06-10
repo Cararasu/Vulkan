@@ -55,11 +55,12 @@
     </GlobalSettings>
     <Configuration Name="Debug" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-g;-O0;-Wall;-std=c++11" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="/home/thomas/VulkanSDK/1.0.61.1/x86_64/include"/>
+        <IncludePath Value="$(VULKAN_PATH)/include"/>
+        <IncludePath Value="../libs/stb"/>
+        <IncludePath Value="../RendererInterface/include"/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <LibraryPath Value="libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
-        <LibraryPath Value="C:\Program Files\VulkanSDK\1.0.61.1\Lib"/>
+        <LibraryPath Value="$(VULKAN_PATH)/lib"/>
         <Library Value="glfw3"/>
         <Library Value="vulkan"/>
         <Library Value="X11"/>
@@ -108,15 +109,15 @@
     </Configuration>
     <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../libs/glfw-3.2.1.bin.WIN64\include"/>
+        <IncludePath Value="../libs/glfw-3.2.1/include"/>
         <IncludePath Value="../libs/glm-0.9.9-a1"/>
-        <IncludePath Value="$(VULKAN_PATH)\Include"/>
+        <IncludePath Value="$(VULKAN_PATH)/Include"/>
         <IncludePath Value="../libs/stb"/>
         <IncludePath Value="../RendererInterface/include"/>
       </Compiler>
       <Linker Options="" Required="yes">
-        <LibraryPath Value="../libs/glfw-3.2.1.bin.WIN64\lib-mingw-w64"/>
-        <LibraryPath Value="$(VULKAN_PATH)\Lib"/>
+        <LibraryPath Value="../libs/glfw-3.2.1/lib-mingw-w64"/>
+        <LibraryPath Value="$(VULKAN_PATH)/Lib"/>
         <Library Value="glfw3"/>
         <Library Value="gdi32"/>
         <Library Value="user32"/>
