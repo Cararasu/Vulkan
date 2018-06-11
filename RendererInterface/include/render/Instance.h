@@ -20,6 +20,8 @@ struct Instance{
 	
 	virtual bool destroy_window(Window* window) = 0;
 	
+	virtual void process_events() = 0;
+	
 	virtual Monitor* get_primary_monitor() = 0;
 	
 	virtual Array<Monitor*>& get_monitors() = 0;

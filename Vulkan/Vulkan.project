@@ -111,7 +111,7 @@
       <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="../libs/glfw-3.2.1/include"/>
         <IncludePath Value="../libs/glm-0.9.9-a1"/>
-        <IncludePath Value="$(VULKAN_PATH)/Include"/>
+        <IncludePath Value="$(VULKAN_PATH)/include"/>
         <IncludePath Value="../libs/stb"/>
         <IncludePath Value="../RendererInterface/include"/>
       </Compiler>

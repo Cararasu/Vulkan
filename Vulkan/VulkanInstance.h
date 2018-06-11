@@ -29,12 +29,9 @@ struct VulkanMonitor : public Monitor {
 	virtual VideoMode current_mode();
 };
 
-enum class WindowState {
-	eUninitialized,
-	eInitialized,
-};
 enum class FrameState {
 	eUninitialized,
+	eInitialized,
 	eFramePrepared,
 	eFramePresented,
 	eNotVisible,
@@ -44,11 +41,9 @@ enum class FrameState {
 struct VulkanInstance;
 
 class VulkanWindow : public Window {
-
-	WindowState windowstate = WindowState::eUninitialized;
 	FrameState framestate = FrameState::eUninitialized;
-	VulkanInstance* m_instance;
-	GLFWwindow* window;
+	VulkanInstance* m_instance = nullptr;
+	GLFWwindow* window = nullptr;
 	vk::SurfaceKHR surface;
 public:
 	VulkanWindow (VulkanInstance* instance);
@@ -82,7 +77,8 @@ struct QueueWrapper{
 
 struct VulkanInstance : public Instance {
 	VExtLayerStruct extLayers;
-	Map<GLFWmonitor*, VulkanMonitor*> monitormap;
+	Map<GLFWmonitor*, VulkanMonitor*> monitor_map;
+	Map<GLFWwindow*, VulkanWindow*> window_map;
 	Array<Monitor*> monitors;
 	Array<Device*> devices;
 	Set<VulkanWindow*> windows;
@@ -101,6 +97,8 @@ struct VulkanInstance : public Instance {
 	virtual ~VulkanInstance();
 
 	virtual bool initialize(Device* device = nullptr);
+	
+	virtual void process_events();
 
 	virtual Window* create_window();
 	virtual Array<Monitor*>& get_monitors();

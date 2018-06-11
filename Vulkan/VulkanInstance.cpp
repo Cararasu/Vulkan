@@ -1,6 +1,5 @@
 #include "VulkanInstance.h"
 
-
 Instance* initialize_instance (const char* name) {
 	if (strcmp (name, "Vulkan") == 0) {
 		glfwInit();
@@ -11,14 +10,15 @@ Instance* initialize_instance (const char* name) {
 }
 
 void destroy_instance (Instance* instance) {
-	if (dynamic_cast<VulkanInstance*> (instance)) {
-		delete instance;
+	if (VulkanInstance* vulkan_instance = dynamic_cast<VulkanInstance*> (instance)) {
+		delete vulkan_instance;
 		glfwTerminate();
+	} else {
+		delete instance;
 	}
 }
-VideoMode glfw_to_videomode(GLFWvidmode glfw_videomode){
-	return {Extend2D<s32> (glfw_videomode.width, glfw_videomode.height), 
-		(u32) glfw_videomode.redBits, (u32) glfw_videomode.greenBits, (u32) glfw_videomode.blueBits, (u32) glfw_videomode.refreshRate};
+VideoMode glfw_to_videomode (GLFWvidmode glfw_videomode) {
+	return {Extend2D<s32> (glfw_videomode.width, glfw_videomode.height), (u32) glfw_videomode.refreshRate};
 }
 
 VulkanMonitor::VulkanMonitor (GLFWmonitor* monitor) : monitor (monitor) {
@@ -33,10 +33,11 @@ VulkanMonitor::VulkanMonitor (GLFWmonitor* monitor) : monitor (monitor) {
 	int count;
 	const GLFWvidmode* videomode = glfwGetVideoModes (monitor, &count);
 	for (int i = 0; i < count; ++i) {
-		videomodes.push_back (glfw_to_videomode(videomode[i]));
-		this->extend = max_extend (this->extend, videomodes.back().extend);
-		//printf ("\tVideomode %gx%g r%dg%db%d, %dHz\n", videomodes.back().extend.width, videomodes.back().extend.height,
-		//	videomodes.back().red_bits, videomodes.back().green_bits, videomodes.back().blue_bits, videomodes.back().refresh_rate);
+		if (videomode[i].redBits == 8 || videomode[i].greenBits == 8 || videomode[i].blueBits == 8) {
+			videomodes.push_back (glfw_to_videomode (videomode[i]));
+			this->extend = max_extend (this->extend, videomodes.back().extend);
+			//printf ("\tVideomode %dx%d r%dg%db%d %dHz\n", videomode[i].width, videomode[i].height, videomode[i].redBits, videomode[i].greenBits, videomode[i].blueBits, videomode[i].refreshRate);
+		}
 	}
 	printf ("Monitor %s: %dx%d %dx%d\n", this->name, this->offset.x, this->offset.y, this->extend.x, this->extend.y);
 }
@@ -44,7 +45,7 @@ VulkanMonitor::~VulkanMonitor() {
 
 }
 VideoMode VulkanMonitor::current_mode() {
-	return glfw_to_videomode(*glfwGetVideoMode(this->monitor));
+	return glfw_to_videomode (*glfwGetVideoMode (this->monitor));
 }
 VkBool32 VKAPI_PTR debugLogger (
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
@@ -64,7 +65,7 @@ VulkanInstance::VulkanInstance() {
 	printf ("%d\n", count);
 	for (int i = 0; i < count; ++i) {
 		VulkanMonitor* vulkanmonitor = new VulkanMonitor (glfw_monitors[i]);
-		monitormap.insert (std::make_pair (glfw_monitors[i], vulkanmonitor));
+		monitor_map.insert (std::make_pair (glfw_monitors[i], vulkanmonitor));
 		monitors.push_back (vulkanmonitor);
 	}
 	if (glfwVulkanSupported()) {
@@ -211,7 +212,7 @@ VulkanInstance::VulkanInstance() {
 }
 
 VulkanInstance::~VulkanInstance() {
-	for (auto entry : monitormap) {
+	for (auto entry : monitor_map) {
 		delete entry.second;
 	}
 }
@@ -338,7 +339,7 @@ bool VulkanInstance::initialize (Device* device) {
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority);
 		vulkan_device->queueFamilyProps[pId].queueCount -= pgcCount;
 		currentIndex++;
-		
+
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority);
 		vulkan_device->queueFamilyProps[gId].queueCount -= pgcCount;
 		currentIndex++;
@@ -397,21 +398,25 @@ Array<Monitor*>& VulkanInstance::get_monitors() {
 Array<Device*>& VulkanInstance::get_devices() {
 	return devices;
 }
+void VulkanInstance::process_events(){
+	glfwPollEvents();
+}
 
 VulkanMonitor* VulkanInstance::get_primary_monitor_vulkan() {
-	return monitormap.find (glfwGetPrimaryMonitor())->second;
+	return monitor_map.find (glfwGetPrimaryMonitor())->second;
 }
 Monitor* VulkanInstance::get_primary_monitor() {
 	return get_primary_monitor_vulkan();
 }
 bool VulkanInstance::destroy_window (Window* window) {
-	if (VulkanWindow* vulk_window = dynamic_cast<VulkanWindow*> (window))
+	if (VulkanWindow* vulk_window = dynamic_cast<VulkanWindow*> (window)) {
 		if (windows.erase (vulk_window) > 0) {
 			delete vulk_window;
 			return true;
 		} else {
 			return false;
 		}
+	}
 }
 
 
@@ -427,61 +432,134 @@ void VulkanWindow::set_root_section (WindowSection* section) {
 
 }
 RendResult VulkanWindow::update() {
-	switch (windowstate) {
-	case WindowState::eUninitialized: {
+	if (window) {
+		while(true){//just so we don't need a goto for this logic ;-)
+			//not visible
+			if(m_visible.changed()){
+				if(m_visible.wanted){
+					glfwShowWindow(window);
+				} else {
+					glfwHideWindow(window);
+				}
+				m_visible.apply();
+			}
+			//minimized
+			if(m_minimized.changed() && m_minimized.wanted){
+				glfwIconifyWindow (window);
+				break;
+			}
+			//maximized and not fullscreen
+			else if(m_maximized.changed() && m_maximized.wanted && !m_fullscreen_monitor.wanted){
+				glfwMaximizeWindow (window);
+				break;
+			}
+			//fullscreen, window mode cnd coming out of minimized or maximized
+			else if (m_minimized.changed() || m_maximized.changed() || m_fullscreen_monitor.changed()) {
+				VulkanMonitor* vulkan_monitor = dynamic_cast<VulkanMonitor*> (m_fullscreen_monitor.wanted);
+				if(vulkan_monitor){
+					VideoMode wanted_mode = vulkan_monitor->find_best_videomode(m_size.wanted, m_refreshrate.wanted);
+					m_size = wanted_mode.extend;
+					m_refreshrate = wanted_mode.refresh_rate;
+				}
+				glfwSetWindowMonitor (window, vulkan_monitor ? vulkan_monitor->monitor : nullptr, m_position.wanted.x, m_position.wanted.y, m_size.wanted.x, m_size.wanted.y, m_refreshrate.wanted);
+				m_fullscreen_monitor.apply();
+				break;
+			}
+			if(m_size.changed()) {
+				glfwSetWindowSize(window, m_size.wanted.x, m_size.wanted.y);
+			}
+			if(m_position.changed()) {
+				glfwSetWindowPos(window, m_position.wanted.x, m_position.wanted.y);
+			}
+			break;
+		}
+	}
+	if (!window) {
 
 		glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_MAXIMIZED, (bool)m_maximized);
-		glfwWindowHint(GLFW_AUTO_ICONIFY, (bool)m_minimized);
-		glfwWindowHint(GLFW_FOCUSED, (bool)m_focused);
-		glfwWindowHint(GLFW_DECORATED, (bool)m_decorated);
-		glfwWindowHint(GLFW_VISIBLE, (bool)m_visible);
-		glfwWindowHint(GLFW_RESIZABLE, (bool)m_resizable);
-		
-		VulkanMonitor* fullscreen_monitor = dynamic_cast<VulkanMonitor*>(this->m_fullscreen_monitor.wanted);
-		//force fullscreen
-		//fullscreen_monitor = dynamic_cast<VulkanMonitor*>(this->m_instance->get_primary_monitor());
-		if(fullscreen_monitor) {//it is fullscreen
-			VideoMode wanted_mode = this->m_fullscreen_mode.wanted;
-			bool mode_is_possible_for_monitor = false;
-			for(VideoMode& mode : fullscreen_monitor->videomodes){//check if the mode is actually possible for this monitor
-				if(mode == wanted_mode){
-					mode_is_possible_for_monitor = true;
-					break;
-				}
-			}
-			if(!mode_is_possible_for_monitor){
-				wanted_mode = fullscreen_monitor->current_mode();
-			}
-		
-			glfwWindowHint(GLFW_RED_BITS, wanted_mode.red_bits);
-			glfwWindowHint(GLFW_GREEN_BITS, wanted_mode.green_bits);
-			glfwWindowHint(GLFW_BLUE_BITS, wanted_mode.blue_bits);
-			glfwWindowHint(GLFW_REFRESH_RATE, wanted_mode.refresh_rate);
-			
-			m_size = wanted_mode.extend;
-			printf ("\tFullscreen Videomode %dx%d r%dg%db%d, %dHz\n", wanted_mode.extend.width, wanted_mode.extend.height,
-				wanted_mode.red_bits, wanted_mode.green_bits, wanted_mode.blue_bits, wanted_mode.refresh_rate);
-		}else{
-			
-		}
-		
-		GLFWwindow* window = glfwCreateWindow (m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr);
-		
-		VCHECKCALL (glfwCreateWindowSurface (m_instance->m_instance, window, nullptr, (VkSurfaceKHR*) &surface), printf ("Creation of Surface failed"));
+		glfwWindowHint (GLFW_MAXIMIZED, (bool) m_maximized.wanted);
+		glfwWindowHint (GLFW_AUTO_ICONIFY, (bool) m_minimized.wanted);
+		glfwWindowHint (GLFW_FOCUSED, (bool) m_focused.wanted);
+		glfwWindowHint (GLFW_DECORATED, (bool) m_decorated.wanted);
+		glfwWindowHint (GLFW_VISIBLE, (bool) m_visible.wanted);
+		glfwWindowHint (GLFW_RESIZABLE, (bool) m_resizable.wanted);
 
-		//windowMap.insert (std::make_pair (window, this));
-		m_size.apply();
-		glfwSetFramebufferSizeCallback (window, [](GLFWwindow* window, int x, int y){
-			printf("Callback\n");
-			//m_size.value = Extend2D(x, y);
-		});
+		VulkanMonitor* fullscreen_monitor = dynamic_cast<VulkanMonitor*> (this->m_fullscreen_monitor.wanted);
+		//force fullscreen
+		//fullscreen_monitor = dynamic_cast<VulkanMonitor*> (this->m_instance->get_primary_monitor());
+		if (fullscreen_monitor) { //it is fullscreen
+			VideoMode wanted_mode = fullscreen_monitor->find_best_videomode(m_size.wanted, m_refreshrate.wanted);
+			m_size = wanted_mode.extend;
+			m_refreshrate = wanted_mode.refresh_rate;
+			glfwWindowHint (GLFW_REFRESH_RATE, m_refreshrate.wanted);
+			
+			m_refreshrate.apply();
+			printf ("Fullscreen Videomode %dx%d %dHz\n", wanted_mode.extend.width, wanted_mode.extend.height, wanted_mode.refresh_rate);
+		}
+
+		window = glfwCreateWindow (m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr);
+
+		glfwSetWindowPos (window, m_position.wanted.x, m_position.wanted.y);
+
+		VCHECKCALL (glfwCreateWindowSurface (m_instance->m_instance, window, nullptr, (VkSurfaceKHR*) &surface), printf ("Creation of Surface failed"));
 		
-		windowstate = WindowState::eInitialized;
-	} break;
-	case WindowState::eInitialized: {
-		//maybe change stuff
-	} break;
+		glfwSetWindowUserPointer(window, this);
+		
+		m_instance->window_map.insert (std::make_pair (window, this));
+		m_visible.apply();
+		m_position.apply();
+		m_size.apply();
+		
+		glfwSetWindowPosCallback (window, [] (GLFWwindow * window, int x, int y) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				printf ("Position of Window %dx%d\n", x, y);
+				vulkan_window->m_position.apply({x, y});
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
+		glfwSetWindowSizeCallback (window, [] (GLFWwindow * window, int x, int y) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				printf ("Size of Window %dx%d\n", x, y);
+				vulkan_window->m_size.apply({x, y});
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
+		glfwSetWindowCloseCallback (window, [] (GLFWwindow * window) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				vulkan_window->m_visible = false;
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
+		glfwSetWindowRefreshCallback (window, [] (GLFWwindow * window) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				//TODO implement???
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
+		glfwSetWindowFocusCallback (window, [] (GLFWwindow * window, int focus) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				vulkan_window->m_focused.value = focus;
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
+		glfwSetWindowIconifyCallback (window, [] (GLFWwindow * window, int iconified) {
+			VulkanWindow* vulkan_window = static_cast<VulkanWindow*>(glfwGetWindowUserPointer (window));
+			if (vulkan_window) {
+				vulkan_window->m_minimized.value = iconified == GLFW_TRUE;
+			} else {
+				printf ("No Window Registered For GLFW-Window\n");
+			}
+		});
 	}
 }
 RendResult VulkanWindow::destroy() {

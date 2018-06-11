@@ -68,17 +68,11 @@ struct Extend2D {
 
 template<typename T>
 inline Extend2D<T> operator+ (Extend2D<T> extend, T value) {
-	Extend2D<T> ext = extend;
-	return ext += value;
+	return extend += value;
 }
 template<typename T>
 inline Extend2D<T> operator+ (T value, Extend2D<T> extend) {
 	return extend + value;
-}
-template<typename T>
-inline Extend2D<T> operator+ (Extend2D<T>& lextend, Extend2D<T>& rextend) {
-	Extend2D<T> ext = lextend;
-	return ext += rextend;
 }
 template<typename T>
 inline Extend2D<T> operator+ (Extend2D<T> lextend, Extend2D<T> rextend) {
@@ -86,15 +80,13 @@ inline Extend2D<T> operator+ (Extend2D<T> lextend, Extend2D<T> rextend) {
 }
 template<typename T>
 inline Extend2D<T> operator- (Extend2D<T> extend, T value) {
-	Extend2D<T> ext = extend;
-	return ext -= value;
+	return extend -= value;
 }
 template<typename T>
 inline Extend2D<T> operator- (T value, Extend2D<T> extend) {
-	Extend2D<T> ext = extend;
-	ext.x = value - extend.x;
-	ext.y = value - extend.y;
-	return ext;
+	extend.x = value - extend.x;
+	extend.y = value - extend.y;
+	return extend;
 }
 template<typename T>
 inline Extend2D<T> operator- (Extend2D<T>& lextend, Extend2D<T>& rextend) {
@@ -103,13 +95,11 @@ inline Extend2D<T> operator- (Extend2D<T>& lextend, Extend2D<T>& rextend) {
 }
 template<typename T>
 inline Extend2D<T> operator* (Extend2D<T> extend, T value) {
-	Extend2D<T> ext = extend;
-	return ext *= value;
+	return extend *= value;
 }
 template<typename T>
 inline Extend2D<T> operator/ (Extend2D<T> extend, T value) {
-	Extend2D<T> ext = extend;
-	return ext /= value;
+	return extend /= value;
 }
 
 template<typename T>

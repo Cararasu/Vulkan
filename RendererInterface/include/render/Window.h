@@ -39,39 +39,50 @@ struct WorldWindowSection : public WindowSection {
 
 class Window {
 protected:
-	ChangeableValue<Offset2D<s32>> m_offset = Offset2D<s32>(0, 0);
+	ChangeableValue<Offset2D<s32>> m_position = Offset2D<s32>(0, 0);
 	ChangeableValue<Extend2D<s32>> m_size = Extend2D<s32>(100, 100);
+	ChangeableValue<u32> m_refreshrate = 60;
 	ChangeableValue<bool> m_maximized = false;
 	ChangeableValue<bool> m_minimized = false;
 	ChangeableValue<bool> m_focused = true;
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
-	ChangeableValue<bool> m_resizable = false;
+	ChangeableValue<bool> m_resizable = true;
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
-	ChangeableValue<VideoMode> m_fullscreen_mode = VideoMode();
 
 public:
-	virtual void set_root_section (WindowSection* section) = 0;
-
-	const ChangeableValue<Offset2D<s32>>* offset(){
-		return &m_offset;
+	const ChangeableValue<Offset2D<s32>>* position(){
+		return &m_position;
 	}
 	const ChangeableValue<Extend2D<s32>>* size(){
 		return &m_size;
 	}
+	const ChangeableValue<u32>* refreshrate(){
+		return &m_refreshrate;
+	}
+	const ChangeableValue<bool>* maximized(){
+		return &m_maximized;
+	}
 	const ChangeableValue<bool>* minimized(){
 		return &m_minimized;
+	}
+	const ChangeableValue<bool>* focused(){
+		return &m_focused;
+	}
+	const ChangeableValue<bool>* decorated(){
+		return &m_decorated;
 	}
 	const ChangeableValue<bool>* visible(){
 		return &m_visible;
 	}
+	const ChangeableValue<bool>* resizable(){
+		return &m_resizable;
+	}
 	const ChangeableValue<Monitor*>* fullscreen_monitor(){
 		return &m_fullscreen_monitor;
 	}
-	const ChangeableValue<VideoMode>* fullscreen_mode(){
-		return &m_fullscreen_mode;
-	}
 
+	virtual void set_root_section (WindowSection* section) = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
 

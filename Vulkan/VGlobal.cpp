@@ -162,7 +162,7 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 		}
 		for(uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
 			printf("Heap %d\n", i);
-			printf("\tSize %I64u\n", memProperties.memoryHeaps[i].size);
+			printf("\tSize %lld\n", memProperties.memoryHeaps[i].size);
 			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eDeviceLocal)
 				printf("\tDevice Local\n");
 			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eMultiInstanceKHX)

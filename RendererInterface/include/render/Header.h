@@ -17,6 +17,8 @@ typedef uint64_t u64;
 typedef int32_t s32;
 typedef int64_t s64;
 
+typedef uint32_t ResourceId;
+
 typedef float f32;
 typedef double f64;
 
@@ -45,17 +47,24 @@ struct ChangeableValue {
 	void operator=(T&& newvalue) const{
 		wanted = newvalue;
 	}
-	void operator=(T& newvalue) const{
+	void operator=(const T& newvalue) const{
 		wanted = newvalue;
 	}
 	
 	explicit operator T() const{
 		return value;
 	}
-	inline bool is_equals() const{
+	inline bool changed() const{
+		return wanted != value;
+	}
+	inline bool unchanged() const{
 		return wanted == value;
 	}
 	inline void apply(){
 		value = wanted;
+	}
+	inline void apply(T val){
+		wanted = val;
+		value = val;
 	}
 };

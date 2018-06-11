@@ -262,16 +262,20 @@ int main (int argc, char **argv) {
 		printf ("\t%s %d\n", device->name, device->rating);
 	}
 	
-	*window->offset() = primMonitor->offset + ((primMonitor->extend / 2) - 100);
-	*window->size() = {200, 200};
+	*window->position() = primMonitor->offset + ((primMonitor->extend / 2) - 300);
 	*window->visible() = true;
-	
+	*window->size() = {600, 600};
+	window->update();
+	*window->position() = {100, 100};
+	*window->size() = {800, 800};
 	window->update();
 	
-	std::this_thread::sleep_for(std::chrono::seconds(4));
+	do{
+		newinstance->process_events();
+		window->update();
+	}while(window->visible()->value);
 	
 	window->destroy();
-	
 	
 	destroy_instance(newinstance);
 	return 0;
