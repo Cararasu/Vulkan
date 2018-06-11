@@ -3,7 +3,7 @@
 #include "Header.h"
 
 struct VideoMode{
-	Extend2D<s32> extend;
+	Extent2D<s32> extend;
 	u32 refresh_rate;
 };
 
@@ -16,13 +16,13 @@ inline bool operator!=(VideoMode lmode, VideoMode rmode){
 
 struct Monitor{
 	const char* name;
-	Extend2D<s32> extend;
+	Extent2D<s32> extend;
 	Offset2D<s32> offset;
 	Array<VideoMode> videomodes;
 	
 	virtual ~Monitor(){}
 	
-	VideoMode find_best_videomode(Extend2D<s32> size, u32 refreshrate){
+	VideoMode find_best_videomode(Extent2D<s32> size, u32 refreshrate){
 		if(size.x <= 0 || size.y <= 0 || refreshrate <= 0)
 			return current_mode();
 		VideoMode best_mode;

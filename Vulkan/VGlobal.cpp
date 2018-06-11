@@ -203,6 +203,12 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 		return lhs.rating > rhs.rating;
 	});
 	for(auto& dev : physicalDevices)
+/**
+ * @brief 
+ * @param appName
+ * @param engineName
+ * @return 
+ */
 		printf("WWW: %s\n", dev.vkPhysDevProps.deviceName);
 	return true;
 }

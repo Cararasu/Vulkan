@@ -31,9 +31,11 @@ template<typename K, typename T>
 using Map = std::map<K, T>;
 
 enum class RendResult {
-	e_rend_fail = 0,
-	e_rend_success = 1,
-
+	eFail = 0,
+	eSuccess = 1,
+	eAlreadyRegistered = -0x10,
+	eWrongInstance = -0x11,
+	eWrongType = -0x12,
 };
 
 template<typename T>
@@ -45,9 +47,6 @@ struct ChangeableValue {
 	ChangeableValue (T wanted, T value) : wanted (wanted), value(value) { }
 	
 	void operator=(T&& newvalue) const{
-		wanted = newvalue;
-	}
-	void operator=(const T& newvalue) const{
 		wanted = newvalue;
 	}
 	

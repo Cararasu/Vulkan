@@ -68,7 +68,6 @@ struct VWindow {
 		return !glfwWindowShouldClose (window);
 	}
 
-
 	vk::CommandPool getCurrentGraphicsCommandPool() {
 		return perPresentImageDatas[presentImageIndex].graphicQCommandPool;
 	}

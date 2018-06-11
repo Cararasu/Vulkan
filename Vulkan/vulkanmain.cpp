@@ -244,10 +244,7 @@ int main (int argc, char **argv) {
 	Instance* newinstance = initialize_instance ("Vulkan");
 	
 	newinstance->initialize();
-	printf ("%p\n", newinstance);
-	printf ("%s\n", newinstance->get_primary_monitor()->name);
 	
-	Window* window = newinstance->create_window();
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 	
 	printf ("Monitors\n");
@@ -262,18 +259,22 @@ int main (int argc, char **argv) {
 		printf ("\t%s %d\n", device->name, device->rating);
 	}
 	
-	*window->position() = primMonitor->offset + ((primMonitor->extend / 2) - 300);
+	Window* window = newinstance->create_window();
+	*window->position() = primMonitor->offset + ((primMonitor->extend / 2) - 150);
+	*window->size() = {300, 300};
 	*window->visible() = true;
-	*window->size() = {600, 600};
-	window->update();
-	*window->position() = {100, 100};
-	*window->size() = {800, 800};
-	window->update();
 	
+		
+	window->set_root_section(newinstance->create_window_section(WindowSectionType::eUI));
+	window->update();
+	//*window->position() = {100, 100};
+	//*window->size() = {800, 800};
+	*window->cursor_mode() = CursorMode::eInvisible;
+	
+	printf("Start Main Loop\n");
 	do{
 		newinstance->process_events();
-		window->update();
-	}while(window->visible()->value);
+	}while(newinstance->is_window_open());
 	
 	window->destroy();
 	

@@ -5,6 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "VGlobal.h"
+#include "VulkanWindow.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -29,31 +30,6 @@ struct VulkanMonitor : public Monitor {
 	virtual VideoMode current_mode();
 };
 
-enum class FrameState {
-	eUninitialized,
-	eInitialized,
-	eFramePrepared,
-	eFramePresented,
-	eNotVisible,
-	eResized
-};
-
-struct VulkanInstance;
-
-class VulkanWindow : public Window {
-	FrameState framestate = FrameState::eUninitialized;
-	VulkanInstance* m_instance = nullptr;
-	GLFWwindow* window = nullptr;
-	vk::SurfaceKHR surface;
-public:
-	VulkanWindow (VulkanInstance* instance);
-	virtual ~VulkanWindow();
-
-	virtual void set_root_section (WindowSection* section);
-
-	virtual RendResult update();
-	virtual RendResult destroy();
-};
 
 struct PGCQueueWrapper{
 	u32 graphics_queue_id = -1;
@@ -82,6 +58,7 @@ struct VulkanInstance : public Instance {
 	Array<Monitor*> monitors;
 	Array<Device*> devices;
 	Set<VulkanWindow*> windows;
+	Set<VulkanWindowSection*> window_sections;
 	
 	vk::Instance m_instance;
 	VulkanDevice* vulkan_device;
@@ -99,12 +76,31 @@ struct VulkanInstance : public Instance {
 	virtual bool initialize(Device* device = nullptr);
 	
 	virtual void process_events();
+	virtual bool is_window_open();
 
 	virtual Window* create_window();
+	virtual bool destroy_window (Window* window);
+	
+	virtual WindowSection* create_window_section(WindowSectionType type);
+	virtual bool destroy_window_section(WindowSection* window_section);
+	
 	virtual Array<Monitor*>& get_monitors();
 	virtual Array<Device*>& get_devices();
 	VulkanMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
-	virtual bool destroy_window (Window* window);
 
 };
+
+inline vk::Device vulkan_device(VulkanInstance* instance){
+	return instance->m_device;
+}
+inline vk::PhysicalDevice vulkan_physical_device(VulkanInstance* instance){
+	return instance->vulkan_device->physical_device;
+}
+inline vk::Semaphore create_semaphore(VulkanInstance* instance){
+	return instance->m_device.createSemaphore(vk::SemaphoreCreateInfo(), nullptr);
+}
+inline RendResult destroy_semaphore(VulkanInstance* instance, vk::Semaphore sem){
+	instance->m_device.destroySemaphore(sem, nullptr);
+	return RendResult::eSuccess;
+}

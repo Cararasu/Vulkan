@@ -14,13 +14,16 @@ struct Instance{
 	
 	virtual ~Instance(){}
 	
-	virtual Window* create_window() = 0;
-	
 	virtual bool initialize(Device* device = nullptr) = 0;
 	
+	virtual Window* create_window() = 0;
 	virtual bool destroy_window(Window* window) = 0;
 	
+	virtual WindowSection* create_window_section(WindowSectionType type) = 0;
+	virtual bool destroy_window_section(WindowSection* window_section) = 0;
+	
 	virtual void process_events() = 0;
+	virtual bool is_window_open() = 0;
 	
 	virtual Monitor* get_primary_monitor() = 0;
 	
