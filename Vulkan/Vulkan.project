@@ -8,6 +8,7 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VulkanHeader.h"/>
     <File Name="VulkanWindow.cpp"/>
     <File Name="VulkanWindow.h"/>
     <File Name="VulkanInstance.cpp"/>

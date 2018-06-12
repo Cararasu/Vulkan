@@ -2,10 +2,9 @@
 
 #include "render/Instance.h"
 #include "render/Window.h"
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include "VGlobal.h"
 #include "VulkanWindow.h"
+#include "VulkanHeader.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -30,26 +29,6 @@ struct VulkanMonitor : public Monitor {
 	virtual VideoMode current_mode();
 };
 
-
-struct PGCQueueWrapper{
-	u32 graphics_queue_id = -1;
-	vk::Queue graphics_queue;
-	
-	bool combined_graphics_present_queue = false;
-	u32 present_queue_id = -1;
-	vk::Queue present_queue;
-	
-	bool combined_graphics_compute_queue = false;
-	u32 compute_queue_id = -1;
-	vk::Queue compute_queue;
-};
-struct QueueWrapper{
-	Array<PGCQueueWrapper> pgc;
-	
-	bool dedicated_transfer_queue = false;
-	u32 transfer_queue_id = -1;
-	vk::Queue transfer_queue;
-};
 
 struct VulkanInstance : public Instance {
 	VExtLayerStruct extLayers;
@@ -103,4 +82,7 @@ inline vk::Semaphore create_semaphore(VulkanInstance* instance){
 inline RendResult destroy_semaphore(VulkanInstance* instance, vk::Semaphore sem){
 	instance->m_device.destroySemaphore(sem, nullptr);
 	return RendResult::eSuccess;
+}
+inline PGCQueueWrapper* vulkan_pgc_queue(VulkanInstance* instance, u32 index){
+	return &instance->queues.pgc[index];
 }

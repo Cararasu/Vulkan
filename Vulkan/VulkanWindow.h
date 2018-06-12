@@ -1,20 +1,13 @@
 #pragma once
 
 #include "render/Window.h"
+#include "VulkanHeader.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "VGlobal.h"
 
 #define MAX_PRESENTIMAGE_COUNT (3)
 
-enum class FrameState {
-	eUninitialized,
-	eInitialized,
-	eFramePrepared,
-	eFramePresented,
-	eNotVisible,
-	eResized
-};
 struct VulkanWindow;
 struct VulkanInstance;
 
@@ -64,6 +57,26 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 	virtual void set_world() {}
 };
 
+struct FrameLocalData{
+	bool initialized = false;
+	vk::Fence image_presented_fence;
+	vk::Semaphore image_presented_sem;
+	
+	vk::Image present_image;
+	vk::ImageView present_image_view;
+	
+	vk::Framebuffer framebuffer;
+};
+
+enum class FrameState {
+	eUninitialized,
+	eInitialized,
+	eFramePrepared,
+	eFramePresented,
+	eNotVisible,
+	eResized
+};
+
 struct VulkanWindow : public Window {
 	FrameState framestate = FrameState::eUninitialized;
 	VulkanInstance* m_instance = nullptr;
@@ -80,8 +93,12 @@ struct VulkanWindow : public Window {
 	vk::SurfaceFormatKHR present_swap_format;
 	vk::PresentModeKHR chosen_presentation_mode;
 	vk::SurfaceCapabilitiesKHR capabilities;
+	vk::SwapchainKHR swap_chain;
 	Extent2D<u32> swap_chain_extend;
-	Array<u32> frame_local_data;
+	u32 image_buffer_count;
+	u32 queue_index = 0;
+	u32 present_image_index = 0;
+	Array<FrameLocalData> frame_local_data;
 
 
 	VulkanWindow ( VulkanInstance* instance );

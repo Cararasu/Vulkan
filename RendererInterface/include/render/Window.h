@@ -43,6 +43,11 @@ enum class CursorMode {
 	eCatch,
 };
 
+enum class WindowAlphaBlend{
+	eOpaque,
+	eBlend
+};
+
 class Window {
 protected:
 	ChangeableValue<Offset2D<s32>> m_position = Offset2D<s32> ( 100, 100 );
@@ -54,6 +59,7 @@ protected:
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
 	ChangeableValue<bool> m_resizable = true;
+	ChangeableValue<WindowAlphaBlend> m_alphablend = WindowAlphaBlend::eOpaque;
 	ChangeableValue<CursorMode> m_cursormode = CursorMode::eNormal;
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
 
@@ -84,6 +90,9 @@ public:
 	}
 	const ChangeableValue<bool>* resizable() {
 		return &m_resizable;
+	}
+	const ChangeableValue<WindowAlphaBlend>* alphablend() {
+		return &m_alphablend;
 	}
 	const ChangeableValue<CursorMode>* cursor_mode() {
 		return &m_cursormode;
