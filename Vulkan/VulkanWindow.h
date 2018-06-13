@@ -2,6 +2,7 @@
 
 #include "render/Window.h"
 #include "VulkanHeader.h"
+#include "VulkanImage.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "VGlobal.h"
@@ -100,6 +101,9 @@ struct VulkanWindow : public Window {
 	u32 queue_index = 0;
 	u32 present_image_index = 0;
 	Array<FrameLocalData> frame_local_data;
+	
+	VulkanImageWrapper* depth_image;
+	vk::ImageView depth_image_view;
 
 
 	VulkanWindow ( VulkanInstance* instance );
@@ -113,4 +117,5 @@ struct VulkanWindow : public Window {
 	void framebuffer_size_changed(s32 x, s32 y);
 	
 	void create_swapchain();
+	void destroy_depth_image();
 };

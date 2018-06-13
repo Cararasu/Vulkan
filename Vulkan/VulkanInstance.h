@@ -3,7 +3,6 @@
 #include "render/Instance.h"
 #include "render/Window.h"
 #include "VGlobal.h"
-#include "VulkanWindow.h"
 #include "VulkanHeader.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
@@ -29,6 +28,9 @@ struct VulkanMonitor : public Monitor {
 	virtual VideoMode current_mode();
 };
 
+
+struct VulkanWindow;
+struct VulkanWindowSection;
 
 struct VulkanInstance : public Instance {
 	VExtLayerStruct extLayers;
@@ -70,12 +72,35 @@ struct VulkanInstance : public Instance {
 	
 	virtual ResourceManager* resource_manager();
 
+
+
+//------------ Instance/Device/Physicaldevice
+
+	inline PGCQueueWrapper* vulkan_pgc_queue(u32 index){
+		return &queues.pgc[index];
+	}
+
+	vk::ImageView createImageView2D (vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags);
+	vk::ImageView createImageView2DArray (vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags);
+	
+	vk::DeviceMemory allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties);
+
+	vk::CommandPool createTransferCommandPool(vk::CommandPoolCreateFlags createFlags);
+	vk::CommandPool createGraphicsCommandPool(vk::CommandPoolCreateFlags createFlags);
+	void destroyCommandPool(vk::CommandPool commandPool);
+	vk::CommandBuffer createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel);
+	void deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer);
+	void copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size);
+
+	u32 findMemoryType(u32 typeFilter, vk::MemoryPropertyFlags properties);
+	vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+	vk::Format findDepthFormat();
 };
 
-inline vk::Device vulkan_device(VulkanInstance* instance){
+inline vk::Device vulkan_device(VulkanInstance* instance) {
 	return instance->m_device;
 }
-inline vk::PhysicalDevice vulkan_physical_device(VulkanInstance* instance){
+inline vk::PhysicalDevice vulkan_physical_device(VulkanInstance* instance) {
 	return instance->vulkan_device->physical_device;
 }
 inline vk::Semaphore create_semaphore(VulkanInstance* instance){
@@ -85,6 +110,7 @@ inline RendResult destroy_semaphore(VulkanInstance* instance, vk::Semaphore sem)
 	instance->m_device.destroySemaphore(sem, nullptr);
 	return RendResult::eSuccess;
 }
-inline PGCQueueWrapper* vulkan_pgc_queue(VulkanInstance* instance, u32 index){
-	return &instance->queues.pgc[index];
+
+inline bool hasStencilComponent(vk::Format format) {
+	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }

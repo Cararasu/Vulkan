@@ -101,8 +101,6 @@ RendResult VulkanWindow::update() {
 		glfwWindowHint (GLFW_RESIZABLE, (bool) m_resizable.wanted);
 
 		VulkanMonitor* fullscreen_monitor = dynamic_cast<VulkanMonitor*> (this->m_fullscreen_monitor.wanted);
-		//force fullscreen
-		//fullscreen_monitor = dynamic_cast<VulkanMonitor*> (this->m_instance->get_primary_monitor());
 		if (fullscreen_monitor) {   //it is fullscreen
 			VideoMode wanted_mode = fullscreen_monitor->find_best_videomode (m_size.wanted, m_refreshrate.wanted);
 			m_size = wanted_mode.extend;
@@ -200,21 +198,17 @@ RendResult VulkanWindow::update() {
 
 				present_swap_format = formats[0];
 
-				printf("WWW %d\n", present_swap_format.colorSpace);
 				if (formatCount == 1 && formats[0].format == vk::Format::eUndefined) {
 					present_swap_format = {vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
-					printf("WWW %d\n", present_swap_format.colorSpace);
 				}
 				for (size_t i = 0; i < formatCount; i++) {
 					if (formats[i].format == vk::Format::eB8G8R8A8Unorm && formats[i].colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
 						present_swap_format = formats[i];
-						printf("WWW %d\n", present_swap_format.colorSpace);
 						break;
 					}
 				}
 			}
 		}
-						printf("WWW %d\n", present_swap_format.colorSpace);
 		chosen_presentation_mode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 		{
 			u32 presentModeCount;
@@ -290,7 +284,7 @@ void VulkanWindow::create_swapchain() {
 		    vk::PresentModeKHR::eImmediate,
 		    0,
 		    swap_chain);
-		PGCQueueWrapper* pgc_queue_wrapper = vulkan_pgc_queue (m_instance, queue_index);
+		PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue (queue_index);
 		if (pgc_queue_wrapper->combined_graphics_present_queue) {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
@@ -340,22 +334,17 @@ void VulkanWindow::create_swapchain() {
 
 	{
 		//create/recreate depth image
-		/*
-		if (depthImageView) {
-			instance->device.destroyImageView (depthImageView);
-		}
-		if (depthImage) {
-			delete depthImage;
-		}
-		vk::Format depthFormat = instance->findDepthFormat();
+		destroy_depth_image();
+		vk::Format depthFormat = m_instance->findDepthFormat();
 
-		vk::Extent3D extent (swapChainExtend.width, swapChainExtend.height, 1);
-		depthImage = new ImageWrapper (instance, extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
+		vk::Extent3D extent (swap_chain_extend.width, swap_chain_extend.height, 1);
+		depth_image = new VulkanImageWrapper (m_instance, extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
 		                               vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
-		depthImageView = instance->createImageView2D (depthImage->image, 0, depthImage->mipMapLevels, depthImage->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
-		instance->transitionImageLayout (depthImage->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
-		                                 vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), getCurrentGraphicsCommandPool(), pgcQueue->graphicsQueue);
-		*/
+		depth_image_view = m_instance->createImageView2D (depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
+		
+		//depth_image->transitionImageLayout (depth_image->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
+		//                                 vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), getCurrentGraphicsCommandPool(), pgcQueue->graphicsQueue);
+		
 	}
 /*
 	if (standardmodule.pipeline) {
@@ -372,7 +361,7 @@ void VulkanWindow::create_swapchain() {
 	}
 	FrameLocalData* data = &frame_local_data[present_image_index];
 
-	PGCQueueWrapper* pgc_queue_wrapper = vulkan_pgc_queue (m_instance, queue_index);
+	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue (queue_index);
 	
 	if(!image_available_guard_sem_waited){
 		vk::SubmitInfo submitInfo;
@@ -399,7 +388,18 @@ void VulkanWindow::framebuffer_size_changed (s32 x, s32 y) {
 	}
 	create_swapchain();
 }
+void VulkanWindow::destroy_depth_image(){
+	if (depth_image_view) {
+		vulkan_device(m_instance).destroyImageView (depth_image_view);
+	}
+	if(depth_image){
+		depth_image->destroy();
+		delete depth_image;
+		depth_image = nullptr;
+	}
+}
 RendResult VulkanWindow::destroy() {
 	if (image_available_guard_sem)
 		destroy_semaphore (m_instance, image_available_guard_sem);
+	destroy_depth_image();
 }
