@@ -67,6 +67,8 @@ struct VulkanInstance : public Instance {
 	virtual Array<Device*>& get_devices();
 	VulkanMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
+	
+	virtual ResourceManager* resource_manager();
 
 };
 

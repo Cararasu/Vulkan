@@ -90,6 +90,7 @@ struct VulkanWindow : public Window {
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;
+	bool image_available_guard_sem_waited = true;
 	vk::SurfaceFormatKHR present_swap_format;
 	vk::PresentModeKHR chosen_presentation_mode;
 	vk::SurfaceCapabilitiesKHR capabilities;

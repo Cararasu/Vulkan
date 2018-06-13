@@ -454,3 +454,6 @@ bool VulkanInstance::destroy_window_section ( WindowSection* window_section ) {
 		}
 	}
 }
+ResourceManager* VulkanInstance::resource_manager(){
+	return nullptr;
+}

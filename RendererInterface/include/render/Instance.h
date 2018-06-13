@@ -3,6 +3,7 @@
 #include "Monitor.h"
 #include "Header.h"
 #include "Window.h"
+#include "ResourceManager.h"
 
 struct Device{
 	const char* name;
@@ -29,6 +30,8 @@ struct Instance{
 	
 	virtual Array<Monitor*>& get_monitors() = 0;
 	virtual Array<Device*>& get_devices() = 0;
+	
+	virtual ResourceManager* resource_manager() = 0;
 };
 
 Instance* initialize_instance(const char* name);

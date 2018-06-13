@@ -335,6 +335,7 @@ void VulkanWindow::create_swapchain() {
 		
 	}
 	swap_chain_extend = Extent2D<u32>(capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
+	image_available_guard_sem_waited = false;
 	vulkan_device(m_instance).acquireNextImageKHR (swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index);
 
 	{
@@ -372,7 +373,19 @@ void VulkanWindow::create_swapchain() {
 	FrameLocalData* data = &frame_local_data[present_image_index];
 
 	PGCQueueWrapper* pgc_queue_wrapper = vulkan_pgc_queue (m_instance, queue_index);
-	pgc_queue_wrapper->graphics_queue.submit({}, data->image_presented_fence);
+	
+	if(!image_available_guard_sem_waited){
+		vk::SubmitInfo submitInfo;
+		vk::PipelineStageFlags waitDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe);
+		
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &image_available_guard_sem;
+		submitInfo.pWaitDstStageMask = &waitDstStageMask;
+		pgc_queue_wrapper->graphics_queue.submit({submitInfo}, data->image_presented_fence);
+	}else{
+		pgc_queue_wrapper->graphics_queue.submit({}, data->image_presented_fence);
+	}
+	
 	//data->firstShow = false;
 	//instance->device.waitForFences ({data->fence}, true, std::numeric_limits<u64>::max());
 	//instance->device.resetFences ({data->fence});
