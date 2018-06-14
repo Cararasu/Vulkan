@@ -26,6 +26,8 @@ typedef double f64;
 template<typename T>
 using Array = std::vector<T>;
 template<typename T>
+using StaticArray = std::vector<T>;
+template<typename T>
 using Set = std::set<T>;
 template<typename K, typename T>
 using Map = std::map<K, T>;

@@ -102,7 +102,7 @@ struct VulkanWindow : public Window {
 	u32 present_image_index = 0;
 	Array<FrameLocalData> frame_local_data;
 	
-	VulkanImageWrapper* depth_image;
+	VulkanImageWrapper* depth_image = nullptr;
 	vk::ImageView depth_image_view;
 
 

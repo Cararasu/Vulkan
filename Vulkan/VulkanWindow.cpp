@@ -335,14 +335,14 @@ void VulkanWindow::create_swapchain() {
 	{
 		//create/recreate depth image
 		destroy_depth_image();
-		vk::Format depthFormat = m_instance->findDepthFormat();
+		vk::Format depth_format = m_instance->findDepthFormat();
 
 		vk::Extent3D extent (swap_chain_extend.width, swap_chain_extend.height, 1);
-		depth_image = new VulkanImageWrapper (m_instance, extent, 1, 1, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
+		depth_image = new VulkanImageWrapper (m_instance, extent, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
 		                               vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 		depth_image_view = m_instance->createImageView2D (depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 		
-		//depth_image->transitionImageLayout (depth_image->image, depthFormat, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
+		//depth_image->transitionImageLayout (depth_image->image, depth_format, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
 		//                                 vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), getCurrentGraphicsCommandPool(), pgcQueue->graphicsQueue);
 		
 	}

@@ -106,6 +106,28 @@ void VInstance::transitionImageLayout (vk::Image image, vk::Format format, vk::I
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 	vk::PipelineStageFlags sourceStage, destinationStage;
 
+	if(oldLayout == vk::ImageLayout::eUndefined){
+		srcAccessMask = vk::AccessFlags();
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+	} else if(oldLayout == vk::ImageLayout::eTransferDstOptimal){
+		srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+	} else{
+		assert (false);
+	}
+	
+	if(oldLayout == vk::ImageLayout::eTransferDstOptimal){
+		dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+		destinationStage = vk::PipelineStageFlagBits::eTransfer;
+	} else if(oldLayout == vk::ImageLayout::eTransferDstOptimal){
+		dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+	} else if(oldLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal){
+		dstAccessMask = vk::AccessFlags (vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+		destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+	} else{
+		assert (false);
+	}
 	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
 		srcAccessMask = vk::AccessFlags();
 		dstAccessMask = vk::AccessFlagBits::eTransferWrite;
