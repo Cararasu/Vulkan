@@ -127,7 +127,7 @@ void VulkanImageWrapper::transition_image_layout (vk::ImageLayout newLayout, Ran
 }
 
 void VulkanImageWrapper::transition_image_layout (vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandPool commandPool, vk::Queue submitQueue) {
-
+	
 	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
 
 	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlagBits::eOneTimeSubmit));

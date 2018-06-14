@@ -65,8 +65,10 @@ struct FrameLocalData{
 	
 	vk::Image present_image;
 	vk::ImageView present_image_view;
-	
 	vk::Framebuffer framebuffer;
+	
+	//needs to be destroyed before the frame is started
+	vk::CommandPool graphics_command_pool;
 };
 
 enum class FrameState {
@@ -115,6 +117,12 @@ struct VulkanWindow : public Window {
 	virtual RendResult destroy();
 	
 	void framebuffer_size_changed(s32 x, s32 y);
+	
+	vk::CommandPool graphics_command_pool(){
+		if(!frame_local_data[present_image_index].graphics_command_pool)
+			frame_local_data[present_image_index].graphics_command_pool = vulkan_device(m_instance).createCommandPool(vk::CommandPoolCreateInfo());
+		return frame_local_data[present_image_index].graphics_command_pool;
+	}
 	
 	void create_swapchain();
 	void destroy_depth_image();

@@ -97,6 +97,13 @@ struct VulkanInstance : public Instance {
 	vk::Format findDepthFormat();
 };
 
+inline QueueWrapper* vulkan_queue_wrapper(VulkanInstance* instance){
+	return &instance->queues;
+}
+inline PGCQueueWrapper* vulkan_pgc_queue_wrapper(VulkanInstance* instance, u32 pgc_index){
+	return &instance->queues.pgc[pgc_index];
+}
+
 inline vk::Device vulkan_device(VulkanInstance* instance) {
 	return instance->m_device;
 }

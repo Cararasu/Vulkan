@@ -7,7 +7,7 @@ void UIVulkanWindowSection::render_frame() {
 }
 
 VulkanWindow::VulkanWindow (VulkanInstance* instance) : m_instance (instance) {
-
+	
 }
 VulkanWindow::~VulkanWindow() {
 	m_instance->destroy_window (this);
@@ -339,11 +339,10 @@ void VulkanWindow::create_swapchain() {
 
 		vk::Extent3D extent (swap_chain_extend.width, swap_chain_extend.height, 1);
 		depth_image = new VulkanImageWrapper (m_instance, extent, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
-		                               vk::ImageAspectFlagBits::eDepth, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
+		                               vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 		depth_image_view = m_instance->createImageView2D (depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
 		
-		//depth_image->transitionImageLayout (depth_image->image, depth_format, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal,
-		//                                 vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil), getCurrentGraphicsCommandPool(), pgcQueue->graphicsQueue);
+		depth_image->transition_image_layout (vk::ImageLayout::eDepthStencilAttachmentOptimal, graphics_command_pool(), vulkan_pgc_queue_wrapper(m_instance, queue_index)->graphics_queue);
 		
 	}
 /*
