@@ -25,11 +25,17 @@ VulkanImageWrapper::VulkanImageWrapper (VulkanInstance* instance, vk::Extent3D e
 
 	vkBindImageMemory (instance->m_device, image, memory.memory, 0);
 }
+VulkanImageWrapper::VulkanImageWrapper (VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags) :
+	instance (instance), memory(), image(image), extent (extent), mipMapLevels (mipMapLevels), arraySize (arraySize), format (format), tiling (tiling), usage (usage), type(), layouts (arraySize, vk::ImageLayout::eUndefined), aspectFlags (aspectFlags) {
+	
+}
 VulkanImageWrapper::~VulkanImageWrapper() {
 }
 void VulkanImageWrapper::destroy() {
-	vkDestroyImage (instance->m_device, image, nullptr);
-	vkFreeMemory (instance->m_device, memory.memory, nullptr);
+	if(memory.memory){//if the image is managed externally
+		vkDestroyImage (instance->m_device, image, nullptr);
+		vkFreeMemory (instance->m_device, memory.memory, nullptr);
+	}
 }
 vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl (vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags) {
 
@@ -65,6 +71,9 @@ vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl (vk::Ima
 	} else if (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
 		dstAccessMask = vk::AccessFlagBits::eShaderRead;
 		*dstStageFlags |= vk::PipelineStageFlagBits::eFragmentShader;
+	} else if (newLayout == vk::ImageLayout::ePresentSrcKHR) {
+		dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+		*dstStageFlags |= vk::PipelineStageFlagBits::eTopOfPipe;
 	} else {
 		assert (false);
 	}

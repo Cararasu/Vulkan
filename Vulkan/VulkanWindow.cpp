@@ -7,7 +7,7 @@ void UIVulkanWindowSection::render_frame() {
 }
 
 VulkanWindow::VulkanWindow (VulkanInstance* instance) : m_instance (instance) {
-	
+
 }
 VulkanWindow::~VulkanWindow() {
 	m_instance->destroy_window (this);
@@ -191,7 +191,7 @@ RendResult VulkanWindow::update() {
 		{
 			u32 formatCount;
 			vulkan_physical_device (m_instance).getSurfaceFormatsKHR (surface, &formatCount, nullptr);
-			printf("WWW %d\n", formatCount);
+			printf ("WWW %d\n", formatCount);
 			if (formatCount != 0) {
 				vk::SurfaceFormatKHR formats[formatCount];
 				vulkan_physical_device (m_instance).getSurfaceFormatsKHR (surface, &formatCount, formats);
@@ -227,45 +227,78 @@ RendResult VulkanWindow::update() {
 				}
 			}
 		}
-		capabilities = vulkan_physical_device (m_instance).getSurfaceCapabilitiesKHR (surface);
-		{
-			vk::Extent2D actualExtent = {m_size.value.x, m_size.value.y};
-			if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
-				vk::Extent2D extend = capabilities.currentExtent;
-				swap_chain_extend = {extend.width, extend.height};
-			} else {
-				swap_chain_extend.width = std::max (capabilities.minImageExtent.width, std::min (capabilities.maxImageExtent.width, actualExtent.width));
-				swap_chain_extend.height = std::max (capabilities.minImageExtent.height, std::min (capabilities.maxImageExtent.height, actualExtent.height));
-			}
-		}
-		image_buffer_count = std::max<u32> (capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT);
-		if (capabilities.maxImageCount > 0) {
-			image_buffer_count = std::min<u32> (capabilities.maxImageCount, MAX_PRESENTIMAGE_COUNT);
-			printf ("Present Image Counts: %d\n", image_buffer_count);
-		}
-		for (size_t i = 0; i < image_buffer_count; i++) {
-			FrameLocalData frame_local;
-			frame_local.image_presented_fence = vulkan_device(m_instance).createFence(vk::FenceCreateFlags());
-			
-			frame_local_data.push_back(frame_local);
-		}
 		framebuffer_size_changed (m_size.value.x, m_size.value.y);
 		framestate = FrameState::eInitialized;
 
 	}
+	image_available_guard_sem_waited = false;
+	printf("-----------------> %d\n", present_image_index);
+	vulkan_device (m_instance).acquireNextImageKHR (swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index);
+	FrameLocalData* data = &frame_local_data[present_image_index];
+	printf("------------------ %d\n", present_image_index);
+	
+	
+	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue (queue_index);
 
+	if(data->initialized){
+		vulkan_device (m_instance).waitForFences ({data->image_presented_fence}, true, std::numeric_limits<u64>::max());
+		vulkan_device (m_instance).resetFences ({data->image_presented_fence});
+	}
+	data->initialized = true;
+	
+	
+	vk::SwapchainKHR swapChains[] = {swap_chain};
+	vk::PresentInfoKHR presentInfo (0, nullptr, 1, swapChains, &present_image_index, nullptr);
+
+	data->present_image->transition_image_layout(vk::ImageLayout::ePresentSrcKHR, graphics_command_pool(), pgc_queue_wrapper->graphics_queue);
 	if ( (bool) m_visible && m_root_section) {
 		m_root_section->render_frame();
+	}
+
+	assert (pgc_queue_wrapper->combined_graphics_present_queue);
+	pgc_queue_wrapper->present_queue.presentKHR(&presentInfo);
+	if (!image_available_guard_sem_waited) {
+		vk::SubmitInfo submitInfo;
+		vk::PipelineStageFlags waitDstStageMask (vk::PipelineStageFlagBits::eBottomOfPipe);
+
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &image_available_guard_sem;
+		submitInfo.pWaitDstStageMask = &waitDstStageMask;
+		pgc_queue_wrapper->graphics_queue.submit ({submitInfo}, data->image_presented_fence);
+	} else {
+		pgc_queue_wrapper->graphics_queue.submit ({}, data->image_presented_fence);
 	}
 }
 void VulkanWindow::create_swapchain() {
 
-	for (auto& data : frame_local_data) {
-		if (data.initialized && data.image_presented_fence) {
-			vulkan_device (m_instance).waitForFences ({data.image_presented_fence}, true, std::numeric_limits<u64>::max());
-			vulkan_device (m_instance).resetFences ({data.image_presented_fence});
+	capabilities = vulkan_physical_device (m_instance).getSurfaceCapabilitiesKHR (surface);
+	
+	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
+	{
+		Extent2D<s32> actualExtent = m_size.value;
+		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
+			vk::Extent2D extend = capabilities.currentExtent;
+			swap_chain_extend = {extend.width, extend.height};
+		} else {
+			swap_chain_extend.width = std::max<u32> (capabilities.minImageExtent.width, std::min<u32> (capabilities.maxImageExtent.width, actualExtent.width));
+			swap_chain_extend.height = std::max<u32> (capabilities.minImageExtent.height, std::min<u32> (capabilities.maxImageExtent.height, actualExtent.height));
 		}
 	}
+	if(old_swap_chain_extend == swap_chain_extend){
+		return;
+	}
+	image_buffer_count = std::max<u32> (capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT);
+	if (capabilities.maxImageCount > 0) {
+		image_buffer_count = std::min<u32> (capabilities.maxImageCount, MAX_PRESENTIMAGE_COUNT);
+		printf ("Present Image Counts: %d\n", image_buffer_count);
+	}
+	
+	destroy_frame_local_data();
+	for (size_t i = 0; i < image_buffer_count; i++) {
+		FrameLocalData frame_local;
+		frame_local.image_presented_fence = vulkan_device (m_instance).createFence (vk::FenceCreateFlags());
+		frame_local_data.push_back (frame_local);
+	} 
 	{
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo (
 		    vk::SwapchainCreateFlagsKHR(),
@@ -308,29 +341,21 @@ void VulkanWindow::create_swapchain() {
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		printf ("SUPPORTED %d\n", vulkan_physical_device(m_instance).getSurfaceSupportKHR (pgc_queue_wrapper->present_queue_id, surface));
+		printf ("SUPPORTED %d\n", vulkan_physical_device (m_instance).getSurfaceSupportKHR (pgc_queue_wrapper->present_queue_id, surface));
 
-		V_CHECKCALL (vulkan_device(m_instance).createSwapchainKHR (&swapchainCreateInfo, nullptr, &swap_chain), printf ("Creation of Swapchain failed\n"));
-		vulkan_device(m_instance).destroySwapchainKHR (swapchainCreateInfo.oldSwapchain);
+		V_CHECKCALL (vulkan_device (m_instance).createSwapchainKHR (&swapchainCreateInfo, nullptr, &swap_chain), printf ("Creation of Swapchain failed\n"));
+		vulkan_device (m_instance).destroySwapchainKHR (swapchainCreateInfo.oldSwapchain);
 	}
 
-	for (FrameLocalData& data : frame_local_data) {
-		if (data.image_presented_fence) {
-			vulkan_device(m_instance).destroyFence (data.image_presented_fence);
-			data.image_presented_fence = vk::Fence();
-		}
-	}
+	std::vector<vk::Image> swapChainImages = vulkan_device (m_instance).getSwapchainImagesKHR (swap_chain);
 
-	std::vector<vk::Image> swapChainImages = vulkan_device(m_instance).getSwapchainImagesKHR (swap_chain);
-	
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
-		frame_local_data[i].present_image = swapChainImages[i];
-		//frame_local_data[i].present_image_view = vulkan_device(m_instance).createImageView2D (data.swapChainImages[i], 0, 1, present_swap_format.format, vk::ImageAspectFlagBits::eColor);
-		
+		frame_local_data[i].present_image = new VulkanImageWrapper(m_instance, swapChainImages[i], {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, present_swap_format.format, vk::ImageTiling::eOptimal, 
+				vk::ImageUsageFlags(vk::ImageUsageFlagBits::eColorAttachment), vk::ImageAspectFlags(vk::ImageAspectFlagBits::eColor));
+				
+		frame_local_data[i].present_image_view = m_instance->createImageView2D (swapChainImages[i], 0, 1, present_swap_format.format, vk::ImageAspectFlagBits::eColor);
 	}
-	swap_chain_extend = Extent2D<u32>(capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
-	image_available_guard_sem_waited = false;
-	vulkan_device(m_instance).acquireNextImageKHR (swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index);
+	swap_chain_extend = Extent2D<u32> (capabilities.maxImageExtent.width, capabilities.maxImageExtent.height);
 
 	{
 		//create/recreate depth image
@@ -339,41 +364,18 @@ void VulkanWindow::create_swapchain() {
 
 		vk::Extent3D extent (swap_chain_extend.width, swap_chain_extend.height, 1);
 		depth_image = new VulkanImageWrapper (m_instance, extent, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags (vk::ImageUsageFlagBits::eDepthStencilAttachment),
-		                               vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
+		                                      vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags (vk::MemoryPropertyFlagBits::eDeviceLocal));
 		depth_image_view = m_instance->createImageView2D (depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags (vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil));
-		
-		depth_image->transition_image_layout (vk::ImageLayout::eDepthStencilAttachmentOptimal, graphics_command_pool(), vulkan_pgc_queue_wrapper(m_instance, queue_index)->graphics_queue);
-		
+
+		depth_image->transition_image_layout (vk::ImageLayout::eDepthStencilAttachmentOptimal, graphics_command_pool(), vulkan_pgc_queue_wrapper (m_instance, queue_index)->graphics_queue);
+
 	}
-/*
-	if (standardmodule.pipeline) {
-		updateExtent (&instance->pipeline_module_builders.standard, &standardmodule, swapChainExtend);
-	} else {
-		standardmodule = createPipelineModule (&instance->pipeline_module_builders.standard, &instance->pipeline_module_layouts.standard, presentSwapFormat.format, swapChainExtend);
-	}*/
 	for (FrameLocalData& data : frame_local_data) {
-		//data.presentImageView = instance->createImageView2D (data.presentImage, 0, 1, presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
-		//data.firstShow = true;
 		//vk::ImageView attachments[2] = {data.presentImageView, depthImageView};
 		//vk::FramebufferCreateInfo framebufferInfo (vk::FramebufferCreateFlags(), standardmodule.renderPass, 2, attachments, swapChainExtend.width, swapChainExtend.height, 1);
 		//data.framebuffer = vulkan_device(m_instance).createFramebuffer (framebufferInfo, nullptr);
 	}
-	FrameLocalData* data = &frame_local_data[present_image_index];
 
-	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue (queue_index);
-	
-	if(!image_available_guard_sem_waited){
-		vk::SubmitInfo submitInfo;
-		vk::PipelineStageFlags waitDstStageMask(vk::PipelineStageFlagBits::eBottomOfPipe);
-		
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &image_available_guard_sem;
-		submitInfo.pWaitDstStageMask = &waitDstStageMask;
-		pgc_queue_wrapper->graphics_queue.submit({submitInfo}, data->image_presented_fence);
-	}else{
-		pgc_queue_wrapper->graphics_queue.submit({}, data->image_presented_fence);
-	}
-	
 	//data->firstShow = false;
 	//instance->device.waitForFences ({data->fence}, true, std::numeric_limits<u64>::max());
 	//instance->device.resetFences ({data->fence});
@@ -385,20 +387,41 @@ void VulkanWindow::framebuffer_size_changed (s32 x, s32 y) {
 	if (m_root_section) {
 		m_root_section->update_viewport (Viewport<f32> (0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, 0.0f, 1.0f), nullptr);
 	}
-	create_swapchain();
+	printf("Minimized %d\n", m_minimized.value);
+	printf("Visible %d\n", m_minimized.value);
+	if(x > 0 && y > 0)
+		create_swapchain();
 }
-void VulkanWindow::destroy_depth_image(){
+void VulkanWindow::destroy_depth_image() {
 	if (depth_image_view) {
-		vulkan_device(m_instance).destroyImageView (depth_image_view);
+		vulkan_device (m_instance).destroyImageView (depth_image_view);
 	}
-	if(depth_image){
+	if (depth_image) {
 		depth_image->destroy();
 		delete depth_image;
 		depth_image = nullptr;
 	}
 }
+void VulkanWindow::destroy_frame_local_data() {
+	for (FrameLocalData& data : frame_local_data) {
+		if (data.initialized && data.image_presented_fence) {
+			printf("Wait For Fence\n");
+			vulkan_device (m_instance).waitForFences ({data.image_presented_fence}, true, std::numeric_limits<u64>::max());
+			//vulkan_device (m_instance).resetFences ({data.image_presented_fence});
+		}
+		delete data.present_image;
+		if (data.present_image_view)
+			vulkan_device (m_instance).destroyImageView (data.present_image_view);
+		if (data.image_presented_fence)
+			vulkan_device (m_instance).destroyFence (data.image_presented_fence);
+		if (data.image_presented_sem)
+			vulkan_device (m_instance).destroySemaphore (data.image_presented_sem);
+	}
+	frame_local_data.clear();
+}
 RendResult VulkanWindow::destroy() {
 	if (image_available_guard_sem)
 		destroy_semaphore (m_instance, image_available_guard_sem);
+	destroy_frame_local_data();
 	destroy_depth_image();
 }

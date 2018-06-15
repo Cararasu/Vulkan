@@ -63,11 +63,11 @@ struct FrameLocalData{
 	vk::Fence image_presented_fence;
 	vk::Semaphore image_presented_sem;
 	
-	vk::Image present_image;
+	//recreate for every resize
+	VulkanImageWrapper* present_image;
 	vk::ImageView present_image_view;
-	vk::Framebuffer framebuffer;
 	
-	//needs to be destroyed before the frame is started
+	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
 };
 
@@ -126,4 +126,5 @@ struct VulkanWindow : public Window {
 	
 	void create_swapchain();
 	void destroy_depth_image();
+	void destroy_frame_local_data();
 };
