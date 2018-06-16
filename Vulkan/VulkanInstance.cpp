@@ -216,8 +216,8 @@ VulkanInstance::~VulkanInstance() {
 	for ( auto entry : monitor_map ) {
 		delete entry.second;
 	}
-	for ( auto entry : windows ) {
-		destroy_window(entry);
+	for ( auto entry : window_map ) {
+		destroy_window(entry.second);
 	}
 	m_device.destroy(nullptr);
 }
