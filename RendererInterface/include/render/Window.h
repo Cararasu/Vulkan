@@ -64,6 +64,8 @@ protected:
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
 
 public:
+	virtual ~Window(){}
+
 	const ChangeableValue<Offset2D<s32>>* position() {
 		return &m_position;
 	}

@@ -61,27 +61,23 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 struct FrameLocalData{
 	bool initialized = false;
 	vk::Fence image_presented_fence;
-	vk::Semaphore image_presented_sem;
+	vk::Semaphore render_ready_sem;
+	vk::Semaphore present_ready_sem;
+	
+	Array<vk::Semaphore> generated_sems;
+	Array<vk::Semaphore> sem_wait_needed;
 	
 	//recreate for every resize
 	VulkanImageWrapper* present_image;
 	vk::ImageView present_image_view;
+	vk::CommandBuffer clear_command_buffer;
+	vk::CommandBuffer present_command_buffer;
 	
 	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
 };
 
-enum class FrameState {
-	eUninitialized,
-	eInitialized,
-	eFramePrepared,
-	eFramePresented,
-	eNotVisible,
-	eResized
-};
-
 struct VulkanWindow : public Window {
-	FrameState framestate = FrameState::eUninitialized;
 	VulkanInstance* m_instance = nullptr;
 	VulkanWindowSection* m_root_section = nullptr;
 	Extent2D<s32> framebuffer_size;
@@ -93,7 +89,6 @@ struct VulkanWindow : public Window {
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;
-	bool image_available_guard_sem_waited = true;
 	vk::SurfaceFormatKHR present_swap_format;
 	vk::PresentModeKHR chosen_presentation_mode;
 	vk::SurfaceCapabilitiesKHR capabilities;
@@ -103,6 +98,8 @@ struct VulkanWindow : public Window {
 	u32 queue_index = 0;
 	u32 present_image_index = 0;
 	Array<FrameLocalData> frame_local_data;
+	
+	vk::CommandPool window_graphics_command_pool;
 	
 	VulkanImageWrapper* depth_image = nullptr;
 	vk::ImageView depth_image_view;
@@ -124,7 +121,13 @@ struct VulkanWindow : public Window {
 		return frame_local_data[present_image_index].graphics_command_pool;
 	}
 	
+	void initialize();
+	void render_frame();
+	void create_command_buffers();
+	
 	void create_swapchain();
+	void create_empty_pipeline();
 	void destroy_depth_image();
+	void create_frame_local_data(std::vector<vk::Image> swapChainImages);
 	void destroy_frame_local_data();
 };

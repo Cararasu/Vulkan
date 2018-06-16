@@ -265,11 +265,11 @@ int main (int argc, char **argv) {
 	*window->visible() = true;
 	
 		
-	window->set_root_section(newinstance->create_window_section(WindowSectionType::eUI));
+	//window->set_root_section(newinstance->create_window_section(WindowSectionType::eUI));
 	window->update();
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
-	*window->cursor_mode() = CursorMode::eInvisible;
+	*window->cursor_mode() = CursorMode::eNormal;
 	
 	printf("Start Main Loop\n");
 	do{

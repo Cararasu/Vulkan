@@ -216,6 +216,10 @@ VulkanInstance::~VulkanInstance() {
 	for ( auto entry : monitor_map ) {
 		delete entry.second;
 	}
+	for ( auto entry : windows ) {
+		destroy_window(entry);
+	}
+	m_device.destroy(nullptr);
 }
 bool VulkanInstance::initialize ( Device* device ) {
 	if ( !device )
@@ -358,7 +362,7 @@ bool VulkanInstance::initialize ( Device* device ) {
 	                                        extLayers.neededLayers.size(), extLayers.neededLayers.data(),
 	                                        extLayers.neededExtensions.size(), extLayers.neededExtensions.data(),
 	                                        &physicalDeviceFeatures );
-	
+
 	V_CHECKCALL ( vulkan_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
 
 	if ( queues.dedicated_transfer_queue ) {
@@ -455,108 +459,108 @@ bool VulkanInstance::destroy_window_section ( WindowSection* window_section ) {
 		}
 	}
 }
-ResourceManager* VulkanInstance::resource_manager(){
+ResourceManager* VulkanInstance::resource_manager() {
 	return nullptr;
 }
 
 
-vk::ImageView VulkanInstance::createImageView2D (vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VulkanInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
 	    image,
 	    vk::ImageViewType::e2D, format,
-	    vk::ComponentMapping (vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity),
-	    vk::ImageSubresourceRange (aspectFlags, mipBase, mipOffset, 0, 1)
+	    vk::ComponentMapping ( vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity ),
+	    vk::ImageSubresourceRange ( aspectFlags, mipBase, mipOffset, 0, 1 )
 	);
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL (m_device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
+	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), printf ( "Creation of ImageView failed\n" ) );
 
 	return imageView;
 }
-vk::ImageView VulkanInstance::createImageView2DArray (vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags) {
+vk::ImageView VulkanInstance::createImageView2DArray ( vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
 	    image,
 	    vk::ImageViewType::e2DArray, format,
-	    vk::ComponentMapping (vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity),
-	    vk::ImageSubresourceRange (aspectFlags, mipBase, mipOffset, arrayOffset, arraySize)
+	    vk::ComponentMapping ( vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity ),
+	    vk::ImageSubresourceRange ( aspectFlags, mipBase, mipOffset, arrayOffset, arraySize )
 	);
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL (m_device.createImageView (&imageViewCreateInfo, nullptr, &imageView), printf ("Creation of ImageView failed\n"));
+	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), printf ( "Creation of ImageView failed\n" ) );
 
 	return imageView;
 }
 
-vk::DeviceMemory VulkanInstance::allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties){
-	u32 memoryType = findMemoryType(memoryRequirement.memoryTypeBits, properties);
-	if(memoryType == -1)
+vk::DeviceMemory VulkanInstance::allocateMemory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties ) {
+	u32 memoryType = findMemoryType ( memoryRequirement.memoryTypeBits, properties );
+	if ( memoryType == -1 )
 		return vk::DeviceMemory();
-		
-	vk::MemoryAllocateInfo allocInfo(memoryRequirement.size, memoryType);
-	printf("Allocate %d Bytes\n", memoryRequirement.size);
+
+	vk::MemoryAllocateInfo allocInfo ( memoryRequirement.size, memoryType );
+	printf ( "Allocate %d Bytes\n", memoryRequirement.size );
 
 	vk::DeviceMemory memory;
-	V_CHECKCALL(m_device.allocateMemory(&allocInfo, nullptr, &memory), printf("Failed To Create Image Memory\n"));
+	V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory ), printf ( "Failed To Create Image Memory\n" ) );
 	return memory;
 }
 
-void VulkanInstance::destroyCommandPool(vk::CommandPool commandPool){
-	vkDestroyCommandPool(m_device, commandPool, nullptr);
+void VulkanInstance::destroyCommandPool ( vk::CommandPool commandPool ) {
+	vkDestroyCommandPool ( m_device, commandPool, nullptr );
 }
-vk::CommandBuffer VulkanInstance::createCommandBuffer(vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel){
-	vk::CommandBufferAllocateInfo allocateInfo(commandPool, bufferLevel, 1);
-	
-    vk::CommandBuffer commandBuffer;
-	m_device.allocateCommandBuffers(&allocateInfo, &commandBuffer);
-    return commandBuffer;
+vk::CommandBuffer VulkanInstance::createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel ) {
+	vk::CommandBufferAllocateInfo allocateInfo ( commandPool, bufferLevel, 1 );
+
+	vk::CommandBuffer commandBuffer;
+	m_device.allocateCommandBuffers ( &allocateInfo, &commandBuffer );
+	return commandBuffer;
 }
-void VulkanInstance::deleteCommandBuffer(vk::CommandPool commandPool, vk::CommandBuffer commandBuffer){
-	m_device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+void VulkanInstance::deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {
+	m_device.freeCommandBuffers ( commandPool, 1, &commandBuffer );
 }
 
-void VulkanInstance::copyData(const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size) {
+void VulkanInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
 	void* data;
-	vkMapMemory(m_device, dstMemory, offset, size, 0, &data);
-	memcpy(data, srcData, size);
-	vkUnmapMemory(m_device, dstMemory);
+	vkMapMemory ( m_device, dstMemory, offset, size, 0, &data );
+	memcpy ( data, srcData, size );
+	vkUnmapMemory ( m_device, dstMemory );
 }
 
-u32 VulkanInstance::findMemoryType(u32 typeFilter, vk::MemoryPropertyFlags properties) {
+u32 VulkanInstance::findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
-	vulkan_device->physical_device.getMemoryProperties(&memProperties);
-	
-	for (u32 i = 0; i < memProperties.memoryTypeCount; i++) {
-		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+	vulkan_device->physical_device.getMemoryProperties ( &memProperties );
+
+	for ( u32 i = 0; i < memProperties.memoryTypeCount; i++ ) {
+		if ( ( typeFilter & ( 1 << i ) ) && ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties ) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-vk::Format VulkanInstance::findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) {
-	for (vk::Format format : candidates) {
+vk::Format VulkanInstance::findSupportedFormat ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
+	for ( vk::Format format : candidates ) {
 		vk::FormatProperties props;
-		vulkan_device->physical_device.getFormatProperties(format, &props);
-		if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features) {
+		vulkan_device->physical_device.getFormatProperties ( format, &props );
+		if ( tiling == vk::ImageTiling::eLinear && ( props.linearTilingFeatures & features ) == features ) {
 			return format;
-		} else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features) {
+		} else if ( tiling == vk::ImageTiling::eOptimal && ( props.optimalTilingFeatures & features ) == features ) {
 			return format;
 		}
 	}
-	assert(false);
+	assert ( false );
 	return vk::Format::eUndefined;
 }
 
 vk::Format VulkanInstance::findDepthFormat() {
-    return findSupportedFormat(
-        {vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
-        vk::ImageTiling::eOptimal,
-        vk::FormatFeatureFlagBits::eDepthStencilAttachment
-    );
+	return findSupportedFormat (
+	{vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
+	vk::ImageTiling::eOptimal,
+	vk::FormatFeatureFlagBits::eDepthStencilAttachment
+	);
 }
