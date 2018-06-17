@@ -113,7 +113,7 @@ struct VulkanWindow : public Window {
 	virtual RendResult update();
 	virtual RendResult destroy();
 	
-	void framebuffer_size_changed(s32 x, s32 y);
+	void framebuffer_size_changed(Extent2D<s32> extend);
 	
 	vk::CommandPool graphics_command_pool(){
 		if(!frame_local_data[present_image_index].graphics_command_pool)

@@ -9,7 +9,7 @@
 
 vk::DeviceMemory VInstance::allocateMemory(vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties){
 	u32 memoryType = findMemoryType(memoryRequirement.memoryTypeBits, properties);
-	if(memoryType == -1)
+	if(memoryType == (u32)-1)
 		return vk::DeviceMemory();
 		
 	vk::MemoryAllocateInfo allocInfo(memoryRequirement.size, memoryType);

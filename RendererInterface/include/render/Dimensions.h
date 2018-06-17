@@ -118,8 +118,11 @@ struct Viewport {
 	Extent2D<T> extend;
 	Range<T> depth;
 
-	Viewport (T x = 0, T y = 0, T width = 0, T height = 0, T minDepth = 0, T maxDepth = 0)
+	Viewport (T x, T y = 0, T width = 0, T height = 0, T minDepth = 0, T maxDepth = 0)
 		: offset (x, y), extend (width, height), depth (minDepth, maxDepth) {
+	}
+	Viewport (Offset2D<T> offset = Offset2D<T>(), Extent2D<T> extend = Extent2D<T>(), Range<T> depth = Range<T>())
+		: offset (offset), extend (extend), depth (depth) {
 	}
 
 	Viewport (const Viewport<T>& rhs) {
