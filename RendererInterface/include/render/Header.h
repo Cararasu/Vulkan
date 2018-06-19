@@ -51,6 +51,9 @@ struct ChangeableValue {
 	void operator=(T&& newvalue) const{
 		wanted = newvalue;
 	}
+	void operator=(const T& newvalue) const{
+		wanted = newvalue;
+	}
 	
 	explicit operator T() const{
 		return value;

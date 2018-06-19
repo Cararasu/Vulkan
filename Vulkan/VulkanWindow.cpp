@@ -38,7 +38,7 @@ void VulkanWindow::initialize() {
 	glfwWindowHint ( GLFW_AUTO_ICONIFY, ( bool ) m_minimized.wanted );
 	glfwWindowHint ( GLFW_FOCUSED, ( bool ) m_focused.wanted );
 	glfwWindowHint ( GLFW_DECORATED, ( bool ) m_decorated.wanted );
-	glfwWindowHint ( GLFW_VISIBLE, ( bool ) m_visible.wanted );
+	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
 
 	VulkanMonitor* fullscreen_monitor = dynamic_cast<VulkanMonitor*> ( this->m_fullscreen_monitor.wanted );
@@ -132,7 +132,6 @@ void VulkanWindow::initialize() {
 	{
 		u32 formatCount;
 		vulkan_physical_device ( m_instance ).getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
-		printf ( "WWW %d\n", formatCount );
 		if ( formatCount != 0 ) {
 			vk::SurfaceFormatKHR formats[formatCount];
 			vulkan_physical_device ( m_instance ).getSurfaceFormatsKHR ( surface, &formatCount, formats );
@@ -168,8 +167,13 @@ void VulkanWindow::initialize() {
 			}
 		}
 	}
+	
+	if(m_visible.wanted){
+		glfwShowWindow(window);
+	}
 
 	framebuffer_size_changed ( m_size.value );
+	
 }
 RendResult VulkanWindow::update() {
 
@@ -349,7 +353,10 @@ void VulkanWindow::render_frame() {
 	pgc_queue_wrapper->present_queue.presentKHR ( &presentInfo );
 }
 void VulkanWindow::create_swapchain() {
-
+	
+	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
+	destroy_frame_local_data();
+	
 	capabilities = vulkan_physical_device ( m_instance ).getSurfaceCapabilitiesKHR ( surface );
 
 	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
@@ -430,7 +437,6 @@ void VulkanWindow::create_swapchain() {
 		depth_image_view = m_instance->createImageView2D ( depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil ) );
 
 	}
-	destroy_frame_local_data();
 	create_frame_local_data ( vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain ) );
 }
 void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
@@ -475,10 +481,12 @@ void VulkanWindow::create_frame_local_data ( std::vector<vk::Image> swapChainIma
 	create_command_buffers();
 }
 void VulkanWindow::destroy_frame_local_data() {
+	printf ( "Wait For Queues to clear out\n" );
+	m_instance->m_device.waitIdle();
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
-			printf ( "Wait For Fence\n" );
-			vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
+			//TODO figure out why this freezes the Screen on Ubuntu/GNOME
+			//vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
 			vulkan_device ( m_instance ).destroyFence ( data.image_presented_fence );
 		}
 		for ( vk::Semaphore sem : data.generated_sems ) {

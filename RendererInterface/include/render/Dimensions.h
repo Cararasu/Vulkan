@@ -89,9 +89,8 @@ inline Extent2D<T> operator- (T value, Extent2D<T> extend) {
 	return extend;
 }
 template<typename T>
-inline Extent2D<T> operator- (Extent2D<T>& lextend, Extent2D<T>& rextend) {
-	Extent2D<T> ext = lextend;
-	return ext -= rextend;
+inline Extent2D<T> operator- (Extent2D<T> lextend, Extent2D<T> rextend) {
+	return lextend -= rextend;
 }
 template<typename T>
 inline Extent2D<T> operator* (Extent2D<T> extend, T value) {

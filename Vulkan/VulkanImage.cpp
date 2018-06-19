@@ -37,11 +37,11 @@ VulkanImageWrapper::~VulkanImageWrapper() {
 }
 void VulkanImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
-		vkDestroyImage ( instance->m_device, image, nullptr );
-		printf ( "Freeing %d Bytes of Memory\n", memory.size );
-		vkFreeMemory ( instance->m_device, memory.memory, nullptr );
-		memory.memory = vk::DeviceMemory();
+		instance->m_device.destroyImage(image);
 		image = vk::Image();
+		printf ( "Freeing %d Bytes of Memory\n", memory.size );
+		instance->m_device.freeMemory(memory.memory);
+		memory.memory = vk::DeviceMemory();
 	}
 }
 vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {

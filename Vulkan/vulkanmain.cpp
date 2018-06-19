@@ -260,8 +260,11 @@ int main (int argc, char **argv) {
 	}
 	
 	Window* window = newinstance->create_window();
-	*window->position() = primMonitor->offset + ((primMonitor->extend / 2) - 150);
-	*window->size() = {300, 300};
+	
+	Extent2D<s32> window_size(1000, 600);
+	
+	*window->position() = primMonitor->offset + ((primMonitor->extend / 2) - (window_size/2));
+	*window->size() = window_size;
 	*window->visible() = true;
 	
 		
