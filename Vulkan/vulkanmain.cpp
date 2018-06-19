@@ -461,7 +461,7 @@ int main (int argc, char **argv) {
 		imageWrapper->generateMipmaps (0, vk::ImageLayout::eShaderReadOnlyOptimal, vWindow->getCurrentGraphicsCommandPool(), vWindow->pgcQueue->graphicsQueue);
 	}
 
-	//TODO Memory Barrier for graphics queue
+	//@TODO Memory Barrier for graphics queue
 	//instance->tqueue->waitForFinish();
 	//vWindow->pgcQueue->waitForFinish();
 

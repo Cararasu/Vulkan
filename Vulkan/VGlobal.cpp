@@ -326,7 +326,7 @@ bool VGlobal::initializeDevice(VInstance* instance) {
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority);
 		devProps.queueFamilyProps[pId].queueCount -= pgcCount;
 		currentIndex++;
-		//TODO problem if gId == cId
+		//@TODO problem if gId == cId
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo (vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority);
 		devProps.queueFamilyProps[gId].queueCount -= pgcCount;
 		currentIndex++;

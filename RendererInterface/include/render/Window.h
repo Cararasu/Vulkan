@@ -2,10 +2,9 @@
 
 #include "Dimensions.h"
 #include "Monitor.h"
+#include "World.h"
 
-struct UINode {
-
-};
+struct UINode;
 
 struct RenderTargetWrapper {
 
@@ -29,11 +28,10 @@ struct WindowSection {
 
 	virtual void render_frame() = 0;
 
-
 	virtual void set_root_node ( UINode* node ) = 0;
 	virtual void set_stack_size ( uint32_t size ) = 0;
 	virtual void set_layer ( u32 layer, WindowSection* section ) = 0;
-	virtual void set_world() {}
+	virtual void set_world(World* world) {}
 };
 
 

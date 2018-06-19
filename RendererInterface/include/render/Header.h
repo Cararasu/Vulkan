@@ -22,7 +22,7 @@ typedef uint32_t ResourceId;
 typedef float f32;
 typedef double f64;
 
-//TODO implement own DynamicArrayClass
+//@TODO implement own DynamicArrayClass
 template<typename T>
 using Array = std::vector<T>;
 template<typename T>
@@ -35,6 +35,7 @@ using Map = std::map<K, T>;
 enum class RendResult {
 	eFail = 0,
 	eSuccess = 1,
+	eUnmodified = 2,
 	eAlreadyRegistered = -0x10,
 	eWrongInstance = -0x11,
 	eWrongType = -0x12,
@@ -48,11 +49,13 @@ struct ChangeableValue {
 	ChangeableValue (T value) : wanted (value), value(value) { }
 	ChangeableValue (T wanted, T value) : wanted (wanted), value(value) { }
 	
-	void operator=(T&& newvalue) const{
+	T& operator=(T&& newvalue) const{
 		wanted = newvalue;
+		return this->wanted;
 	}
-	void operator=(const T& newvalue) const{
+	T& operator=(const T& newvalue) const{
 		wanted = newvalue;
+		return this->wanted;
 	}
 	
 	explicit operator T() const{

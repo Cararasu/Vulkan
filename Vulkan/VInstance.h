@@ -29,12 +29,12 @@ struct VInstance {
 	VTQueue* requestTransferQueue(){
 		return tqueue;
 	}
-	VPGCQueue* requestPGCQueue(){//TODO synch
+	VPGCQueue* requestPGCQueue(){//@TODO synch
 		VPGCQueue* queue = pgcQueues[pgcIndex];
 		pgcIndex = (pgcIndex + 1) % pgcQueues.size();
 		return queue;
 	}
-	VPGCQueue* getPGCQueue(){//TODO synch
+	VPGCQueue* getPGCQueue(){//@TODO synch
 		return pgcQueues[pgcIndex];
 	}
 	

@@ -95,7 +95,7 @@ void VulkanWindow::initialize() {
 	glfwSetWindowRefreshCallback ( window, [] ( GLFWwindow * window ) {
 		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			//TODO implement???
+			//@TODO implement???
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -346,7 +346,7 @@ void VulkanWindow::render_frame() {
 	}
 
 	if ( !pgc_queue_wrapper->combined_graphics_present_queue ) {
-		//TODO synchronize
+		//@TODO synchronize
 	}
 
 	vk::PresentInfoKHR presentInfo ( 1, &data->present_ready_sem, 1, swapChains, &present_image_index, nullptr );
@@ -485,7 +485,7 @@ void VulkanWindow::destroy_frame_local_data() {
 	m_instance->m_device.waitIdle();
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
-			//TODO figure out why this freezes the Screen on Ubuntu/GNOME
+			//@TODO figure out why this freezes the Screen on Ubuntu/GNOME
 			//vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
 			vulkan_device ( m_instance ).destroyFence ( data.image_presented_fence );
 		}
@@ -496,6 +496,7 @@ void VulkanWindow::destroy_frame_local_data() {
 		if ( data.present_image_view )
 			vulkan_device ( m_instance ).destroyImageView ( data.present_image_view );
 	}
+	//@Debugging clear so we assert in case we access it in a state, that we should not
 	frame_local_data.clear();
 }
 RendResult VulkanWindow::destroy() {

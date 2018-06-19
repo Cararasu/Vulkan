@@ -36,11 +36,16 @@ struct VulkanWindowSection : public WindowSection {
 		m_parent_window = nullptr;
 		m_parent = nullptr;
 	}
-
+	
+	virtual void resize() = 0;
+	
 	virtual void update_viewport ( Viewport<f32> viewport, RenderTargetWrapper* target_wrapper ) {
+		if(m_viewport == viewport && m_target_wrapper == target_wrapper)
+			return;
 		m_viewport = viewport;
 		m_target_wrapper = target_wrapper;
 		printf ( "Viewport changed %g x %g | %g x %g | %g - %g\n", viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max );
+		resize();
 	}
 
 };
@@ -56,6 +61,23 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 	virtual void set_stack_size ( uint32_t size ) {}
 	virtual void set_layer ( u32 layer, WindowSection* section ) {}
 	virtual void set_world() {}
+	
+	virtual void resize(){}
+};
+struct WorldVulkanWindowSection : public VulkanWindowSection {
+	//here an optimized quad renderer
+	
+
+	WorldVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eWorld, instance ) {}
+	virtual ~WorldVulkanWindowSection() {}
+
+	virtual void render_frame();
+	virtual void set_root_node ( UINode* node ) {}
+	virtual void set_stack_size ( uint32_t size ) {}
+	virtual void set_layer ( u32 layer, WindowSection* section ) {}
+	virtual void set_world(World* world) {}
+	
+	virtual void resize(){}
 };
 
 struct FrameLocalData{
