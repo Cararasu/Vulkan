@@ -1,24 +1,34 @@
 #include "VulkanQuadRenderer.h"
 
 
-VulkanQuadRenderer::~VulkanQuadRenderer(){
-	if(pipeline)
-		vulkan_device ( v_instance ).destroyPipeline(pipeline);
-	if(renderpass)
-		vulkan_device ( v_instance ).destroyRenderPass(renderpass);
-	if(vertex_shader)
-		vulkan_device ( v_instance ).destroyShaderModule(vertex_shader);
-	if(fragment_shader)
-		vulkan_device ( v_instance ).destroyShaderModule(fragment_shader);
-	if(pipeline_layout)
-		vulkan_device ( v_instance ).destroyPipelineLayout(pipeline_layout);
-	for(auto dsl : descriptor_set_layouts){
+VulkanQuadRenderer::~VulkanQuadRenderer() {
+	if ( pipeline )
+		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
+	destroy_framebuffers();
+	if(commandpool)
+		vulkan_device(v_instance).destroyCommandPool(commandpool);
+	if ( renderpass )
+		vulkan_device ( v_instance ).destroyRenderPass ( renderpass );
+	if ( vertex_shader )
+		vulkan_device ( v_instance ).destroyShaderModule ( vertex_shader );
+	if ( fragment_shader )
+		vulkan_device ( v_instance ).destroyShaderModule ( fragment_shader );
+	if ( pipeline_layout )
+		vulkan_device ( v_instance ).destroyPipelineLayout ( pipeline_layout );
+	for ( auto dsl : descriptor_set_layouts ) {
 		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
+	}
+}
+void VulkanQuadRenderer::destroy_framebuffers(){
+	for ( auto& fb : per_target_data ) {
+		vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
 	}
 }
 
 RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {
-
+	
+	//TODO move most of the things here to the resourcemanager
+	//@Refactor 
 	if ( !pipeline_layout ) {
 		vk::DescriptorSetLayoutBinding bindings1[] = {
 			vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, nullptr ),
@@ -94,14 +104,27 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 
 		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/ );
 
-		renderpass = vulkan_device(v_instance).createRenderPass ( renderPassInfo, nullptr );
+		renderpass = vulkan_device ( v_instance ).createRenderPass ( renderPassInfo, nullptr );
+	}
+	destroy_framebuffers();
+	per_target_data.resize ( target_wrapper->images.size() );
+	vk::ImageView attachments[2] = {vk::ImageView(), target_wrapper->depthview};
+	vk::FramebufferCreateInfo frameBufferCreateInfo = {
+		vk::FramebufferCreateFlags(), renderpass,
+		2, attachments,
+		viewport.extend.width, viewport.extend.height, 1
+	};
+	for ( size_t i = 0; i < target_wrapper->images.size(); i++ ) {
+		attachments[0] = target_wrapper->images[i].imageview;
+		per_target_data[i].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
 	}
 
-	if(pipeline){
-		vulkan_device(v_instance).destroyPipeline(pipeline);
+
+	if ( pipeline ) {
+		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 	}
-	
-	
+
+
 	std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
 		vk::VertexInputBindingDescription ( 0, sizeof ( Vertex ), vk::VertexInputRate::eVertex ),
 		vk::VertexInputBindingDescription ( 1, sizeof ( InstanceObj ), vk::VertexInputRate::eInstance )
@@ -115,11 +138,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		vk::VertexInputAttributeDescription ( 4, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) ),
 		vk::VertexInputAttributeDescription ( 5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) ),
 		vk::VertexInputAttributeDescription ( 6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) * 2 ),
-		vk::VertexInputAttributeDescription ( 7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) * 3 ),
-		//vk::VertexInputAttributeDescription (8, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (9, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (10, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
-		//vk::VertexInputAttributeDescription (11, 1, vk::Format::eR32G32B32A32Sfloat, offsetof (InstanceObj, m2wMatrix) + sizeof (glm::vec4) * 3),
+		vk::VertexInputAttributeDescription ( 7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) * 3 )
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(), vertexInputBindings.size(), vertexInputBindings.data(), vertexInputAttributes.size(), vertexInputAttributes.data() );
@@ -131,7 +150,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	};
 
 	vk::Rect2D scissors[] = {
-		vk::Rect2D ( vk::Offset2D ( 0, 0 ), vk::Extent2D(viewport.extend.width, viewport.extend.height) ),
+		vk::Rect2D ( vk::Offset2D ( 0, 0 ), vk::Extent2D ( viewport.extend.width, viewport.extend.height ) ),
 	};
 
 	vk::PipelineViewportStateCreateInfo viewportState ( vk::PipelineViewportStateCreateFlags(), 1, viewports, 1, scissors );
@@ -204,19 +223,44 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	    -1
 	);
 
-	pipeline = vulkan_device(v_instance).createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
-	
-	/*
-	for (WindowPerPresentImageData& data : perPresentImageDatas) {
-		data.presentImageView = instance->createImageView2D (data.presentImage, 0, 1, presentSwapFormat.format, vk::ImageAspectFlagBits::eColor);
-		data.firstShow = true;
-		vk::ImageView attachments[2] = {data.presentImageView, depthImageView};
-		vk::FramebufferCreateInfo framebufferInfo (vk::FramebufferCreateFlags(), standardmodule.renderPass, 2, attachments, swapChainExtend.width, swapChainExtend.height, 1);
-		data.framebuffer = instance->device.createFramebuffer (framebufferInfo, nullptr);
-	}
-	*/
+	pipeline = vulkan_device ( v_instance ).createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+
+	printf("Update Quad-Renderer\n");
 }
 
-RendResult VulkanQuadRenderer::render_quads(){
-	printf("Wuuuh");
+RendResult VulkanQuadRenderer::render_quads(u32 index) {
+	PerFrameQuadRenderObj& per_frame = per_target_data[index];
+	if(per_frame.commandbuffer){
+		per_frame.commandbuffer.reset(vk::CommandBufferResetFlags())
+	}else{
+		per_frame.commandbuffer = v_instance->createCommandBuffer(commandpool, vk::CommandBufferLevel::ePrimary)
+	}
+	vk::CommandBufferBeginInfo begininfo = {
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+	};
+	vk::RenderPassBeginInfo renderPassBeginInfo = {
+		renderpass, per_frame.framebuffer, vk::Rect2D(),
+		0, nullptr
+	};
+	per_frame.commandbuffer.begin(begininfo);
+	per_frame.commandbuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	
+	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+
+	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
+	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
+	
+	//here be commands
+	
+	//1. simple textured quads
+	//2. simple bordered quads
+	//3. fonts
+	
+	per_frame.commandbuffer.endRenderPass();
+	per_frame.commandbuffer.end();
+	
+	
+
+
 }

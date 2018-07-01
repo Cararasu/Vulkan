@@ -276,6 +276,8 @@ int main (int argc, char **argv) {
 	
 	printf("Start Main Loop\n");
 	do{
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(20ms);
 		newinstance->process_events();
 	}while(newinstance->is_window_open());
 	

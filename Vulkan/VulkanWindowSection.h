@@ -6,9 +6,15 @@
 struct VulkanWindow;
 struct VulkanInstance;
 
+struct ImageRenderTarget{
+	vk::ImageView imageview;
+};
+
 struct VulkanRenderTarget : public RenderTarget {
+	Array<ImageRenderTarget> images;
 	vk::Format color_format;
 	vk::Format depth_stencil_format;
+	vk::ImageView depthview;
 	u32 targetcount;
 };
 

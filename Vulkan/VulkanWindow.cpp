@@ -409,8 +409,6 @@ void VulkanWindow::render_frame() {
 		submitInfo.pCommandBuffers = &data->clear_command_buffer;
 		pgc_queue_wrapper->graphics_queue.submit ( {submitInfo}, vk::Fence() );
 	}
-	v_render_target_wrapper.color_format = data->present_image->format;
-	v_render_target_wrapper.depth_stencil_format = depth_image->format;
 
 	data->sem_wait_needed.push_back ( data->render_ready_sem );
 	if ( ( bool ) m_visible ) {
@@ -537,8 +535,13 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
 	if ( extend.x > 0 && extend.y > 0 )
 		create_swapchain();
 
+	v_render_target_wrapper.images.resize(frame_local_data.size());
+	for(size_t i = 0; i < frame_local_data.size(); i++){
+		v_render_target_wrapper.images[i].imageview = frame_local_data[i].present_image_view;
+	}
 	v_render_target_wrapper.color_format = frame_local_data[0].present_image->format;
 	v_render_target_wrapper.depth_stencil_format = depth_image->format;
+	v_render_target_wrapper.depthview = depth_image_view;
 	v_render_target_wrapper.targetcount = frame_local_data.size();
 	m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, -1.0f, 1.0f ), &v_render_target_wrapper );
 }
