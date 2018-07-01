@@ -4,6 +4,7 @@
 #include "render/Window.h"
 #include "VGlobal.h"
 #include "VulkanHeader.h"
+#include "VulkanResourceManager.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -47,6 +48,8 @@ struct VulkanInstance : public Instance {
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
 	
 	QueueWrapper queues;
+	
+	VulkanResourceManager* v_resource_manager;
 	
 	bool initialized = false;
 
@@ -104,10 +107,10 @@ inline PGCQueueWrapper* vulkan_pgc_queue_wrapper(VulkanInstance* instance, u32 p
 	return &instance->queues.pgc[pgc_index];
 }
 
-inline vk::Device vulkan_device(VulkanInstance* instance) {
+inline vk::Device vulkan_device(const VulkanInstance* instance) {
 	return instance->m_device;
 }
-inline vk::PhysicalDevice vulkan_physical_device(VulkanInstance* instance) {
+inline vk::PhysicalDevice vulkan_physical_device(const VulkanInstance* instance) {
 	return instance->vulkan_device->physical_device;
 }
 inline vk::Semaphore create_semaphore(VulkanInstance* instance){

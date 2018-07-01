@@ -6,10 +6,10 @@
 
 struct UINode;
 
-struct RenderTargetWrapper {
-
-	Extent2D<u32> getSize();
-
+struct RenderTarget {
+	const Extent2D<u32> extent;
+	
+	virtual void dummy(){}
 };
 
 enum class WindowSectionType {
@@ -24,7 +24,7 @@ struct WindowSection {
 	WindowSection ( WindowSectionType type ) : section_type ( type ) {}
 	virtual ~WindowSection() {}
 
-	virtual void update_viewport ( Viewport<f32> viewport, RenderTargetWrapper* targetWrapper ) = 0;
+	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* targetWrapper ) = 0;
 
 	virtual void render_frame() = 0;
 
@@ -101,7 +101,8 @@ public:
 		return &m_fullscreen_monitor;
 	}
 
-	virtual RendResult set_root_section ( WindowSection* section ) = 0;
+	virtual RendResult root_section ( WindowSection* section ) = 0;
+	virtual WindowSection* root_section () = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
 	

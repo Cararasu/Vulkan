@@ -2,9 +2,6 @@
 #include "VulkanInstance.h"
 
 
-void UIVulkanWindowSection::render_frame() {
-	//printf ( "Render-UI Section\n" );
-}
 
 VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ) {
 
@@ -13,24 +10,35 @@ VulkanWindow::~VulkanWindow() {
 	m_instance->destroy_window ( this );
 }
 
-RendResult VulkanWindow::set_root_section ( WindowSection* section ) {
+RendResult VulkanWindow::root_section ( WindowSection* section ) {
 	VulkanWindowSection* root_section = dynamic_cast<VulkanWindowSection*> ( section );
 	if ( root_section ) {
-		if ( root_section->m_instance != m_instance )
+		if ( root_section->v_instance != m_instance )
 			return RendResult::eWrongInstance;
 		if ( m_root_section ) {
 			m_root_section->unregister_parent();
-		}
-		RendResult res;
-		if ( ( res = root_section->register_parent ( this, nullptr ) ) != RendResult::eSuccess ) {
-			return res;
+			RendResult res;
+			if ( ( res = root_section->register_parent ( this, nullptr ) ) != RendResult::eSuccess ) {
+				return res;
+			}
+			m_root_section->v_update_viewport ( Viewport<f32> (), nullptr );
 		}
 		m_root_section = root_section;
-		m_root_section->update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, 0.0f, 1.0f ), nullptr );
+		if ( swap_chain ) {
+			m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, -1.0f, 1.0f ), &v_render_target_wrapper );
+		}
+	} else if ( !section ) {//nullptr passed
+		if ( m_root_section ) {//reset the current section
+			m_root_section->v_update_viewport ( Viewport<f32> (), nullptr );
+			m_root_section = nullptr;
+		}
 	} else {
 		return RendResult::eWrongType;
 	}
 	return RendResult::eSuccess;
+}
+WindowSection* VulkanWindow::root_section () {
+	return m_root_section;
 }
 void VulkanWindow::initialize() {
 	glfwWindowHint ( GLFW_CLIENT_API, GLFW_NO_API );
@@ -124,7 +132,82 @@ void VulkanWindow::initialize() {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
 	} );
+	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
+		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+			switch ( action ) {
+			case GLFW_PRESS:
+				printf ( "Press " );
+				break;
+			case GLFW_REPEAT:
+				printf ( "Repeat " );
+				break;
+			case GLFW_RELEASE:
+				printf ( "Release " );
+				break;
+			default:
+				printf ( "Unknown Action " );
+				break;
+			}
+			printf ( "%d ", key );
+			if ( mods & GLFW_MOD_SHIFT )
+				printf ( "Shift " );
+			if ( mods & GLFW_MOD_CONTROL )
+				printf ( "Cntrl " );
+			if ( mods & GLFW_MOD_ALT )
+				printf ( "Alt " );
+			if ( mods & GLFW_MOD_SUPER )
+				printf ( "Super " );
+			printf ( "\n" );
 
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
+	glfwSetCharModsCallback ( window, [] ( GLFWwindow * window, unsigned int codepoint, int mods ) {
+		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+			printf ( "%lc ", ( wint_t ) codepoint );
+			if ( mods & GLFW_MOD_SHIFT )
+				printf ( "Shift " );
+			if ( mods & GLFW_MOD_CONTROL )
+				printf ( "Cntrl " );
+			if ( mods & GLFW_MOD_ALT )
+				printf ( "Alt " );
+			if ( mods & GLFW_MOD_SUPER )
+				printf ( "Super " );
+			printf ( "\n" );
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
+	glfwSetCursorPosCallback ( window, [] ( GLFWwindow * window, double xpos, double ypos ) {
+		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+			//printf ( "Mouse Position %f, %f\n", xpos,  ypos);
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
+	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
+		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+			if ( entered )
+				printf ( "Mouse Entered\n" );
+			else
+				printf ( "Mouse Left\n" );
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
+	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
+		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
 	//initialize Vulkan stuff
 
 	image_available_guard_sem = create_semaphore ( m_instance );
@@ -167,16 +250,19 @@ void VulkanWindow::initialize() {
 			}
 		}
 	}
-	
-	if(m_visible.wanted){
-		glfwShowWindow(window);
+
+	if ( m_visible.wanted ) {
+		glfwShowWindow ( window );
 	}
 
 	framebuffer_size_changed ( m_size.value );
-	
+
 }
 RendResult VulkanWindow::update() {
-
+	static double oldTime = 0.0;
+	double newTime = glfwGetTime();
+	//printf("Time: %f\n", 1.0 / (newTime - oldTime));
+	oldTime = newTime;
 	if ( window ) {
 		while ( true ) { //just so we don't need a goto for this logic ;-)
 			//not visible
@@ -323,6 +409,8 @@ void VulkanWindow::render_frame() {
 		submitInfo.pCommandBuffers = &data->clear_command_buffer;
 		pgc_queue_wrapper->graphics_queue.submit ( {submitInfo}, vk::Fence() );
 	}
+	v_render_target_wrapper.color_format = data->present_image->format;
+	v_render_target_wrapper.depth_stencil_format = depth_image->format;
 
 	data->sem_wait_needed.push_back ( data->render_ready_sem );
 	if ( ( bool ) m_visible ) {
@@ -353,10 +441,10 @@ void VulkanWindow::render_frame() {
 	pgc_queue_wrapper->present_queue.presentKHR ( &presentInfo );
 }
 void VulkanWindow::create_swapchain() {
-	
+
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
 	destroy_frame_local_data();
-	
+
 	capabilities = vulkan_physical_device ( m_instance ).getSurfaceCapabilitiesKHR ( surface );
 
 	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
@@ -438,18 +526,21 @@ void VulkanWindow::create_swapchain() {
 
 	}
 	create_frame_local_data ( vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain ) );
+
 }
 void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
 	printf ( "Size of Framebuffer %dx%d\n", extend.x, extend.y );
 	framebuffer_size.x = extend.x;
 	framebuffer_size.y = extend.y;
-	if ( m_root_section ) {
-		m_root_section->update_viewport ( Viewport<f32> ( {0.0f, 0.0f}, Offset2D<f32>(extend.x, extend.y), {0.0f, 1.0f} ), nullptr );
-	}
 	printf ( "Minimized %d\n", m_minimized.value );
 	printf ( "Visible %d\n", m_minimized.value );
 	if ( extend.x > 0 && extend.y > 0 )
 		create_swapchain();
+
+	v_render_target_wrapper.color_format = frame_local_data[0].present_image->format;
+	v_render_target_wrapper.depth_stencil_format = depth_image->format;
+	v_render_target_wrapper.targetcount = frame_local_data.size();
+	m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, -1.0f, 1.0f ), &v_render_target_wrapper );
 }
 void VulkanWindow::destroy_depth_image() {
 	if ( depth_image_view ) {

@@ -209,6 +209,9 @@ VulkanInstance::VulkanInstance() {
 	std::sort ( devices.begin(), devices.end(), [] ( Device * lhs, Device * rhs ) {
 		return lhs->rating > rhs->rating;
 	} );
+	
+	v_resource_manager = new VulkanResourceManager(this);
+	
 	initialized = true;
 }
 
@@ -220,6 +223,8 @@ VulkanInstance::~VulkanInstance() {
 		destroy_window(entry.second);
 	}
 	m_device.destroy(nullptr);
+	
+	delete v_resource_manager;
 }
 bool VulkanInstance::initialize ( Device* device ) {
 	if ( !device )

@@ -267,8 +267,8 @@ int main (int argc, char **argv) {
 	*window->size() = window_size;
 	*window->visible() = true;
 	
-		
-	//window->set_root_section(newinstance->create_window_section(WindowSectionType::eUI));
+	
+	window->root_section(newinstance->create_window_section(WindowSectionType::eUI));
 	window->update();
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
@@ -278,6 +278,8 @@ int main (int argc, char **argv) {
 	do{
 		newinstance->process_events();
 	}while(newinstance->is_window_open());
+	
+	delete window->root_section();
 	
 	window->destroy();
 	

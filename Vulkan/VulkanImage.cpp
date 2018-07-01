@@ -37,10 +37,10 @@ VulkanImageWrapper::~VulkanImageWrapper() {
 }
 void VulkanImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
-		instance->m_device.destroyImage(image);
+		instance->m_device.destroyImage ( image );
 		image = vk::Image();
 		printf ( "Freeing %d Bytes of Memory\n", memory.size );
-		instance->m_device.freeMemory(memory.memory);
+		instance->m_device.freeMemory ( memory.memory );
 		memory.memory = vk::DeviceMemory();
 	}
 }
@@ -48,52 +48,115 @@ vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::Im
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 
-	if ( oldLayout == vk::ImageLayout::eUndefined ) {
+	switch ( oldLayout ) {
+	case vk::ImageLayout::eUndefined:
 		srcAccessMask = vk::AccessFlags();
 		*srcStageFlags |= vk::PipelineStageFlagBits::eTopOfPipe;
-	} else if ( oldLayout == vk::ImageLayout::eTransferDstOptimal ) {
-		srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		*srcStageFlags |= vk::PipelineStageFlagBits::eTransfer;
-	} else if ( oldLayout == vk::ImageLayout::eTransferSrcOptimal ) {
-		srcAccessMask = vk::AccessFlagBits::eTransferRead;
-		*srcStageFlags |= vk::PipelineStageFlagBits::eTransfer;
-	} else if ( oldLayout == vk::ImageLayout::eShaderReadOnlyOptimal ) {
-		srcAccessMask = vk::AccessFlagBits::eShaderRead;
-		*srcStageFlags |= vk::PipelineStageFlagBits::eFragmentShader;
-	} else if ( oldLayout == vk::ImageLayout::ePresentSrcKHR ) {
-		srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-		*srcStageFlags |= vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	} else if ( oldLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal ) {
-		srcAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite );
-		*srcStageFlags |= vk::PipelineStageFlagBits::eLateFragmentTests;
-	} else if ( oldLayout == vk::ImageLayout::eColorAttachmentOptimal ) {
+		break;
+	case vk::ImageLayout::eGeneral:
+		srcAccessMask = vk::AccessFlags();
+		*srcStageFlags |= vk::PipelineStageFlagBits::eTopOfPipe;
+		break;
+	case vk::ImageLayout::eColorAttachmentOptimal:
 		srcAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite );
 		*srcStageFlags |= vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	} else {
+		break;
+	case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+		srcAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite );
+		*srcStageFlags |= vk::PipelineStageFlagBits::eLateFragmentTests;
+		break;
+	case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		break;
+	case vk::ImageLayout::eShaderReadOnlyOptimal:
+		srcAccessMask = vk::AccessFlagBits::eShaderRead;
+		*srcStageFlags |= vk::PipelineStageFlagBits::eFragmentShader;
+		break;
+	case vk::ImageLayout::eTransferSrcOptimal:
+		srcAccessMask = vk::AccessFlagBits::eTransferRead;
+		*srcStageFlags |= vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::eTransferDstOptimal:
+		srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		*srcStageFlags |= vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::ePreinitialized:
+		assert ( false );
+		break;
+	case vk::ImageLayout::ePresentSrcKHR:
+		srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+		*srcStageFlags |= vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		break;
+	case vk::ImageLayout::eSharedPresentKHR:
+		srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+		*srcStageFlags |= vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		break;
+	case vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimalKHR:
+		srcAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*srcStageFlags |= vk::PipelineStageFlagBits::eLateFragmentTests;
+		break;
+	case vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimalKHR:
+		srcAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*srcStageFlags |= vk::PipelineStageFlagBits::eLateFragmentTests;
+		break;
+	default:
 		assert ( false );
 	}
-	if ( newLayout == vk::ImageLayout::eUndefined ) {
+	
+	switch ( newLayout ) {
+	case vk::ImageLayout::eUndefined:
 		dstAccessMask = vk::AccessFlags();
 		*dstStageFlags |= vk::PipelineStageFlagBits::eBottomOfPipe;
-	} else if ( newLayout == vk::ImageLayout::eTransferDstOptimal ) {
-		dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		*dstStageFlags |= vk::PipelineStageFlagBits::eTransfer;
-	} else if ( newLayout == vk::ImageLayout::eTransferSrcOptimal ) {
-		dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		*dstStageFlags |= vk::PipelineStageFlagBits::eTransfer;
-	} else if ( newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal ) {
-		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite );
-		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
-	} else if ( newLayout == vk::ImageLayout::eColorAttachmentOptimal ) {
+		break;
+	case vk::ImageLayout::eGeneral:
+		dstAccessMask = vk::AccessFlags();
+		*dstStageFlags |= vk::PipelineStageFlagBits::eBottomOfPipe;
+		break;
+	case vk::ImageLayout::eColorAttachmentOptimal:
 		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite );
 		*dstStageFlags |= vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	} else if ( newLayout == vk::ImageLayout::eShaderReadOnlyOptimal ) {
+		break;
+	case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite );
+		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		break;
+	case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		break;
+	case vk::ImageLayout::eShaderReadOnlyOptimal:
 		dstAccessMask = vk::AccessFlagBits::eShaderRead;
 		*dstStageFlags |= vk::PipelineStageFlagBits::eFragmentShader;
-	} else if ( newLayout == vk::ImageLayout::ePresentSrcKHR ) {
+		break;
+	case vk::ImageLayout::eTransferSrcOptimal:
+		dstAccessMask = vk::AccessFlagBits::eTransferRead;
+		*dstStageFlags |= vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::eTransferDstOptimal:
+		dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+		*dstStageFlags |= vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::ePreinitialized:
+		assert ( false );
+		break;
+	case vk::ImageLayout::ePresentSrcKHR:
 		dstAccessMask = vk::AccessFlagBits::eMemoryRead;
 		*dstStageFlags |= vk::PipelineStageFlagBits::eTopOfPipe;
-	} else {
+		break;
+	case vk::ImageLayout::eSharedPresentKHR:
+		dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+		*dstStageFlags |= vk::PipelineStageFlagBits::eTopOfPipe;
+		break;
+	case vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimalKHR:
+		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		break;
+	case vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimalKHR:
+		dstAccessMask = vk::AccessFlags ( vk::AccessFlagBits::eDepthStencilAttachmentRead );
+		*dstStageFlags |= vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		break;
+	default:
 		assert ( false );
 	}
 	return vk::ImageMemoryBarrier (
