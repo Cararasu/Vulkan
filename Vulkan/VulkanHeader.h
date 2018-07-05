@@ -35,3 +35,9 @@ struct FrameRenderContext{
 	QueueWrapper* queue_wrapper;
 	u32 pgcqueue_index;
 };
+
+
+struct GPUMemory {
+	vk::DeviceMemory memory;
+	vk::DeviceSize size;
+};

@@ -8,6 +8,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VulkanBuffer.cpp"/>
+    <File Name="VulkanBuffer.h"/>
     <File Name="VulkanQuadRenderer.cpp"/>
     <File Name="VulkanQuadRenderer.h"/>
     <File Name="VulkanWindowSection.cpp"/>
