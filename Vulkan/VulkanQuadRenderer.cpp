@@ -231,9 +231,9 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 RendResult VulkanQuadRenderer::render_quads(u32 index) {
 	PerFrameQuadRenderObj& per_frame = per_target_data[index];
 	if(per_frame.commandbuffer){
-		per_frame.commandbuffer.reset(vk::CommandBufferResetFlags())
+		per_frame.commandbuffer.reset(vk::CommandBufferResetFlags());
 	}else{
-		per_frame.commandbuffer = v_instance->createCommandBuffer(commandpool, vk::CommandBufferLevel::ePrimary)
+		per_frame.commandbuffer = v_instance->createCommandBuffer(commandpool, vk::CommandBufferLevel::ePrimary);
 	}
 	vk::CommandBufferBeginInfo begininfo = {
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
@@ -243,7 +243,7 @@ RendResult VulkanQuadRenderer::render_quads(u32 index) {
 		0, nullptr
 	};
 	per_frame.commandbuffer.begin(begininfo);
-	per_frame.commandbuffer.beginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	per_frame.commandbuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	
 	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
 	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);

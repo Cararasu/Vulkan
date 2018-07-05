@@ -33,7 +33,6 @@ struct FrameLocalData {
 struct VulkanWindow : public Window {
 	VulkanInstance* m_instance = nullptr;
 	VulkanWindowSection* m_root_section = nullptr;
-	Extent2D<s32> framebuffer_size;
 	VulkanWindowSection* section;
 
 	//glfw

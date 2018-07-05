@@ -25,7 +25,7 @@ RendResult VulkanWindow::root_section ( WindowSection* section ) {
 		}
 		m_root_section = root_section;
 		if ( swap_chain ) {
-			m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, -1.0f, 1.0f ), &v_render_target_wrapper );
+			m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 		}
 	} else if ( !section ) {//nullptr passed
 		if ( m_root_section ) {//reset the current section
@@ -527,13 +527,14 @@ void VulkanWindow::create_swapchain() {
 
 }
 void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
+	if(m_root_section)
+		m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), nullptr );
 	printf ( "Size of Framebuffer %dx%d\n", extend.x, extend.y );
-	framebuffer_size.x = extend.x;
-	framebuffer_size.y = extend.y;
 	printf ( "Minimized %d\n", m_minimized.value );
 	printf ( "Visible %d\n", m_minimized.value );
 	if ( extend.x > 0 && extend.y > 0 )
 		create_swapchain();
+	printf ( "Actual Extent %dx%d\n", swap_chain_extend.x, swap_chain_extend.y );
 
 	v_render_target_wrapper.images.resize(frame_local_data.size());
 	for(size_t i = 0; i < frame_local_data.size(); i++){
@@ -543,7 +544,8 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
 	v_render_target_wrapper.depth_stencil_format = depth_image->format;
 	v_render_target_wrapper.depthview = depth_image_view;
 	v_render_target_wrapper.targetcount = frame_local_data.size();
-	m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, framebuffer_size.x, framebuffer_size.y, -1.0f, 1.0f ), &v_render_target_wrapper );
+	if(m_root_section)
+		m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 }
 void VulkanWindow::destroy_depth_image() {
 	if ( depth_image_view ) {
