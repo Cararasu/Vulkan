@@ -26,7 +26,7 @@ struct WindowSection {
 
 	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* targetWrapper ) = 0;
 
-	virtual void render_frame() = 0;
+	virtual void render_frame(u32 index) = 0;
 
 	virtual void set_root_node ( UINode* node ) = 0;
 	virtual void set_stack_size ( uint32_t size ) = 0;

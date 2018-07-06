@@ -40,4 +40,7 @@ struct FrameRenderContext{
 struct GPUMemory {
 	vk::DeviceMemory memory;
 	vk::DeviceSize size;
+	u32 heap_index;
+	vk::MemoryPropertyFlags property_flags;
 };
+

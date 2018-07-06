@@ -1,6 +1,7 @@
 #pragma once
 #include "VulkanInstance.h"
 #include "VulkanWindowSection.h"
+#include "VulkanBuffer.h"
 #include "render/Dimensions.h"
 
 struct PerFrameQuadRenderObj{
@@ -10,6 +11,7 @@ struct PerFrameQuadRenderObj{
 
 struct VulkanQuadRenderer {
 	VulkanInstance* v_instance;
+	Viewport<f32> viewport;
 	
 	std::array<vk::DescriptorSetLayout, 2> descriptor_set_layouts;
 	vk::PipelineLayout pipeline_layout;
@@ -18,6 +20,8 @@ struct VulkanQuadRenderer {
 	vk::RenderPass renderpass;
 	vk::Pipeline pipeline;
 	vk::CommandPool commandpool;
+	
+	VulkanBuffer* vertex_buffer = nullptr;
 	
 	Array<PerFrameQuadRenderObj> per_target_data;
 

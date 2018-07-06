@@ -19,13 +19,9 @@ VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D 
 
 	printf ( "Create Image of dimensions %dx%dx%d\n", extent.width, extent.height, extent.depth );
 
-	vk::MemoryRequirements memRequirements;
-	instance->m_device.getImageMemoryRequirements ( image, &memRequirements );
-	memory.memory = instance->allocateMemory ( memRequirements, needed | recommended );
-	memory.size = memRequirements.size;
-	if ( !memory.memory )
-		memory.memory = instance->allocateMemory ( memRequirements, needed );
-
+	vk::MemoryRequirements mem_req;
+	instance->m_device.getImageMemoryRequirements ( image, &mem_req );
+	memory = instance->allocate_gpu_memory(mem_req, needed, recommended);
 	vkBindImageMemory ( instance->m_device, image, memory.memory, 0 );
 }
 VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags ) :

@@ -103,7 +103,8 @@ void VulkanWindow::initialize() {
 	glfwSetWindowRefreshCallback ( window, [] ( GLFWwindow * window ) {
 		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			//@TODO implement???
+			//@Remove when rendering is delegated into a different thread
+			vulkan_window->render_frame();
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -150,16 +151,11 @@ void VulkanWindow::initialize() {
 				break;
 			}
 			printf ( "%d ", key );
-			if ( mods & GLFW_MOD_SHIFT )
-				printf ( "Shift " );
-			if ( mods & GLFW_MOD_CONTROL )
-				printf ( "Cntrl " );
-			if ( mods & GLFW_MOD_ALT )
-				printf ( "Alt " );
-			if ( mods & GLFW_MOD_SUPER )
-				printf ( "Super " );
+			if ( mods & GLFW_MOD_SHIFT )   printf ( "Shift " );
+			if ( mods & GLFW_MOD_CONTROL ) printf ( "Cntrl " );
+			if ( mods & GLFW_MOD_ALT )     printf ( "Alt " );
+			if ( mods & GLFW_MOD_SUPER )   printf ( "Super " );
 			printf ( "\n" );
-
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -413,7 +409,7 @@ void VulkanWindow::render_frame() {
 	data->sem_wait_needed.push_back ( data->render_ready_sem );
 	if ( ( bool ) m_visible ) {
 		if ( m_root_section ) {
-			m_root_section->render_frame();
+			m_root_section->render_frame(present_image_index);
 		} else {
 
 		}
@@ -527,7 +523,7 @@ void VulkanWindow::create_swapchain() {
 
 }
 void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
-	if(m_root_section)
+	if ( m_root_section )
 		m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), nullptr );
 	printf ( "Size of Framebuffer %dx%d\n", extend.x, extend.y );
 	printf ( "Minimized %d\n", m_minimized.value );
@@ -536,15 +532,15 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
 		create_swapchain();
 	printf ( "Actual Extent %dx%d\n", swap_chain_extend.x, swap_chain_extend.y );
 
-	v_render_target_wrapper.images.resize(frame_local_data.size());
-	for(size_t i = 0; i < frame_local_data.size(); i++){
+	v_render_target_wrapper.images.resize ( frame_local_data.size() );
+	for ( size_t i = 0; i < frame_local_data.size(); i++ ) {
 		v_render_target_wrapper.images[i].imageview = frame_local_data[i].present_image_view;
 	}
 	v_render_target_wrapper.color_format = frame_local_data[0].present_image->format;
 	v_render_target_wrapper.depth_stencil_format = depth_image->format;
 	v_render_target_wrapper.depthview = depth_image_view;
 	v_render_target_wrapper.targetcount = frame_local_data.size();
-	if(m_root_section)
+	if ( m_root_section )
 		m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 }
 void VulkanWindow::destroy_depth_image() {

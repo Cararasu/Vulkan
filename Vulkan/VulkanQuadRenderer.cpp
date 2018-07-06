@@ -5,8 +5,8 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 	if ( pipeline )
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 	destroy_framebuffers();
-	if(commandpool)
-		vulkan_device(v_instance).destroyCommandPool(commandpool);
+	if ( commandpool )
+		vulkan_device ( v_instance ).destroyCommandPool ( commandpool );
 	if ( renderpass )
 		vulkan_device ( v_instance ).destroyRenderPass ( renderpass );
 	if ( vertex_shader )
@@ -15,20 +15,24 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 		vulkan_device ( v_instance ).destroyShaderModule ( fragment_shader );
 	if ( pipeline_layout )
 		vulkan_device ( v_instance ).destroyPipelineLayout ( pipeline_layout );
+	if ( vertex_buffer ) {
+		delete vertex_buffer;
+		vertex_buffer = nullptr;
+	}
 	for ( auto dsl : descriptor_set_layouts ) {
 		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
 	}
 }
-void VulkanQuadRenderer::destroy_framebuffers(){
+void VulkanQuadRenderer::destroy_framebuffers() {
 	for ( auto& fb : per_target_data ) {
 		vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
 	}
 }
 
 RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {
-	
+	this->viewport = viewport;
 	//TODO move most of the things here to the resourcemanager
-	//@Refactor 
+	//@Refactor
 	if ( !pipeline_layout ) {
 		vk::DescriptorSetLayoutBinding bindings1[] = {
 			vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, nullptr ),
@@ -225,42 +229,60 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 
 	pipeline = vulkan_device ( v_instance ).createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 
-	printf("Update Quad-Renderer\n");
+	printf ( "Update Quad-Renderer\n" );
 }
 
-RendResult VulkanQuadRenderer::render_quads(u32 index) {
+RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
+
+	if ( !vertex_buffer ) {
+
+		vertex_buffer = new VulkanBuffer (
+		    v_instance, sizeof ( u32 ) * 100 * 4,
+		    vk::BufferUsageFlagBits::eVertexBuffer,
+		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+	}
+	if ( !commandpool ) {
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.pgc[0].graphics_queue_id );
+		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &commandpool );
+	}
+
 	PerFrameQuadRenderObj& per_frame = per_target_data[index];
-	if(per_frame.commandbuffer){
-		per_frame.commandbuffer.reset(vk::CommandBufferResetFlags());
-	}else{
-		per_frame.commandbuffer = v_instance->createCommandBuffer(commandpool, vk::CommandBufferLevel::ePrimary);
+	if ( per_frame.commandbuffer ) {
+		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
+	} else {
+		per_frame.commandbuffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
 	}
 	vk::CommandBufferBeginInfo begininfo = {
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
 	};
-	vk::RenderPassBeginInfo renderPassBeginInfo = {
-		renderpass, per_frame.framebuffer, vk::Rect2D(),
-		0, nullptr
+	vk::ClearValue clearColors[2] = {
+		vk::ClearValue ( ),
+		vk::ClearValue ( )
 	};
-	per_frame.commandbuffer.begin(begininfo);
-	per_frame.commandbuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-	
+	vk::RenderPassBeginInfo renderPassBeginInfo = {
+		renderpass, per_frame.framebuffer,
+		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
+		2, clearColors
+	};
+	per_frame.commandbuffer.begin ( begininfo );
+	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+
 	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
 	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
 	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
 	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
-	
+
 	//here be commands
-	
+
 	//1. simple textured quads
 	//2. simple bordered quads
 	//3. fonts
-	
+
 	per_frame.commandbuffer.endRenderPass();
 	per_frame.commandbuffer.end();
-	
-	
+
+
 
 
 }

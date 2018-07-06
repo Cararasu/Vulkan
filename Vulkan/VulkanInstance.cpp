@@ -155,23 +155,23 @@ VulkanInstance::VulkanInstance() {
 		for ( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ ) {
 			printf ( "Memory %d\n", i );
 			printf ( "\tHeap Index %d\n", memProperties.memoryTypes[i].heapIndex );
-			if ( memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eDeviceLocal )
+			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal )
 				printf ( "\tDevice Local\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostVisible )
+			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible )
 				printf ( "\tHost Visible\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostCoherent )
+			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent )
 				printf ( "\tHost Coherent\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eHostCached )
+			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostCached )
 				printf ( "\tHost Cached\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags | vk::MemoryPropertyFlagBits::eLazilyAllocated )
+			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eLazilyAllocated )
 				printf ( "\tLazily Allocated\n" );
 		}
 		for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
 			printf ( "Heap %d\n", i );
 			printf ( "\tSize %I64u\n", memProperties.memoryHeaps[i].size );
-			if ( memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eDeviceLocal )
+			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal )
 				printf ( "\tDevice Local\n" );
-			if ( memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eMultiInstanceKHX )
+			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eMultiInstanceKHX )
 				printf ( "\tMulti Instance Visible\n" );
 		}
 
@@ -209,9 +209,9 @@ VulkanInstance::VulkanInstance() {
 	std::sort ( devices.begin(), devices.end(), [] ( Device * lhs, Device * rhs ) {
 		return lhs->rating > rhs->rating;
 	} );
-	
-	v_resource_manager = new VulkanResourceManager(this);
-	
+
+	v_resource_manager = new VulkanResourceManager ( this );
+
 	initialized = true;
 }
 
@@ -220,21 +220,21 @@ VulkanInstance::~VulkanInstance() {
 		delete entry.second;
 	}
 	for ( auto entry : window_map ) {
-		destroy_window(entry.second);
+		destroy_window ( entry.second );
 	}
-	m_device.destroy(nullptr);
-	
+	m_device.destroy ( nullptr );
+
 	delete v_resource_manager;
 }
 bool VulkanInstance::initialize ( Device* device ) {
 	if ( !device )
 		device = devices[0];
-	vulkan_device = dynamic_cast<VulkanDevice*> ( device );
+	v_device = dynamic_cast<VulkanDevice*> ( device );
 	if ( !initialized && !vulkan_device )
 		return false;
 	VExtLayerStruct extLayers;
-	extLayers.availableExtensions = vulkan_device->availableExtensions;
-	extLayers.availableLayers = vulkan_device->availableLayers;
+	extLayers.availableExtensions = v_device->availableExtensions;
+	extLayers.availableLayers = v_device->availableLayers;
 	printf ( "Device Extensions available:\n" );
 	for ( vk::ExtensionProperties& prop : extLayers.availableExtensions ) {
 		printf ( "\t%s\n", prop.extensionName );
@@ -259,17 +259,17 @@ bool VulkanInstance::initialize ( Device* device ) {
 	u32 cId = -1;
 
 	u32 highestRate = 0;
-	for ( size_t j = 0; j < vulkan_device->queueFamilyProps.size(); ++j ) {
+	for ( size_t j = 0; j < v_device->queueFamilyProps.size(); ++j ) {
 		u32 rating = 0;
 
-		if ( vk::QueueFlags ( vulkan_device->queueFamilyProps[j].queueFlags ) == vk::QueueFlagBits::eTransfer && vulkan_device->queueFamilyProps[j].queueCount < 1 ) {
+		if ( vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags ) == vk::QueueFlagBits::eTransfer && v_device->queueFamilyProps[j].queueCount < 1 ) {
 			queues.dedicated_transfer_queue = true;
 			queues.transfer_queue_id = j;
 		}
-		bool present = glfwGetPhysicalDevicePresentationSupport ( m_instance, vulkan_device->physical_device, j );
-		bool graphics = ( bool ) vk::QueueFlags ( vulkan_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics );
-		bool compute = ( bool ) vk::QueueFlags ( vulkan_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute );
-		bool sparse = ( bool ) vk::QueueFlags ( vulkan_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding );
+		bool present = glfwGetPhysicalDevicePresentationSupport ( m_instance, v_device->physical_device, j );
+		bool graphics = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics );
+		bool compute = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute );
+		bool sparse = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding );
 		if ( present ) rating++;
 		if ( graphics ) rating++;
 		if ( compute ) rating++;
@@ -316,43 +316,43 @@ bool VulkanInstance::initialize ( Device* device ) {
 	bool separateTransferQueue = false;
 	if ( queues.dedicated_transfer_queue ) {
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), queues.transfer_queue_id, 1, &priority );
-		vulkan_device->queueFamilyProps[queues.transfer_queue_id].queueCount--;
+		v_device->queueFamilyProps[queues.transfer_queue_id].queueCount--;
 		currentIndex++;
 		separateTransferQueue = true;
 	}
 	if ( pgcId != ( u32 ) - 1 ) {
-		pgcCount = vulkan_device->queueFamilyProps[pgcId].queueCount;
+		pgcCount = v_device->queueFamilyProps[pgcId].queueCount;
 		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
 		assert ( pgcCount );
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[pgcId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[pgcId].queueCount -= pgcCount;
 		currentIndex++;
 	} else if ( pgId != ( u32 ) - 1 ) {
-		pgcCount = std::min<u32> ( vulkan_device->queueFamilyProps[pgId].queueCount, vulkan_device->queueFamilyProps[cId].queueCount );
+		pgcCount = std::min<u32> ( v_device->queueFamilyProps[pgId].queueCount, v_device->queueFamilyProps[cId].queueCount );
 		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
 		assert ( pgcCount );
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[pgId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[pgId].queueCount -= pgcCount;
 		currentIndex++;
 
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[cId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex++;
 	} else {
-		pgcCount = std::min<u32> ( vulkan_device->queueFamilyProps[pId].queueCount,
-		                           std::min<u32> ( vulkan_device->queueFamilyProps[gId].queueCount, vulkan_device->queueFamilyProps[cId].queueCount ) );
+		pgcCount = std::min<u32> ( v_device->queueFamilyProps[pId].queueCount,
+		                           std::min<u32> ( v_device->queueFamilyProps[gId].queueCount, v_device->queueFamilyProps[cId].queueCount ) );
 		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
 		assert ( pgcCount );
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[pId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[pId].queueCount -= pgcCount;
 		currentIndex++;
 
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[gId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[gId].queueCount -= pgcCount;
 		currentIndex++;
 
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority );
-		vulkan_device->queueFamilyProps[cId].queueCount -= pgcCount;
+		v_device->queueFamilyProps[cId].queueCount -= pgcCount;
 		currentIndex++;
 	}
 
@@ -368,7 +368,7 @@ bool VulkanInstance::initialize ( Device* device ) {
 	                                        extLayers.neededExtensions.size(), extLayers.neededExtensions.data(),
 	                                        &physicalDeviceFeatures );
 
-	V_CHECKCALL ( vulkan_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
+	V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
 
 	if ( queues.dedicated_transfer_queue ) {
 		m_device.getQueue ( queues.transfer_queue_id, 0, &queues.transfer_queue );
@@ -439,6 +439,7 @@ bool VulkanInstance::destroy_window ( Window* window ) {
 			return false;
 		}
 	}
+	return false;
 }
 
 WindowSection* VulkanInstance::create_window_section ( WindowSectionType type ) {
@@ -469,6 +470,32 @@ ResourceManager* VulkanInstance::resource_manager() {
 }
 
 
+GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+	GPUMemory memory;
+
+	memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed | recommended );
+	if ( memory.heap_index == std::numeric_limits<u32>::max() ) {
+		memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed );
+	}
+	if ( memory.heap_index != std::numeric_limits<u32>::max() ) {
+		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory.heap_index );
+		printf ( "Allocate %d Bytes\n", mem_req.size );
+
+		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory.memory ), printf ( "Failed To Create Image Memory\n" ) );
+
+		memory.size = mem_req.size;
+	} else {
+		printf ( "Cannot Allocate %d bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x\n",
+		         mem_req.size, mem_req.memoryTypeBits,
+		         static_cast<VkMemoryPropertyFlags> ( needed ), static_cast<VkMemoryPropertyFlags> ( recommended ) );
+	}
+	return memory;
+}
+RendResult VulkanInstance::free_gpu_memory ( GPUMemory memory ) {
+	if ( memory.memory )
+		vulkan_device ( this ).freeMemory ( memory.memory, nullptr );
+	return RendResult::eSuccess;
+}
 vk::ImageView VulkanInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
@@ -502,19 +529,6 @@ vk::ImageView VulkanInstance::createImageView2DArray ( vk::Image image, u32 mipB
 	return imageView;
 }
 
-vk::DeviceMemory VulkanInstance::allocateMemory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties ) {
-	u32 memoryType = findMemoryType ( memoryRequirement.memoryTypeBits, properties );
-	if ( memoryType == -1 )
-		return vk::DeviceMemory();
-
-	vk::MemoryAllocateInfo allocInfo ( memoryRequirement.size, memoryType );
-	printf ( "Allocate %d Bytes\n", memoryRequirement.size );
-
-	vk::DeviceMemory memory;
-	V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory ), printf ( "Failed To Create Image Memory\n" ) );
-	return memory;
-}
-
 void VulkanInstance::destroyCommandPool ( vk::CommandPool commandPool ) {
 	vkDestroyCommandPool ( m_device, commandPool, nullptr );
 }
@@ -538,8 +552,13 @@ void VulkanInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory,
 
 u32 VulkanInstance::findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
-	vulkan_device->physical_device.getMemoryProperties ( &memProperties );
+	v_device->physical_device.getMemoryProperties ( &memProperties );
 
+	for ( u32 i = 0; i < memProperties.memoryTypeCount; i++ ) {
+		if ( ( typeFilter & ( 1 << i ) ) && ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties ) {
+			return i;
+		}
+	}
 	for ( u32 i = 0; i < memProperties.memoryTypeCount; i++ ) {
 		if ( ( typeFilter & ( 1 << i ) ) && ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties ) {
 			return i;
@@ -551,7 +570,7 @@ u32 VulkanInstance::findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags pro
 vk::Format VulkanInstance::findSupportedFormat ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
 	for ( vk::Format format : candidates ) {
 		vk::FormatProperties props;
-		vulkan_device->physical_device.getFormatProperties ( format, &props );
+		v_device->physical_device.getFormatProperties ( format, &props );
 		if ( tiling == vk::ImageTiling::eLinear && ( props.linearTilingFeatures & features ) == features ) {
 			return format;
 		} else if ( tiling == vk::ImageTiling::eOptimal && ( props.optimalTilingFeatures & features ) == features ) {

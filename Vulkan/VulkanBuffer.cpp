@@ -12,19 +12,14 @@ VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::
 
 	printf ( "Create Buffer of size %d\n", size );
 
-	vk::MemoryRequirements memRequirements;
-	device.getBufferMemoryRequirements ( buffer, &memRequirements );
-	memory.memory = v_instance->allocateMemory ( memRequirements, needed | recommended );
-	memory.size = memRequirements.size;
-	if ( !memory.memory )
-		memory.memory = v_instance->allocateMemory ( memRequirements, needed );
-
+	vk::MemoryRequirements mem_req;
+	device.getBufferMemoryRequirements ( buffer, &mem_req );
+	memory = v_instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	device.bindBufferMemory ( buffer, memory.memory, 0 );
 }
 void VulkanBuffer::destroy() {
-	//instance->destroyBuffer (buffer, memory.memory);
 	vulkan_device ( v_instance ).destroyBuffer ( buffer, nullptr );
-	vulkan_device ( v_instance ).freeMemory ( memory.memory, nullptr );
+	v_instance->free_gpu_memory ( memory );
 }
 VulkanBuffer::~VulkanBuffer() {
 	destroy();

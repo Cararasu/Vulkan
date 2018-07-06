@@ -67,7 +67,7 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 	UIVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eUI, instance ) {}
 	virtual ~UIVulkanWindowSection() {}
 
-	virtual void render_frame();
+	virtual void render_frame(u32 index);
 	virtual void set_root_node ( UINode* node ) {}
 	virtual void set_stack_size ( uint32_t size ) {}
 	virtual void set_layer ( u32 layer, WindowSection* section ) {}
@@ -82,7 +82,7 @@ struct WorldVulkanWindowSection : public VulkanWindowSection {
 	WorldVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eWorld, instance ) {}
 	virtual ~WorldVulkanWindowSection() {}
 
-	virtual void render_frame();
+	virtual void render_frame(u32 index);
 	virtual void set_root_node ( UINode* node ) {}
 	virtual void set_stack_size ( uint32_t size ) {}
 	virtual void set_layer ( u32 layer, WindowSection* section ) {}
