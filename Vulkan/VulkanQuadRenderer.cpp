@@ -5,8 +5,10 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 	if ( pipeline )
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 	destroy_framebuffers();
-	if ( commandpool )
-		vulkan_device ( v_instance ).destroyCommandPool ( commandpool );
+	if ( g_commandpool )
+		vulkan_device ( v_instance ).destroyCommandPool ( g_commandpool );
+	if ( t_commandpool )
+		vulkan_device ( v_instance ).destroyCommandPool ( t_commandpool );
 	if ( renderpass )
 		vulkan_device ( v_instance ).destroyRenderPass ( renderpass );
 	if ( vertex_shader )
@@ -18,6 +20,10 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 	if ( vertex_buffer ) {
 		delete vertex_buffer;
 		vertex_buffer = nullptr;
+	}
+	if ( staging_buffer ) {
+		delete staging_buffer;
+		staging_buffer = nullptr;
 	}
 	for ( auto dsl : descriptor_set_layouts ) {
 		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
@@ -235,22 +241,32 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
 
 	if ( !vertex_buffer ) {
-
 		vertex_buffer = new VulkanBuffer (
 		    v_instance, sizeof ( u32 ) * 100 * 4,
-		    vk::BufferUsageFlagBits::eVertexBuffer,
+		    vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 	}
-	if ( !commandpool ) {
+	if ( !staging_buffer ) {
+		staging_buffer = new VulkanBuffer (
+		    v_instance, sizeof ( u32 ) * 100 * 4,
+		    vk::BufferUsageFlagBits::eTransferSrc,
+		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+		staging_buffer->map_mem();
+	}
+	if ( !g_commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.pgc[0].graphics_queue_id );
-		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &commandpool );
+		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &g_commandpool );
+	}
+	if ( !t_commandpool && v_instance->queues.dedicated_transfer_queue ) {
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.transfer_queue_id );
+		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &t_commandpool );
 	}
 
 	PerFrameQuadRenderObj& per_frame = per_target_data[index];
 	if ( per_frame.commandbuffer ) {
 		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
 	} else {
-		per_frame.commandbuffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
+		per_frame.commandbuffer = v_instance->createCommandBuffer ( g_commandpool, vk::CommandBufferLevel::ePrimary );
 	}
 	vk::CommandBufferBeginInfo begininfo = {
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
@@ -281,8 +297,13 @@ RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
 
 	per_frame.commandbuffer.endRenderPass();
 	per_frame.commandbuffer.end();
-
-
-
-
+	
+	
+	vk::SubmitInfo submitInfo (
+	    0, nullptr,//waitSemaphores
+	    nullptr,//pWaitDstStageMask
+	    1, &per_frame.commandbuffer,
+	    0, nullptr//signalsemaphores
+	);
+	v_instance->queues.pgc[index].graphics_queue.submit ( {submitInfo}, vk::Fence() );
 }

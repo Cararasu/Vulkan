@@ -6,7 +6,7 @@
 struct VulkanWindow;
 struct VulkanInstance;
 
-struct ImageRenderTarget{
+struct ImageRenderTarget {
 	vk::ImageView imageview;
 };
 
@@ -48,11 +48,11 @@ struct VulkanWindowSection : public WindowSection {
 	virtual void resize ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
 
 	void v_update_viewport ( Viewport<f32> viewport, VulkanRenderTarget* render_targets ) {
-		if(render_targets){
+		if ( render_targets ) {
 			m_viewport = viewport;
 			printf ( "Viewport changed %g x %g | %g x %g | %g - %g\n", viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max );
 			resize ( viewport, render_targets );
-		}else{
+		} else {
 			//reset all stuff
 		}
 	}
@@ -67,13 +67,13 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 	UIVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eUI, instance ) {}
 	virtual ~UIVulkanWindowSection() {}
 
-	virtual void render_frame(u32 index);
+	virtual void render_frame ( u32 index );
 	virtual void set_root_node ( UINode* node ) {}
 	virtual void set_stack_size ( uint32_t size ) {}
 	virtual void set_layer ( u32 layer, WindowSection* section ) {}
 	virtual void set_world() {}
 
-	virtual void resize(Viewport<f32> viewport, VulkanRenderTarget* target_wrapper);
+	virtual void resize ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 };
 struct WorldVulkanWindowSection : public VulkanWindowSection {
 	//here an optimized quad renderer
@@ -82,11 +82,11 @@ struct WorldVulkanWindowSection : public VulkanWindowSection {
 	WorldVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eWorld, instance ) {}
 	virtual ~WorldVulkanWindowSection() {}
 
-	virtual void render_frame(u32 index);
+	virtual void render_frame ( u32 index );
 	virtual void set_root_node ( UINode* node ) {}
 	virtual void set_stack_size ( uint32_t size ) {}
 	virtual void set_layer ( u32 layer, WindowSection* section ) {}
 	virtual void set_world ( World* world ) {}
 
-	virtual void resize(Viewport<f32> viewport, VulkanRenderTarget* target_wrapper) {}
+	virtual void resize ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {}
 };

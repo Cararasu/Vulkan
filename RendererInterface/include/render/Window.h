@@ -8,8 +8,8 @@ struct UINode;
 
 struct RenderTarget {
 	const Extent2D<u32> extent;
-	
-	virtual void dummy(){}
+
+	virtual void dummy() {}
 };
 
 enum class WindowSectionType {
@@ -26,12 +26,12 @@ struct WindowSection {
 
 	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* targetWrapper ) = 0;
 
-	virtual void render_frame(u32 index) = 0;
+	virtual void render_frame ( u32 index ) = 0;
 
 	virtual void set_root_node ( UINode* node ) = 0;
 	virtual void set_stack_size ( uint32_t size ) = 0;
 	virtual void set_layer ( u32 layer, WindowSection* section ) = 0;
-	virtual void set_world(World* world) {}
+	virtual void set_world ( World* world ) {}
 };
 
 
@@ -41,7 +41,7 @@ enum class CursorMode {
 	eCatch,
 };
 
-enum class WindowAlphaBlend{
+enum class WindowAlphaBlend {
 	eOpaque,
 	eBlend
 };
@@ -62,7 +62,7 @@ protected:
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
 
 public:
-	virtual ~Window(){}
+	virtual ~Window() {}
 
 	const ChangeableValue<Offset2D<s32>>* position() {
 		return &m_position;
@@ -105,7 +105,7 @@ public:
 	virtual WindowSection* root_section () = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
-	
+
 	//u32 max_buffer_images() = 0;
 	//ChangeableValue<u32> buffered_image_count;
 

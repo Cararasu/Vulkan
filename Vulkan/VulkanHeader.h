@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <functional>
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>
 
@@ -44,3 +45,6 @@ struct GPUMemory {
 	vk::MemoryPropertyFlags property_flags;
 };
 
+struct VulkanInstance;
+
+RendResult submit_command( std::function<RendResult ( vk::CommandBuffer ) > do_command, VulkanInstance* instance, vk::CommandPool commandPool, vk::Queue submitQueue );

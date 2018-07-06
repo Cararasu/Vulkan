@@ -19,9 +19,12 @@ struct VulkanQuadRenderer {
 	vk::ShaderModule fragment_shader;
 	vk::RenderPass renderpass;
 	vk::Pipeline pipeline;
-	vk::CommandPool commandpool;
+	
+	vk::CommandPool g_commandpool;
+	vk::CommandPool t_commandpool;
 	
 	VulkanBuffer* vertex_buffer = nullptr;
+	VulkanBuffer* staging_buffer = nullptr;
 	
 	Array<PerFrameQuadRenderObj> per_target_data;
 

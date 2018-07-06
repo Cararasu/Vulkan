@@ -213,23 +213,6 @@ void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Ra
 	}
 }
 
-void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandPool commandPool, vk::Queue submitQueue ) {
-
-	vk::CommandBuffer commandBuffer = instance->createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
-
-	commandBuffer.begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
-
-	transition_image_layout ( newLayout, mip_range, array_range, commandBuffer );
-
-	commandBuffer.end();
-	vk::SubmitInfo submitInfo (
-	    0, nullptr,//waitSemaphores
-	    nullptr,//pWaitDstStageMask
-	    1, &commandBuffer,
-	    0, nullptr//signalsemaphores
-	);
-	submitQueue.submit ( {submitInfo}, vk::Fence() );
-}
 void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
@@ -250,23 +233,5 @@ void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> arr
 		commandBuffer.blitImage ( image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, {imageBlit}, vk::Filter::eLinear );
 	}
 	transition_image_layout ( targetLayout, mip_range, array_range, commandBuffer );
-
-}
-void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandPool commandPool, vk::Queue submitQueue ) {
-
-	vk::CommandBuffer commandBuffer = instance->createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
-
-	commandBuffer.begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
-
-	generate_mipmaps ( mip_range, array_range, targetLayout, commandBuffer );
-
-	commandBuffer.end();
-	vk::SubmitInfo submitInfo (
-	    0, nullptr,//waitSemaphores
-	    nullptr,//pWaitDstStageMask
-	    1, &commandBuffer,
-	    0, nullptr//signalsemaphores
-	);
-	submitQueue.submit ( {submitInfo}, vk::Fence() );
 
 }

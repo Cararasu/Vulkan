@@ -7,7 +7,7 @@ VulkanWindowSection::VulkanWindowSection ( WindowSectionType type, VulkanInstanc
 VulkanWindowSection::~VulkanWindowSection() {
 	delete v_quad_renderer;
 }
-void UIVulkanWindowSection::render_frame(u32 index) {
+void UIVulkanWindowSection::render_frame( u32 index ) {
 	//printf ( "Render-UI Section\n" );
 	v_quad_renderer->render_quads(index);
 }

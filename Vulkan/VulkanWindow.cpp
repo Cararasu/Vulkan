@@ -407,9 +407,11 @@ void VulkanWindow::render_frame() {
 	}
 
 	data->sem_wait_needed.push_back ( data->render_ready_sem );
+	Array<vk::Semaphore> sems = {data->render_ready_sem};
 	if ( ( bool ) m_visible ) {
 		if ( m_root_section ) {
-			m_root_section->render_frame(present_image_index);
+			//somehow pass semaphores through here
+			m_root_section->render_frame ( present_image_index );
 		} else {
 
 		}
