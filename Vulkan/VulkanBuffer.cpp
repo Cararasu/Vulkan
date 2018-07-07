@@ -26,16 +26,17 @@ RendResult VulkanBuffer::map_mem() {
 	}
 	if ( mapped_ptr )
 		return RendResult::eSuccess;
-	vulkan_device(v_instance).mapMemory(memory.memory, (vk::DeviceSize) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr);
+	vulkan_device ( v_instance ).mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
+	return mapped_ptr ? RendResult::eSuccess : RendResult::eFail;
 }
 RendResult VulkanBuffer::unmap_mem() {
-	vulkan_device(v_instance).unmapMemory(memory.memory);
+	vulkan_device ( v_instance ).unmapMemory ( memory.memory );
 }
-RendResult VulkanBuffer::transfer_to(VulkanBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer){
-	
+RendResult VulkanBuffer::transfer_to ( VulkanBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer ) {
+	commandBuffer.copyBuffer ( buffer, dst->buffer, {vk::BufferCopy ( offset, offset, size ) } );
 }
 void VulkanBuffer::destroy() {
-	if(mapped_ptr)
+	if ( mapped_ptr )
 		unmap_mem();
 	vulkan_device ( v_instance ).destroyBuffer ( buffer, nullptr );
 	v_instance->free_gpu_memory ( memory );

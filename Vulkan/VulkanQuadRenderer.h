@@ -24,11 +24,12 @@ struct VulkanQuadRenderer {
 	vk::CommandPool t_commandpool;
 	
 	VulkanBuffer* vertex_buffer = nullptr;
-	VulkanBuffer* staging_buffer = nullptr;
+	VulkanBuffer* staging_vertex_buffer = nullptr;
 	
 	Array<PerFrameQuadRenderObj> per_target_data;
 
 	VulkanQuadRenderer ( VulkanInstance* instance );
+	VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer );
 	~VulkanQuadRenderer();
 	
 	void reset(u32 index);

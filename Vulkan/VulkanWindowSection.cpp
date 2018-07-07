@@ -43,6 +43,6 @@ void UIVulkanWindowSection::reset ( ) {
 			delete quadRend;
 			return RendResult::eSuccess;
 		});
-		v_quad_renderer = nullptr;
+		v_quad_renderer = new VulkanQuadRenderer(v_quad_renderer);
 	}
 }

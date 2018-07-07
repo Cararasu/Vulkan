@@ -474,8 +474,10 @@ GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, 
 	GPUMemory memory;
 
 	memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed | recommended );
+	memory.property_flags = needed | recommended;
 	if ( memory.heap_index == std::numeric_limits<u32>::max() ) {
 		memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed );
+		memory.property_flags = needed;
 	}
 	if ( memory.heap_index != std::numeric_limits<u32>::max() ) {
 		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory.heap_index );

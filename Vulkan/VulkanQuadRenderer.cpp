@@ -2,7 +2,19 @@
 
 
 VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
+
+}
+VulkanQuadRenderer::VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer ) : v_instance ( old_quad_renderer->v_instance ){
 	
+	vertex_shader = old_quad_renderer->vertex_shader;
+	old_quad_renderer->vertex_shader = nullptr;
+	fragment_shader = old_quad_renderer->fragment_shader;
+	old_quad_renderer->fragment_shader = nullptr;
+	
+	vertex_buffer = old_quad_renderer->vertex_buffer;
+	old_quad_renderer->vertex_buffer = nullptr;
+	staging_vertex_buffer = old_quad_renderer->staging_vertex_buffer;
+	old_quad_renderer->staging_vertex_buffer = nullptr;
 }
 VulkanQuadRenderer::~VulkanQuadRenderer() {
 	if ( pipeline )
@@ -24,9 +36,9 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 		delete vertex_buffer;
 		vertex_buffer = nullptr;
 	}
-	if ( staging_buffer ) {
-		delete staging_buffer;
-		staging_buffer = nullptr;
+	if ( staging_vertex_buffer ) {
+		delete staging_vertex_buffer;
+		staging_vertex_buffer = nullptr;
 	}
 	for ( auto dsl : descriptor_set_layouts ) {
 		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
@@ -138,23 +150,18 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	}
 
 
-	std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
-		vk::VertexInputBindingDescription ( 0, sizeof ( Vertex ), vk::VertexInputRate::eVertex ),
-		vk::VertexInputBindingDescription ( 1, sizeof ( InstanceObj ), vk::VertexInputRate::eInstance )
+	std::array<vk::VertexInputBindingDescription, 1> vertexInputBindings = {
+		vk::VertexInputBindingDescription ( 0, sizeof ( glm::vec3 ) * 2, vk::VertexInputRate::eVertex )
 	};
 
-	std::array<vk::VertexInputAttributeDescription, 7> vertexInputAttributes = {
-		vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32B32Sfloat, offsetof ( Vertex, pos ) ),
-		vk::VertexInputAttributeDescription ( 1, 0, vk::Format::eR32G32B32Sfloat, offsetof ( Vertex, uv ) ),
-		vk::VertexInputAttributeDescription ( 2, 0, vk::Format::eR32G32B32Sfloat, offsetof ( Vertex, normal ) ),
-
-		vk::VertexInputAttributeDescription ( 4, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) ),
-		vk::VertexInputAttributeDescription ( 5, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) ),
-		vk::VertexInputAttributeDescription ( 6, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) * 2 ),
-		vk::VertexInputAttributeDescription ( 7, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( InstanceObj, m2wMatrix ) + sizeof ( glm::vec4 ) * 3 )
+	std::array<vk::VertexInputAttributeDescription, 2> vertexInputAttributes = {
+		vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32B32Sfloat, 0 ),
+		vk::VertexInputAttributeDescription ( 1, 0, vk::Format::eR32G32B32Sfloat, sizeof ( glm::vec3 ) )
 	};
 
-	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(), vertexInputBindings.size(), vertexInputBindings.data(), vertexInputAttributes.size(), vertexInputAttributes.data() );
+	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
+	        vertexInputBindings.size(), vertexInputBindings.data(),
+	        vertexInputAttributes.size(), vertexInputAttributes.data() );
 
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
 
@@ -242,19 +249,20 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 }
 
 vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
-
+	const static u32 vertexbuffer_size = sizeof ( glm::vec3 ) * 2 * 100 * 4;
 	if ( !vertex_buffer ) {
 		vertex_buffer = new VulkanBuffer (
-		    v_instance, sizeof ( u32 ) * 100 * 4,
+		    v_instance, vertexbuffer_size,
 		    vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 	}
-	if ( !staging_buffer ) {
-		staging_buffer = new VulkanBuffer (
-		    v_instance, sizeof ( u32 ) * 100 * 4,
+	if ( !staging_vertex_buffer ) {
+		staging_vertex_buffer = new VulkanBuffer (
+		    v_instance, vertexbuffer_size,
 		    vk::BufferUsageFlagBits::eTransferSrc,
-		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
-		staging_buffer->map_mem();
+		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+		staging_vertex_buffer->map_mem();
+		memset ( staging_vertex_buffer->mapped_ptr, 0, vertexbuffer_size );
 	}
 	if ( !g_commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->vulkan_pgc_queue ( 0 )->graphics_queue_id );
@@ -284,6 +292,9 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		2, clearColors
 	};
 	per_frame.commandbuffer.begin ( begininfo );
+
+	staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.commandbuffer );
+
 	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
 	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
