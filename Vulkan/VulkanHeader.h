@@ -44,7 +44,3 @@ struct GPUMemory {
 	u32 heap_index;
 	vk::MemoryPropertyFlags property_flags;
 };
-
-struct VulkanInstance;
-
-RendResult submit_command( std::function<RendResult ( vk::CommandBuffer ) > do_command, VulkanInstance* instance, vk::CommandPool commandPool, vk::Queue submitQueue );

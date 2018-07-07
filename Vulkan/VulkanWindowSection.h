@@ -21,14 +21,14 @@ struct VulkanRenderTarget : public RenderTarget {
 struct VulkanQuadRenderer;
 
 struct VulkanWindowSection : public WindowSection {
-	const VulkanInstance* v_instance;
+	VulkanInstance* const v_instance;
 	Viewport<f32> m_viewport;
 
 	VulkanWindow* m_parent_window;
 	VulkanWindowSection* m_parent;
 
 	VulkanQuadRenderer* v_quad_renderer;
-
+	vk::Semaphore finish_sem;
 
 	VulkanWindowSection ( WindowSectionType type, VulkanInstance* instance );
 	virtual ~VulkanWindowSection();
@@ -46,6 +46,7 @@ struct VulkanWindowSection : public WindowSection {
 	}
 
 	virtual void resize ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
+	virtual void reset ( ) = 0;
 
 	void v_update_viewport ( Viewport<f32> viewport, VulkanRenderTarget* render_targets ) {
 		if ( render_targets ) {
@@ -53,7 +54,7 @@ struct VulkanWindowSection : public WindowSection {
 			printf ( "Viewport changed %g x %g | %g x %g | %g - %g\n", viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max );
 			resize ( viewport, render_targets );
 		} else {
-			//reset all stuff
+			reset();
 		}
 	}
 	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* target_wrapper ) {
@@ -74,6 +75,7 @@ struct UIVulkanWindowSection : public VulkanWindowSection {
 	virtual void set_world() {}
 
 	virtual void resize ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
+	virtual void reset ( );
 };
 struct WorldVulkanWindowSection : public VulkanWindowSection {
 	//here an optimized quad renderer

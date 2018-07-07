@@ -1,10 +1,12 @@
 #include "VulkanQuadRenderer.h"
 
 
+VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
+	
+}
 VulkanQuadRenderer::~VulkanQuadRenderer() {
 	if ( pipeline )
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
-	destroy_framebuffers();
 	if ( g_commandpool )
 		vulkan_device ( v_instance ).destroyCommandPool ( g_commandpool );
 	if ( t_commandpool )
@@ -17,6 +19,7 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 		vulkan_device ( v_instance ).destroyShaderModule ( fragment_shader );
 	if ( pipeline_layout )
 		vulkan_device ( v_instance ).destroyPipelineLayout ( pipeline_layout );
+	destroy_framebuffers();
 	if ( vertex_buffer ) {
 		delete vertex_buffer;
 		vertex_buffer = nullptr;
@@ -82,20 +85,20 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            target_wrapper->color_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
-			                            vk::ImageLayout::eUndefined,//initialLaylout
-			                            vk::ImageLayout::ePresentSrcKHR//finalLayout
+			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            target_wrapper->depth_stencil_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
-			                            vk::ImageLayout::eUndefined,//initialLaylout
+			                            vk::ImageLayout::eDepthStencilAttachmentOptimal,//initialLaylout
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal//finalLayout
 			                          )
 		};
@@ -238,7 +241,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	printf ( "Update Quad-Renderer\n" );
 }
 
-RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
+vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 
 	if ( !vertex_buffer ) {
 		vertex_buffer = new VulkanBuffer (
@@ -254,7 +257,7 @@ RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
 		staging_buffer->map_mem();
 	}
 	if ( !g_commandpool ) {
-		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.pgc[0].graphics_queue_id );
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->vulkan_pgc_queue ( 0 )->graphics_queue_id );
 		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &g_commandpool );
 	}
 	if ( !t_commandpool && v_instance->queues.dedicated_transfer_queue ) {
@@ -297,13 +300,6 @@ RendResult VulkanQuadRenderer::render_quads ( u32 index ) {
 
 	per_frame.commandbuffer.endRenderPass();
 	per_frame.commandbuffer.end();
-	
-	
-	vk::SubmitInfo submitInfo (
-	    0, nullptr,//waitSemaphores
-	    nullptr,//pWaitDstStageMask
-	    1, &per_frame.commandbuffer,
-	    0, nullptr//signalsemaphores
-	);
-	v_instance->queues.pgc[index].graphics_queue.submit ( {submitInfo}, vk::Fence() );
+
+	return per_frame.commandbuffer;
 }

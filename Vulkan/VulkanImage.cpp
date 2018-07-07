@@ -43,7 +43,7 @@ void VulkanImageWrapper::destroy() {
 vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
-
+	
 	switch ( oldLayout ) {
 	case vk::ImageLayout::eUndefined:
 		srcAccessMask = vk::AccessFlags();
@@ -209,7 +209,7 @@ void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Ra
 	);
 
 	for ( size_t i = array_range.min; i < array_range.max; ++i ) {
-		layouts[array_range.min + i] = newLayout;
+		layouts[i] = newLayout;
 	}
 }
 

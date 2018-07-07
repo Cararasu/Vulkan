@@ -279,11 +279,14 @@ int main (int argc, char **argv) {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(20ms);
 		newinstance->process_events();
+		
 	}while(newinstance->is_window_open());
-	
-	delete window->root_section();
+	WindowSection* section = window->root_section();
+	window->root_section(nullptr);
 	
 	window->destroy();
+	
+	delete section;
 	
 	destroy_instance(newinstance);
 	return 0;

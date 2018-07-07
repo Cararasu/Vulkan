@@ -7,9 +7,12 @@
 #include <GLFW/glfw3.h>
 #include "VGlobal.h"
 
+#include <functional>
+
 #include "VulkanWindowSection.h"
 
 #define MAX_PRESENTIMAGE_COUNT (3)
+
 
 struct FrameLocalData {
 	bool initialized = false;
@@ -17,14 +20,13 @@ struct FrameLocalData {
 	vk::Semaphore render_ready_sem;
 	vk::Semaphore present_ready_sem;
 
-	Array<vk::Semaphore> generated_sems;
-	Array<vk::Semaphore> sem_wait_needed;
-
 	//recreate for every resize
 	VulkanImageWrapper* present_image;
 	vk::ImageView present_image_view;
 	vk::CommandBuffer clear_command_buffer;
 	vk::CommandBuffer present_command_buffer;
+	
+	Array<std::function<RendResult(u32)>> deferred_calls;
 
 	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
@@ -50,6 +52,7 @@ struct VulkanWindow : public Window {
 	u32 queue_index = 0;
 	u32 present_image_index = 0;
 	Array<FrameLocalData> frame_local_data;
+	Array<vk::Semaphore> active_sems;
 
 	vk::CommandPool window_graphics_command_pool;
 
@@ -74,6 +77,10 @@ struct VulkanWindow : public Window {
 		if ( !frame_local_data[present_image_index].graphics_command_pool )
 			frame_local_data[present_image_index].graphics_command_pool = vulkan_device ( m_instance ).createCommandPool ( vk::CommandPoolCreateInfo() );
 		return frame_local_data[present_image_index].graphics_command_pool;
+	}
+	
+	inline FrameLocalData* current_framelocal_data(){
+		return &frame_local_data[present_image_index];
 	}
 
 	void initialize();

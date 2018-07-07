@@ -28,11 +28,12 @@ struct VulkanQuadRenderer {
 	
 	Array<PerFrameQuadRenderObj> per_target_data;
 
-	VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {}
+	VulkanQuadRenderer ( VulkanInstance* instance );
 	~VulkanQuadRenderer();
-
+	
+	void reset(u32 index);
 	void destroy_framebuffers();
 	
 	RendResult update_extend(Viewport<f32> viewport, VulkanRenderTarget* target_wrapper);
-	RendResult render_quads(u32 index);
+	vk::CommandBuffer render_quads(u32 index);
 };

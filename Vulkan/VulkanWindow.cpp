@@ -17,11 +17,12 @@ RendResult VulkanWindow::root_section ( WindowSection* section ) {
 			return RendResult::eWrongInstance;
 		if ( m_root_section ) {
 			m_root_section->unregister_parent();
-			RendResult res;
-			if ( ( res = root_section->register_parent ( this, nullptr ) ) != RendResult::eSuccess ) {
-				return res;
-			}
 			m_root_section->v_update_viewport ( Viewport<f32> (), nullptr );
+			m_root_section->register_parent ( nullptr, nullptr );
+		}
+		RendResult res;
+		if ( ( res = root_section->register_parent ( this, nullptr ) ) != RendResult::eSuccess ) {
+			return res;
 		}
 		m_root_section = root_section;
 		if ( swap_chain ) {
@@ -104,6 +105,7 @@ void VulkanWindow::initialize() {
 		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
+			printf ( "Refresh\n" );
 			vulkan_window->render_frame();
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
@@ -369,47 +371,47 @@ void VulkanWindow::create_command_buffers() {
 void VulkanWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
+	printf ( "--------------- FrameBoundary ---------------\n" );
 
 	vulkan_device ( m_instance ).acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-	FrameLocalData* data = &frame_local_data[present_image_index];
+	printf ( "PresetImageId: %d\n", present_image_index );
+	active_sems.push_back ( image_available_guard_sem );
+	FrameLocalData* data = current_framelocal_data();
 	//reset for frame
 	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
+
+	for ( auto callable : data->deferred_calls) {
+		callable ( present_image_index );
+	}
+	data->deferred_calls.clear();
+
 	vulkan_device ( m_instance ).resetFences ( {data->image_presented_fence} );
 
 	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue ( queue_index );
 
 	data->initialized = true;
 
-	data->sem_wait_needed.clear();
 
-	//clear image or do other stuff
-	//data->clear_command_buffer
-
-	//draw child stuff
-
-	//present image
 
 	vk::SwapchainKHR swapChains[] = {swap_chain};
 
 
 	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eBottomOfPipe );
 
-	{
-		vk::SubmitInfo submitInfo;
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &image_available_guard_sem;
-		submitInfo.pWaitDstStageMask = &waitDstStageMask;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &data->render_ready_sem;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &data->clear_command_buffer;
-		pgc_queue_wrapper->graphics_queue.submit ( {submitInfo}, vk::Fence() );
-	}
+	//clear image or do other stuff
+	pgc_queue_wrapper->graphics_queue.submit ( {
+		vk::SubmitInfo (
+		    active_sems.size(), active_sems.data(), &waitDstStageMask,//waitSem
+		    1, &data->clear_command_buffer,//commandbuffers
+		    1, &data->render_ready_sem//signalSem
+		)
+	}, vk::Fence() );
+	active_sems.clear();
+	active_sems.push_back ( data->render_ready_sem );
 
-	data->sem_wait_needed.push_back ( data->render_ready_sem );
-	Array<vk::Semaphore> sems = {data->render_ready_sem};
-	if ( ( bool ) m_visible ) {
-		if ( m_root_section ) {
+	//draw child stuff
+	if ( m_root_section ) {
+		if ( ( bool ) m_visible ) {
 			//somehow pass semaphores through here
 			m_root_section->render_frame ( present_image_index );
 		} else {
@@ -417,24 +419,28 @@ void VulkanWindow::render_frame() {
 		}
 	}
 
-	{
-		vk::SubmitInfo submitInfo;
-		submitInfo.waitSemaphoreCount = data->sem_wait_needed.size();
-		submitInfo.pWaitSemaphores = data->sem_wait_needed.data();
-		submitInfo.pWaitDstStageMask = &waitDstStageMask;
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &data->present_ready_sem;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &data->present_command_buffer;
-		pgc_queue_wrapper->graphics_queue.submit ( {submitInfo}, data->image_presented_fence );
-	}
+	pgc_queue_wrapper->graphics_queue.submit ( {
+		vk::SubmitInfo (
+		    active_sems.size(), active_sems.data(), &waitDstStageMask,//waitSem
+		    1, &data->present_command_buffer,//commandbuffers
+		    1, &data->present_ready_sem//signalSem
+		)
+	}, data->image_presented_fence );
+	active_sems.clear();
+	active_sems.push_back ( data->present_ready_sem );
 
 	if ( !pgc_queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
 	}
-
-	vk::PresentInfoKHR presentInfo ( 1, &data->present_ready_sem, 1, swapChains, &present_image_index, nullptr );
+	//present image
+	vk::Result results;
+	vk::PresentInfoKHR presentInfo (
+	    active_sems.size(), active_sems.data(),
+	    1, swapChains,
+	    &present_image_index, &results );
 	pgc_queue_wrapper->present_queue.presentKHR ( &presentInfo );
+	active_sems.clear();
+	printf ( "---------------   EndFrame    ---------------\n" );
 }
 void VulkanWindow::create_swapchain() {
 
@@ -563,9 +569,7 @@ void VulkanWindow::create_frame_local_data ( std::vector<vk::Image> swapChainIma
 
 		frame_local_data[i].image_presented_fence = vulkan_device ( m_instance ).createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
 		frame_local_data[i].present_ready_sem = create_semaphore ( m_instance );
-		frame_local_data[i].generated_sems.push_back ( frame_local_data[i].present_ready_sem );
 		frame_local_data[i].render_ready_sem = create_semaphore ( m_instance );
-		frame_local_data[i].generated_sems.push_back ( frame_local_data[i].render_ready_sem );
 
 		frame_local_data[i].present_image = new VulkanImageWrapper ( m_instance, swapChainImages[i], {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, present_swap_format.format, vk::ImageTiling::eOptimal,
 		        vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
@@ -577,18 +581,25 @@ void VulkanWindow::create_frame_local_data ( std::vector<vk::Image> swapChainIma
 void VulkanWindow::destroy_frame_local_data() {
 	printf ( "Wait For Queues to clear out\n" );
 	m_instance->m_device.waitIdle();
+	u32 index = 0;
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
 			//@TODO figure out why this freezes the Screen on Ubuntu/GNOME
 			//vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
 			vulkan_device ( m_instance ).destroyFence ( data.image_presented_fence );
 		}
-		for ( vk::Semaphore sem : data.generated_sems ) {
-			vulkan_device ( m_instance ).destroySemaphore ( sem );
+		for ( auto callable : data.deferred_calls) {
+			//maybe call it how many times it is needed
+			callable ( index );
 		}
+		data.deferred_calls.clear();
+
+		destroy_semaphore ( m_instance, data.present_ready_sem );
+		destroy_semaphore ( m_instance, data.render_ready_sem );
 		delete data.present_image;
 		if ( data.present_image_view )
 			vulkan_device ( m_instance ).destroyImageView ( data.present_image_view );
+		index++;
 	}
 	//@Debugging clear so we assert in case we access it in a state, that we should not
 	frame_local_data.clear();

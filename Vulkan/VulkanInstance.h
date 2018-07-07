@@ -120,11 +120,19 @@ inline vk::PhysicalDevice vulkan_physical_device ( const VulkanInstance* instanc
 inline vk::Semaphore create_semaphore ( VulkanInstance* instance ) {
 	return instance->m_device.createSemaphore ( vk::SemaphoreCreateInfo(), nullptr );
 }
-inline RendResult destroy_semaphore ( VulkanInstance* instance, vk::Semaphore sem ) {
+inline RendResult destroy_semaphore ( const VulkanInstance* const instance, vk::Semaphore sem ) {
 	instance->m_device.destroySemaphore ( sem, nullptr );
 	return RendResult::eSuccess;
 }
 
 inline bool hasStencilComponent ( vk::Format format ) {
 	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
+}
+
+inline RendResult wrap_command ( std::function<RendResult ( vk::CommandBuffer ) > do_command, VulkanInstance* v_instance, vk::CommandPool commandpool, vk::CommandBuffer* cmdbuffer ) {
+	*cmdbuffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
+	cmdbuffer->begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
+	RendResult res = do_command ( *cmdbuffer );
+	cmdbuffer->end();
+	return res;
 }
