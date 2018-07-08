@@ -579,19 +579,14 @@ int main (int argc, char **argv) {
 			stagingOffset = g_thread_data.dispatcher.setup (stagingBuffer, stagingOffset, commandBuffer);
 
 			commandBuffer.pipelineBarrier (
-			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexInput),
+			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags () | vk::PipelineStageFlagBits::eVertexInput | vk::PipelineStageFlagBits::eVertexShader,
 			    vk::DependencyFlags(),
 			{}/*memoryBarrier*/, {
 				vk::BufferMemoryBarrier (
 				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
 				    instance->transfQId, instance->graphQId,
 				    g_thread_data.dispatcher.instanceBuffer->buffer, 0, g_thread_data.dispatcher.instanceBuffer->memory.size
-				)
-			}/*bufferBarrier*/, {}/*imageBarrier*/);
-			commandBuffer.pipelineBarrier (
-			    vk::PipelineStageFlags (vk::PipelineStageFlagBits::eTransfer), vk::PipelineStageFlags (vk::PipelineStageFlagBits::eVertexShader),
-			    vk::DependencyFlags(),
-			{}/*memoryBarrier*/, {
+				),
 				vk::BufferMemoryBarrier (
 				    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead,
 				    instance->transfQId, instance->graphQId,

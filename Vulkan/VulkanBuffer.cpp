@@ -31,6 +31,7 @@ RendResult VulkanBuffer::map_mem() {
 }
 RendResult VulkanBuffer::unmap_mem() {
 	vulkan_device ( v_instance ).unmapMemory ( memory.memory );
+	mapped_ptr = nullptr;
 }
 RendResult VulkanBuffer::transfer_to ( VulkanBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer ) {
 	commandBuffer.copyBuffer ( buffer, dst->buffer, {vk::BufferCopy ( offset, offset, size ) } );

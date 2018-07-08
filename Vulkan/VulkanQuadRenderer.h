@@ -13,7 +13,7 @@ struct VulkanQuadRenderer {
 	VulkanInstance* v_instance;
 	Viewport<f32> viewport;
 	
-	std::array<vk::DescriptorSetLayout, 2> descriptor_set_layouts;
+	std::array<vk::DescriptorSetLayout, 0> descriptor_set_layouts;
 	vk::PipelineLayout pipeline_layout;
 	vk::ShaderModule vertex_shader;
 	vk::ShaderModule fragment_shader;
