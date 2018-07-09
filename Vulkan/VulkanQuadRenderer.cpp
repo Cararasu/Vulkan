@@ -6,7 +6,7 @@ struct QuadVertex {
 struct QuadInstance {
 	glm::vec4 dim;
 	glm::vec4 uvdim;
-	u32 imageindex;
+	glm::vec2 depth_imageindex;
 };
 
 VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
@@ -168,7 +168,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 
 		vk::VertexInputAttributeDescription ( 1, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, dim ) ),
 		vk::VertexInputAttributeDescription ( 2, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, uvdim ) ),
-		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32Uint, offsetof ( QuadInstance, imageindex ) ),
+		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, depth_imageindex ) ),
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
@@ -284,12 +284,12 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		vertex_ptr[5].pos = glm::vec2 ( 1.0f, 1.0f );
 
 		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
-		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.2f, 0.2f );
+		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[0].imageindex = 0;
-		instance_ptr[1].dim = glm::vec4 ( 0.5f, 0.5f, 0.2f, 0.2f );
+		instance_ptr[0].depth_imageindex = glm::vec2 (0.5f, 0.0f);
+		instance_ptr[1].dim = glm::vec4 ( 0.2f, 0.2f, 0.2f, 0.2f );
 		instance_ptr[1].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[1].imageindex = 0;
+		instance_ptr[1].depth_imageindex = glm::vec2 (0.2f, 1.0f);
 		staging_vertex_buffer->unmap_mem();
 	}
 	if ( !g_commandpool ) {
