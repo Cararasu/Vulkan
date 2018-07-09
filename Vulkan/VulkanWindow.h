@@ -25,8 +25,8 @@ struct FrameLocalData {
 	vk::ImageView present_image_view;
 	vk::CommandBuffer clear_command_buffer;
 	vk::CommandBuffer present_command_buffer;
-	
-	Array<std::function<RendResult(u32)>> deferred_calls;
+
+	Array<std::function<RendResult ( u32 ) >> deferred_calls;
 
 	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
@@ -78,8 +78,8 @@ struct VulkanWindow : public Window {
 			frame_local_data[present_image_index].graphics_command_pool = vulkan_device ( m_instance ).createCommandPool ( vk::CommandPoolCreateInfo() );
 		return frame_local_data[present_image_index].graphics_command_pool;
 	}
-	
-	inline FrameLocalData* current_framelocal_data(){
+
+	inline FrameLocalData* current_framelocal_data() {
 		return &frame_local_data[present_image_index];
 	}
 

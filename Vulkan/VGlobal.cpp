@@ -165,8 +165,6 @@ bool VGlobal::initializeInstance (const char* appName, const char* engineName) {
 			printf("\tSize %lld\n", memProperties.memoryHeaps[i].size);
 			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eDeviceLocal)
 				printf("\tDevice Local\n");
-			if(memProperties.memoryHeaps[i].flags | vk::MemoryHeapFlagBits::eMultiInstanceKHX)
-				printf("\tMulti Instance Visible\n");
 		}
 
 

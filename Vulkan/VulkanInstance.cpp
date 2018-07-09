@@ -100,12 +100,12 @@ VulkanInstance::VulkanInstance() {
 		printf ( "Extension %s not available\n", VK_EXT_DEBUG_REPORT_EXTENSION_NAME );
 	}
 
-	/*if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" ) ) {
+	if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" ) ) {
 		printf ( "Layer VK_LAYER_LUNARG_standard_validation not available\n" );
 	}
 	if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_swapchain" ) ) {
 		printf ( "Layer VK_LAYER_LUNARG_swapchain not available\n" );
-	}*/
+	}
 	if ( !extLayers.activateLayer ( "VK_LAYER_RENDERDOC_Capture" ) ) {
 		printf ( "Layer VK_LAYER_RENDERDOC_Capture not available\n" );
 	}
@@ -174,8 +174,6 @@ VulkanInstance::VulkanInstance() {
 			printf ( "\tSize %I64u\n", memProperties.memoryHeaps[i].size );
 			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal )
 				printf ( "\tDevice Local\n" );
-			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eMultiInstanceKHX )
-				printf ( "\tMulti Instance Visible\n" );
 		}
 
 

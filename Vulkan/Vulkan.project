@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="Vulkan" Version="10.0.0" InternalType="Library">
+  <Reconciliation>
+    <Regexes/>
+    <Excludepaths/>
+    <Ignorefiles/>
+    <Extensions>
+      <![CDATA[*.cpp;*.c;*.h;*.hpp;*.xrc;*.wxcp;*.fbp]]>
+    </Extensions>
+    <Topleveldir>/GNUProg/Vulkan/Vulkan</Topleveldir>
+  </Reconciliation>
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00020001N0005Debug0000000000000001N0013Debug Windows000000000000]]>
@@ -123,11 +132,11 @@
     </Configuration>
     <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="../libs/glfw-3.2.1/include"/>
-        <IncludePath Value="../libs/glm-0.9.9-a1"/>
-        <IncludePath Value="$(VULKAN_PATH)/include"/>
-        <IncludePath Value="../libs/stb"/>
-        <IncludePath Value="../RendererInterface/include"/>
+        <IncludePath Value="..\libs\glfw-3.2.1\include"/>
+        <IncludePath Value="..\libs\glm-0.9.9-a1"/>
+        <IncludePath Value="..\libs\stb"/>
+        <IncludePath Value="..\RendererInterface\include"/>
+        <IncludePath Value="$(VULKAN_PATH)\Include"/>
       </Compiler>
       <Linker Options="" Required="yes">
         <LibraryPath Value="../libs/glfw-3.2.1/lib-mingw-w64"/>
@@ -150,8 +159,8 @@
         <StartupCommands/>
       </Debugger>
       <PreBuild>
-        <Command Enabled="yes">%VULKAN_PATH%\bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">%VULKAN_PATH%\bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
       </PreBuild>
       <PostBuild/>
       <CustomBuild Enabled="no">

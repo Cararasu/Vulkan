@@ -1,8 +1,11 @@
 #include "VulkanQuadRenderer.h"
 
 struct QuadVertex {
-	glm::vec3 pos;
-	glm::vec2 uv;
+	glm::vec2 pos;
+};
+struct QuadInstance {
+	glm::vec4 dim;
+	glm::vec4 uvdim;
 	u32 imageindex;
 };
 
@@ -155,14 +158,17 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	}
 
 
-	std::array<vk::VertexInputBindingDescription, 1> vertexInputBindings = {
-		vk::VertexInputBindingDescription ( 0, sizeof ( QuadVertex ), vk::VertexInputRate::eVertex )
+	std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
+		vk::VertexInputBindingDescription ( 0, sizeof ( QuadVertex ), vk::VertexInputRate::eVertex ),
+		vk::VertexInputBindingDescription ( 1, sizeof ( QuadInstance ), vk::VertexInputRate::eInstance )
 	};
 
-	std::array<vk::VertexInputAttributeDescription, 3> vertexInputAttributes = {
-		vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32B32Sfloat, offsetof ( QuadVertex, pos ) ),
-		vk::VertexInputAttributeDescription ( 1, 0, vk::Format::eR32G32Sfloat, offsetof ( QuadVertex, uv ) ),
-		vk::VertexInputAttributeDescription ( 2, 0, vk::Format::eR32Uint, offsetof ( QuadVertex, imageindex ) )
+	std::array<vk::VertexInputAttributeDescription, 4> vertexInputAttributes = {
+		vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32Sfloat, offsetof ( QuadVertex, pos ) ),
+
+		vk::VertexInputAttributeDescription ( 1, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, dim ) ),
+		vk::VertexInputAttributeDescription ( 2, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, uvdim ) ),
+		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32Uint, offsetof ( QuadInstance, imageindex ) ),
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
@@ -255,7 +261,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 }
 
 vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
-	const static u32 vertexbuffer_size = sizeof ( QuadVertex ) * 100 * 4;
+	const static u32 vertexbuffer_size = sizeof ( QuadVertex ) * 6 + sizeof ( QuadInstance ) * 100;
 	if ( !vertex_buffer ) {
 		vertex_buffer = new VulkanBuffer (
 		    v_instance, vertexbuffer_size,
@@ -269,15 +275,21 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
 		staging_vertex_buffer->map_mem();
 		memset ( staging_vertex_buffer->mapped_ptr, 0, vertexbuffer_size );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [0].pos = glm::vec3 ( 1.0f, 1.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [0].uv = glm::vec2 ( 0.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [0].imageindex = 0;
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [1].pos = glm::vec3 ( -1.0f, 1.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [1].uv = glm::vec2 ( 0.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [1].imageindex = 0;
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [2].pos = glm::vec3 ( 0.0f, -1.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [2].uv = glm::vec2 ( 0.0f, 0.0f );
-		( ( QuadVertex* ) staging_vertex_buffer->mapped_ptr ) [2].imageindex = 0;
+		QuadVertex* vertex_ptr = ( QuadVertex* ) staging_vertex_buffer->mapped_ptr;
+		vertex_ptr[0].pos = glm::vec2 ( 1.0f, 1.0f );
+		vertex_ptr[1].pos = glm::vec2 ( 0.0f, 1.0f );
+		vertex_ptr[2].pos = glm::vec2 ( 0.0f, 0.0f );
+		vertex_ptr[3].pos = glm::vec2 ( 0.0f, 0.0f );
+		vertex_ptr[4].pos = glm::vec2 ( 1.0f, 0.0f );
+		vertex_ptr[5].pos = glm::vec2 ( 1.0f, 1.0f );
+
+		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
+		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.2f, 0.2f );
+		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
+		instance_ptr[0].imageindex = 0;
+		instance_ptr[1].dim = glm::vec4 ( 0.5f, 0.5f, 0.2f, 0.2f );
+		instance_ptr[1].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
+		instance_ptr[1].imageindex = 0;
 		staging_vertex_buffer->unmap_mem();
 	}
 	if ( !g_commandpool ) {
@@ -307,10 +319,10 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		vk::BufferMemoryBarrier (
 		    vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
 		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->memory.size
+		    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
 		)
 	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-	
+
 	staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.commandbuffer );
 
 	per_frame.commandbuffer.pipelineBarrier (
@@ -320,10 +332,10 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		vk::BufferMemoryBarrier (
 		    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
 		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    vertex_buffer->buffer, 0, vertex_buffer->memory.size
+		    vertex_buffer->buffer, 0, vertex_buffer->size
 		)
 	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-	
+
 	vk::ClearValue clearColors[2] = {
 		vk::ClearValue ( ),
 		vk::ClearValue ( )
@@ -336,8 +348,9 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
 	per_frame.commandbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
-	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer}, {0} );
-	per_frame.commandbuffer.draw ( 3, 1, 0, 0 );
+	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
+
+	per_frame.commandbuffer.draw(6, 2, 0, 0);
 
 	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
 	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);

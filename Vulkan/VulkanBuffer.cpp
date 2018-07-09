@@ -4,7 +4,7 @@
 VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	v_instance ( instance ), memory ( {
 	vk::DeviceMemory(), size
-} ), buffer ( vk::Buffer() ) {
+} ), buffer ( vk::Buffer() ), size(size) {
 	vk::Device device = vulkan_device ( v_instance );
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
 

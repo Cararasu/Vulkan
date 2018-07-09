@@ -105,7 +105,7 @@ vk::Pipeline StandardPipelineModuleBuilder::createPipeline (vk::Extent2D extent,
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly (vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE);
 
 	vk::Viewport viewports[] = {
-		vk::Viewport (0.0f, 0.0f, (float) extent.width, (float) extent.height, -1.0f, 1.0f)
+		vk::Viewport (0.0f, 0.0f, (float) extent.width, (float) extent.height, 0.0f, 1.0f)
 	};
 
 	vk::Rect2D scissors[] = {

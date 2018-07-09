@@ -7,6 +7,7 @@ struct VulkanBuffer {
 	VulkanInstance* v_instance;
 	GPUMemory memory;
 	vk::Buffer buffer;
+	vk::DeviceSize size;
 	void* mapped_ptr = nullptr;
 
 	VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
