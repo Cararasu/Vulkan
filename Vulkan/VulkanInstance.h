@@ -92,8 +92,8 @@ struct VulkanInstance : public Instance {
 
 	vk::DeviceMemory allocateMemory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties );
 
-	vk::CommandPool createTransferCommandPool ( vk::CommandPoolCreateFlags createFlags );
-	vk::CommandPool createGraphicsCommandPool ( vk::CommandPoolCreateFlags createFlags );
+	vk::CommandPool createTransferCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
+	vk::CommandPool createGraphicsCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
 	void destroyCommandPool ( vk::CommandPool commandPool );
 	vk::CommandBuffer createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel );
 	void deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer );

@@ -10,7 +10,7 @@ struct PerFrameQuadRenderObj {
 };
 
 struct VulkanQuadRenderer {
-	VulkanInstance* v_instance;
+	VulkanInstance* const v_instance;
 	Viewport<f32> viewport;
 
 	std::array<vk::DescriptorSetLayout, 0> descriptor_set_layouts;

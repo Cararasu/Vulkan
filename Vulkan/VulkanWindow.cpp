@@ -252,7 +252,6 @@ void VulkanWindow::initialize() {
 	if ( m_visible.wanted ) {
 		glfwShowWindow ( window );
 	}
-
 	framebuffer_size_changed ( m_size.value );
 
 }
@@ -350,15 +349,6 @@ void VulkanWindow::create_command_buffers() {
 		);
 		data.present_image->transition_image_layout ( vk::ImageLayout::eColorAttachmentOptimal, data.clear_command_buffer );
 
-		depth_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
-
-		data.clear_command_buffer.clearDepthStencilImage (
-		    depth_image->image,
-		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
-		{vk::ImageSubresourceRange ( depth_image->aspectFlags, 0, 1, 0, 1 ) }
-		);
-		depth_image->transition_image_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data.clear_command_buffer );
 		data.clear_command_buffer.end();
 
 		data.present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
@@ -516,17 +506,6 @@ void VulkanWindow::create_swapchain() {
 
 	swap_chain_extend = Extent2D<u32> ( capabilities.maxImageExtent.width, capabilities.maxImageExtent.height );
 
-	{
-		//create/recreate depth image
-		destroy_depth_image();
-		vk::Format depth_format = m_instance->findDepthFormat();
-
-		vk::Extent3D extent ( swap_chain_extend.width, swap_chain_extend.height, 0 );
-		depth_image = new VulkanImageWrapper ( m_instance, extent, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-		                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
-		depth_image_view = m_instance->createImageView2D ( depth_image->image, 0, depth_image->mipMapLevels, depth_image->format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil ) );
-
-	}
 	create_frame_local_data ( vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain ) );
 
 }
@@ -545,22 +524,9 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extend ) {
 		v_render_target_wrapper.images[i].imageview = frame_local_data[i].present_image_view;
 	}
 	v_render_target_wrapper.color_format = frame_local_data[0].present_image->format;
-	v_render_target_wrapper.depth_stencil_format = depth_image->format;
-	v_render_target_wrapper.depthview = depth_image_view;
 	v_render_target_wrapper.targetcount = frame_local_data.size();
 	if ( m_root_section )
 		m_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
-}
-void VulkanWindow::destroy_depth_image() {
-	if ( depth_image_view ) {
-		vulkan_device ( m_instance ).destroyImageView ( depth_image_view );
-		depth_image_view = vk::ImageView();
-	}
-	if ( depth_image ) {
-		depth_image->destroy();
-		delete depth_image;
-		depth_image = nullptr;
-	}
 }
 void VulkanWindow::create_frame_local_data ( std::vector<vk::Image> swapChainImages ) {
 
@@ -610,8 +576,6 @@ RendResult VulkanWindow::destroy() {
 		destroy_semaphore ( m_instance, image_available_guard_sem );
 	printf ( "Destroy Local Data\n" );
 	destroy_frame_local_data();
-	printf ( "Destroy Depth Image\n" );
-	destroy_depth_image();
 	printf ( "Destroy Swap Chain\n" );
 	if ( swap_chain )
 		vulkan_device ( m_instance ).destroySwapchainKHR ( swap_chain );

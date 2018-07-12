@@ -56,9 +56,6 @@ struct VulkanWindow : public Window {
 
 	vk::CommandPool window_graphics_command_pool;
 
-	VulkanImageWrapper* depth_image = nullptr;
-	vk::ImageView depth_image_view;
-
 	VulkanRenderTarget v_render_target_wrapper;
 
 
@@ -89,7 +86,6 @@ struct VulkanWindow : public Window {
 
 	void create_swapchain();
 	void create_empty_pipeline();
-	void destroy_depth_image();
 	void create_frame_local_data ( std::vector<vk::Image> swapChainImages );
 	void destroy_frame_local_data();
 };

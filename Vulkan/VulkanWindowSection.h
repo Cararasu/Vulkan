@@ -2,6 +2,7 @@
 
 #include "render/Window.h"
 #include "VulkanHeader.h"
+#include "VulkanImage.h"
 
 struct VulkanWindow;
 struct VulkanInstance;
@@ -13,8 +14,8 @@ struct ImageRenderTarget {
 struct VulkanRenderTarget : public RenderTarget {
 	Array<ImageRenderTarget> images;
 	vk::Format color_format;
-	vk::Format depth_stencil_format;
 	vk::ImageView depthview;
+	vk::Format depth_stencil_format;
 	u32 targetcount;
 };
 
@@ -23,11 +24,11 @@ struct VulkanQuadRenderer;
 struct VulkanWindowSection : public WindowSection {
 	VulkanInstance* const v_instance;
 	Viewport<f32> m_viewport;
+	vk::CommandPool commandpool;
 
 	VulkanWindow* m_parent_window;
 	VulkanWindowSection* m_parent;
 
-	VulkanQuadRenderer* v_quad_renderer;
 	vk::Semaphore finish_sem;
 
 	VulkanWindowSection ( WindowSectionType type, VulkanInstance* instance );
@@ -62,11 +63,19 @@ struct VulkanWindowSection : public WindowSection {
 	}
 
 };
+struct UIVulkanSectionFrameData {
+	vk::CommandBuffer clearcmd;
+};
 struct UIVulkanWindowSection : public VulkanWindowSection {
 	//here an optimized quad renderer
+	VulkanQuadRenderer* v_quad_renderer = nullptr;
+	
+	Array<UIVulkanSectionFrameData> per_frame_data;
+	VulkanImageWrapper* depth_image = nullptr;
+	vk::ImageView depth_image_view;
 
 	UIVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eUI, instance ) {}
-	virtual ~UIVulkanWindowSection() {}
+	virtual ~UIVulkanWindowSection();
 
 	virtual void render_frame ( u32 index );
 	virtual void set_root_node ( UINode* node ) {}

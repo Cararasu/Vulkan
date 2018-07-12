@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="Vulkan" Version="10.0.0" InternalType="Library">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00020001N0005Debug0000000000000001N0013Debug Windows000000000000]]>
+    </Plugin>
+  </Plugins>
   <Reconciliation>
     <Regexes/>
     <Excludepaths/>
@@ -9,14 +14,10 @@
     </Extensions>
     <Topleveldir>/GNUProg/Vulkan/Vulkan</Topleveldir>
   </Reconciliation>
-  <Plugins>
-    <Plugin Name="qmake">
-      <![CDATA[00020001N0005Debug0000000000000001N0013Debug Windows000000000000]]>
-    </Plugin>
-  </Plugins>
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="TODO.txt"/>
     <File Name="VulkanHeader.cpp"/>
     <File Name="VulkanBuffer.cpp"/>
     <File Name="VulkanBuffer.h"/>

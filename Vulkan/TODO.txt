@@ -1,0 +1,9 @@
+# Done
+
+Maybe move Depthstencil to WindowSection, so that every section can have it's own stencil Section
+
+# Todo
+
+Wrapper just for depth-image to wrap all that is needed
+Wrapper just for color-image to wrap all that is needed
+	VulkanImageWrapper + vk::ImageView

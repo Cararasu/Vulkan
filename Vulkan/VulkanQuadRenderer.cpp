@@ -54,7 +54,8 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 }
 void VulkanQuadRenderer::destroy_framebuffers() {
 	for ( auto& fb : per_target_data ) {
-		vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
+		if(fb.framebuffer)
+			vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
 	}
 }
 
@@ -101,7 +102,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	if ( !fragment_shader ) {
 		fragment_shader = v_instance->v_resource_manager->load_shader_from_file ( "shader/quad.frag.sprv" );
 	}
-	if ( !renderpass ) {
+	if ( !renderpass ) {// Color and depth-stencil buffers
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            target_wrapper->color_format, vk::SampleCountFlagBits::e1,//format, samples
