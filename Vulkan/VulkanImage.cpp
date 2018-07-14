@@ -2,17 +2,28 @@
 #include "VulkanImage.h"
 
 VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	instance ( instance ), memory(), image(), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ) {
-	if ( extent.height == 0 ) {
-		extent.height = 1;
-		extent.depth = 1;
-		type = vk::ImageType::e1D;
+	instance ( instance ), memory(), image(), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ), needed ( needed ), recommended ( recommended ) {
+	if ( this->extent.height == 0 ) {
+		this->extent.height = 1;
+		this->extent.depth = 1;
+		this->type = vk::ImageType::e1D;
 	} else if ( extent.depth == 0 ) {
-		extent.depth = 1;
-		type = vk::ImageType::e2D;
-	} else
-		type = vk::ImageType::e3D;
+		this->extent.depth = 1;
+		this->type = vk::ImageType::e2D;
+	} else {
+		this->type = vk::ImageType::e3D;
+	}
 
+	create();
+}
+VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags ) :
+	instance ( instance ), memory(), image ( image ), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ) {
+
+}
+VulkanImageWrapper::~VulkanImageWrapper() {
+	destroy();
+}
+void VulkanImageWrapper::create() {
 	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, format, extent, mipMapLevels, arraySize, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
 
 	V_CHECKCALL ( instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
@@ -21,15 +32,8 @@ VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D 
 
 	vk::MemoryRequirements mem_req;
 	instance->m_device.getImageMemoryRequirements ( image, &mem_req );
-	memory = instance->allocate_gpu_memory(mem_req, needed, recommended);
+	memory = instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	vkBindImageMemory ( instance->m_device, image, memory.memory, 0 );
-}
-VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags ) :
-	instance ( instance ), memory(), image ( image ), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ) {
-
-}
-VulkanImageWrapper::~VulkanImageWrapper() {
-	destroy();
 }
 void VulkanImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
@@ -43,7 +47,7 @@ void VulkanImageWrapper::destroy() {
 vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
-	
+
 	switch ( oldLayout ) {
 	case vk::ImageLayout::eUndefined:
 		srcAccessMask = vk::AccessFlags();
@@ -99,7 +103,7 @@ vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::Im
 	default:
 		assert ( false );
 	}
-	
+
 	switch ( newLayout ) {
 	case vk::ImageLayout::eUndefined:
 		dstAccessMask = vk::AccessFlags();

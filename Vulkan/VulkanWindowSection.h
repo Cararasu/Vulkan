@@ -3,6 +3,7 @@
 #include "render/Window.h"
 #include "VulkanHeader.h"
 #include "VulkanImage.h"
+#include "VulkanQuadRenderer.h"
 
 struct VulkanWindow;
 struct VulkanInstance;
@@ -68,13 +69,13 @@ struct UIVulkanSectionFrameData {
 };
 struct UIVulkanWindowSection : public VulkanWindowSection {
 	//here an optimized quad renderer
-	VulkanQuadRenderer* v_quad_renderer = nullptr;
+	VulkanQuadRenderer v_quad_renderer;
 	
 	Array<UIVulkanSectionFrameData> per_frame_data;
 	VulkanImageWrapper* depth_image = nullptr;
 	vk::ImageView depth_image_view;
 
-	UIVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eUI, instance ) {}
+	UIVulkanWindowSection ( VulkanInstance* instance ) : VulkanWindowSection ( WindowSectionType::eUI, instance ), v_quad_renderer(instance)  {}
 	virtual ~UIVulkanWindowSection();
 
 	virtual void render_frame ( u32 index );

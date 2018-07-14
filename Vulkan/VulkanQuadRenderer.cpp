@@ -1,4 +1,5 @@
 #include "VulkanQuadRenderer.h"
+#include "VulkanWindowSection.h"
 
 struct QuadVertex {
 	glm::vec2 pos;
@@ -12,33 +13,38 @@ struct QuadInstance {
 VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
 
 }
-VulkanQuadRenderer::VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer ) : v_instance ( old_quad_renderer->v_instance ) {
-
-	vertex_shader = old_quad_renderer->vertex_shader;
-	old_quad_renderer->vertex_shader = nullptr;
-	fragment_shader = old_quad_renderer->fragment_shader;
-	old_quad_renderer->fragment_shader = nullptr;
-
-	vertex_buffer = old_quad_renderer->vertex_buffer;
-	old_quad_renderer->vertex_buffer = nullptr;
-	staging_vertex_buffer = old_quad_renderer->staging_vertex_buffer;
-	old_quad_renderer->staging_vertex_buffer = nullptr;
-}
 VulkanQuadRenderer::~VulkanQuadRenderer() {
-	if ( pipeline )
+	
+}
+void VulkanQuadRenderer::remove ( ) {
+	if ( pipeline ) {
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
-	if ( g_commandpool )
+		pipeline = vk::Pipeline();
+	}
+	if ( g_commandpool ) {
 		vulkan_device ( v_instance ).destroyCommandPool ( g_commandpool );
-	if ( t_commandpool )
+		g_commandpool = vk::CommandPool();
+	}
+	if ( t_commandpool ) {
 		vulkan_device ( v_instance ).destroyCommandPool ( t_commandpool );
-	if ( renderpass )
+		t_commandpool = vk::CommandPool();
+	}
+	if ( renderpass ) {
 		vulkan_device ( v_instance ).destroyRenderPass ( renderpass );
-	if ( vertex_shader )
+		renderpass = vk::RenderPass();
+	}
+	if ( vertex_shader ) {
 		vulkan_device ( v_instance ).destroyShaderModule ( vertex_shader );
-	if ( fragment_shader )
+		vertex_shader = vk::ShaderModule();
+	}
+	if ( fragment_shader ) {
 		vulkan_device ( v_instance ).destroyShaderModule ( fragment_shader );
-	if ( pipeline_layout )
+		fragment_shader = vk::ShaderModule();
+	}
+	if ( pipeline_layout ) {
 		vulkan_device ( v_instance ).destroyPipelineLayout ( pipeline_layout );
+		pipeline_layout = vk::PipelineLayout();
+	}
 	destroy_framebuffers();
 	if ( vertex_buffer ) {
 		delete vertex_buffer;
@@ -50,13 +56,17 @@ VulkanQuadRenderer::~VulkanQuadRenderer() {
 	}
 	for ( auto dsl : descriptor_set_layouts ) {
 		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
+		dsl = vk::DescriptorSetLayout();
 	}
 }
 void VulkanQuadRenderer::destroy_framebuffers() {
 	for ( auto& fb : per_target_data ) {
-		if(fb.framebuffer)
+		if ( fb.framebuffer ) {
 			vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
+			fb.framebuffer = vk::Framebuffer();
+		}
 	}
+	per_target_data.clear();
 }
 
 RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {
@@ -287,10 +297,10 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
 		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[0].depth_imageindex = glm::vec2 (0.5f, 0.0f);
+		instance_ptr[0].depth_imageindex = glm::vec2 ( 0.5f, 0.0f );
 		instance_ptr[1].dim = glm::vec4 ( 0.2f, 0.2f, 0.2f, 0.2f );
 		instance_ptr[1].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[1].depth_imageindex = glm::vec2 (0.2f, 1.0f);
+		instance_ptr[1].depth_imageindex = glm::vec2 ( 0.2f, 1.0f );
 		staging_vertex_buffer->unmap_mem();
 	}
 	if ( !g_commandpool ) {
@@ -350,8 +360,7 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 
 	per_frame.commandbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
 	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
-
-	per_frame.commandbuffer.draw(6, 2, 0, 0);
+	per_frame.commandbuffer.draw ( 6, 2, 0, 0 );
 
 	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
 	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
@@ -369,4 +378,30 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 	per_frame.commandbuffer.end();
 
 	return per_frame.commandbuffer;
+}
+
+void VulkanQuadRenderer::inherit ( VulkanQuadRenderer* old_quad_renderer ) {
+
+	pipeline = vk::Pipeline();
+	g_commandpool = vk::CommandPool();
+	t_commandpool = vk::CommandPool();
+	renderpass = vk::RenderPass();
+
+	vertex_shader = old_quad_renderer->vertex_shader;
+	old_quad_renderer->vertex_shader = nullptr;
+	fragment_shader = old_quad_renderer->fragment_shader;
+	old_quad_renderer->fragment_shader = nullptr;
+	
+	pipeline_layout = vk::PipelineLayout();
+	
+	per_target_data.clear();
+	
+	vertex_buffer = old_quad_renderer->vertex_buffer;
+	old_quad_renderer->vertex_buffer = nullptr;
+	staging_vertex_buffer = old_quad_renderer->staging_vertex_buffer;
+	old_quad_renderer->staging_vertex_buffer = nullptr;
+	
+	for ( auto dsl : descriptor_set_layouts ) {
+		dsl = vk::DescriptorSetLayout();
+	}
 }

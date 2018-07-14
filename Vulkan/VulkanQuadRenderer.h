@@ -1,6 +1,5 @@
 #pragma once
 #include "VulkanInstance.h"
-#include "VulkanWindowSection.h"
 #include "VulkanBuffer.h"
 #include "render/Dimensions.h"
 
@@ -8,6 +7,8 @@ struct PerFrameQuadRenderObj {
 	vk::Framebuffer framebuffer;
 	vk::CommandBuffer commandbuffer;
 };
+
+struct VulkanRenderTarget;
 
 struct VulkanQuadRenderer {
 	VulkanInstance* const v_instance;
@@ -32,9 +33,10 @@ struct VulkanQuadRenderer {
 	VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer );
 	~VulkanQuadRenderer();
 
-	void reset ( u32 index );
+	void inherit ( VulkanQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
 
 	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 	vk::CommandBuffer render_quads ( u32 index );
+	void remove ( );
 };

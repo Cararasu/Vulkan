@@ -11,14 +11,14 @@ VulkanWindowSection::~VulkanWindowSection() {
 	destroy_semaphore ( v_instance, finish_sem );
 }
 UIVulkanWindowSection::~UIVulkanWindowSection() {
-	delete v_quad_renderer;
+	v_quad_renderer.remove();
 }
 void UIVulkanWindowSection::render_frame ( u32 index ) {
 	//printf ( "Render-UI Section\n" );
 
 	vk::CommandBuffer buffers[2];
 	buffers[0] = per_frame_data[index].clearcmd;
-	buffers[1] = v_quad_renderer->render_quads ( index );
+	buffers[1] = v_quad_renderer.render_quads ( index );
 
 	vk::PipelineStageFlags waitDstStageMask = vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eColorAttachmentOutput;
 	vk::SubmitInfo submitInfo (
@@ -76,37 +76,41 @@ void UIVulkanWindowSection::resize ( Viewport<f32> viewport, VulkanRenderTarget*
 
 		target_wrapper->depth_stencil_format = depth_image->format;
 		target_wrapper->depthview = depth_image_view;
-		if ( !v_quad_renderer )
-			v_quad_renderer = new VulkanQuadRenderer ( v_instance );
-		v_quad_renderer->update_extend ( viewport, target_wrapper );
+		v_quad_renderer.update_extend ( viewport, target_wrapper );
 	}
 
 }
 void UIVulkanWindowSection::reset ( ) {
-	if ( v_quad_renderer ) {
-		VulkanQuadRenderer* quad_rend = v_quad_renderer;
-		vk::CommandPool tmp_commandpool = commandpool;
-		vk::ImageView tmp_depth_image_view = depth_image_view;
-		VulkanImageWrapper* tmp_depth_image = depth_image;
-		VulkanInstance* tmp_instance = v_instance;
-		
-		m_parent_window->current_framelocal_data()->deferred_calls.push_back ( [tmp_instance, quad_rend, tmp_commandpool, tmp_depth_image_view, tmp_depth_image] ( u32 index ) {
-			if(tmp_commandpool){
-				vulkan_device ( tmp_instance ).destroyCommandPool ( tmp_commandpool );
-			}
-			if ( tmp_depth_image_view ) {
-				vulkan_device ( tmp_instance ).destroyImageView ( tmp_depth_image_view );
-			}
-			if ( tmp_depth_image ) {
-				tmp_depth_image->destroy();
-				delete tmp_depth_image;
-			}
-			delete quad_rend;
-			return RendResult::eSuccess;
-		} );
-		commandpool = vk::CommandPool();
-		depth_image_view = vk::ImageView();
-		depth_image = nullptr;
-		v_quad_renderer = new VulkanQuadRenderer ( v_quad_renderer );
+	VulkanQuadRenderer quad_rend = v_quad_renderer;
+	vk::CommandPool tmp_commandpool = commandpool;
+	vk::ImageView tmp_depth_image_view = depth_image_view;
+	VulkanImageWrapper* tmp_depth_image = depth_image;
+	VulkanInstance* tmp_instance = v_instance;
+
+	commandpool = vk::CommandPool();
+	depth_image_view = vk::ImageView();
+	depth_image = nullptr;
+	v_quad_renderer.inherit ( &quad_rend );
+
+	FrameLocalData* frame_local_data = m_parent_window->current_framelocal_data();
+	auto lambda = [tmp_instance, quad_rend, tmp_commandpool, tmp_depth_image_view, tmp_depth_image] ( u32 index ) mutable -> RendResult {
+		if ( tmp_commandpool ) {
+			vulkan_device ( tmp_instance ).destroyCommandPool ( tmp_commandpool );
+		}
+		if ( tmp_depth_image_view ) {
+			vulkan_device ( tmp_instance ).destroyImageView ( tmp_depth_image_view );
+		}
+		if ( tmp_depth_image ) {
+			tmp_depth_image->destroy();
+			delete tmp_depth_image;
+		}
+		quad_rend.remove();
+		return RendResult::eSuccess;
+	};
+	if ( frame_local_data ) {
+		m_parent_window->current_framelocal_data()->deferred_calls.push_back ( lambda );
+	} else {
+		lambda ( 0 );
 	}
+
 }
