@@ -267,8 +267,8 @@ int main ( int argc, char **argv ) {
 	*window->size() = window_size;
 	*window->visible() = true;
 
-
-	window->root_section ( newinstance->create_window_section ( WindowSectionType::eUI ) );
+	//newinstance->create_window_section ( WindowSectionType::eUI )
+	//window->root_section (  );
 	window->update();
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
@@ -279,14 +279,14 @@ int main ( int argc, char **argv ) {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for ( 20ms );
 		newinstance->process_events();
-
+		printf("%d\n", (1.0f + (1.0f / (1 << 23))) == 1.0f);
 	} while ( newinstance->is_window_open() );
 	WindowSection* section = window->root_section();
 	window->root_section ( nullptr );
 
 	window->destroy();
-
-	delete section;
+	if(section)
+		delete section;
 
 	destroy_instance ( newinstance );
 	return 0;

@@ -65,9 +65,6 @@ struct VulkanInstance : public Instance {
 	virtual Window* create_window();
 	virtual bool destroy_window ( Window* window );
 
-	virtual WindowSection* create_window_section ( WindowSectionType type );
-	virtual bool destroy_window_section ( WindowSection* window_section );
-
 	virtual Array<Monitor*>& get_monitors();
 	virtual Array<Device*>& get_devices();
 	VulkanMonitor* get_primary_monitor_vulkan();

@@ -140,3 +140,22 @@ struct Viewport {
 		return !operator== (rhs);
 	}
 };
+
+enum class AbsRel{
+	eAbsolute,
+	eRelative,
+};
+
+template<typename T>
+struct AbsRelValue{
+	T value = 0;
+	AbsRel absolute = AbsRel::eAbsolute;
+	void abs(T value){
+		this->value = value;
+		absolute = AbsRel::eAbsolute;
+	}
+	void rel(T value){
+		this->value = value;
+		absolute = AbsRel::eRelative;
+	}
+};

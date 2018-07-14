@@ -8,3 +8,15 @@ Wrapper just for depth-image to wrap all that is needed
 Wrapper just for color-image to wrap all that is needed
 	VulkanImageWrapper + vk::ImageView
 	create, reset
+	
+UI stuff
+	BorderSection
+	SplitSection
+	LayeredSection
+	WorldSection
+	VerticalBox - HorizontalBox
+	
+
+	TextInput
+	Button
+	...

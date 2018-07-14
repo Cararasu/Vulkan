@@ -443,29 +443,6 @@ bool VulkanInstance::destroy_window ( Window* window ) {
 	return false;
 }
 
-WindowSection* VulkanInstance::create_window_section ( WindowSectionType type ) {
-	VulkanWindowSection* vulkan_section = nullptr;
-	switch ( type ) {
-	case WindowSectionType::eUI:
-		vulkan_section = new UIVulkanWindowSection ( this );
-	case WindowSectionType::eStack:
-		break;
-	case WindowSectionType::eWorld:
-		break;
-	}
-	window_sections.insert ( vulkan_section );
-	return vulkan_section;
-}
-bool VulkanInstance::destroy_window_section ( WindowSection* window_section ) {
-	if ( VulkanWindowSection* vulk_window_sec = dynamic_cast<VulkanWindowSection*> ( window_section ) ) {
-		if ( window_sections.erase ( vulk_window_sec ) > 0 ) {
-			delete vulk_window_sec;
-			return true;
-		} else {
-			return false;
-		}
-	}
-}
 ResourceManager* VulkanInstance::resource_manager() {
 	return nullptr;
 }
@@ -495,8 +472,11 @@ GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, 
 	return memory;
 }
 RendResult VulkanInstance::free_gpu_memory ( GPUMemory memory ) {
-	if ( memory.memory )
+	if ( memory.memory ){
+		printf ( "Freeing %d Bytes of Memory\n", memory.size );
 		vulkan_device ( this ).freeMemory ( memory.memory, nullptr );
+		memory.memory = vk::DeviceMemory();
+	}
 	return RendResult::eSuccess;
 }
 vk::ImageView VulkanInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {

@@ -3,6 +3,28 @@
 
 VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	instance ( instance ), memory(), image(), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ), needed ( needed ), recommended ( recommended ) {
+
+	create ( extent, mipMapLevels, arraySize, format, tiling, usage, aspectFlags, needed, recommended );
+}
+VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags ) :
+	instance ( instance ), memory(), image ( image ), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ) {
+
+}
+VulkanImageWrapper::~VulkanImageWrapper() {
+	destroy();
+}
+
+void VulkanImageWrapper::create ( vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+	this->image = image;
+	this->extent = extent;
+	this->mipMapLevels = mipMapLevels;
+	this->arraySize = arraySize;
+	this->format = format;
+	this->tiling = tiling;
+	this->usage = usage;
+	this->aspectFlags = aspectFlags;
+	this->needed = needed;
+	this->recommended = recommended;
 	if ( this->extent.height == 0 ) {
 		this->extent.height = 1;
 		this->extent.depth = 1;
@@ -13,15 +35,7 @@ VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D 
 	} else {
 		this->type = vk::ImageType::e3D;
 	}
-
 	create();
-}
-VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Image image, vk::Extent3D extent, u32 mipMapLevels, u32 arraySize, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags ) :
-	instance ( instance ), memory(), image ( image ), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ) {
-
-}
-VulkanImageWrapper::~VulkanImageWrapper() {
-	destroy();
 }
 void VulkanImageWrapper::create() {
 	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, format, extent, mipMapLevels, arraySize, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
@@ -34,13 +48,13 @@ void VulkanImageWrapper::create() {
 	instance->m_device.getImageMemoryRequirements ( image, &mem_req );
 	memory = instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	vkBindImageMemory ( instance->m_device, image, memory.memory, 0 );
+	this->layouts = Array<vk::ImageLayout> ( arraySize, vk::ImageLayout::eUndefined );
 }
 void VulkanImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
 		instance->m_device.destroyImage ( image );
 		image = vk::Image();
-		printf ( "Freeing %d Bytes of Memory\n", memory.size );
-		instance->m_device.freeMemory ( memory.memory );
+		instance->free_gpu_memory ( memory );
 		memory.memory = vk::DeviceMemory();
 	}
 }

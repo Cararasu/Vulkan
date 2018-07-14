@@ -16,7 +16,7 @@ VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance
 VulkanQuadRenderer::~VulkanQuadRenderer() {
 	
 }
-void VulkanQuadRenderer::remove ( ) {
+void VulkanQuadRenderer::destroy ( ) {
 	if ( pipeline ) {
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 		pipeline = vk::Pipeline();
@@ -371,7 +371,7 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 	//here be commands
 
 	//1. simple textured quads
-	//2. simple bordered quads
+	//2. simple filled quads
 	//3. fonts
 
 	per_frame.commandbuffer.endRenderPass();

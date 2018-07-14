@@ -15,11 +15,11 @@ BufferWrapper::~BufferWrapper() {
 }
 MappedBufferWrapper::MappedBufferWrapper (VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) :
 	BufferWrapper (instance, size, usage, needed) {
-	printf ("Map %d Bytes of Memory\n", memory.size);
+	printf ("Map %llu Bytes of Memory\n", memory.size);
 	vkMapMemory (instance->device, memory.memory, 0, memory.size, 0, &data);
 }
 void MappedBufferWrapper::destroy(){
-	printf ("Unmap %d Bytes of Memory\n", memory.size);
+	printf ("Unmap %llu Bytes of Memory\n", memory.size);
 	vkUnmapMemory (instance->device, memory.memory);
 }
 MappedBufferWrapper::~MappedBufferWrapper() {

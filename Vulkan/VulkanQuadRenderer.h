@@ -38,5 +38,5 @@ struct VulkanQuadRenderer {
 
 	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 	vk::CommandBuffer render_quads ( u32 index );
-	void remove ( );
+	void destroy ( );
 };

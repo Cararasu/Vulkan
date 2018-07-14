@@ -20,9 +20,6 @@ struct Instance{
 	virtual Window* create_window() = 0;
 	virtual bool destroy_window(Window* window) = 0;
 	
-	virtual WindowSection* create_window_section(WindowSectionType type) = 0;
-	virtual bool destroy_window_section(WindowSection* window_section) = 0;
-	
 	virtual void process_events() = 0;
 	virtual bool is_window_open() = 0;
 	

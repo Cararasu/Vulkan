@@ -12,28 +12,31 @@ struct RenderTarget {
 	virtual void dummy() {}
 };
 
-enum class WindowSectionType {
-	eUI,
-	eStack,
-	eWorld
-};
-
 struct WindowSection {
-	const WindowSectionType section_type;
-
-	WindowSection ( WindowSectionType type ) : section_type ( type ) {}
+	Viewport<f32> viewport;
+	void* ptr = nullptr;
+	
+	WindowSection ( ) {}
 	virtual ~WindowSection() {}
+
+	virtual void create() = 0;
 
 	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* targetWrapper ) = 0;
 
 	virtual void render_frame ( u32 index ) = 0;
-
-	virtual void set_root_node ( UINode* node ) = 0;
-	virtual void set_stack_size ( uint32_t size ) = 0;
-	virtual void set_layer ( u32 layer, WindowSection* section ) = 0;
-	virtual void set_world ( World* world ) {}
 };
-
+struct StackWindowSection : public WindowSection {
+	
+};
+struct BorderWindowSection : public WindowSection {
+	
+};
+struct LayeredWindowSection : public WindowSection {
+	
+};
+struct WorldWindowSection : public WindowSection {
+	
+};
 
 enum class CursorMode {
 	eNormal,

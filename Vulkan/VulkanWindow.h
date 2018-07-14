@@ -34,12 +34,14 @@ struct FrameLocalData {
 
 struct VulkanWindow : public Window {
 	VulkanInstance* m_instance = nullptr;
-	VulkanWindowSection* m_root_section = nullptr;
-	VulkanWindowSection* section;
+	VulkanWindowSection* v_root_section = nullptr;
 
 	//glfw
 	GLFWwindow* window = nullptr;
 
+	VulkanQuadRenderer quad_renderer;
+	VulkanSingleImage depth_image;
+	
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;

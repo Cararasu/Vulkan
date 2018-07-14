@@ -9,7 +9,7 @@ void VInstance::createBuffer ( vk::DeviceSize size, vk::BufferUsageFlags usage, 
 
 	V_CHECKCALL ( device.createBuffer(&bufferInfo, nullptr, buffer), printf ( "Failed To Create Buffer\n" ) );
 
-	printf ( "Create Buffer of size %d\n", size );
+	printf ( "Create Buffer of size %llu\n", size );
 	
 	vk::MemoryRequirements memRequirements;
 	device.getBufferMemoryRequirements(*buffer, &memRequirements);
