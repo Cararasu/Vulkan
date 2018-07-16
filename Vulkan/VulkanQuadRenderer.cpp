@@ -1,5 +1,6 @@
 #include "VulkanQuadRenderer.h"
 #include "VulkanWindowSection.h"
+#include "VulkanWindow.h"
 
 struct QuadVertex {
 	glm::vec2 pos;
@@ -14,7 +15,7 @@ VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance
 
 }
 VulkanQuadRenderer::~VulkanQuadRenderer() {
-	
+
 }
 void VulkanQuadRenderer::destroy ( ) {
 	if ( pipeline ) {
@@ -271,7 +272,8 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	printf ( "Update Quad-Renderer\n" );
 }
 
-vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
+void VulkanQuadRenderer::init() {
+
 	const static u32 vertexbuffer_size = sizeof ( QuadVertex ) * 6 + sizeof ( QuadInstance ) * 100;
 	if ( !vertex_buffer ) {
 		vertex_buffer = new VulkanBuffer (
@@ -311,7 +313,11 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.transfer_queue_id );
 		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &t_commandpool );
 	}
-
+}
+vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
+	
+	init();
+	
 	PerFrameQuadRenderObj& per_frame = per_target_data[index];
 	if ( per_frame.commandbuffer ) {
 		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
@@ -368,8 +374,6 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
 	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
 
-	//here be commands
-
 	//1. simple textured quads
 	//2. simple filled quads
 	//3. fonts
@@ -378,6 +382,86 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 	per_frame.commandbuffer.end();
 
 	return per_frame.commandbuffer;
+}
+RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
+
+	init();
+	
+	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
+	if ( per_frame.commandbuffer ) {
+		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
+	} else {
+		per_frame.commandbuffer = v_instance->createCommandBuffer ( g_commandpool, vk::CommandBufferLevel::ePrimary );
+	}
+	vk::CommandBufferBeginInfo begininfo = {
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+	};
+	per_frame.commandbuffer.begin ( begininfo );
+
+	per_frame.commandbuffer.pipelineBarrier (
+	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
+	    vk::DependencyFlags(),
+	{}/*memoryBarrier*/, {
+		vk::BufferMemoryBarrier (
+		    vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
+		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+		    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
+		)
+	}/*bufferBarrier*/, {}/*imageBarrier*/ );
+
+	staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.commandbuffer );
+
+	per_frame.commandbuffer.pipelineBarrier (
+	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
+	    vk::DependencyFlags(),
+	{}/*memoryBarrier*/, {
+		vk::BufferMemoryBarrier (
+		    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+		    vertex_buffer->buffer, 0, vertex_buffer->size
+		)
+	}/*bufferBarrier*/, {}/*imageBarrier*/ );
+
+	vk::ClearValue clearColors[2] = {
+		vk::ClearValue ( ),
+		vk::ClearValue ( )
+	};
+	vk::RenderPassBeginInfo renderPassBeginInfo = {
+		renderpass, per_frame.framebuffer,
+		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
+		2, clearColors
+	};
+	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+
+	per_frame.commandbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
+	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
+	per_frame.commandbuffer.draw ( 6, 2, 0, 0 );
+
+	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+
+	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
+	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
+
+	//1. simple textured quads
+	//2. simple filled quads
+	//3. fonts
+	
+	per_frame.commandbuffer.endRenderPass();
+	per_frame.commandbuffer.end();
+
+	SubmitInfo submitinfo = {
+		vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eHost | vk::PipelineStageFlagBits::eVertexInput,
+		wait_sem_index, 1,
+		state->commandbuffers.size(), 1,
+		wait_sem_index, 1
+	};
+	
+	state->commandbuffers.push_back(per_frame.commandbuffer);
+	state->submitinfos.push_back(submitinfo);
+	
+	*final_sem_index = wait_sem_index;
+	return RendResult::eSuccess;
 }
 
 void VulkanQuadRenderer::inherit ( VulkanQuadRenderer* old_quad_renderer ) {
@@ -391,16 +475,16 @@ void VulkanQuadRenderer::inherit ( VulkanQuadRenderer* old_quad_renderer ) {
 	old_quad_renderer->vertex_shader = nullptr;
 	fragment_shader = old_quad_renderer->fragment_shader;
 	old_quad_renderer->fragment_shader = nullptr;
-	
+
 	pipeline_layout = vk::PipelineLayout();
-	
+
 	per_target_data.clear();
-	
+
 	vertex_buffer = old_quad_renderer->vertex_buffer;
 	old_quad_renderer->vertex_buffer = nullptr;
 	staging_vertex_buffer = old_quad_renderer->staging_vertex_buffer;
 	old_quad_renderer->staging_vertex_buffer = nullptr;
-	
+
 	for ( auto dsl : descriptor_set_layouts ) {
 		dsl = vk::DescriptorSetLayout();
 	}

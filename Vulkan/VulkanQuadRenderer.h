@@ -9,6 +9,7 @@ struct PerFrameQuadRenderObj {
 };
 
 struct VulkanRenderTarget;
+struct SubmitStore;
 
 struct VulkanQuadRenderer {
 	VulkanInstance* const v_instance;
@@ -33,10 +34,12 @@ struct VulkanQuadRenderer {
 	VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer );
 	~VulkanQuadRenderer();
 
+	void init();
 	void inherit ( VulkanQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
 
 	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 	vk::CommandBuffer render_quads ( u32 index );
+	RendResult render (u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index);
 	void destroy ( );
 };

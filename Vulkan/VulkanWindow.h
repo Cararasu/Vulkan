@@ -91,3 +91,16 @@ struct VulkanWindow : public Window {
 	void create_frame_local_data ( std::vector<vk::Image> swapChainImages );
 	void destroy_frame_local_data();
 };
+
+struct SubmitInfo{
+	vk::PipelineStageFlags wait_dst_stage_mask;
+	u32 need_sem_index, need_sem_count;
+	u32 comm_buff_index, comm_buff_count;
+	u32 sig_sem_index, sig_sem_count;
+};
+struct SubmitStore{
+	Array<vk::Semaphore> semaphores;
+	Array<vk::CommandBuffer> commandbuffers;
+	Array<SubmitInfo> submitinfos;
+	vk::Fence signal_fence;
+};
