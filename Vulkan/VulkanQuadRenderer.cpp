@@ -2,14 +2,6 @@
 #include "VulkanWindowSection.h"
 #include "VulkanWindow.h"
 
-struct QuadVertex {
-	glm::vec2 pos;
-};
-struct QuadInstance {
-	glm::vec4 dim;
-	glm::vec4 uvdim;
-	glm::vec2 depth_imageindex;
-};
 
 VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
 
@@ -175,12 +167,13 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		vk::VertexInputBindingDescription ( 1, sizeof ( QuadInstance ), vk::VertexInputRate::eInstance )
 	};
 
-	std::array<vk::VertexInputAttributeDescription, 4> vertexInputAttributes = {
+	std::array<vk::VertexInputAttributeDescription, 5> vertexInputAttributes = {
 		vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32Sfloat, offsetof ( QuadVertex, pos ) ),
 
 		vk::VertexInputAttributeDescription ( 1, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, dim ) ),
 		vk::VertexInputAttributeDescription ( 2, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, uvdim ) ),
-		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, depth_imageindex ) ),
+		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, depth ) ),
+		vk::VertexInputAttributeDescription ( 4, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, color ) ),
 	};
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
@@ -299,10 +292,12 @@ void VulkanQuadRenderer::init() {
 		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
 		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[0].depth_imageindex = glm::vec2 ( 0.5f, 0.0f );
-		instance_ptr[1].dim = glm::vec4 ( 0.2f, 0.2f, 0.2f, 0.2f );
+		instance_ptr[0].depth = glm::vec4 ( 0.5f, 0.0f, 0.0f, 0.0f);
+		instance_ptr[0].color = glm::vec4 ( 0.2f, 1.0f, 1.0f, 0.0f );
+		instance_ptr[1].dim = glm::vec4 ( 0.2f, 0.2f, 0.18f, 0.2f );
 		instance_ptr[1].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[1].depth_imageindex = glm::vec2 ( 0.2f, 1.0f );
+		instance_ptr[1].depth = glm::vec4 ( 0.2f, 1.0f, 0.0f, 0.0f );
+		instance_ptr[1].color = glm::vec4 ( 0.2f, 0.5f, 0.0f, 0.0f );
 		staging_vertex_buffer->unmap_mem();
 	}
 	if ( !g_commandpool ) {

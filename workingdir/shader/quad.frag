@@ -3,6 +3,7 @@
 
 //input
 layout(location = 0) in vec2 texCoord;
+layout(location = 1) in vec4 color;
 
 //per-material
 
@@ -10,5 +11,5 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	outColor = vec4(0.0, 0.0, texCoord.y, 0.5);
+	outColor = color;
 }

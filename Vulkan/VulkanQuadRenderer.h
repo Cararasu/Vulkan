@@ -8,6 +8,25 @@ struct PerFrameQuadRenderObj {
 	vk::CommandBuffer commandbuffer;
 };
 
+struct QuadVertex {
+	glm::vec2 pos;
+};
+struct QuadInstance {
+	glm::vec4 dim;
+	glm::vec4 uvdim;
+	glm::vec4 depth;
+	glm::vec4 color;
+	glm::ivec4 data;
+};
+enum class QuadType{
+	eInactive,
+	eFilled,
+	eTextured
+};
+struct Quads{
+	QuadType type;
+};
+
 struct VulkanRenderTarget;
 struct SubmitStore;
 
@@ -43,3 +62,17 @@ struct VulkanQuadRenderer {
 	RendResult render (u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index);
 	void destroy ( );
 };
+
+template<typename T>
+void shrink_array(Array<T>* array_to_shrink){
+	auto forward_it = array_to_shrink->begin();
+	auto backwards_it = array_to_shrink->rbegin();
+	while(forward_it <= backwards_it){
+		for(; forward_it != array_to_shrink->end() && !forward_it->is_active(); forward_it++);
+		for(; backwards_it != array_to_shrink->rend() && backwards_it->is_active(); backwards_it++);
+		if(forward_it <= backwards_it){
+			std::swap(*forward_it, *backwards_it);
+		}
+	}
+	
+}

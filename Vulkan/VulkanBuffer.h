@@ -8,10 +8,18 @@ struct VulkanBuffer {
 	GPUMemory memory;
 	vk::Buffer buffer;
 	vk::DeviceSize size;
+	vk::BufferUsageFlags usage;
+	vk::MemoryPropertyFlags needed;
+	vk::MemoryPropertyFlags recommended;
+	
 	void* mapped_ptr = nullptr;
 
+	VulkanBuffer ( VulkanInstance* instance );
 	VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
 	~VulkanBuffer();
+	
+	RendResult init(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+	RendResult init();
 
 	RendResult map_mem();
 	RendResult unmap_mem();

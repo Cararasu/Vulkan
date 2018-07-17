@@ -2,9 +2,19 @@
 
 
 VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	v_instance ( instance ), memory ( {
-	vk::DeviceMemory(), size
-} ), buffer ( vk::Buffer() ), size(size) {
+	v_instance ( instance ) {
+	init ( size, usage, needed, recommended );
+}
+RendResult VulkanBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+	this->memory = { vk::DeviceMemory(), size };
+	this->buffer = vk::Buffer(),
+	this->size = size;
+	this->usage = usage;
+	this->needed = needed;
+	this->recommended = recommended;
+	return init();
+}
+RendResult VulkanBuffer::init() {
 	vk::Device device = vulkan_device ( v_instance );
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
 
@@ -16,6 +26,9 @@ VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
 	memory = v_instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	device.bindBufferMemory ( buffer, memory.memory, 0 );
+	if(memory.memory)
+		return RendResult::eFail;
+	return RendResult::eSuccess;
 }
 RendResult VulkanBuffer::map_mem() {
 	if ( !memory.memory ) {
