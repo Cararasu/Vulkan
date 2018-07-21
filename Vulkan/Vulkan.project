@@ -17,6 +17,10 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VulkanRenderer.cpp"/>
+    <File Name="VulkanRenderer.h"/>
+    <File Name="Logger.cpp"/>
+    <File Name="Logger.h"/>
     <File Name="TODO.txt"/>
     <File Name="VulkanHeader.cpp"/>
     <File Name="VulkanBuffer.cpp"/>
@@ -136,11 +140,11 @@
     </Configuration>
     <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
-        <IncludePath Value="..\libs\glfw-3.2.1\include"/>
-        <IncludePath Value="..\libs\glm-0.9.9-a1"/>
-        <IncludePath Value="..\libs\stb"/>
-        <IncludePath Value="..\RendererInterface\include"/>
-        <IncludePath Value="$(VULKAN_PATH)\Include"/>
+        <IncludePath Value="../libs/glfw-3.2.1/include"/>
+        <IncludePath Value="../libs/glm-0.9.9-a1"/>
+        <IncludePath Value="../libs/stb"/>
+        <IncludePath Value="../RendererInterface/include"/>
+        <IncludePath Value="$(VULKAN_PATH)/Include"/>
       </Compiler>
       <Linker Options="" Required="yes">
         <LibraryPath Value="../libs/glfw-3.2.1/lib-mingw-w64"/>

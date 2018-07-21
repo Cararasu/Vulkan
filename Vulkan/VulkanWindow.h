@@ -21,8 +21,7 @@ struct FrameLocalData {
 	vk::Semaphore present_ready_sem;
 
 	//recreate for every resize
-	VulkanImageWrapper* present_image;
-	vk::ImageView present_image_view;
+	bool createcommandbuffer;
 	vk::CommandBuffer clear_command_buffer;
 	vk::CommandBuffer present_command_buffer;
 
@@ -40,7 +39,8 @@ struct VulkanWindow : public Window {
 	GLFWwindow* window = nullptr;
 
 	VulkanQuadRenderer quad_renderer;
-	VulkanSingleImage depth_image;
+	VulkanWindowImage* present_image;
+	VulkanBaseImage* depth_image;
 	
 	//vulkan
 	vk::SurfaceKHR surface;
@@ -67,6 +67,8 @@ struct VulkanWindow : public Window {
 	virtual RendResult root_section ( WindowSection* section );
 	virtual WindowSection* root_section ( );
 
+	virtual Window* backed_image ();
+	
 	virtual RendResult update();
 	virtual RendResult destroy();
 
@@ -88,7 +90,7 @@ struct VulkanWindow : public Window {
 
 	void create_swapchain();
 	void create_empty_pipeline();
-	void create_frame_local_data ( std::vector<vk::Image> swapChainImages );
+	void create_frame_local_data ( u32 count );
 	void destroy_frame_local_data();
 };
 

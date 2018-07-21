@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "Logger.h"
 #include <functional>
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>

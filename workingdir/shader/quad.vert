@@ -7,7 +7,7 @@ layout(location = 0) in vec2 pos;
 //per-instance
 layout(location = 1) in vec4 dim;
 layout(location = 2) in vec4 uvdim;
-layout(location = 3) in vec4 depth;
+layout(location = 3) in vec4 data;
 layout(location = 4) in vec4 incolor;
 
 //per-frame
@@ -24,8 +24,7 @@ out gl_PerVertex {
 };
 
 void main() {
-	
-    gl_Position = vec4( (dim.xy + (pos.xy * dim.zw) - 0.5f) * 2.0f, depth.x, 1.0f);
-	texCoord = depth.xy;
+    gl_Position = vec4( (dim.xy + (pos.xy * dim.zw) - 0.5f) * 2.0f, data.x, 1.0f);
+	data.y + 0;
 	color = incolor;
 }

@@ -13,11 +13,8 @@ struct ImageRenderTarget {
 };
 
 struct VulkanRenderTarget : public RenderTarget {
-	Array<ImageRenderTarget> images;
-	vk::Format color_format;
-	vk::ImageView depthview;
-	vk::Format depth_stencil_format;
-	u32 targetcount;
+	Array<VulkanBaseImage*> images;
+	VulkanBaseImage* depth_image;
 };
 
 struct VulkanQuadRenderer;

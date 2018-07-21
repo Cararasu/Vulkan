@@ -8,27 +8,17 @@
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 #include <map>
+#include <list>
 #include <set>
 #include <vector>
-#include <inttypes.h>
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef int8_t s8;
-typedef int16_t s16;
-typedef int32_t s32;
-typedef int64_t s64;
-
-typedef uint32_t ResourceId;
-
-typedef float f32;
-typedef double f64;
+#include "RenderTypes.h"
 
 //@TODO implement own DynamicArrayClass
 template<typename T>
 using Array = std::vector<T>;
+template<typename T>
+using List = std::list<T>;
 template<typename T>
 using StaticArray = std::vector<T>;
 template<typename T>
@@ -54,11 +44,12 @@ struct ChangeableValue {
 	ChangeableValue (T value) : wanted (value), value(value) { }
 	ChangeableValue (T wanted, T value) : wanted (wanted), value(value) { }
 	
-	T& operator=(T&& newvalue) const{
+	ChangeableValue<T>& operator=(const ChangeableValue<T>& newvalue) = delete;
+	T& operator=(const T& newvalue) const{
 		wanted = newvalue;
 		return this->wanted;
 	}
-	T& operator=(const T& newvalue) const{
+	T& operator=(T&& newvalue) const{
 		wanted = newvalue;
 		return this->wanted;
 	}

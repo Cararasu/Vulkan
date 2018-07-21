@@ -239,6 +239,27 @@ struct WWW {
 #include <chrono>
 #include <thread>
 
+/*
+ * ImageStore
+ * 
+ * ResourceManager
+ *     ResourceHandle loadImage()
+ *     ResourceHandle loadModel() -> buffer with indices, vertices, uvs
+ *     ResourceHandle load...
+ * 
+ * setImage(ResourceHandle image, ResourceHandle default)
+ * 
+ * Deferred Shading:
+ * 
+ * Color rgb + specular? 16i VK_FORMAT_R16G16B16A16_SFLOAT/VK_FORMAT_R16G16B16A16_UNORM
+ * depth 1 32f VK_FORMAT_R32_SFLOAT
+ * normals 3 10f2i VK_FORMAT_A2B10G10R10_UNORM_PACK32
+ * specular 1f?
+ * 
+ */
+ 
+
+
 int main ( int argc, char **argv ) {
 
 	Instance* newinstance = initialize_instance ( "Vulkan" );
@@ -256,7 +277,7 @@ int main ( int argc, char **argv ) {
 	}
 	printf ( "Devices\n" );
 	for ( Device* device : newinstance->get_devices() ) {
-		printf ( "\t%s %d\n", device->name, device->rating );
+		printf ( "\t%s %ld\n", device->name, device->rating );
 	}
 
 	Window* window = newinstance->create_window();
@@ -279,7 +300,6 @@ int main ( int argc, char **argv ) {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for ( 20ms );
 		newinstance->process_events();
-		printf("%d\n", (1.0f + (1.0f / (1 << 23))) == 1.0f);
 	} while ( newinstance->is_window_open() );
 	WindowSection* section = window->root_section();
 	window->root_section ( nullptr );

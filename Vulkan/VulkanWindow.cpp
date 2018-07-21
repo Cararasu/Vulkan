@@ -3,12 +3,13 @@
 
 
 
-VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ), quad_renderer ( instance ), depth_image ( instance ) {
+VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ), quad_renderer ( instance ), depth_image ( nullptr ) {
 
 }
 VulkanWindow::~VulkanWindow() {
 	m_instance->destroy_window ( this );
-	depth_image.destroy();
+	if ( depth_image )
+		delete depth_image;
 	quad_renderer.destroy();
 }
 
@@ -232,6 +233,9 @@ void VulkanWindow::initialize() {
 					break;
 				}
 			}
+			for ( size_t i = 0; i < formatCount; i++ ) {
+				printf ( "Present Format: %s Colorspace: %s\n", to_string ( formats[i].format ).c_str(), to_string ( formats[i].colorSpace ).c_str() );
+			}
 		}
 	}
 	chosen_presentation_mode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
@@ -258,6 +262,9 @@ void VulkanWindow::initialize() {
 	}
 	framebuffer_size_changed ( m_size.value );
 
+}
+Window* VulkanWindow::backed_image () {
+	return nullptr;
 }
 RendResult VulkanWindow::update() {
 	static double oldTime = 0.0;
@@ -344,27 +351,27 @@ void VulkanWindow::create_command_buffers() {
 			data.present_command_buffer = buffers[1];
 		}
 		data.clear_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		data.present_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
-		depth_image.imagewrapper.transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
+		present_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
+		depth_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
 		data.clear_command_buffer.clearColorImage (
-		    data.present_image->image,
+		    present_image->image,
 		    vk::ImageLayout::eTransferDstOptimal,
 		vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
-		{vk::ImageSubresourceRange ( data.present_image->aspectFlags, 0, 1, 0, 1 ) }
+		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
 		);
 		data.clear_command_buffer.clearDepthStencilImage (
-		    depth_image.imagewrapper.image,
+		    depth_image->image,
 		    vk::ImageLayout::eTransferDstOptimal,
 		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
-		{vk::ImageSubresourceRange ( depth_image.imagewrapper.aspectFlags, 0, 1, 0, 1 ) }
+		{vk::ImageSubresourceRange ( depth_image->aspect, 0, 1, 0, 1 ) }
 		);
-		data.present_image->transition_image_layout ( vk::ImageLayout::eColorAttachmentOptimal, data.clear_command_buffer );
-		depth_image.imagewrapper.transition_image_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data.clear_command_buffer );
+		present_image->transition_image_layout ( vk::ImageLayout::eColorAttachmentOptimal, data.clear_command_buffer );
+		depth_image->transition_image_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data.clear_command_buffer );
 
 		data.clear_command_buffer.end();
 
 		data.present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		data.present_image->transition_image_layout ( vk::ImageLayout::ePresentSrcKHR, data.present_command_buffer );
+		present_image->transition_image_layout ( vk::ImageLayout::ePresentSrcKHR, data.present_command_buffer );
 		data.present_command_buffer.end();
 	}
 
@@ -373,10 +380,10 @@ void VulkanWindow::create_command_buffers() {
 void VulkanWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
-	printf ( "--------------- FrameBoundary ---------------\n" );
+	g_logger.log<LogLevel::eDebug> ( "--------------- FrameBoundary ---------------\n" );
 
 	vulkan_device ( m_instance ).acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-	printf ( "PresetImageId: %d\n", present_image_index );
+	g_logger.log<LogLevel::eDebug> ( "PresetImageId: %d\n", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
 	//reset for frame
 	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
@@ -460,7 +467,7 @@ void VulkanWindow::render_frame() {
 	    &present_image_index, &results );
 	pgc_queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	active_sems.clear();
-	printf ( "---------------   EndFrame    ---------------\n" );
+	g_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
 }
 
 
@@ -490,12 +497,11 @@ void VulkanWindow::create_swapchain() {
 	}
 
 	if ( depth_image ) {
-		depth_image.resize ( swap_chain_extend.width, swap_chain_extend.height );
-	} else {
-		vk::Format depth_format = m_instance->findDepthFormat();
-		depth_image.create ( {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-		                     vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+		delete depth_image;
 	}
+	vk::Format depth_format = m_instance->findDepthFormat();
+	depth_image = new VulkanImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
+						 vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 
 	{
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo (
@@ -544,8 +550,15 @@ void VulkanWindow::create_swapchain() {
 		V_CHECKCALL ( vulkan_device ( m_instance ).createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
 		vulkan_device ( m_instance ).destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
-
-	create_frame_local_data ( vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain ) );
+	
+	if(present_image){
+		delete present_image;
+		present_image = nullptr;
+	}
+	std::vector<vk::Image> images = vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain );
+	present_image = new VulkanWindowImage(m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format);
+	
+	create_frame_local_data ( images.size() );
 
 }
 void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
@@ -559,34 +572,22 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 		create_swapchain();
 	printf ( "Actual Extent %dx%d\n", swap_chain_extend.x, swap_chain_extend.y );
 
-	v_render_target_wrapper.images.resize ( frame_local_data.size() );
-	for ( size_t i = 0; i < frame_local_data.size(); i++ ) {
-		v_render_target_wrapper.images[i].imageview = frame_local_data[i].present_image_view;
-	}
-	v_render_target_wrapper.color_format = frame_local_data[0].present_image->format;
-	v_render_target_wrapper.targetcount = frame_local_data.size();
-
-	v_render_target_wrapper.depth_stencil_format = depth_image.imagewrapper.format;
-	v_render_target_wrapper.depthview = depth_image.imageview;
+	v_render_target_wrapper.images.resize ( 1 );
+	v_render_target_wrapper.images[0] = present_image;
 
 	quad_renderer.update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 
 	if ( v_root_section )
 		v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 }
-void VulkanWindow::create_frame_local_data ( std::vector<vk::Image> swapChainImages ) {
+void VulkanWindow::create_frame_local_data ( u32 count ) {
 
-	frame_local_data.resize ( swapChainImages.size() );
-	for ( size_t i = 0; i < swapChainImages.size(); i++ ) {
+	frame_local_data.resize ( count );
+	for ( u32 i = 0; i < count; i++ ) {
 
 		frame_local_data[i].image_presented_fence = vulkan_device ( m_instance ).createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
 		frame_local_data[i].present_ready_sem = create_semaphore ( m_instance );
 		frame_local_data[i].render_ready_sem = create_semaphore ( m_instance );
-
-		frame_local_data[i].present_image = new VulkanImageWrapper ( m_instance, swapChainImages[i], {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, present_swap_format.format, vk::ImageTiling::eOptimal,
-		        vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
-
-		frame_local_data[i].present_image_view = m_instance->createImageView2D ( swapChainImages[i], 0, 1, present_swap_format.format, vk::ImageAspectFlagBits::eColor );
 	}
 	create_command_buffers();
 }
@@ -608,11 +609,10 @@ void VulkanWindow::destroy_frame_local_data() {
 
 		destroy_semaphore ( m_instance, data.present_ready_sem );
 		destroy_semaphore ( m_instance, data.render_ready_sem );
-		delete data.present_image;
-		if ( data.present_image_view )
-			vulkan_device ( m_instance ).destroyImageView ( data.present_image_view );
 		index++;
 	}
+	if ( present_image )
+		delete present_image;
 	//@Debugging clear so we assert in case we access it in a state, that we should not
 	frame_local_data.clear();
 }

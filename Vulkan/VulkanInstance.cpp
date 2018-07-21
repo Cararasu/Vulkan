@@ -63,7 +63,6 @@ VulkanInstance::VulkanInstance() {
 	int count;
 	GLFWmonitor** glfw_monitors = glfwGetMonitors ( &count );
 
-	printf ( "%d\n", count );
 	for ( int i = 0; i < count; ++i ) {
 		VulkanMonitor* vulkanmonitor = new VulkanMonitor ( glfw_monitors[i] );
 		monitor_map.insert ( std::make_pair ( glfw_monitors[i], vulkanmonitor ) );
@@ -472,7 +471,7 @@ GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, 
 	return memory;
 }
 RendResult VulkanInstance::free_gpu_memory ( GPUMemory memory ) {
-	if ( memory.memory ){
+	if ( memory.memory ) {
 		printf ( "Freeing %d Bytes of Memory\n", memory.size );
 		vulkan_device ( this ).freeMemory ( memory.memory, nullptr );
 		memory.memory = vk::DeviceMemory();
@@ -510,6 +509,9 @@ vk::ImageView VulkanInstance::createImageView2DArray ( vk::Image image, u32 mipB
 	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), printf ( "Creation of ImageView failed\n" ) );
 
 	return imageView;
+}
+void VulkanInstance::destroyImageView ( vk::ImageView imageview ) {
+	m_device.destroyImageView ( imageview );
 }
 
 void VulkanInstance::destroyCommandPool ( vk::CommandPool commandPool ) {

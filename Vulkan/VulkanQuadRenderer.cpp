@@ -108,7 +108,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	if ( !renderpass ) {// Color and depth-stencil buffers
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            target_wrapper->color_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            target_wrapper->images[0]->v_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -117,7 +117,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            target_wrapper->depth_stencil_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            target_wrapper->depth_image->v_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -144,16 +144,23 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		renderpass = vulkan_device ( v_instance ).createRenderPass ( renderPassInfo, nullptr );
 	}
 	destroy_framebuffers();
-	per_target_data.resize ( target_wrapper->images.size() );
-	vk::ImageView attachments[2] = {vk::ImageView(), target_wrapper->depthview};
+	vk::ImageView attachments[2] = {vk::ImageView(), target_wrapper->depth_image->imageview};
 	vk::FramebufferCreateInfo frameBufferCreateInfo = {
 		vk::FramebufferCreateFlags(), renderpass,
 		2, attachments,
 		viewport.extend.width, viewport.extend.height, 1
 	};
-	for ( size_t i = 0; i < target_wrapper->images.size(); i++ ) {
-		attachments[0] = target_wrapper->images[i].imageview;
-		per_target_data[i].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
+	if ( target_wrapper->images[0]->window_target ) {
+		VulkanWindowImage* window_image = static_cast<VulkanWindowImage*>(target_wrapper->images[0]);
+		per_target_data.resize ( window_image->per_image_data.size() );
+		for ( size_t i = 0; i < window_image->per_image_data.size(); i++ ) {
+			attachments[0] = window_image->per_image_data[i].imageview;
+			per_target_data[i].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
+		}
+	}else{
+		per_target_data.resize ( 1 );
+		attachments[0] = target_wrapper->images[0]->imageview;
+		per_target_data[0].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
 	}
 
 
@@ -172,7 +179,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 
 		vk::VertexInputAttributeDescription ( 1, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, dim ) ),
 		vk::VertexInputAttributeDescription ( 2, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, uvdim ) ),
-		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, depth ) ),
+		vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, data ) ),
 		vk::VertexInputAttributeDescription ( 4, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, color ) ),
 	};
 
@@ -282,6 +289,8 @@ void VulkanQuadRenderer::init() {
 		staging_vertex_buffer->map_mem();
 		memset ( staging_vertex_buffer->mapped_ptr, 0, vertexbuffer_size );
 		QuadVertex* vertex_ptr = ( QuadVertex* ) staging_vertex_buffer->mapped_ptr;
+		glm::vec4 dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
+		glm::vec4 uvdim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		vertex_ptr[0].pos = glm::vec2 ( 1.0f, 1.0f );
 		vertex_ptr[1].pos = glm::vec2 ( 0.0f, 1.0f );
 		vertex_ptr[2].pos = glm::vec2 ( 0.0f, 0.0f );
@@ -292,11 +301,11 @@ void VulkanQuadRenderer::init() {
 		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
 		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[0].depth = glm::vec4 ( 0.5f, 0.0f, 0.0f, 0.0f);
-		instance_ptr[0].color = glm::vec4 ( 0.2f, 1.0f, 1.0f, 0.0f );
+		instance_ptr[0].data = glm::vec4 ( 0.5f, 0.0f, 0.0f, 0.0f );
+		instance_ptr[0].color = glm::vec4 ( 0.7f, 1.0f, 1.0f, 0.0f );
 		instance_ptr[1].dim = glm::vec4 ( 0.2f, 0.2f, 0.18f, 0.2f );
 		instance_ptr[1].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
-		instance_ptr[1].depth = glm::vec4 ( 0.2f, 1.0f, 0.0f, 0.0f );
+		instance_ptr[1].data = glm::vec4 ( 0.2f, 1.0f, 0.0f, 0.0f );
 		instance_ptr[1].color = glm::vec4 ( 0.2f, 0.5f, 0.0f, 0.0f );
 		staging_vertex_buffer->unmap_mem();
 	}
@@ -310,9 +319,9 @@ void VulkanQuadRenderer::init() {
 	}
 }
 vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
-	
+
 	init();
-	
+
 	PerFrameQuadRenderObj& per_frame = per_target_data[index];
 	if ( per_frame.commandbuffer ) {
 		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
@@ -381,7 +390,7 @@ vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
 RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
 
 	init();
-	
+
 	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
 	if ( per_frame.commandbuffer ) {
 		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
@@ -441,7 +450,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 	//1. simple textured quads
 	//2. simple filled quads
 	//3. fonts
-	
+
 	per_frame.commandbuffer.endRenderPass();
 	per_frame.commandbuffer.end();
 
@@ -451,10 +460,10 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		state->commandbuffers.size(), 1,
 		wait_sem_index, 1
 	};
-	
-	state->commandbuffers.push_back(per_frame.commandbuffer);
-	state->submitinfos.push_back(submitinfo);
-	
+
+	state->commandbuffers.push_back ( per_frame.commandbuffer );
+	state->submitinfos.push_back ( submitinfo );
+
 	*final_sem_index = wait_sem_index;
 	return RendResult::eSuccess;
 }

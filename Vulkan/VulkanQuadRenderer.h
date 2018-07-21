@@ -14,14 +14,16 @@ struct QuadVertex {
 struct QuadInstance {
 	glm::vec4 dim;
 	glm::vec4 uvdim;
-	glm::vec4 depth;
+	glm::vec4 data;
 	glm::vec4 color;
-	glm::ivec4 data;
 };
 enum class QuadType{
 	eInactive,
 	eFilled,
 	eTextured
+};
+struct QuadRef{
+	u32 quadid;
 };
 struct Quads{
 	QuadType type;

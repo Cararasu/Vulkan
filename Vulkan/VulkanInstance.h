@@ -86,6 +86,7 @@ struct VulkanInstance : public Instance {
 
 	vk::ImageView createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags );
 	vk::ImageView createImageView2DArray ( vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags );
+	void destroyImageView ( vk::ImageView imageview );
 
 	vk::DeviceMemory allocateMemory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties );
 

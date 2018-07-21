@@ -4,9 +4,8 @@
   <Project Name="RendererInterface" Path="RendererInterface/RendererInterface.project" Active="No"/>
   <Project Name="MetaBuilder" Path="MetaBuilder/MetaBuilder.project" Active="No"/>
   <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
-  <Project Name="Vulkan" Path="Vulkan/Vulkan.project" Active="Yes"/>
   <BuildMatrix>
-    <WorkspaceConfiguration Name="Debug" Selected="yes">
+    <WorkspaceConfiguration Name="Debug" Selected="no">
       <Environment/>
       <Project Name="VulkanTest" ConfigName="Debug"/>
       <Project Name="Vulkan" ConfigName="Debug"/>
@@ -22,7 +21,7 @@
       <Project Name="RendererInterface" ConfigName="Release"/>
       <Project Name="MetaBuilder" ConfigName="Release"/>
     </WorkspaceConfiguration>
-    <WorkspaceConfiguration Name="Debug Windows" Selected="no">
+    <WorkspaceConfiguration Name="Debug Windows" Selected="yes">
       <Environment/>
       <Project Name="Main" ConfigName="DebugWindows"/>
       <Project Name="MetaBuilder" ConfigName="Debug"/>
