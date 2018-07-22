@@ -257,8 +257,6 @@ struct WWW {
  * specular 1f?
  * 
  */
- 
-
 
 int main ( int argc, char **argv ) {
 

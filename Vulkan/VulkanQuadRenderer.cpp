@@ -59,11 +59,11 @@ void VulkanQuadRenderer::destroy_framebuffers() {
 			fb.framebuffer = vk::Framebuffer();
 		}
 	}
-	per_target_data.clear();
 }
 
 RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {
 	this->viewport = viewport;
+	this->render_target = target_wrapper;
 	//TODO move most of the things here to the resourcemanager
 	//@Refactor
 	if ( !pipeline_layout ) {
@@ -108,7 +108,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	if ( !renderpass ) {// Color and depth-stencil buffers
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            target_wrapper->images[0]->v_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            render_target->images[0]->v_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -117,7 +117,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            target_wrapper->depth_image->v_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            render_target->depth_image->v_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -144,26 +144,9 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		renderpass = vulkan_device ( v_instance ).createRenderPass ( renderPassInfo, nullptr );
 	}
 	destroy_framebuffers();
-	vk::ImageView attachments[2] = {vk::ImageView(), target_wrapper->depth_image->imageview};
-	vk::FramebufferCreateInfo frameBufferCreateInfo = {
-		vk::FramebufferCreateFlags(), renderpass,
-		2, attachments,
-		viewport.extend.width, viewport.extend.height, 1
-	};
-	if ( target_wrapper->images[0]->window_target ) {
-		VulkanWindowImage* window_image = static_cast<VulkanWindowImage*>(target_wrapper->images[0]);
-		per_target_data.resize ( window_image->per_image_data.size() );
-		for ( size_t i = 0; i < window_image->per_image_data.size(); i++ ) {
-			attachments[0] = window_image->per_image_data[i].imageview;
-			per_target_data[i].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
-		}
-	}else{
-		per_target_data.resize ( 1 );
-		attachments[0] = target_wrapper->images[0]->imageview;
-		per_target_data[0].framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
-	}
-
-
+	if(per_target_data.size() < render_target->target_count )
+		per_target_data.resize ( render_target->target_count );
+	
 	if ( pipeline ) {
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 	}
@@ -318,80 +301,21 @@ void VulkanQuadRenderer::init() {
 		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &t_commandpool );
 	}
 }
-vk::CommandBuffer VulkanQuadRenderer::render_quads ( u32 index ) {
-
-	init();
-
-	PerFrameQuadRenderObj& per_frame = per_target_data[index];
-	if ( per_frame.commandbuffer ) {
-		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
-	} else {
-		per_frame.commandbuffer = v_instance->createCommandBuffer ( g_commandpool, vk::CommandBufferLevel::ePrimary );
-	}
-	vk::CommandBufferBeginInfo begininfo = {
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
-	};
-	per_frame.commandbuffer.begin ( begininfo );
-
-	per_frame.commandbuffer.pipelineBarrier (
-	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
-	    vk::DependencyFlags(),
-	{}/*memoryBarrier*/, {
-		vk::BufferMemoryBarrier (
-		    vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
-		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
-		)
-	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-
-	staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.commandbuffer );
-
-	per_frame.commandbuffer.pipelineBarrier (
-	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
-	    vk::DependencyFlags(),
-	{}/*memoryBarrier*/, {
-		vk::BufferMemoryBarrier (
-		    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    vertex_buffer->buffer, 0, vertex_buffer->size
-		)
-	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-
-	vk::ClearValue clearColors[2] = {
-		vk::ClearValue ( ),
-		vk::ClearValue ( )
-	};
-	vk::RenderPassBeginInfo renderPassBeginInfo = {
-		renderpass, per_frame.framebuffer,
-		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
-		2, clearColors
-	};
-	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-
-	per_frame.commandbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
-	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
-	per_frame.commandbuffer.draw ( 6, 2, 0, 0 );
-
-	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
-	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-
-	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
-	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
-
-	//1. simple textured quads
-	//2. simple filled quads
-	//3. fonts
-
-	per_frame.commandbuffer.endRenderPass();
-	per_frame.commandbuffer.end();
-
-	return per_frame.commandbuffer;
-}
 RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
 
 	init();
-
 	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
+
+	if(!per_frame.framebuffer){
+		vk::ImageView attachments[2] = {render_target->images[0]->imageview, render_target->depth_image->imageview};
+		vk::FramebufferCreateInfo frameBufferCreateInfo = {
+			vk::FramebufferCreateFlags(), renderpass,
+			2, attachments,
+			viewport.extend.width, viewport.extend.height, 1
+		};
+		per_frame.framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
+	}
+	
 	if ( per_frame.commandbuffer ) {
 		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
 	} else {

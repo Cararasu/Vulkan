@@ -271,9 +271,10 @@ ImageFormat transform_image_format ( vk::Format format ) {
 }
 
 VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	VulkanBaseImage ( format, width, height, depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ), memory(), image(), extent ( extent ), mipMapLevels ( mipMapLevels ), arraySize ( arraySize ), format ( format ), tiling ( tiling ), usage ( usage ), type(), layouts ( arraySize, vk::ImageLayout::eUndefined ), aspectFlags ( aspectFlags ), needed ( needed ), recommended ( recommended ) {
+	VulkanBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ), 
+		memory(), layouts ( layers, vk::ImageLayout::eUndefined ) {
 
-	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
+	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), this->type, format, this->extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
 
 	V_CHECKCALL ( instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
 
@@ -283,7 +284,13 @@ VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D 
 	instance->m_device.getImageMemoryRequirements ( image, &mem_req );
 	memory = instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	vkBindImageMemory ( instance->m_device, image, memory.memory, 0 );
-	layouts = Array<vk::ImageLayout> ( arraySize, vk::ImageLayout::eUndefined );
+	
+	if(type == vk::ImageType::e2D && layers == 1){
+		imageview = instance->createImageView2D(image, 0, mipmap_layers, format, aspect);
+	}
+	else if(type == vk::ImageType::e2D){
+		imageview = instance->createImageView2DArray(image, 0, mipmap_layers, 0, layers, format, aspect);
+	}
 }
 VulkanImageWrapper::~VulkanImageWrapper() {
 	destroy();
@@ -291,13 +298,14 @@ VulkanImageWrapper::~VulkanImageWrapper() {
 
 void VulkanImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
-		instance->m_device.destroyImage ( image );
+		v_instance->destroyImageView(imageview);
+		v_instance->m_device.destroyImage ( image );
 		image = vk::Image();
-		instance->free_gpu_memory ( memory );
+		v_instance->free_gpu_memory ( memory );
 		memory.memory = vk::DeviceMemory();
 	}
 }
-vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
+vk::ImageMemoryBarrier VulkanBaseImage::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 
@@ -417,15 +425,28 @@ vk::ImageMemoryBarrier VulkanImageWrapper::transition_image_layout_impl ( vk::Im
 	           oldLayout, newLayout,
 	           0, 0,
 	           image,
-	           vk::ImageSubresourceRange ( aspectFlags, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
+	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
+}
+void VulkanWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
+	
+	vk::PipelineStageFlags sourceStage, destinationStage;
+	vk::ImageMemoryBarrier barrier = transition_image_layout_impl ( per_image_data[current_index].layout, newLayout, mip_range, {0, 1}, &sourceStage, &destinationStage );
+
+	commandBuffer.pipelineBarrier (
+	    sourceStage, destinationStage,
+	    vk::DependencyFlags(),
+	    {},//memoryBarriers
+		{},//bufferBarriers
+		{barrier} //imageBarriers
+	);
 }
 void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
-		mip_range.max = mipMapLevels;
+		mip_range.max = mipmap_layers;
 	if ( array_range.max == 0 )
-		array_range.max = arraySize;
+		array_range.max = layers;
 
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	u32 different_layout_count = layouts[array_range.min] == newLayout ? 0 : 1;
@@ -470,21 +491,24 @@ void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Ra
 	}
 }
 
+void VulkanWindowImage::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+
+}
 void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
-		mip_range.max = mipMapLevels;
+		mip_range.max = mipmap_layers;
 	if ( array_range.max == 0 )
-		array_range.max = arraySize;
+		array_range.max = layers;
 
 	transition_image_layout ( vk::ImageLayout::eTransferSrcOptimal, {mip_range.min, mip_range.min + 1}, array_range, commandBuffer );
 	transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, {mip_range.min + 1, mip_range.max}, array_range, commandBuffer );
 
 	for ( u32 index = mip_range.min + 1; index < mip_range.max; index++ ) {
 		// Set up a blit from previous mip-level to the next.
-		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspectFlags, index - 1, array_range.min, array_range.max - array_range.min ), {
+		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspect, index - 1, array_range.min, array_range.max - array_range.min ), {
 			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> ( index - 1 ) ), 1 ), std::max ( int ( extent.height >> ( index - 1 ) ), 1 ), std::max ( int ( extent.depth >> ( index - 1 ) ), 1 ) )
-		}, vk::ImageSubresourceLayers ( aspectFlags, index, array_range.min, array_range.max - array_range.min ), {
+		}, vk::ImageSubresourceLayers ( aspect, index, array_range.min, array_range.max - array_range.min ), {
 			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> index ), 1 ), std::max ( int ( extent.height >> index ), 1 ), std::max ( int ( extent.depth >> index ), 1 ) )
 		} );
 		commandBuffer.blitImage ( image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, {imageBlit}, vk::Filter::eLinear );

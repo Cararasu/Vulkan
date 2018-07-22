@@ -15,6 +15,7 @@ struct ImageRenderTarget {
 struct VulkanRenderTarget : public RenderTarget {
 	Array<VulkanBaseImage*> images;
 	VulkanBaseImage* depth_image;
+	u32 target_count;
 };
 
 struct VulkanQuadRenderer;

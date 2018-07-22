@@ -37,21 +37,21 @@ struct VulkanBaseImage : public Image {
 		}
 	}
 	virtual ~VulkanBaseImage() { }
-	/*
-		vk::ImageView get_whole_image_view();
-		void transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
-		inline void transition_image_layout ( vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer ) {
-			transition_image_layout ( newLayout, {0, mipMapLevels}, {0, arraySize}, commandBuffer );
-		}
+	
+	vk::ImageMemoryBarrier transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );
 
-		void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
-		inline void generate_mipmaps ( u32 baseLevel, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-			generate_mipmaps ( {baseLevel, mipMapLevels}, {0, arraySize}, targetLayout, commandBuffer );
-		}
-		inline void generate_mipmaps ( vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-			generate_mipmaps ( {0, mipMapLevels}, {0, arraySize}, targetLayout, commandBuffer );
-		}
-	*/
+	virtual void transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) = 0;
+	void transition_layout ( vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer ) {
+		transition_image_layout ( newLayout, {0, mipmap_layers}, {0, layers}, commandBuffer );
+	}
+
+	virtual void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) = 0;
+	void gen_mipmaps ( u32 baseLevel, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+		generate_mipmaps ( {baseLevel, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
+	}
+	void gen_mipmaps ( vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+		generate_mipmaps ( {0, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
+	}
 };
 
 struct PerImageData {
@@ -86,20 +86,13 @@ struct VulkanWindowImage : public VulkanBaseImage {
 		image = per_image_data[current_index].image;
 		imageview = per_image_data[current_index].imageview;
 	}
-	virtual u32 instance_count (){
-		return per_image_data.size();
-	}
-	virtual vk::Image instance_image (u32 index){
-		return per_image_data[index].image;
-	}
-	virtual vk::ImageView instance_imageview (u32 index) {
-		return per_image_data[index].imageview;
-	}
+	
+	virtual void transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
+	virtual void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
 };
 
 struct VulkanImageWrapper : public VulkanBaseImage {
 	GPUMemory memory;
-	vk::ImageType type;
 	StaticArray<vk::ImageLayout> layouts;
 
 	VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
@@ -108,20 +101,9 @@ struct VulkanImageWrapper : public VulkanBaseImage {
 	void destroy();
 
 	//Vulkan-specific stuff
-	vk::ImageMemoryBarrier transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );
+	virtual void transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
 
-	void transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
-	inline void transition_image_layout ( vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer ) {
-		transition_image_layout ( newLayout, {0, mipmap_layers}, {0, layers}, commandBuffer );
-	}
-
-	void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
-	inline void generate_mipmaps ( u32 baseLevel, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-		generate_mipmaps ( {baseLevel, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
-	}
-	inline void generate_mipmaps ( vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-		generate_mipmaps ( {0, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
-	}
+	virtual void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
 	
 	virtual u32 instance_count (){
 		return 1;

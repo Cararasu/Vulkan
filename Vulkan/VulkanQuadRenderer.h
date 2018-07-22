@@ -48,6 +48,8 @@ struct VulkanQuadRenderer {
 
 	VulkanBuffer* vertex_buffer = nullptr;
 	VulkanBuffer* staging_vertex_buffer = nullptr;
+	
+	VulkanRenderTarget* render_target;
 
 	Array<PerFrameQuadRenderObj> per_target_data;
 
@@ -60,7 +62,6 @@ struct VulkanQuadRenderer {
 	void destroy_framebuffers();
 
 	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
-	vk::CommandBuffer render_quads ( u32 index );
 	RendResult render (u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index);
 	void destroy ( );
 };

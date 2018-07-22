@@ -10,6 +10,8 @@ VulkanWindow::~VulkanWindow() {
 	m_instance->destroy_window ( this );
 	if ( depth_image )
 		delete depth_image;
+	if ( present_image )
+		delete present_image;
 	quad_renderer.destroy();
 }
 
@@ -337,44 +339,11 @@ void VulkanWindow::create_command_buffers() {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, vulkan_pgc_queue_wrapper ( m_instance, queue_index )->graphics_queue_id );
 		vulkan_device ( m_instance ).createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
 	}
-	vk::CommandBufferAllocateInfo allocateInfo ( window_graphics_command_pool, vk::CommandBufferLevel::ePrimary, 2 );
 
-	for ( FrameLocalData& data : frame_local_data ) {
-		// create Command Buffers
-		vk::CommandBuffer buffers[2];
-		if ( data.clear_command_buffer && data.present_command_buffer ) {
-			data.clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
-			data.present_command_buffer.reset ( vk::CommandBufferResetFlags() );
-		} else {
-			vulkan_device ( m_instance ).allocateCommandBuffers ( &allocateInfo, buffers );
-			data.clear_command_buffer = buffers[0];
-			data.present_command_buffer = buffers[1];
-		}
-		data.clear_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
-		depth_image->transition_image_layout ( vk::ImageLayout::eTransferDstOptimal, data.clear_command_buffer );
-		data.clear_command_buffer.clearColorImage (
-		    present_image->image,
-		    vk::ImageLayout::eTransferDstOptimal,
-		vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
-		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
-		);
-		data.clear_command_buffer.clearDepthStencilImage (
-		    depth_image->image,
-		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
-		{vk::ImageSubresourceRange ( depth_image->aspect, 0, 1, 0, 1 ) }
-		);
-		present_image->transition_image_layout ( vk::ImageLayout::eColorAttachmentOptimal, data.clear_command_buffer );
-		depth_image->transition_image_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data.clear_command_buffer );
+}
 
-		data.clear_command_buffer.end();
-
-		data.present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_image_layout ( vk::ImageLayout::ePresentSrcKHR, data.present_command_buffer );
-		data.present_command_buffer.end();
-	}
-
+void VulkanWindow::create_command_buffer ( u32 index ){
+	
 }
 
 void VulkanWindow::render_frame() {
@@ -396,6 +365,51 @@ void VulkanWindow::render_frame() {
 	vulkan_device ( m_instance ).resetFences ( {data->image_presented_fence} );
 
 	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue ( queue_index );
+	
+	present_image->set_current_image ( present_image_index );
+	
+	if(data->clear_command_buffer){
+		data->clear_command_buffer.reset(vk::CommandBufferResetFlags());
+	}
+	if(data->present_command_buffer){
+		data->present_command_buffer.reset(vk::CommandBufferResetFlags());
+	}
+	{
+		vk::CommandBufferAllocateInfo allocateInfo ( window_graphics_command_pool, vk::CommandBufferLevel::ePrimary, 2 );
+		// create Command Buffers
+		vk::CommandBuffer buffers[2];
+		if ( data->clear_command_buffer && data->present_command_buffer ) {
+			data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
+			data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
+		} else {
+			vulkan_device ( m_instance ).allocateCommandBuffers ( &allocateInfo, buffers );
+			data->clear_command_buffer = buffers[0];
+			data->present_command_buffer = buffers[1];
+		}
+		data->clear_command_buffer.begin ( vk::CommandBufferBeginInfo() );
+		present_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
+		depth_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
+		data->clear_command_buffer.clearColorImage (
+		    present_image->image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
+		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
+		);
+		data->clear_command_buffer.clearDepthStencilImage (
+		    depth_image->image,
+		    vk::ImageLayout::eTransferDstOptimal,
+		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
+		{vk::ImageSubresourceRange ( depth_image->aspect, 0, 1, 0, 1 ) }
+		);
+		present_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, data->clear_command_buffer );
+		depth_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data->clear_command_buffer );
+
+		data->clear_command_buffer.end();
+
+		data->present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
+		present_image->transition_layout ( vk::ImageLayout::ePresentSrcKHR, data->present_command_buffer );
+		data->present_command_buffer.end();
+	}
 
 	data->initialized = true;
 
@@ -490,7 +504,7 @@ void VulkanWindow::create_swapchain() {
 		}
 	}
 
-	image_buffer_count = std::max<u32> ( capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT );
+	u32 image_buffer_count = std::max<u32> ( capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT );
 	if ( capabilities.maxImageCount > 0 ) {
 		image_buffer_count = std::min<u32> ( capabilities.maxImageCount, MAX_PRESENTIMAGE_COUNT );
 		printf ( "Present Image Counts: %d\n", image_buffer_count );
@@ -501,7 +515,7 @@ void VulkanWindow::create_swapchain() {
 	}
 	vk::Format depth_format = m_instance->findDepthFormat();
 	depth_image = new VulkanImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-						 vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+	                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 
 	{
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo (
@@ -550,14 +564,14 @@ void VulkanWindow::create_swapchain() {
 		V_CHECKCALL ( vulkan_device ( m_instance ).createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
 		vulkan_device ( m_instance ).destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
-	
-	if(present_image){
+
+	if ( present_image ) {
 		delete present_image;
 		present_image = nullptr;
 	}
 	std::vector<vk::Image> images = vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain );
-	present_image = new VulkanWindowImage(m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format);
-	
+	present_image = new VulkanWindowImage ( m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
+
 	create_frame_local_data ( images.size() );
 
 }
@@ -574,7 +588,9 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 
 	v_render_target_wrapper.images.resize ( 1 );
 	v_render_target_wrapper.images[0] = present_image;
-
+	v_render_target_wrapper.depth_image = depth_image;
+	v_render_target_wrapper.target_count = present_image->per_image_data.size();
+	
 	quad_renderer.update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 
 	if ( v_root_section )
@@ -611,8 +627,6 @@ void VulkanWindow::destroy_frame_local_data() {
 		destroy_semaphore ( m_instance, data.render_ready_sem );
 		index++;
 	}
-	if ( present_image )
-		delete present_image;
 	//@Debugging clear so we assert in case we access it in a state, that we should not
 	frame_local_data.clear();
 }

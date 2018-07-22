@@ -39,9 +39,9 @@ struct VulkanWindow : public Window {
 	GLFWwindow* window = nullptr;
 
 	VulkanQuadRenderer quad_renderer;
-	VulkanWindowImage* present_image;
-	VulkanBaseImage* depth_image;
-	
+	VulkanWindowImage* present_image = nullptr;
+	VulkanBaseImage* depth_image = nullptr;
+
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;
@@ -50,7 +50,6 @@ struct VulkanWindow : public Window {
 	vk::SurfaceCapabilitiesKHR capabilities;
 	vk::SwapchainKHR swap_chain;
 	Extent2D<u32> swap_chain_extend;
-	u32 image_buffer_count;
 	u32 queue_index = 0;
 	u32 present_image_index = 0;
 	Array<FrameLocalData> frame_local_data;
@@ -68,7 +67,7 @@ struct VulkanWindow : public Window {
 	virtual WindowSection* root_section ( );
 
 	virtual Window* backed_image ();
-	
+
 	virtual RendResult update();
 	virtual RendResult destroy();
 
@@ -87,6 +86,7 @@ struct VulkanWindow : public Window {
 	void initialize();
 	void render_frame();
 	void create_command_buffers();
+	void create_command_buffer ( u32 index );
 
 	void create_swapchain();
 	void create_empty_pipeline();
@@ -94,13 +94,13 @@ struct VulkanWindow : public Window {
 	void destroy_frame_local_data();
 };
 
-struct SubmitInfo{
+struct SubmitInfo {
 	vk::PipelineStageFlags wait_dst_stage_mask;
 	u32 need_sem_index, need_sem_count;
 	u32 comm_buff_index, comm_buff_count;
 	u32 sig_sem_index, sig_sem_count;
 };
-struct SubmitStore{
+struct SubmitStore {
 	Array<vk::Semaphore> semaphores;
 	Array<vk::CommandBuffer> commandbuffers;
 	Array<SubmitInfo> submitinfos;
