@@ -1,24 +1,37 @@
 
-#include "Resource.h"
-
-struct RenderPass {
-	RId modelbase_id;
-
-
-};
+#include "Resources.h"
 
 struct RenderPassInput {
-	ResourceHandle renderpass_handle;
+	RId renderpass_id;
 	u32 index;
 	bool only_direct_pixel_access;
 };
 struct RenderPassOutput {
-	ImageType type;
+	ImageFormat format;
+	//multisample
 };
 
-struct RenderPass {
-	ResourceHandle modelbase_handle;
-	ResourceHandle instancebase_handle;
+struct RenderPassDef {
+	RId modelbase_id;
+	RId instancebase_id;
 	Array<RenderPassInput> inputs;
 	Array<RenderPassOutput> outputs;
+	
+	RenderPassOutput depth_stencil;
+	bool depthtest, depthwrite, stenciltest;
+	f32 depthbias;
+	
+	
 };
+struct RenderPass : public Resource {
+	const RenderPassDef def;
+	
+	virtual RenderPass* cast_to_renderpass() {
+		return this;
+	}
+	virtual void render_instances(Array<ModelInstance> instances)= 0;
+};
+//triangle/line/points mode
+//scissors?
+//viewports optimizations with geometry shader for multiple screens
+//sample-shading???

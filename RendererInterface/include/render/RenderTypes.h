@@ -112,7 +112,11 @@ enum class ResourceType {
 	eUndefined,
 	eImage,
 	eBuffer,
+	
 	eModelBase,
+	eContextBase,
+	eInstanceBase,
+	
 	eModel,
 	eModelInstance,
 	eRenderPass,

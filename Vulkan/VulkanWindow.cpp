@@ -265,8 +265,8 @@ void VulkanWindow::initialize() {
 	framebuffer_size_changed ( m_size.value );
 
 }
-Window* VulkanWindow::backed_image () {
-	return nullptr;
+Image* VulkanWindow::backed_image () {
+	return present_image;
 }
 RendResult VulkanWindow::update() {
 	static double oldTime = 0.0;

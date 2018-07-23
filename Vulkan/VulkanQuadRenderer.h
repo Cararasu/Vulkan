@@ -1,22 +1,13 @@
 #pragma once
-#include "VulkanInstance.h"
 #include "VulkanBuffer.h"
-#include "render/Dimensions.h"
+#include "VulkanRenderer.h"
+#include "Quads.h"
 
 struct PerFrameQuadRenderObj {
 	vk::Framebuffer framebuffer;
-	vk::CommandBuffer commandbuffer;
+	ResettableCommandBuffer command;
 };
 
-struct QuadVertex {
-	glm::vec2 pos;
-};
-struct QuadInstance {
-	glm::vec4 dim;
-	glm::vec4 uvdim;
-	glm::vec4 data;
-	glm::vec4 color;
-};
 enum class QuadType{
 	eInactive,
 	eFilled,
@@ -32,16 +23,12 @@ struct Quads{
 struct VulkanRenderTarget;
 struct SubmitStore;
 
-struct VulkanQuadRenderer {
+struct VulkanQuadRenderer : public VulkanRenderer {
 	VulkanInstance* const v_instance;
 	Viewport<f32> viewport;
 
-	std::array<vk::DescriptorSetLayout, 0> descriptor_set_layouts;
-	vk::PipelineLayout pipeline_layout;
 	vk::ShaderModule vertex_shader;
 	vk::ShaderModule fragment_shader;
-	vk::RenderPass renderpass;
-	vk::Pipeline pipeline;
 
 	vk::CommandPool g_commandpool;
 	vk::CommandPool t_commandpool;
@@ -54,16 +41,23 @@ struct VulkanQuadRenderer {
 	Array<PerFrameQuadRenderObj> per_target_data;
 
 	VulkanQuadRenderer ( VulkanInstance* instance );
-	VulkanQuadRenderer ( VulkanQuadRenderer* old_quad_renderer );
 	~VulkanQuadRenderer();
 
 	void init();
+	virtual void inherit ( VulkanRenderer* oldrenderer );
 	void inherit ( VulkanQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
 
 	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 	RendResult render (u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index);
 	void destroy ( );
+
+	virtual void use_commandpool ( vk::CommandPool commandpool ) = 0;
+
+	virtual RendResult update_extend ( Viewport<f32> viewport ) = 0;
+	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
+
+	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) = 0;
 };
 
 template<typename T>

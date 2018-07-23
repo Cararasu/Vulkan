@@ -11,6 +11,7 @@
 #include "ViewPort.h"
 #include "DataWrapper.h"
 #include "RenderEnvironment.h"
+#include "Quads.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -241,21 +242,21 @@ struct WWW {
 
 /*
  * ImageStore
- * 
+ *
  * ResourceManager
  *     ResourceHandle loadImage()
  *     ResourceHandle loadModel() -> buffer with indices, vertices, uvs
  *     ResourceHandle load...
- * 
+ *
  * setImage(ResourceHandle image, ResourceHandle default)
- * 
+ *
  * Deferred Shading:
- * 
+ *
  * Color rgb + specular? 16i VK_FORMAT_R16G16B16A16_SFLOAT/VK_FORMAT_R16G16B16A16_UNORM
  * depth 1 32f VK_FORMAT_R32_SFLOAT
  * normals 3 10f2i VK_FORMAT_A2B10G10R10_UNORM_PACK32
  * specular 1f?
- * 
+ *
  */
 
 int main ( int argc, char **argv ) {
@@ -280,6 +281,7 @@ int main ( int argc, char **argv ) {
 
 	Window* window = newinstance->create_window();
 
+
 	Extent2D<s32> window_size ( 1000, 600 );
 
 	*window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
@@ -292,7 +294,7 @@ int main ( int argc, char **argv ) {
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
 	*window->cursor_mode() = CursorMode::eNormal;
-
+	
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
@@ -303,7 +305,7 @@ int main ( int argc, char **argv ) {
 	window->root_section ( nullptr );
 
 	window->destroy();
-	if(section)
+	if ( section )
 		delete section;
 
 	destroy_instance ( newinstance );

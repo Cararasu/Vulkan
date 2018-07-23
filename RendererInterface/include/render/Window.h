@@ -3,6 +3,7 @@
 #include "Dimensions.h"
 #include "Monitor.h"
 #include "World.h"
+#include "Resources.h"
 
 struct UINode;
 
@@ -106,7 +107,7 @@ public:
 
 	virtual RendResult root_section ( WindowSection* section ) = 0;
 	virtual WindowSection* root_section () = 0;
-	virtual Window* backed_image () = 0;
+	virtual Image* backed_image () = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
 

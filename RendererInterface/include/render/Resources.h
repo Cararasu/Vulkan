@@ -53,9 +53,3 @@ struct Buffer : public Resource {
 	}
 };
 
-struct RenderPass : public Resource {
-
-	virtual RenderPass* cast_to_renderpass() {
-		return this;
-	}
-};

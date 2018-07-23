@@ -17,6 +17,7 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="Quads.h"/>
     <File Name="VulkanRenderer.cpp"/>
     <File Name="VulkanRenderer.h"/>
     <File Name="Logger.cpp"/>
@@ -38,7 +39,6 @@
     <File Name="VulkanWindow.h"/>
     <File Name="VulkanInstance.cpp"/>
     <File Name="VulkanInstance.h"/>
-    <File Name="VulkanRenerers.h"/>
     <File Name="vulkanmain.cpp"/>
     <File Name="VWindow.h"/>
     <File Name="VWindow.cpp"/>
@@ -166,11 +166,11 @@
         <PostConnectCommands/>
         <StartupCommands/>
       </Debugger>
-      <PreBuild>
+      <PreBuild/>
+      <PostBuild>
         <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
         <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-      </PreBuild>
-      <PostBuild/>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>

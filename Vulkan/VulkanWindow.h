@@ -59,14 +59,13 @@ struct VulkanWindow : public Window {
 
 	VulkanRenderTarget v_render_target_wrapper;
 
-
 	VulkanWindow ( VulkanInstance* instance );
 	virtual ~VulkanWindow();
 
 	virtual RendResult root_section ( WindowSection* section );
 	virtual WindowSection* root_section ( );
 
-	virtual Window* backed_image ();
+	virtual Image* backed_image ();
 
 	virtual RendResult update();
 	virtual RendResult destroy();

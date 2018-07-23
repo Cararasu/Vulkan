@@ -3,7 +3,7 @@
 #include "VulkanWindow.h"
 
 
-VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : v_instance ( instance ) {
+VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : VulkanRenderer ( instance ) {
 
 }
 VulkanQuadRenderer::~VulkanQuadRenderer() {
@@ -316,67 +316,70 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		per_frame.framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
 	}
 	
-	if ( per_frame.commandbuffer ) {
-		per_frame.commandbuffer.reset ( vk::CommandBufferResetFlags() );
-	} else {
-		per_frame.commandbuffer = v_instance->createCommandBuffer ( g_commandpool, vk::CommandBufferLevel::ePrimary );
+	if(per_frame.command.should_reset){
+		if ( per_frame.command.buffer ) {
+			per_frame.command.buffer.reset ( vk::CommandBufferResetFlags() );
+		} else {
+			per_frame.command.buffer = v_instance->createCommandBuffer ( g_commandpool, vk::CommandBufferLevel::ePrimary );
+		}
+		vk::CommandBufferBeginInfo begininfo = {
+			vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+		};
+		per_frame.command.buffer.begin ( begininfo );
+
+		per_frame.command.buffer.pipelineBarrier (
+			vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
+			vk::DependencyFlags(),
+		{}/*memoryBarrier*/, {
+			vk::BufferMemoryBarrier (
+				vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
+				v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+				staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
+			)
+		}/*bufferBarrier*/, {}/*imageBarrier*/ );
+
+		staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.command.buffer );
+
+		per_frame.command.buffer.pipelineBarrier (
+			vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
+			vk::DependencyFlags(),
+		{}/*memoryBarrier*/, {
+			vk::BufferMemoryBarrier (
+				vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+				v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+				vertex_buffer->buffer, 0, vertex_buffer->size
+			)
+		}/*bufferBarrier*/, {}/*imageBarrier*/ );
+
+		vk::ClearValue clearColors[2] = {
+			vk::ClearValue ( ),
+			vk::ClearValue ( )
+		};
+		vk::RenderPassBeginInfo renderPassBeginInfo = {
+			renderpass, per_frame.framebuffer,
+			vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
+			2, clearColors
+		};
+		per_frame.command.buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+
+		per_frame.command.buffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
+		per_frame.command.buffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
+		per_frame.command.buffer.draw ( 6, 2, 0, 0 );
+
+		/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+
+		VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
+		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
+
+		//1. simple textured quads
+		//2. simple filled quads
+		//3. fonts
+
+		per_frame.command.buffer.endRenderPass();
+		per_frame.command.buffer.end();
+
 	}
-	vk::CommandBufferBeginInfo begininfo = {
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
-	};
-	per_frame.commandbuffer.begin ( begininfo );
-
-	per_frame.commandbuffer.pipelineBarrier (
-	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
-	    vk::DependencyFlags(),
-	{}/*memoryBarrier*/, {
-		vk::BufferMemoryBarrier (
-		    vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
-		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
-		)
-	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-
-	staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.commandbuffer );
-
-	per_frame.commandbuffer.pipelineBarrier (
-	    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
-	    vk::DependencyFlags(),
-	{}/*memoryBarrier*/, {
-		vk::BufferMemoryBarrier (
-		    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-		    v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
-		    vertex_buffer->buffer, 0, vertex_buffer->size
-		)
-	}/*bufferBarrier*/, {}/*imageBarrier*/ );
-
-	vk::ClearValue clearColors[2] = {
-		vk::ClearValue ( ),
-		vk::ClearValue ( )
-	};
-	vk::RenderPassBeginInfo renderPassBeginInfo = {
-		renderpass, per_frame.framebuffer,
-		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
-		2, clearColors
-	};
-	per_frame.commandbuffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-
-	per_frame.commandbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, pipeline );
-	per_frame.commandbuffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
-	per_frame.commandbuffer.draw ( 6, 2, 0, 0 );
-
-	/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
-	vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-
-	VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
-	vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
-
-	//1. simple textured quads
-	//2. simple filled quads
-	//3. fonts
-
-	per_frame.commandbuffer.endRenderPass();
-	per_frame.commandbuffer.end();
 
 	SubmitInfo submitinfo = {
 		vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eHost | vk::PipelineStageFlagBits::eVertexInput,
@@ -384,8 +387,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		state->commandbuffers.size(), 1,
 		wait_sem_index, 1
 	};
-
-	state->commandbuffers.push_back ( per_frame.commandbuffer );
+	state->commandbuffers.push_back ( per_frame.command.buffer );
 	state->submitinfos.push_back ( submitinfo );
 
 	*final_sem_index = wait_sem_index;

@@ -8,6 +8,11 @@
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>
 
+struct ResettableCommandBuffer{
+	bool should_reset = true;
+	vk::CommandBuffer buffer;
+};
+
 struct PGCQueueWrapper{
 	u32 graphics_queue_id = -1;
 	vk::Queue graphics_queue;

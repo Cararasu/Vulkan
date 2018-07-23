@@ -9,40 +9,62 @@ struct DataValueDef {
 };
 struct DataGroupDef {
 	Array<DataValueDef> valuedefs;
+	u32 size;
 };
-
-struct ModelBase {
+struct ModelBaseDef {
 	RId id;
-	//define the layout of the vertexdata
 	Array<DataGroupDef> vertex_input_defs;
 };
-struct InstanceBase {
+struct ModelBase {
+	const ModelBaseDef def;
+};
+struct ContextBaseDef {
 	RId id;
-	//define the layout of the instancedata
+	Array<DataGroupDef> vertex_input_defs;
+};
+struct ContextBase {
+	const ContextBaseDef def;
+};
+struct InstanceBaseDef {
+	RId id;
 	Array<DataGroupDef> instance_input_defs;
 };
-
-struct Model {
-	RId id;
-	RId modelbase_id;
-	//and the indices
-	ValueType indextype;
+struct InstanceBase {
+	const InstanceBaseDef def;
 };
 
-struct ModelInstance {
+struct ModelDef {
+	RId id;
+	RId modelbase_id;
+	ValueType indextype;
+};
+struct Model {
+	const ModelDef def;
+};
+
+struct ModelInstanceDef {
 	RId id;
 	RId model_id;
 	RId instancebase_id;
-	//has a list of per object data, which allows usage for different stuff
-
+	RId contextbase_id;
+};
+struct ModelInstance {
+	const ModelInstanceDef def;
 };
 
+
 inline ResourceHandle resource_handle ( ModelBase* base ) {
-	return {ResourceType::eModelBase, base->id};
+	return {ResourceType::eModelBase, base->def.id};
+}
+inline ResourceHandle resource_handle ( InstanceBase* base ) {
+	return {ResourceType::eInstanceBase, base->def.id};
+}
+inline ResourceHandle resource_handle ( ContextBase* base ) {
+	return {ResourceType::eContextBase, base->def.id};
 }
 inline ResourceHandle resource_handle ( Model* model ) {
-	return {ResourceType::eModel, model->id};
+	return {ResourceType::eModel, model->def.id};
 }
 inline ResourceHandle resource_handle ( ModelInstance* instance ) {
-	return {ResourceType::eModelInstance, instance->id};
+	return {ResourceType::eModelInstance, instance->def.id};
 }
