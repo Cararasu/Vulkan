@@ -6,16 +6,27 @@
 #include "render/Dimensions.h"
 #include "VulkanWindow.h"
 
-//RenderStage
-//    setup_sections
-//    render_sections
-//    finalize_sections
-//RenderSection
+struct ModelStorage {
+	//here be descriptorsetlayouts for each model
+};
+struct SingletonModelStorage {
+	//here be descriptorsetlayouts for each singleton model
+};
+
+
+struct VulkanRenderSection {
+//    List of setup_stages
+//    List of render_stages
+//    List of finalize_stages
+};
+struct VulkanRenderStage {
 //    List of renderers
-//Renderer
-//    models
+//    List of rendertargets
+};
 
 struct VulkanRenderer {
+//    one model
+
 	VulkanInstance* const v_instance;
 	bool rebuild_on_instance_change;
 	bool rebuild_every_time;

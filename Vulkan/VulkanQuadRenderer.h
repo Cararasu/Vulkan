@@ -3,6 +3,11 @@
 #include "VulkanRenderer.h"
 #include "Quads.h"
 
+
+//full image
+//one quad
+//two quads with transition
+
 struct PerFrameQuadRenderObj {
 	vk::Framebuffer framebuffer;
 	ResettableCommandBuffer command;
@@ -58,6 +63,7 @@ struct VulkanQuadRenderer : public VulkanRenderer {
 	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
 
 	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) = 0;
+	
 };
 
 template<typename T>
