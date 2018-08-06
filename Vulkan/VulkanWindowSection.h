@@ -3,7 +3,6 @@
 #include "render/Window.h"
 #include "VulkanHeader.h"
 #include "VulkanImage.h"
-#include "VulkanQuadRenderer.h"
 
 struct VulkanWindow;
 struct VulkanInstance;

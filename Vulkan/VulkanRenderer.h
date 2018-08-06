@@ -2,9 +2,9 @@
 
 #include "VulkanInstance.h"
 #include "VulkanHeader.h"
-#include "VulkanWindowSection.h"
 #include "render/Dimensions.h"
 #include "VulkanWindow.h"
+
 
 struct ModelStorage {
 	//here be descriptorsetlayouts for each model
@@ -24,12 +24,17 @@ struct VulkanRenderStage {
 //    List of rendertargets
 };
 
+struct VulkanRenderTarget;
+
+//can use secondary command buffer
+//or just add 
 struct VulkanRenderer {
-//    one model
+	//one ModelId
+	//or none for empty invocation
 
 	VulkanInstance* const v_instance;
 	bool rebuild_on_instance_change;
-	bool rebuild_every_time;
+	bool rebuild_every_time;//is this 
 	
 	Viewport<f32> viewport;
 
@@ -50,8 +55,7 @@ struct VulkanRenderer {
 
 	virtual void inherit ( VulkanRenderer* oldrenderer ) = 0;
 
-	virtual RendResult update_extend ( Viewport<f32> viewport ) = 0;
-	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
+	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper = nullptr ) = 0;
 
 	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) = 0;
 

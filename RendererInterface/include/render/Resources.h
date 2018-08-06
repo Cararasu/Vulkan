@@ -3,8 +3,40 @@
 #include "Header.h"
 #include <atomic>
 
-//contiguous GPU memory
+//World
+//    ContextList
+//    modelid -> instances
+//
+//
+
+//Context
+//    contextdata
+//    
+//    modelid -> instances
+
+template<typename IT>
+struct Instance {
+	glm::vec3 pos;
+	float radius;
+	IT instance;
+};
+
+//IdArray
+
+//Vertex, VertexDef, VertexId
+//Model, ModelDef, ModelId
+
+//Context, ContextDef, ContextId
+
+//TypeDef
+//    Array of ValueDef
+
+//Textures
+//	ImageType
+
+
 struct Image;
+//contiguous GPU memory
 struct Buffer;
 struct RenderPass;
 
@@ -52,4 +84,3 @@ struct Buffer : public Resource {
 		return this;
 	}
 };
-

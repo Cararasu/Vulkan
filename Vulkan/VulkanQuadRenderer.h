@@ -29,7 +29,6 @@ struct VulkanRenderTarget;
 struct SubmitStore;
 
 struct VulkanQuadRenderer : public VulkanRenderer {
-	VulkanInstance* const v_instance;
 	Viewport<f32> viewport;
 
 	vk::ShaderModule vertex_shader;
@@ -49,20 +48,18 @@ struct VulkanQuadRenderer : public VulkanRenderer {
 	~VulkanQuadRenderer();
 
 	void init();
-	virtual void inherit ( VulkanRenderer* oldrenderer );
-	void inherit ( VulkanQuadRenderer* oldquadrenderer );
+	void v_inherit ( VulkanQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
-
-	RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
-	RendResult render (u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index);
+	
 	void destroy ( );
+	
+	virtual void inherit ( VulkanRenderer* oldrenderer );
+	
+	virtual void use_commandpool ( vk::CommandPool commandpool ){}
 
-	virtual void use_commandpool ( vk::CommandPool commandpool ) = 0;
+	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
 
-	virtual RendResult update_extend ( Viewport<f32> viewport ) = 0;
-	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) = 0;
-
-	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) = 0;
+	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index );
 	
 };
 
@@ -75,7 +72,7 @@ void shrink_array(Array<T>* array_to_shrink){
 		for(; backwards_it != array_to_shrink->rend() && backwards_it->is_active(); backwards_it++);
 		if(forward_it <= backwards_it){
 			std::swap(*forward_it, *backwards_it);
-		}
+		}		
 	}
 	
 }

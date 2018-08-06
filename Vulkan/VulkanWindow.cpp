@@ -1,9 +1,10 @@
 #include "VulkanWindow.h"
 #include "VulkanInstance.h"
+#include "VulkanQuadRenderer.h"
 
 
 
-VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ), quad_renderer ( instance ), depth_image ( nullptr ) {
+VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ), quad_renderer ( new VulkanQuadRenderer(instance) ), depth_image ( nullptr ) {
 
 }
 VulkanWindow::~VulkanWindow() {
@@ -12,7 +13,7 @@ VulkanWindow::~VulkanWindow() {
 		delete depth_image;
 	if ( present_image )
 		delete present_image;
-	quad_renderer.destroy();
+	delete quad_renderer;
 }
 
 RendResult VulkanWindow::root_section ( WindowSection* section ) {
@@ -433,7 +434,7 @@ void VulkanWindow::render_frame() {
 	submit_store.submitinfos.push_back ( si );
 
 	u32 sem_index = 1;
-	quad_renderer.render ( present_image_index, &submit_store, 1, &sem_index );
+	quad_renderer->render ( present_image_index, &submit_store, 1, &sem_index );
 
 	si.wait_dst_stage_mask = vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eColorAttachmentOutput );
 	si.need_sem_index = sem_index;
@@ -591,7 +592,7 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	v_render_target_wrapper.depth_image = depth_image;
 	v_render_target_wrapper.target_count = present_image->per_image_data.size();
 	
-	quad_renderer.update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
+	quad_renderer->update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 
 	if ( v_root_section )
 		v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );

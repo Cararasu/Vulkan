@@ -31,6 +31,8 @@ struct FrameLocalData {
 	vk::CommandPool graphics_command_pool;
 };
 
+struct VulkanQuadRenderer;
+
 struct VulkanWindow : public Window {
 	VulkanInstance* m_instance = nullptr;
 	VulkanWindowSection* v_root_section = nullptr;
@@ -38,7 +40,7 @@ struct VulkanWindow : public Window {
 	//glfw
 	GLFWwindow* window = nullptr;
 
-	VulkanQuadRenderer quad_renderer;
+	VulkanQuadRenderer* quad_renderer;
 	VulkanWindowImage* present_image = nullptr;
 	VulkanBaseImage* depth_image = nullptr;
 

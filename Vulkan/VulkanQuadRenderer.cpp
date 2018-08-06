@@ -7,7 +7,7 @@ VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : VulkanRend
 
 }
 VulkanQuadRenderer::~VulkanQuadRenderer() {
-
+	destroy();
 }
 void VulkanQuadRenderer::destroy ( ) {
 	if ( pipeline ) {
@@ -393,8 +393,11 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 	*final_sem_index = wait_sem_index;
 	return RendResult::eSuccess;
 }
+void VulkanQuadRenderer::inherit ( VulkanRenderer* old_renderer ) {
+	v_inherit(dynamic_cast<VulkanQuadRenderer*>(old_renderer));
+}
 
-void VulkanQuadRenderer::inherit ( VulkanQuadRenderer* old_quad_renderer ) {
+void VulkanQuadRenderer::v_inherit ( VulkanQuadRenderer* old_quad_renderer ) {
 
 	pipeline = vk::Pipeline();
 	g_commandpool = vk::CommandPool();

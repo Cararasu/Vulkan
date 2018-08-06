@@ -15,6 +15,7 @@ typedef uint32_t RId;
 typedef float f32;
 typedef double f64;
 
+
 /*
 u32 valuetype_sizes[] = {
 	1, 2, 4, 8,
