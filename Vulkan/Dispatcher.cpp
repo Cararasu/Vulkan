@@ -6,82 +6,82 @@ OpaqueObjectDispatcher::OpaqueObjectDispatcher () {
 }
 OpaqueObjectDispatcher::~OpaqueObjectDispatcher() {
 }
-u32 OpaqueObjectDispatcher::add_object (std::vector<Vertex>& vertices_, std::vector<u32>& indices_, ObjectPartData& part_) {
+u32 OpaqueObjectDispatcher::add_object ( std::vector<Vertex>& vertices_, std::vector<u32>& indices_, ObjectPartData& part_ ) {
 	u32 id = this->parts.size();
 
-	this->parts.push_back ({0, part_, this->indices.size(), indices_.size(), this->vertices.size() });
-	this->vertices.insert (this->vertices.end(), vertices_.begin(), vertices_.end());
-	this->indices.insert (this->indices.end(), indices_.begin(), indices_.end());
+	this->parts.push_back ( {0, part_, ( u32 ) this->indices.size(), ( u32 ) indices_.size(), ( u32 ) this->vertices.size() } );
+	this->vertices.insert ( this->vertices.end(), vertices_.begin(), vertices_.end() );
+	this->indices.insert ( this->indices.end(), indices_.begin(), indices_.end() );
 	return id;
 }
-void OpaqueObjectDispatcher::set_image_array (ImageWrapper* imageWrapper, vk::Sampler sampler) {
+void OpaqueObjectDispatcher::set_image_array ( ImageWrapper* imageWrapper, vk::Sampler sampler ) {
 	this->sampler = sampler;
 	this->image = imageWrapper;
-	this->imageView = instance->createImageView2DArray (imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags);
-	if (desciptorSet) {
-		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo (sampler);
-		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo (vk::Sampler(), imageView, imageWrapper->layout);
-		instance->device.updateDescriptorSets ({
-			vk::WriteDescriptorSet (desciptorSet,
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampler, //descriptorType
-			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (desciptorSet,
-			                        1, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-		}, {});
+	this->imageView = instance->createImageView2DArray ( imageWrapper->image, 0, imageWrapper->mipMapLevels, 0, imageWrapper->arraySize, imageWrapper->format, imageWrapper->aspectFlags );
+	if ( desciptorSet ) {
+		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo ( sampler );
+		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo ( vk::Sampler(), imageView, imageWrapper->layout );
+		instance->device.updateDescriptorSets ( {
+			vk::WriteDescriptorSet ( desciptorSet,
+			                         0, 0, //dstBinding, dstArrayElement
+			                         1, //descriptorCount
+			                         vk::DescriptorType::eSampler, //descriptorType
+			                         &sampleInfo, nullptr, nullptr ), //pImageInfo, pBufferInfo, pTexelBufferView
+			vk::WriteDescriptorSet ( desciptorSet,
+			                         1, 0, //dstBinding, dstArrayElement
+			                         1, //descriptorCount
+			                         vk::DescriptorType::eSampledImage, //descriptorType
+			                         &imageSetInfo, nullptr, nullptr ), //pImageInfo, pBufferInfo, pTexelBufferView
+		}, {} );
 	}
 }
-void OpaqueObjectDispatcher::set_descriptor_set (vk::DescriptorSet desciptorSet) {
+void OpaqueObjectDispatcher::set_descriptor_set ( vk::DescriptorSet desciptorSet ) {
 	this->desciptorSet = desciptorSet;
-	if (sampler && imageView) {
-		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo (sampler);
-		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo (vk::Sampler(), imageView, image->layout);
-		instance->device.updateDescriptorSets ({
-			vk::WriteDescriptorSet (desciptorSet,
-			                        0, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampler, //descriptorType
-			                        &sampleInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-			vk::WriteDescriptorSet (desciptorSet,
-			                        1, 0, //dstBinding, dstArrayElement
-			                        1, //descriptorCount
-			                        vk::DescriptorType::eSampledImage, //descriptorType
-			                        &imageSetInfo, nullptr, nullptr), //pImageInfo, pBufferInfo, pTexelBufferView
-		}, {});
+	if ( sampler && imageView ) {
+		vk::DescriptorImageInfo sampleInfo = vk::DescriptorImageInfo ( sampler );
+		vk::DescriptorImageInfo imageSetInfo = vk::DescriptorImageInfo ( vk::Sampler(), imageView, image->layout );
+		instance->device.updateDescriptorSets ( {
+			vk::WriteDescriptorSet ( desciptorSet,
+			                         0, 0, //dstBinding, dstArrayElement
+			                         1, //descriptorCount
+			                         vk::DescriptorType::eSampler, //descriptorType
+			                         &sampleInfo, nullptr, nullptr ), //pImageInfo, pBufferInfo, pTexelBufferView
+			vk::WriteDescriptorSet ( desciptorSet,
+			                         1, 0, //dstBinding, dstArrayElement
+			                         1, //descriptorCount
+			                         vk::DescriptorType::eSampledImage, //descriptorType
+			                         &imageSetInfo, nullptr, nullptr ), //pImageInfo, pBufferInfo, pTexelBufferView
+		}, {} );
 	}
 }
-void OpaqueObjectDispatcher::upload_data (vk::CommandPool commandPool, vk::Queue submitQueue) {
+void OpaqueObjectDispatcher::upload_data ( vk::CommandPool commandPool, vk::Queue submitQueue ) {
 
-	if (vertexBuffer) {
+	if ( vertexBuffer ) {
 		delete vertexBuffer;
 		vertexBuffer = nullptr;
 	}
-	if (indexBuffer) {
+	if ( indexBuffer ) {
 		delete indexBuffer;
 		indexBuffer = nullptr;
 	}
-	vertexBuffer = new BufferWrapper (instance, sizeof (vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	transferData (vertices.data(), vertexBuffer, 0, sizeof (vertices[0]) * vertices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
+	vertexBuffer = new BufferWrapper ( instance, sizeof ( vertices[0] ) * vertices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal );
+	transferData ( vertices.data(), vertexBuffer, 0, sizeof ( vertices[0] ) * vertices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue );
 
-	indexBuffer = new BufferWrapper (instance, sizeof (indices[0]) * indices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
-	transferData (indices.data(), indexBuffer, 0, sizeof (indices[0]) * indices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue);
-	
+	indexBuffer = new BufferWrapper ( instance, sizeof ( indices[0] ) * indices.size(), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal );
+	transferData ( indices.data(), indexBuffer, 0, sizeof ( indices[0] ) * indices.size(), vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, submitQueue );
+
 	vertices.clear();
 	indices.clear();
 }
-void OpaqueObjectDispatcher::push_instance (u32 objectId, InstanceObj& inst) {
-	instances.push_back ({objectId, inst});
+void OpaqueObjectDispatcher::push_instance ( u32 objectId, InstanceObj& inst ) {
+	instances.push_back ( {objectId, inst} );
 }
-u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandPool commandPool, vk::Queue submitQueue) {
-	vk::CommandBuffer commandBuffer = instance->createCommandBuffer (commandPool, vk::CommandBufferLevel::ePrimary);
+u32 OpaqueObjectDispatcher::setup ( MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandPool commandPool, vk::Queue submitQueue ) {
+	vk::CommandBuffer commandBuffer = instance->createCommandBuffer ( commandPool, vk::CommandBufferLevel::ePrimary );
 
-	commandBuffer.begin (vk::CommandBufferBeginInfo (vk::CommandBufferUsageFlags (vk::CommandBufferUsageFlagBits::eOneTimeSubmit)));
+	commandBuffer.begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlags ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) ) );
 
-	setup (stagingBuffer, offset, commandBuffer);
+	setup ( stagingBuffer, offset, commandBuffer );
 
 	commandBuffer.end();
 
@@ -91,66 +91,66 @@ u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offse
 	    1, &commandBuffer,
 	    0, nullptr//signalsemaphores
 	);
-	submitQueue.submit ({submitInfo}, vk::Fence());
+	submitQueue.submit ( {submitInfo}, vk::Fence() );
 }
-u32 OpaqueObjectDispatcher::setup (MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandBuffer commandBuffer) {
-	if (!desciptorSet) {
-		assert (false);
+u32 OpaqueObjectDispatcher::setup ( MappedBufferWrapper* stagingBuffer, u32 offset, vk::CommandBuffer commandBuffer ) {
+	if ( !desciptorSet ) {
+		assert ( false );
 	}
-	u32 neededSize = sizeof (InstanceObj) * instances.size();
-	if (instanceBuffer && instanceBuffer->memory.size < neededSize) {
-		printf ("Increase InstanceBuffer %d - %d\n", instanceBuffer->memory.size, neededSize);
+	u32 neededSize = sizeof ( InstanceObj ) * instances.size();
+	if ( instanceBuffer && instanceBuffer->memory.size < neededSize ) {
+		printf ( "Increase InstanceBuffer %d - %d\n", instanceBuffer->memory.size, neededSize );
 		delete instanceBuffer;
 		instanceBuffer = nullptr;
 	}
-	if (!instanceBuffer) {
-		instanceBuffer = new BufferWrapper (instance, sizeof (instances[0]) * (instances.size() + (instances.size() / 4)),
-		                                    vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	if ( !instanceBuffer ) {
+		instanceBuffer = new BufferWrapper ( instance, sizeof ( instances[0] ) * ( instances.size() + ( instances.size() / 4 ) ),
+		                                     vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal );
 	}
 
-	if (stagingBuffer->memory.size < neededSize) {
-		assert (false);
+	if ( stagingBuffer->memory.size < neededSize ) {
+		assert ( false );
 	}
-	if (stagingBuffer->memory.size - offset < neededSize) {
+	if ( stagingBuffer->memory.size - offset < neededSize ) {
 		offset = 0;
 	}
 
-	for (OpaqueObject& opObj : parts) {
+	for ( OpaqueObject& opObj : parts ) {
 		opObj.count = 0;
 	}
 
-	std::sort (instances.begin(), instances.end(), [] (OpaqueInstance & lhs, OpaqueInstance & rhs) {
+	std::sort ( instances.begin(), instances.end(), [] ( OpaqueInstance & lhs, OpaqueInstance & rhs ) {
 		return lhs.objIndex < rhs.objIndex;
-	});
-	InstanceObj* instanceArray = (InstanceObj*) (stagingBuffer->data + offset);
+	} );
+	InstanceObj* instanceArray = ( InstanceObj* ) ( stagingBuffer->data + offset );
 
 	u32 instanceCount = 0;
-	for (OpaqueInstance& opInst : instances) {
+	for ( OpaqueInstance& opInst : instances ) {
 		instanceArray[instanceCount++] = opInst.data;
 		parts[opInst.objIndex].count++;
 	}
 
-	copyBuffer (stagingBuffer, instanceBuffer, offset, 0, sizeof (InstanceObj) *instanceCount,
-	            vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
-	            commandBuffer);
+	copyBuffer ( stagingBuffer, instanceBuffer, offset, 0, sizeof ( InstanceObj ) *instanceCount,
+	             vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite,
+	             commandBuffer );
 
 	return offset + neededSize;
 }
-void OpaqueObjectDispatcher::dispatch (vk::CommandBuffer commandBuffer) {
-	if (!desciptorSet) {
-		assert (false);
+void OpaqueObjectDispatcher::dispatch ( vk::CommandBuffer commandBuffer ) {
+	if ( !desciptorSet ) {
+		assert ( false );
 	}
-	
-	commandBuffer.bindDescriptorSets (vk::PipelineBindPoint::eGraphics, instance->pipeline_module_layouts.standard.pipelineLayout, 1, desciptorSet, {});
 
-	commandBuffer.bindVertexBuffers (0, {vertexBuffer->buffer, instanceBuffer->buffer}, {0, 0});
-	
-	commandBuffer.bindIndexBuffer (indexBuffer->buffer, 0, vk::IndexType::eUint32);
+	commandBuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, instance->pipeline_module_layouts.standard.pipelineLayout, 1, desciptorSet, {} );
+
+	commandBuffer.bindVertexBuffers ( 0, {vertexBuffer->buffer, instanceBuffer->buffer}, {0, 0} );
+
+	commandBuffer.bindIndexBuffer ( indexBuffer->buffer, 0, vk::IndexType::eUint32 );
 
 	u32 count = 0;
-	for (OpaqueObject& opObj : parts) {
-		commandBuffer.pushConstants (instance->pipeline_module_layouts.standard.pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof (ObjectPartData), &opObj.data);
-		commandBuffer.drawIndexed (opObj.indexCount, opObj.count, opObj.indexOffset, opObj.vertexOffset, count);
+	for ( OpaqueObject& opObj : parts ) {
+		commandBuffer.pushConstants ( instance->pipeline_module_layouts.standard.pipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof ( ObjectPartData ), &opObj.data );
+		commandBuffer.drawIndexed ( opObj.indexCount, opObj.count, opObj.indexOffset, opObj.vertexOffset, count );
 		count += opObj.count;
 	}
 }

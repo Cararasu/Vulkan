@@ -13,7 +13,6 @@ struct RenderPassOutput {
 
 struct RenderPassDef {
 	RId modelbase_id;
-	RId instancebase_id;
 	Array<RenderPassInput> inputs;
 	Array<RenderPassOutput> outputs;
 	
@@ -29,7 +28,6 @@ struct RenderPass : public Resource {
 	virtual RenderPass* cast_to_renderpass() {
 		return this;
 	}
-	virtual void render_instances(Array<ModelInstance> instances)= 0;
 };
 //triangle/line/points mode
 //scissors?

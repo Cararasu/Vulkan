@@ -222,9 +222,9 @@ VulkanInstance::~VulkanInstance() {
 	for ( auto entry : window_map ) {
 		destroy_window ( entry.second );
 	}
-	m_device.destroy ( nullptr );
-
 	delete v_resource_manager;
+	m_device.destroy ( nullptr );
+	
 }
 bool VulkanInstance::initialize ( Device* device ) {
 	if ( !device )
@@ -443,7 +443,7 @@ bool VulkanInstance::destroy_window ( Window* window ) {
 }
 
 ResourceManager* VulkanInstance::resource_manager() {
-	return nullptr;
+	return v_resource_manager;
 }
 
 

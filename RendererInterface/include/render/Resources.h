@@ -4,18 +4,23 @@
 #include <atomic>
 
 //World
-//    ContextList
+//    contextid -> context
 //    modelid -> instances
-//
-//
 
 //Context
+//    contextid
 //    contextdata
 //    
-//    modelid -> instances
+/*
+//type, count, datadef_id, 
+struct RenderContext{
+	u32 id;
+	Array<u32> data_def_ids;
+	Array<u32> data_def_ids;other stuff
+};*/
 
 template<typename IT>
-struct Instance {
+struct ObjectInstance {
 	glm::vec3 pos;
 	float radius;
 	IT instance;

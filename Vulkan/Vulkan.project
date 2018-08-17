@@ -170,6 +170,8 @@
       <PostBuild>
         <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
         <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.vert -o ../workingdir/shader/tri.vert.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.frag -o ../workingdir/shader/tri.frag.sprv</Command>
       </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>

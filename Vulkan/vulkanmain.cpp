@@ -260,9 +260,25 @@ struct WWW {
  */
 
 int main ( int argc, char **argv ) {
+	
+	
+	{
+	
+		SparseStore<void> astore(16);
+		for(int i = 0; i < 100; i++){
+			printf("create Chunk %d\n", astore.create_chunk());
+			printf("Capacity %d\n", astore.capacity);
+		}
+		for(int i = 99; i >= 0; i--){
+			astore.delete_chunk(i);
+			printf("%d Capacity %d\n", i, astore.capacity);
+		}
+	
+	}
+	return 0;
+	Instance* newinstance = initialize_instance ( "Vulkan" );             
 
-	Instance* newinstance = initialize_instance ( "Vulkan" );
-
+	
 	newinstance->initialize();
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
@@ -276,11 +292,98 @@ int main ( int argc, char **argv ) {
 	}
 	printf ( "Devices\n" );
 	for ( Device* device : newinstance->get_devices() ) {
-		printf ( "\t%s %ld\n", device->name, device->rating );
+		printf ( "\t%s %lu\n", device->name, device->rating );
 	}
 
-	Window* window = newinstance->create_window();
+	DataGroupDef groupdef;
+	ContextBase contextbase;
+	ModelBase modelbase;
 
+	ResourceManager* resource_manager = newinstance->resource_manager();
+
+	//create datagroups
+	groupdef = {1, { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, 3 * 4}, {ValueType::eF32Vec3, 1, 6 * 4} }, 9 * 4, 1};
+	RId vertex_id = resource_manager->datagroup_store.insert ( 1, groupdef );
+
+	groupdef = {2, { {ValueType::eF32Mat4, 1, 0} }, 16 * 4, 1};
+	RId matrix_id = resource_manager->datagroup_store.insert ( 2, groupdef );
+
+	//create contextbase from datagroups
+	contextbase = {1, matrix_id};
+	RId w2smatrix_id = resource_manager->contextbase_store.insert ( contextbase );
+	contextbase = {2, matrix_id};
+	RId m2wmatrix_id = resource_manager->contextbase_store.insert ( contextbase );
+
+	//create modelbase from datagroup and contextbases
+	modelbase = {1, vertex_id};
+	RId simplemodel_id = resource_manager->modelbase_store.insert ( modelbase );
+	//create model from modelbase
+	Array<u8> data_to_load;
+	data_to_load.resize ( sizeof ( glm::vec3 ) * 3 * 24 );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 0] ) = glm::vec3 ( 0.5f, 0.5f, 0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 1] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 2] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 3] ) = glm::vec3 ( -0.5f, 0.5f, 0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 4] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 5] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 6] ) = glm::vec3 ( 0.5f, -0.5f, 0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 7] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 8] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 9] ) = glm::vec3 ( -0.5f, -0.5f, 0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 10] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 11] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 12] ) = glm::vec3 ( 0.5f, 0.5f, -0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 13] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 14] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 15] ) = glm::vec3 ( -0.5f, 0.5f, -0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 16] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 17] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 18] ) = glm::vec3 ( 0.5f, -0.5f, -0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 19] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 20] ) = glm::vec3();
+
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 21] ) = glm::vec3 ( -0.5f, -0.5f, -0.5f );
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 22] ) = glm::vec3();
+	* ( ( glm::vec3* ) &data_to_load[sizeof ( glm::vec3 ) * 23] ) = glm::vec3();
+
+
+	Array<u16> indices = {0, 1, 2};
+
+	const Model model = resource_manager->load_generic_model ( simplemodel_id, data_to_load.data(), 24, indices.data(), 3 );
+
+	//create instance from model
+	const ModelInstance mod_instance = resource_manager->create_instance ( model, m2wmatrix_id );
+	//ModelInstance* mod_instance = model->create_instance ();
+
+	//get context from model and is updated once?
+	//Context* context = &mod_instance->contexts[0];
+	//glm::mat4 matrix = glm::mat4();
+	//set_value_m4 ( context->blocks[0].dataptr, &(resource_manager->datagroup_store[matrix_id]), (u8*)&matrix, 0, 0, 0 );
+
+	//create renderer from model and a list of rendercontexts
+	//Renderer* simplerenderer = resource_manager->create_renderer();
+
+	//create world from a list of contextbases
+	//World* simpleworld = resource_manager->create_world();
+
+	//RenderContext* simplecontext = simpleworld->add_rendercontext();
+	//create contexts from world
+	//add renderers to world
+	//simpleworld->add_renderer ( simplerenderer );
+
+	//loop
+	//update contexts of world
+	//update instances
+	//let it render
+
+
+	Window* window = newinstance->create_window();
 
 	Extent2D<s32> window_size ( 1000, 600 );
 
@@ -294,7 +397,7 @@ int main ( int argc, char **argv ) {
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
 	*window->cursor_mode() = CursorMode::eNormal;
-	
+
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
@@ -508,8 +611,6 @@ int main ( int argc, char **argv ) {
 	}
 
 	g_thread_data.dispatcher.set_image_array ( imageWrapper, sampler );
-
-	u32 MAX_COMMAND_COUNT = 100;
 
 	BufferWrapper *uniformBuffer = new BufferWrapper ( instance, sizeof ( Camera ),
 	        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, vk::MemoryPropertyFlagBits::eDeviceLocal );

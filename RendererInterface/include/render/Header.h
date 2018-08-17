@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 #include <map>
+#include <unordered_map>
 #include <list>
 #include <set>
 #include <vector>
@@ -24,7 +25,7 @@ using StaticArray = std::vector<T>;
 template<typename T>
 using Set = std::set<T>;
 template<typename K, typename T>
-using Map = std::map<K, T>;
+using Map = std::unordered_map<K, T>;
 
 enum class RendResult {
 	eFail = 0,

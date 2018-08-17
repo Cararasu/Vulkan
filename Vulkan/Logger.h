@@ -17,7 +17,7 @@ struct Logger {
 	LogLevel level;
 	FILE * log_output;
 
-	Logger ( std::string module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
+	Logger ( std::string& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
 
 	}
 	~Logger() = default;
