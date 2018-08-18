@@ -1,3 +1,4 @@
+#pragma once
 
 #include <inttypes.h>
 
@@ -114,8 +115,10 @@ enum class ResourceType {
 	eImage,
 	eBuffer,
 	
-	eModelBase,
+	eDataGroupDef,
 	eContextBase,
+	eModelBase,
+	eModelInstanceBase,
 	
 	eModel,
 	eModelInstance,
@@ -124,6 +127,13 @@ enum class ResourceType {
 struct ResourceHandle {
 	ResourceType type = ResourceType::eUndefined;
 	RId id = 0;
+	
+	operator bool(){
+		return id != 0;
+	}
+	bool is_type(ResourceType type){
+		return this->type == type;
+	}
 };
 
 inline bool operator== ( ResourceHandle lh, ResourceHandle rh ) {

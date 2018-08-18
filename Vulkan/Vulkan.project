@@ -17,7 +17,13 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="VulkanTransferOperator.cpp"/>
+    <File Name="VulkanTransferOperator.h"/>
+    <File Name="VulkanModel.cpp"/>
+    <File Name="VulkanModel.h"/>
     <File Name="Quads.h"/>
+    <File Name="VulkanContext.cpp"/>
+    <File Name="VulkanContext.h"/>
     <File Name="VulkanRenderer.cpp"/>
     <File Name="VulkanRenderer.h"/>
     <File Name="Logger.cpp"/>
@@ -40,32 +46,7 @@
     <File Name="VulkanInstance.cpp"/>
     <File Name="VulkanInstance.h"/>
     <File Name="vulkanmain.cpp"/>
-    <File Name="VWindow.h"/>
-    <File Name="VWindow.cpp"/>
-    <File Name="VInstance.h"/>
-    <File Name="VInstance.cpp"/>
     <File Name="ViewPort.h"/>
-    <File Name="VHeader.h"/>
-    <File Name="VHeader.cpp"/>
-    <File Name="VGlobal.h"/>
-    <File Name="VGlobal.cpp"/>
-    <File Name="VDevice.h"/>
-    <File Name="VDevice.cpp"/>
-    <File Name="ShaderInputAbstraction.h"/>
-    <File Name="RenderEnvironment.h"/>
-    <File Name="RenderEnvironment.cpp"/>
-    <File Name="Pipelines.cpp"/>
-    <File Name="PipelineModule.h"/>
-    <File Name="PipelineModule.cpp"/>
-    <File Name="Image.cpp"/>
-    <File Name="DrawDispatcher.h"/>
-    <File Name="DrawDispatcher.cpp"/>
-    <File Name="Dispatcher.h"/>
-    <File Name="Dispatcher.cpp"/>
-    <File Name="DescriptorSet.cpp"/>
-    <File Name="DataWrapper.h"/>
-    <File Name="DataWrapper.cpp"/>
-    <File Name="Buffer.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include"/>
   <Dependencies Name="Debug Windows">

@@ -1,7 +1,6 @@
 #pragma once
 #include "VulkanBuffer.h"
 #include "VulkanRenderer.h"
-#include "Quads.h"
 
 
 //full image

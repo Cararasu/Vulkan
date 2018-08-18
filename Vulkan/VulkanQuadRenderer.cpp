@@ -1,6 +1,7 @@
 #include "VulkanQuadRenderer.h"
 #include "VulkanWindowSection.h"
 #include "VulkanWindow.h"
+#include "Quads.h"
 
 
 VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : VulkanRenderer ( instance ) {

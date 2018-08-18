@@ -20,7 +20,6 @@ struct RenderPassDef {
 	bool depthtest, depthwrite, stenciltest;
 	f32 depthbias;
 	
-	
 };
 struct RenderPass : public Resource {
 	const RenderPassDef def;

@@ -1,6 +1,9 @@
 #include "VulkanBuffer.h"
+#include "VulkanInstance.h"
 
-
+VulkanBuffer::VulkanBuffer ( VulkanInstance* instance ) :
+	v_instance ( instance ) {
+}
 VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	v_instance ( instance ) {
 	init ( size, usage, needed, recommended );

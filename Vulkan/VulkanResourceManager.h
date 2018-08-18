@@ -8,85 +8,45 @@
 struct VulkanInstance;
 struct VulkanBuffer;
 struct VulkanResourceManager;
+struct VulkanModelBase;
+struct VulkanModel;
+struct VulkanContextBase;
+struct VulkanTransferController;
 
-struct VulkanModelInstances {
-	SparseStore<void> store;
-};
-struct VulkanModel {
-	RId id;
-	bool index_is_2byte;
-	u32 vertexoffset, vertexcount;
-	u32 indexoffset, indexcount;
-	VulkanBuffer* vertexbuffer;
-	VulkanBuffer* indexbuffer;
-	
-	
-};
-struct VulkanModelBase {
-	RId id;
-	VulkanBuffer* vertexbuffer;
-	VulkanBuffer* indexbuffer2;//16-bit indices
-	VulkanBuffer* indexbuffer4;//32-bit indices
-
-	IdArray<VulkanModel> models;
-
-	VulkanModelBase ( RId id ) : id ( id ), vertexbuffer ( nullptr ), indexbuffer2 ( nullptr ), indexbuffer4 ( nullptr ), models() {}
-};
-
-struct VulkanContext {
-	vk::DescriptorPool descriptorpool;
-	vk::DescriptorSetLayout descriptorsetlayout;
-};
-
-struct VulkanTransferBuffer {
-	VulkanBuffer* buffer;
-	vk::DeviceSize remaining_bytes;
-	std::atomic<u32> uses;
-
-	VulkanTransferBuffer ( VulkanInstance* instance, vk::DeviceSize buffersize );
-	~VulkanTransferBuffer ( );
-};
-/*struct VulkanTransferJob {
-	VulkanTransferBuffer* used_transfer_buffer;
-	VulkanBuffer* dst_buffer;
-	u32 transfer_offset, final_offset, byte_size;
-	bool is_running;
-	vk::Fence finished_fence;
-};*/
-struct VulkanTransferControl {
-	VulkanInstance* v_instance;
-	Array<VulkanTransferBuffer*> transfer_buffers;
-	//Array<VulkanTransferJob> transfer_jobs;
-	vk::CommandPool commandpool;
-	vk::CommandBuffer synchron_commandbuffer;
-
-	VulkanTransferControl ( VulkanInstance* v_instance );
-	~VulkanTransferControl();
-
-	void transfer_data ( u8 * data, u32 size, VulkanBuffer* dstbuffer, vk::DeviceSize offset );
-	void transfer_data ( u8 * data, u32 size, VulkanBuffer* dstbuffer, vk::DeviceSize offset, vk::CommandBuffer commandbuffer );
-};
 
 struct VulkanInstance;
 
 struct VulkanResourceManager : public ResourceManager {
 	VulkanInstance * v_instance;
 
-	VulkanTransferControl transfer_control;
-	
-	IdGenerator modelbase_idgen;
-	Map<RId, VulkanModelBase> modelbase_map;
+	VulkanTransferController* transfer_control;
 
-	VulkanResourceManager ( VulkanInstance * instance ) : v_instance ( instance ), transfer_control(instance) {}
+	VulkanResourceManager ( VulkanInstance * instance );
 	~VulkanResourceManager();
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
 
+	IdPtrArray<DataGroupDef> datagroup_store;
+	IdPtrArray<ContextBase> contextbase_store;
+	IdPtrArray<VulkanModelBase> modelbase_store;
+	IdPtrArray<VulkanModel> model_store;
+	
+	virtual RId register_datagroupdef ( DataGroupDef& datagroupdef );
+	virtual const DataGroupDef* datagroupdef ( RId handle );
+
+	virtual RId register_contextbase ( RId datagroup/*image-defs*/ );
+	virtual const ContextBase contextbase ( RId handle );
+
+	virtual RId register_modelbase ( RId vertexdatagroup );
+	virtual const ModelBase modelbase ( RId handle );
+
 	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount );
 	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount );
-	
-	virtual const ModelInstance create_instance( RId model_id, RId context_id = 0 );
-	virtual const ModelInstance create_instance( Model model, RId context_id = 0 );
+
+	virtual RId register_modelinstancebase ( Model model, RId context = 0 );
+	virtual const ModelInstanceBase modelinstancebase ( RId handle );
+
+	virtual const ModelInstance create_instance ( RId modelinstancebase );
 };
 
 #endif // VULKANRESOURCEMANAGER_H

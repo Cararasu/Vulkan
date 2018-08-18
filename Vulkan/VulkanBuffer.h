@@ -1,9 +1,10 @@
 #pragma once
 
-#include "VulkanInstance.h"
+#include "VulkanHeader.h"
+
+struct VulkanInstance;
 
 struct VulkanBuffer {
-
 	VulkanInstance* v_instance;
 	GPUMemory memory;
 	vk::Buffer buffer;

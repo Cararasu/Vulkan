@@ -8,6 +8,36 @@
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>
 
+void printError(VkResult res);
+
+#define VCHECKCALL(call, errorcode) {\
+	if(VkResult res = call){\
+		errorcode;\
+		printError(res);\
+	}\
+}
+
+#define V_CHECKCALL(call, errorcode) {\
+	vk::Result res = call;\
+	if(res != vk::Result::eSuccess){\
+		printf("Error %s\n", vk::to_string(res).c_str());\
+		errorcode;\
+	}\
+}
+#ifdef VULKAN_HPP_DISABLE_ENHANCED_MODE
+#define V_CHECKCALL_MAYBE(call, errorcode) {\
+	vk::Result res = call;\
+	if(res != vk::Result::eSuccess){\
+		printf("Error %s\n", vk::to_string(res).c_str());\
+		errorcode;\
+	}\
+}
+#else
+#define V_CHECKCALL_MAYBE(call, errorcode) {\
+	call;\
+}
+#endif
+
 struct ResettableCommandBuffer{
 	bool should_reset = true;
 	vk::CommandBuffer buffer;

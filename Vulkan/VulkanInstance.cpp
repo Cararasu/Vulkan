@@ -1,6 +1,108 @@
 #include "VulkanInstance.h"
 #include "VulkanWindow.h"
 
+bool operator== (vk::LayerProperties& lhs, vk::LayerProperties& rhs) {
+	return !strcmp (lhs.layerName, rhs.layerName);
+}
+bool operator== (vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs) {
+	return !strcmp (lhs.extensionName, rhs.extensionName);
+}
+
+void addExtension (std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop) {
+	bool found = false;
+	for (vk::ExtensionProperties& it : *propList) {
+		if (it == prop) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		propList->push_back (prop);
+	}
+}
+
+void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions) {
+
+	u32 count;
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
+	}
+	extensions->resize (count);
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
+	}
+
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
+	}
+	layers->resize (count);
+	if (!device) {
+		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
+	} else {
+		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
+	}
+	for (vk::LayerProperties& layerProp : *layers) {
+
+		if (!device) {
+			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
+		} else {
+			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
+		}
+		vk::ExtensionProperties extensionArray[count];
+		if (!device) {
+			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
+		} else {
+			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
+		}
+		for (size_t i = 0; i < count; ++i) {
+			addExtension (extensions, extensionArray[i]);
+		}
+	}
+}
+bool VulkanExtLayerStruct::activateLayer (const char* name) {
+	bool found = false;
+	for (vk::LayerProperties& layer : availableLayers) {
+		if (!strcmp (layer.layerName, name)) {
+			found = true;
+			break;
+		}
+	}
+	if (!found)
+		return false;
+	for (const char* layName : neededLayers) {
+		if (!strcmp (layName, name)) {
+			return true;
+		}
+	}
+	neededLayers.push_back (name);
+	return true;
+}
+bool VulkanExtLayerStruct::activateExtension (const char* name) {
+	bool found = false;
+	for (vk::ExtensionProperties& ext : availableExtensions) {
+		if (!strcmp (ext.extensionName, name)) {
+			found = true;
+			break;
+		}
+	}
+	if (!found)
+		return false;
+	for (const char* extName : neededExtensions) {
+		if (!strcmp (extName, name)) {
+			return true;
+		}
+	}
+	neededExtensions.push_back (name);
+	return true;
+}
+
+
 Instance* initialize_instance ( const char* name ) {
 	if ( strcmp ( name, "Vulkan" ) == 0 ) {
 		glfwInit();
@@ -232,7 +334,7 @@ bool VulkanInstance::initialize ( Device* device ) {
 	v_device = dynamic_cast<VulkanDevice*> ( device );
 	if ( !initialized && !vulkan_device )
 		return false;
-	VExtLayerStruct extLayers;
+	VulkanExtLayerStruct extLayers;
 	extLayers.availableExtensions = v_device->availableExtensions;
 	extLayers.availableLayers = v_device->availableLayers;
 	printf ( "Device Extensions available:\n" );

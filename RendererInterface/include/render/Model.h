@@ -36,13 +36,15 @@ struct ModelBase {
 struct Model {
 	RId id;
 	RId modelbase_id;
-	Context context;
 };
 
+struct ModelInstanceBase{
+	RId id;
+};
 struct ModelInstance {
 	RId id;
 	RId model_id;
-	Context context;
+	RId context_id;
 };
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( u8* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\

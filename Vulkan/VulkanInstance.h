@@ -2,11 +2,21 @@
 
 #include "render/Instance.h"
 #include "render/Window.h"
-#include "VGlobal.h"
 #include "VulkanHeader.h"
 #include "VulkanResourceManager.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
+
+void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions);
+struct VulkanExtLayerStruct{
+	std::vector<vk::LayerProperties> availableLayers;
+	std::vector<vk::ExtensionProperties> availableExtensions;
+	std::vector<const char*> neededLayers;
+	std::vector<const char*> neededExtensions;
+	
+	bool activateLayer(const char* name);
+	bool activateExtension(const char* name);
+};
 
 struct VulkanDevice : public Device {
 	vk::PhysicalDevice physical_device;
@@ -34,7 +44,7 @@ struct VulkanWindow;
 struct VulkanWindowSection;
 
 struct VulkanInstance : public Instance {
-	VExtLayerStruct extLayers;
+	VulkanExtLayerStruct extLayers;
 	Map<GLFWmonitor*, VulkanMonitor*> monitor_map;
 	Map<GLFWwindow*, VulkanWindow*> window_map;
 	Array<Monitor*> monitors;

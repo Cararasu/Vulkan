@@ -79,23 +79,23 @@ struct IdArray {
 };
 
 template<typename T>
-struct IdArrayArray {
+struct IdPtrArray {
 	IdGenerator gen;
 	Array<T*> list;
 
-	typedef typename Array<T>::iterator iterator;
+	typedef typename Array<T*>::iterator iterator;
 
-	IdArrayArray() {}
-	IdArrayArray ( std::initializer_list<T*> list ) : list ( list ) {
+	IdPtrArray() {}
+	IdPtrArray ( std::initializer_list<T*> list ) : list ( list ) {
 		for ( T* e : list ) e->id = gen.next();
 	}
-	IdArrayArray ( Array<T*> list ) : list ( list ) {
+	IdPtrArray ( Array<T*> list ) : list ( list ) {
 		for ( T* e : list ) e->id = gen.next();
 	}
 
 	RId insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			if ( !list[i].id ) {
+			if ( !list[i]->id ) {
 				ele->id = i + 1;
 				list[i] = ele;
 				return ele->id;
@@ -133,8 +133,8 @@ struct IdArrayArray {
 	T* get ( RId id ) {
 		return id && id <= list.size() ? list[id - 1] : nullptr;
 	}
-	T& operator[] ( RId id ) {
-		return *get ( id );
+	T* operator[] ( RId id ) {
+		return get ( id );
 	}
 	void clear() {
 		gen.clear();
@@ -155,7 +155,7 @@ struct IdStore {
 		for ( T e : list ) insert ( e );
 	}
 
-	RId insert ( T ele ) {
+	RId insert ( T& ele ) {
 		RId id = 0;
 		if ( ele.id && ( id = insert ( ele.id, ele ) ) )
 			return id;
@@ -165,7 +165,7 @@ struct IdStore {
 		map.insert ( std::make_pair ( id, ele ) );
 		return id;
 	}
-	RId insert ( RId id, T ele ) {
+	RId insert ( RId id, T& ele ) {
 		if ( map.find ( id ) != map.end() ) return 0;
 		ele.id = id;
 		map.insert ( std::make_pair ( id, ele ) );
@@ -203,56 +203,99 @@ const u64 FILLED_U64_BITFIELD = 0xFFFFFFFFFFFFFFFF;
 
 template<typename T>
 struct SparseStore {
-	Array<T> data;
-	Array<bool> filled_bits;
+	u32 size;
+	u32 capacity;
+	T* data;
+	u8* filled_bits;
 
-	u32 create_chunk ( ) {
-		for ( u32 i = 0; i < data.size(); i++ ) {
-			if ( filled_bits[i] ) {
-				filled_bits[i] = false;
+	SparseStore ( u32 initial_capacity = 0 ) : size ( 0 ) {
+		capacity = 8;
+		while(capacity < initial_capacity){
+			capacity *= 2;
+		}
+		data = new T[capacity];
+		filled_bits = new u8[capacity / 8];
+	}
+	~SparseStore ( ) {
+		if ( data ) delete[] data;
+		if ( filled_bits ) delete[] filled_bits;
+	}
+	void set_filled ( u32 index ) {
+		filled_bits[index / 8] |= 1 << ( index % 8 );
+	}
+	void set_free ( u32 index ) {
+		filled_bits[index / 8] &= ~ ( 1 << ( index % 8 ) );
+	}
+	bool is_filled ( u32 index ) {
+		return ( filled_bits[index / 8] & ( 1 << ( index % 8 ) ) ) != 0;
+	}
+	void reallocate ( u32 nextblockcount ) {
+		T* newdata = new T[nextblockcount];
+		u32 nextbitblockcount = nextblockcount / 8;
+		u8* newbits = new u8[nextbitblockcount];
+		
+		memcpy ( newdata, data, std::min ( nextblockcount, capacity ) * sizeof(T) );
+		memcpy ( newbits, filled_bits, std::min ( nextbitblockcount, capacity / 8 ) * sizeof ( u8 ) );
+
+		delete[] data;
+		delete[] filled_bits;
+
+		data = newdata;
+		capacity = nextblockcount;
+		filled_bits = newbits;
+	}
+
+	u32 create_chunk () {
+		for ( u32 i = 0; i < size; i++ ) {
+			if ( !is_filled(i) ) {
+				set_filled(i);
 				return i;
 			}
 		}
-		data.emplace_back ( );
-		filled_bits.push_back ( false );
-		return data.size() - 1;
+		if ( capacity <= size ) {
+			u32 newblockcount = capacity;
+			newblockcount *= 2;
+			reallocate ( newblockcount );
+		}
+		set_filled ( size );
+		return size++;
 	}
 	T* operator[] ( u32 index ) {
 		return &data[index];
 	}
 	void delete_chunk ( u32 index ) {
-		filled_bits[index] = true;
-		while ( filled_bits.back() ) {
-			filled_bits.pop_back();
-			data.pop_back();
+		set_free ( index );
+		u32 last_free_index = size;
+		for(; last_free_index > 0; last_free_index--){
+			if(is_filled(last_free_index - 1))
+				break;
 		}
-	}
-	void clear ( ) {
-		data.clear();
-		filled_bits.clear();
+		if ( last_free_index <= capacity / 4 && capacity / 2 >= 8 ) {
+			reallocate ( capacity / 2 );
+		}
+		size = last_free_index;
 	}
 };
 
 template<>
 struct SparseStore<void> {
 	u32 genericdatasize;
-	u32 end_index;
+	u32 size;
 	u32 capacity;
 	u8* data;
 	u8* filled_bits;
 
-	SparseStore<void> ( u32 genericdatasize ) : genericdatasize ( genericdatasize ), end_index ( 0 ), capacity ( 8 ), data ( new u8[8 * genericdatasize] ), filled_bits ( new u8[1] ) {}
-	SparseStore<void> ( u32 genericdatasize, u32 initial_capacity ) : genericdatasize ( genericdatasize ), end_index ( 0 ) {
-		capacity = initial_capacity;
-		u32 overflow = capacity % 8;
-		if ( overflow ) {
-			capacity += 8 - overflow;
+	SparseStore<void> ( u32 genericdatasize, u32 initial_capacity = 0 ) : genericdatasize ( genericdatasize ), size ( 0 ) {
+		capacity = 8;
+		while(capacity < initial_capacity){
+			capacity *= 2;
 		}
-		data = new u8[capacity];
+		data = new u8[capacity * genericdatasize];
 		filled_bits = new u8[capacity / 8];
 	}
 	~SparseStore<void> ( ) {
 		if ( data ) delete[] data;
+		if ( filled_bits ) delete[] filled_bits;
 	}
 	void set_filled ( u32 index ) {
 		filled_bits[index / 8] |= 1 << ( index % 8 );
@@ -283,21 +326,21 @@ struct SparseStore<void> {
 			u32 newblockcount = capacity;
 			while ( newblockcount <= blocks ) newblockcount *= 2;
 			reallocate ( newblockcount );
-		} else if ( blocks <= capacity / 4 && capacity / 4 >= 8 ) {
+		} else if ( blocks <= capacity / 4 && capacity / 2 >= 8 ) {
 			reallocate ( capacity / 2 );
 		}
-		end_index = blocks;
+		size = blocks;
 	}
 
 	u32 create_chunk () {
-		for ( u32 i = 0; i < end_index; i++ ) {
+		for ( u32 i = 0; i < size; i++ ) {
 			if ( !is_filled(i) ) {
 				set_filled(i);
 				return i;
 			}
 		}
-		u32 new_index = end_index;
-		resize ( end_index + 1 );
+		u32 new_index = size;
+		resize ( size + 1 );
 		set_filled ( new_index );
 		return new_index;
 	}
@@ -306,7 +349,7 @@ struct SparseStore<void> {
 	}
 	void delete_chunk ( u32 index ) {
 		set_free ( index );
-		u32 last_free_index = end_index;
+		u32 last_free_index = size;
 		for(; last_free_index > 0; last_free_index--){
 			if(is_filled(last_free_index - 1))
 				break;
