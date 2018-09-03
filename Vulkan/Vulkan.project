@@ -36,8 +36,6 @@
     <File Name="VulkanQuadRenderer.h"/>
     <File Name="VulkanWindowSection.cpp"/>
     <File Name="VulkanWindowSection.h"/>
-    <File Name="VulkanResourceManager.cpp"/>
-    <File Name="VulkanResourceManager.h"/>
     <File Name="VulkanImage.h"/>
     <File Name="VulkanImage.cpp"/>
     <File Name="VulkanHeader.h"/>
@@ -49,9 +47,7 @@
     <File Name="ViewPort.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include"/>
-  <Dependencies Name="Debug Windows">
-    <Project Name="MetaBuilder"/>
-  </Dependencies>
+  <Dependencies Name="Debug Windows"/>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="-Wall;-std=c++17" C_Options="-Wall;-std=c99" Assembler="">
@@ -120,7 +116,7 @@
       </Completion>
     </Configuration>
     <Configuration Name="Debug Windows" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g;-O0;-Wall" C_Options="-g;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+      <Compiler Options="-g;-O0" C_Options="-g;-O0" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="../libs/glfw-3.2.1/include"/>
         <IncludePath Value="../libs/glm-0.9.9-a1"/>
         <IncludePath Value="../libs/stb"/>
@@ -148,12 +144,7 @@
         <StartupCommands/>
       </Debugger>
       <PreBuild/>
-      <PostBuild>
-        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.vert -o ../workingdir/shader/tri.vert.sprv</Command>
-        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.frag -o ../workingdir/shader/tri.frag.sprv</Command>
-      </PostBuild>
+      <PostBuild/>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>

@@ -270,6 +270,11 @@ Image* VulkanWindow::backed_image () {
 	return present_image;
 }
 RendResult VulkanWindow::update() {
+	RendResult res = v_update();
+	m_instance->frame_index++;
+	return res;
+}
+RendResult VulkanWindow::v_update() {
 	static double oldTime = 0.0;
 	double newTime = glfwGetTime();
 	//printf("Time: %f\n", 1.0 / (newTime - oldTime));
@@ -350,21 +355,19 @@ void VulkanWindow::create_command_buffer ( u32 index ){
 void VulkanWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
-	g_logger.log<LogLevel::eDebug> ( "--------------- FrameBoundary ---------------\n" );
-
+	
+	g_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------\n", m_instance->frame_index );
 	vulkan_device ( m_instance ).acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
+	
 	g_logger.log<LogLevel::eDebug> ( "PresetImageId: %d\n", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
 	//reset for frame
 	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 
-	for ( auto callable : data->deferred_calls ) {
-		callable ( present_image_index );
-	}
-	data->deferred_calls.clear();
-
 	vulkan_device ( m_instance ).resetFences ( {data->image_presented_fence} );
-
+	
+	data->frame_index = m_instance->frame_index;
+	
 	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue ( queue_index );
 	
 	present_image->set_current_image ( present_image_index );
@@ -618,11 +621,6 @@ void VulkanWindow::destroy_frame_local_data() {
 			//vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
 			vulkan_device ( m_instance ).destroyFence ( data.image_presented_fence );
 		}
-		for ( auto callable : data.deferred_calls ) {
-			//maybe call it how many times it is needed
-			callable ( index );
-		}
-		data.deferred_calls.clear();
 
 		destroy_semaphore ( m_instance, data.present_ready_sem );
 		destroy_semaphore ( m_instance, data.render_ready_sem );

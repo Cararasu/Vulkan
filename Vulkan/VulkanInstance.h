@@ -3,7 +3,7 @@
 #include "render/Instance.h"
 #include "render/Window.h"
 #include "VulkanHeader.h"
-#include "VulkanResourceManager.h"
+#include <render/IdArray.h>
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -29,6 +29,10 @@ struct VulkanDevice : public Device {
 
 	virtual ~VulkanDevice() {}
 };
+struct VulkanDeferredCall{
+	u64 frame_index = 0;
+	std::function<RendResult ( u64 )> call;
+};
 
 struct VulkanMonitor : public Monitor {
 	GLFWmonitor* monitor;
@@ -42,6 +46,11 @@ struct VulkanMonitor : public Monitor {
 
 struct VulkanWindow;
 struct VulkanWindowSection;
+struct VulkanTransferController;
+struct VulkanContextBase;
+struct VulkanModelBase;
+struct VulkanModel;
+struct VulkanModelInstanceBase;
 
 struct VulkanInstance : public Instance {
 	VulkanExtLayerStruct extLayers;
@@ -56,13 +65,13 @@ struct VulkanInstance : public Instance {
 	VulkanDevice* v_device;
 	vk::Device m_device;
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
-
+	
+	Array<VulkanDeferredCall> deferred_calls;
+	
 	QueueWrapper queues;
 
-	VulkanResourceManager* v_resource_manager;
-
 	bool initialized = false;
-
+	u64 frame_index = 1;
 
 	VulkanInstance();
 	virtual ~VulkanInstance();
@@ -80,8 +89,33 @@ struct VulkanInstance : public Instance {
 	VulkanMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
 
-	virtual ResourceManager* resource_manager();
+//------------ Resources
+	VulkanTransferController* transfer_control = nullptr;
+	
+	IdPtrArray<DataGroupDef> datagroup_store;
+	IdPtrArray<VulkanContextBase> contextbase_store;
+	IdPtrArray<VulkanModelBase> modelbase_store;
+	IdPtrArray<VulkanModel> model_store;
+	IdPtrArray<VulkanModelInstanceBase> modelinstancebase_store;
 
+	vk::ShaderModule load_shader_from_file ( const char* filename );
+	
+	virtual RId register_datagroupdef ( DataGroupDef& datagroupdef );
+	virtual const DataGroupDef* datagroupdef ( RId handle );
+
+	virtual RId register_contextbase ( RId datagroup/*image-defs*/ );
+	virtual const ContextBase contextbase ( RId handle );
+
+	virtual RId register_modelbase ( RId vertexdatagroup );
+	virtual const ModelBase modelbase ( RId handle );
+
+	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount );
+	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount );
+
+	virtual RId register_modelinstancebase ( Model model, RId datagroup = 0 );
+	virtual const ModelInstanceBase modelinstancebase ( RId handle );
+
+	virtual const ModelInstance create_instance ( RId modelinstancebase );
 
 
 //------------ Instance/Device/Physicaldevice

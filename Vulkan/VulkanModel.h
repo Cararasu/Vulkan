@@ -1,9 +1,27 @@
 #pragma once
 #include <render/IdArray.h>
 #include "VulkanBuffer.h"
+#include "VulkanTransferOperator.h"
 
 struct VulkanModelInstances {
 	SparseStore<void> store;
+};
+
+struct DataGroupDef;
+struct VulkanModel;
+struct VulkanModelBase;
+
+struct VulkanModelInstanceBase{
+	RId id;
+	DataGroupDef* const datagroup;
+	VulkanModel* const model;
+	VulkanModelBase* const modelbase;
+	VulkanBufferStorage bufferstorage;
+	
+	VulkanModelInstanceBase(VulkanInstance* instance, DataGroupDef* datagroup, VulkanModel* model, VulkanModelBase* modelbase) : 
+		bufferstorage(instance, vk::BufferUsageFlagBits::eVertexBuffer), datagroup(datagroup), model(model), modelbase(modelbase){
+		
+	}
 };
 struct VulkanModel {
 	RId id;

@@ -3,7 +3,7 @@
 #include "Monitor.h"
 #include "Header.h"
 #include "Window.h"
-#include "ResourceManager.h"
+#include "Model.h"
 
 struct Device{
 	const char* name;
@@ -28,7 +28,25 @@ struct Instance{
 	virtual Array<Monitor*>& get_monitors() = 0;
 	virtual Array<Device*>& get_devices() = 0;
 	
-	virtual ResourceManager* resource_manager() = 0;
+	
+//------------ Resources
+	virtual RId register_datagroupdef ( DataGroupDef& datagroupdef ) = 0;
+	virtual const DataGroupDef* datagroupdef ( RId handle ) = 0;
+	
+	virtual RId register_contextbase ( RId datagroup/*image-defs*/ ) = 0;
+	virtual const ContextBase contextbase ( RId handle ) = 0;
+	
+	virtual RId register_modelbase ( RId vertexdatagroup ) = 0;
+	virtual const ModelBase modelbase ( RId handle ) = 0;
+	
+	virtual const Model load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
+	virtual const Model load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
+	
+	virtual RId register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
+	virtual const ModelInstanceBase modelinstancebase ( RId handle ) = 0;
+	
+	virtual const ModelInstance create_instance( RId modelinstancebase ) = 0;
+	
 };
 
 Instance* initialize_instance(const char* name);

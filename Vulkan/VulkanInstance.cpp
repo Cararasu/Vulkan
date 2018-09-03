@@ -1,104 +1,108 @@
 #include "VulkanInstance.h"
 #include "VulkanWindow.h"
+#include "VulkanTransferOperator.h"
+#include <fstream>
+#include "VulkanContext.h"
+#include "VulkanModel.h"
 
-bool operator== (vk::LayerProperties& lhs, vk::LayerProperties& rhs) {
-	return !strcmp (lhs.layerName, rhs.layerName);
+bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
+	return !strcmp ( lhs.layerName, rhs.layerName );
 }
-bool operator== (vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs) {
-	return !strcmp (lhs.extensionName, rhs.extensionName);
+bool operator== ( vk::ExtensionProperties& lhs, vk::ExtensionProperties& rhs ) {
+	return !strcmp ( lhs.extensionName, rhs.extensionName );
 }
 
-void addExtension (std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop) {
+void addExtension ( std::vector<vk::ExtensionProperties>* propList, vk::ExtensionProperties prop ) {
 	bool found = false;
-	for (vk::ExtensionProperties& it : *propList) {
-		if (it == prop) {
+	for ( vk::ExtensionProperties& it : *propList ) {
+		if ( it == prop ) {
 			found = true;
 			break;
 		}
 	}
-	if (!found) {
-		propList->push_back (prop);
+	if ( !found ) {
+		propList->push_back ( prop );
 	}
 }
 
-void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions) {
+void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions ) {
 
 	u32 count;
-	if (!device) {
-		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
+	if ( !device ) {
+		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, nullptr ), printf ( "Could not get Extension-count" ) );
 	} else {
-		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, nullptr), printf ("Could not get Extension-count"));
+		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, nullptr ), printf ( "Could not get Extension-count" ) );
 	}
-	extensions->resize (count);
-	if (!device) {
-		V_CHECKCALL (vk::enumerateInstanceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
+	extensions->resize ( count );
+	if ( !device ) {
+		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, extensions->data() ), printf ( "Could not get Extensions" ) );
 	} else {
-		V_CHECKCALL (device.enumerateDeviceExtensionProperties (nullptr, &count, extensions->data()), printf ("Could not get Extensions"));
+		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, extensions->data() ), printf ( "Could not get Extensions" ) );
 	}
 
-	if (!device) {
-		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
+	if ( !device ) {
+		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, nullptr ), printf ( "Could not get Layer-count" ) );
 	} else {
-		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, nullptr), printf ("Could not get Layer-count"));
+		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, nullptr ), printf ( "Could not get Layer-count" ) );
 	}
-	layers->resize (count);
-	if (!device) {
-		V_CHECKCALL (vk::enumerateInstanceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
+	layers->resize ( count );
+	if ( !device ) {
+		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, layers->data() ), printf ( "Could not get Layers" ) );
 	} else {
-		V_CHECKCALL (device.enumerateDeviceLayerProperties (&count, layers->data()), printf ("Could not get Layers"));
+		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, layers->data() ), printf ( "Could not get Layers" ) );
 	}
-	for (vk::LayerProperties& layerProp : *layers) {
+	for ( vk::LayerProperties& layerProp : *layers ) {
 
-		if (!device) {
-			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
+		if ( !device ) {
+			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, nullptr ), printf ( "Could not get Extension-count" ) );
 		} else {
-			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, nullptr), printf ("Could not get Extension-count"));
+			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, nullptr ), printf ( "Could not get Extension-count" ) );
 		}
 		vk::ExtensionProperties extensionArray[count];
-		if (!device) {
-			V_CHECKCALL (vk::enumerateInstanceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
+		if ( !device ) {
+			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, extensionArray ), printf ( "Could not get Extensions" ) );
 		} else {
-			V_CHECKCALL (device.enumerateDeviceExtensionProperties (layerProp.layerName, &count, extensionArray), printf ("Could not get Extensions"));
+			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, extensionArray ), printf ( "Could not get Extensions" ) );
 		}
-		for (size_t i = 0; i < count; ++i) {
-			addExtension (extensions, extensionArray[i]);
+		for ( size_t i = 0; i < count; ++i ) {
+			addExtension ( extensions, extensionArray[i] );
 		}
 	}
 }
-bool VulkanExtLayerStruct::activateLayer (const char* name) {
+bool VulkanExtLayerStruct::activateLayer ( const char* name ) {
 	bool found = false;
-	for (vk::LayerProperties& layer : availableLayers) {
-		if (!strcmp (layer.layerName, name)) {
+	for ( vk::LayerProperties& layer : availableLayers ) {
+		if ( !strcmp ( layer.layerName, name ) ) {
 			found = true;
 			break;
 		}
 	}
-	if (!found)
+	if ( !found )
 		return false;
-	for (const char* layName : neededLayers) {
-		if (!strcmp (layName, name)) {
+	for ( const char* layName : neededLayers ) {
+		if ( !strcmp ( layName, name ) ) {
 			return true;
 		}
 	}
-	neededLayers.push_back (name);
+	neededLayers.push_back ( name );
 	return true;
 }
-bool VulkanExtLayerStruct::activateExtension (const char* name) {
+bool VulkanExtLayerStruct::activateExtension ( const char* name ) {
 	bool found = false;
-	for (vk::ExtensionProperties& ext : availableExtensions) {
-		if (!strcmp (ext.extensionName, name)) {
+	for ( vk::ExtensionProperties& ext : availableExtensions ) {
+		if ( !strcmp ( ext.extensionName, name ) ) {
 			found = true;
 			break;
 		}
 	}
-	if (!found)
+	if ( !found )
 		return false;
-	for (const char* extName : neededExtensions) {
-		if (!strcmp (extName, name)) {
+	for ( const char* extName : neededExtensions ) {
+		if ( !strcmp ( extName, name ) ) {
 			return true;
 		}
 	}
-	neededExtensions.push_back (name);
+	neededExtensions.push_back ( name );
 	return true;
 }
 
@@ -312,21 +316,36 @@ VulkanInstance::VulkanInstance() {
 		return lhs->rating > rhs->rating;
 	} );
 
-	v_resource_manager = new VulkanResourceManager ( this );
 
 	initialized = true;
 }
 
 VulkanInstance::~VulkanInstance() {
+
+	for ( VulkanDeferredCall& def_call : deferred_calls ) {
+		def_call.call ( def_call.frame_index );
+	}
 	for ( auto entry : monitor_map ) {
 		delete entry.second;
 	}
 	for ( auto entry : window_map ) {
 		destroy_window ( entry.second );
 	}
-	delete v_resource_manager;
+	for ( auto ele : datagroup_store ) {
+		delete ele;
+	}
+	for ( auto ele : contextbase_store ) {
+		delete ele;
+	}
+	for ( auto ele : modelbase_store ) {
+		delete ele;
+	}
+	for ( auto ele : model_store ) {
+		delete ele;
+	}
+	delete transfer_control;
 	m_device.destroy ( nullptr );
-	
+
 }
 bool VulkanInstance::initialize ( Device* device ) {
 	if ( !device )
@@ -498,6 +517,7 @@ bool VulkanInstance::initialize ( Device* device ) {
 		queues.pgc.push_back ( queue_wrapper );
 	}
 
+	transfer_control = new VulkanTransferController ( this );
 	return true;
 }
 
@@ -508,10 +528,23 @@ Array<Device*>& VulkanInstance::get_devices() {
 	return devices;
 }
 void VulkanInstance::process_events() {
-	for ( Window* window : windows ) {
-		window->update();
+	/*u64 last_frame_index = std::numeric_limits<u64>::max();
+	for ( VulkanWindow* window : windows ) {
+		last_frame_index = std::min(window->prepare_frame(), last_frame_index);
 	}
+	for(auto it = deferred_calls.begin();; ++it){
+		if(it == deferred_calls.end() || it->frame_index > last_frame_index){
+			deferred_calls.erase(deferred_calls.begin(), it);
+			break;
+		}
+		it->call(it->frame_index);
+	}*/
+	for ( VulkanWindow* window : windows ) {
+		window->v_update();
+	}
+
 	glfwPollEvents();
+	frame_index++;
 }
 bool VulkanInstance::is_window_open() {
 	for ( Window* window : windows ) {
@@ -544,9 +577,122 @@ bool VulkanInstance::destroy_window ( Window* window ) {
 	return false;
 }
 
-ResourceManager* VulkanInstance::resource_manager() {
-	return v_resource_manager;
+
+static std::vector<char> readFile ( const char* filename ) {
+	std::ifstream file ( filename, std::ios::ate | std::ios::binary );
+
+	if ( !file.is_open() ) {
+		printf ( "Couldn't open File %s\n", filename );
+		return std::vector<char>();
+	}
+
+	size_t fileSize = ( size_t ) file.tellg();
+	std::vector<char> buffer ( fileSize );
+
+	file.seekg ( 0 );
+	file.read ( buffer.data(), fileSize );
+	file.close();
+
+	return buffer;
 }
+RId VulkanInstance::register_datagroupdef ( DataGroupDef& datagroupdef ) {
+	return datagroup_store.insert ( new DataGroupDef ( datagroupdef ) );
+}
+const DataGroupDef* VulkanInstance::datagroupdef ( RId id ) {
+	return datagroup_store[id];
+}
+
+RId VulkanInstance::register_contextbase ( RId datagroup_id ) {
+	return contextbase_store.insert ( new VulkanContextBase ( this, datagroup_store[datagroup_id] ) );
+}
+const ContextBase VulkanInstance::contextbase ( RId id ) {
+	const VulkanContextBase* v_contextbase = contextbase_store.get ( id );
+	return {v_contextbase->id, v_contextbase->datagroup->id};
+}
+
+RId VulkanInstance::register_modelbase ( RId vertexdatagroup ) {
+	return modelbase_store.insert ( new VulkanModelBase ( vertexdatagroup ) );
+}
+const ModelBase VulkanInstance::modelbase ( RId id ) {
+	const VulkanModelBase* v_modelbase = modelbase_store[id];
+	return {v_modelbase->id, v_modelbase->datagroup};
+}
+RId VulkanInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
+	VulkanModel* v_model = model_store[model.id];
+
+	return modelinstancebase_store.insert ( new VulkanModelInstanceBase ( this, datagroup_store[datagroup_id], v_model, modelbase_store[v_model->modelbase] ) );
+}
+const ModelInstanceBase VulkanInstance::modelinstancebase ( RId handle ) {
+
+}
+const ModelInstance VulkanInstance::create_instance ( RId modelinstancebase ) {
+
+}
+
+vk::ShaderModule VulkanInstance::load_shader_from_file ( const char* filename ) {
+
+	std::vector<char> shaderCode = readFile ( filename );
+
+	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
+
+	vk::ShaderModule shadermodule;
+	V_CHECKCALL ( vulkan_device ( this ).createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
+	return shadermodule;
+}
+const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+	const VulkanModelBase* v_modelbase = modelbase_store[modelbase];
+	const DataGroupDef* datagroupdef = datagroup_store[v_modelbase->datagroup];
+
+	VulkanModel* newmodel = new VulkanModel ( this, modelbase );
+	newmodel->modelbase = modelbase;
+	newmodel->index_is_2byte = true;
+	newmodel->vertexoffset = 0;
+	newmodel->vertexcount = vertexcount;
+	newmodel->indexoffset = 0;
+	newmodel->indexcount = indexcount;
+	newmodel->vertexbuffer.init ( vertexcount * datagroupdef->size,
+	                              vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+	                              vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+	newmodel->indexbuffer.init ( indexcount * sizeof ( u16 ),
+	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+
+	std::pair<u8*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
+	std::pair<u8*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u16 ) );
+	memcpy ( ( void* ) vertexdata.first, ( void* ) vertices, vertexcount * datagroupdef->size );
+	memcpy ( ( void* ) indexdata.first, ( void* ) indices, indexcount * sizeof ( u16 ) );
+	transfer_control->do_transfers();
+	transfer_control->check_free();
+	return {model_store.insert ( newmodel ), modelbase};
+}
+const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+	const VulkanModelBase* v_modelbase = modelbase_store[modelbase];
+	const DataGroupDef* datagroupdef = datagroup_store[v_modelbase->datagroup];
+	bool fitsin2bytes = vertexcount < 0x10000;
+
+	VulkanModel* newmodel = new VulkanModel ( this, modelbase );
+	newmodel->modelbase = modelbase;
+	newmodel->index_is_2byte = false;
+	newmodel->vertexoffset = 0;
+	newmodel->vertexcount = vertexcount;
+	newmodel->indexoffset = 0;
+	newmodel->indexcount = indexcount;
+	newmodel->vertexbuffer.init ( vertexcount * datagroupdef->size,
+	                              vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+	                              vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+	newmodel->indexbuffer.init ( indexcount * sizeof ( u32 ),
+	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+
+	std::pair<u8*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
+	std::pair<u8*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u32 ) );
+	memcpy ( ( void* ) vertexdata.first, ( void* ) vertices, vertexcount * datagroupdef->size );
+	memcpy ( ( void* ) indexdata.first, ( void* ) indices, indexcount * sizeof ( u16 ) );
+	transfer_control->do_transfers();
+	transfer_control->check_free();
+	return {model_store.insert ( newmodel ), modelbase};
+}
+
 
 
 GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {

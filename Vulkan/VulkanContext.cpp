@@ -24,5 +24,6 @@ void VulkanGPUDataStore::remove_block ( RId index ) {
 	return datastore.delete_chunk ( index );
 }
 void VulkanGPUDataStore::update_data() {
-	instance->v_resource_manager->transfer_control->transfer_data ( datastore.data, datastore.size, &buffer, 0 );
+	std::pair<u8*, vk::Semaphore> data = instance->transfer_control->request_transfer_memory ( &buffer, datastore.size, 0 );
+	memcpy(datastore.data, data.first, datastore.size);
 }

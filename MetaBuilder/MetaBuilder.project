@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Project Name="MetaBuilder" Version="10.0.0" InternalType="Console">
+  <Plugins>
+    <Plugin Name="qmake">
+      <![CDATA[00010001N0005Debug000000000000]]>
+    </Plugin>
+  </Plugins>
   <Description/>
   <Dependencies/>
+  <VirtualDirectory Name="src">
+    <File Name="metamain.cpp"/>
+  </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
@@ -29,7 +37,12 @@
         <StartupCommands/>
       </Debugger>
       <PreBuild/>
-      <PostBuild/>
+      <PostBuild>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.vert -o ../workingdir/shader/tri.vert.sprv</Command>
+        <Command Enabled="yes">%VULKAN_PATH%\Bin\glslc.exe ../workingdir/shader/tri.frag -o ../workingdir/shader/tri.frag.sprv</Command>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>
@@ -92,7 +105,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <VirtualDirectory Name="src">
-    <File Name="metamain.cpp"/>
-  </VirtualDirectory>
 </CodeLite_Project>

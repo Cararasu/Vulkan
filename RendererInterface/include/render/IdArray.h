@@ -92,6 +92,9 @@ struct IdPtrArray {
 	IdPtrArray ( Array<T*> list ) : list ( list ) {
 		for ( T* e : list ) e->id = gen.next();
 	}
+	~IdPtrArray ( ) {
+		
+	}
 
 	RId insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
@@ -127,8 +130,10 @@ struct IdPtrArray {
 		( *it )->id = 0;
 		return ++it;
 	}
-	void remove ( RId id ) {
-		get ( id )->id = 0;
+	T* remove ( RId id ) {
+		T* ptr = get ( id );
+		list[id - 1] = nullptr;
+		return ptr;
 	}
 	T* get ( RId id ) {
 		return id && id <= list.size() ? list[id - 1] : nullptr;

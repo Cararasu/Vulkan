@@ -101,10 +101,10 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 
 
 	if ( !vertex_shader ) {
-		vertex_shader = v_instance->v_resource_manager->load_shader_from_file ( "shader/quad.vert.sprv" );
+		vertex_shader = v_instance->load_shader_from_file ( "shader/quad.vert.sprv" );
 	}
 	if ( !fragment_shader ) {
-		fragment_shader = v_instance->v_resource_manager->load_shader_from_file ( "shader/quad.frag.sprv" );
+		fragment_shader = v_instance->load_shader_from_file ( "shader/quad.frag.sprv" );
 	}
 	if ( !renderpass ) {// Color and depth-stencil buffers
 		vk::AttachmentDescription attachments[2] = {
@@ -273,8 +273,6 @@ void VulkanQuadRenderer::init() {
 		staging_vertex_buffer->map_mem();
 		memset ( staging_vertex_buffer->mapped_ptr, 0, vertexbuffer_size );
 		QuadVertex* vertex_ptr = ( QuadVertex* ) staging_vertex_buffer->mapped_ptr;
-		glm::vec4 dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
-		glm::vec4 uvdim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		vertex_ptr[0].pos = glm::vec2 ( 1.0f, 1.0f );
 		vertex_ptr[1].pos = glm::vec2 ( 0.0f, 1.0f );
 		vertex_ptr[2].pos = glm::vec2 ( 0.0f, 0.0f );
@@ -282,7 +280,7 @@ void VulkanQuadRenderer::init() {
 		vertex_ptr[4].pos = glm::vec2 ( 1.0f, 0.0f );
 		vertex_ptr[5].pos = glm::vec2 ( 1.0f, 1.0f );
 
-		QuadInstance* instance_ptr = ( QuadInstance* ) ( staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
+		QuadInstance* instance_ptr = ( QuadInstance* ) ( (u8*)staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
 		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
 		instance_ptr[0].data = glm::vec4 ( 0.5f, 0.0f, 0.0f, 0.0f );
@@ -312,7 +310,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), renderpass,
 			2, attachments,
-			viewport.extend.width, viewport.extend.height, 1
+			(u32)viewport.extend.width, (u32)viewport.extend.height, 1
 		};
 		per_frame.framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
 	}
@@ -385,7 +383,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 	SubmitInfo submitinfo = {
 		vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eHost | vk::PipelineStageFlagBits::eVertexInput,
 		wait_sem_index, 1,
-		state->commandbuffers.size(), 1,
+		(u32)state->commandbuffers.size(), 1,
 		wait_sem_index, 1
 	};
 	state->commandbuffers.push_back ( per_frame.command.buffer );

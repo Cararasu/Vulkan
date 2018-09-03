@@ -2,7 +2,7 @@
 #include "VulkanInstance.h"
 
 VulkanBuffer::VulkanBuffer ( VulkanInstance* instance ) :
-	v_instance ( instance ) {
+	v_instance ( instance ), size(0) {
 }
 VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	v_instance ( instance ) {
@@ -23,7 +23,7 @@ RendResult VulkanBuffer::init() {
 
 	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), printf ( "Failed To Create Buffer\n" ) );
 
-	printf ( "Create Buffer of size %d\n", size );
+	printf ( "Create Buffer of size %d with usage %s\n", size, to_string(usage).c_str() );
 
 	vk::MemoryRequirements mem_req;
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
@@ -55,8 +55,13 @@ RendResult VulkanBuffer::transfer_to ( VulkanBuffer* dst, vk::DeviceSize offset,
 void VulkanBuffer::destroy() {
 	if ( mapped_ptr )
 		unmap_mem();
-	vulkan_device ( v_instance ).destroyBuffer ( buffer, nullptr );
-	v_instance->free_gpu_memory ( memory );
+	if ( buffer ) {
+		vulkan_device ( v_instance ).destroyBuffer ( buffer, nullptr );
+		buffer = vk::Buffer();
+	}
+	if ( memory.memory ) {
+		v_instance->free_gpu_memory ( memory );
+	}
 }
 VulkanBuffer::~VulkanBuffer() {
 	destroy();

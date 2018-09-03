@@ -7,6 +7,9 @@
 #include <glm/gtx/normal.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 #include <map>
 #include <unordered_map>
 #include <list>

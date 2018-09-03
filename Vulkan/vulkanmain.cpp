@@ -226,11 +226,9 @@ struct SimpleObject {
  * specular 1f?
  *
  */
-
 int main ( int argc, char **argv ) {
 
 	Instance* newinstance = initialize_instance ( "Vulkan" );
-
 
 	newinstance->initialize();
 
@@ -245,28 +243,26 @@ int main ( int argc, char **argv ) {
 	}
 	printf ( "Devices\n" );
 	for ( Device* device : newinstance->get_devices() ) {
-		printf ( "\t%s %lu\n", device->name, device->rating );
+		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
 
 	DataGroupDef groupdef;
 	ContextBase contextbase;
 	ModelBase modelbase;
 
-	ResourceManager* resource_manager = newinstance->resource_manager();
-
 	//create datagroups
 	groupdef = {1, { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, 3 * 4}, {ValueType::eF32Vec3, 1, 6 * 4} }, 9 * 4, 1};
-	RId vertex_id = resource_manager->register_datagroupdef ( groupdef );
+	RId vertex_id = newinstance->register_datagroupdef ( groupdef );
 
 	groupdef = {2, { {ValueType::eF32Mat4, 1, 0} }, 16 * 4, 1};
-	RId matrix_id = resource_manager->register_datagroupdef ( groupdef );
+	RId matrix_id = newinstance->register_datagroupdef ( groupdef );
 
 	//create contextbase from datagroups
-	RId w2smatrix_id = resource_manager->register_contextbase ( matrix_id );
-	RId m2wmatrix_id = resource_manager->register_contextbase ( matrix_id );
+	RId w2smatrix_id = newinstance->register_contextbase ( matrix_id );
+	RId m2wmatrix_id = newinstance->register_contextbase ( matrix_id );
 
 	//create modelbase from datagroup and contextbases
-	RId simplemodel_id = resource_manager->register_modelbase ( vertex_id );
+	RId simplemodel_id = newinstance->register_modelbase ( vertex_id );
 	//create model from modelbase
 	Array<glm::vec3> data_to_load = {
 		glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3(),
@@ -281,24 +277,28 @@ int main ( int argc, char **argv ) {
 
 	Array<u16> indices = {0, 1, 2};
 
-	const Model model = resource_manager->load_generic_model ( simplemodel_id, (u8*)data_to_load.data(), 24, indices.data(), 3 );
+	const Model model = newinstance->load_generic_model ( simplemodel_id, (u8*)data_to_load.data(), 24, indices.data(), 3 );
 
 	//create instance from model
-	RId mod_instance = resource_manager->register_modelinstancebase ( model, m2wmatrix_id );
+	RId mod_instance = newinstance->register_modelinstancebase ( model, matrix_id );
 
-	const ModelInstance instance = resource_manager->create_instance ( mod_instance );
+	const ModelInstance instance = newinstance->create_instance ( mod_instance );
 	//ModelInstance* mod_instance = model->create_instance ();
+
+	//VulkanStagingMemory
+	//	list of buffers that grows if the data is not enough
+	//	u8* create_transfer_job(size, dstbuffer);
 
 	//get context from model and is updated once?
 	//Context* context = &mod_instance->contexts[0];
 	//glm::mat4 matrix = glm::mat4();
-	//set_value_m4 ( context->blocks[0].dataptr, &(resource_manager->datagroup_store[matrix_id]), (u8*)&matrix, 0, 0, 0 );
+	//set_value_m4 ( context->blocks[0].dataptr, &(newinstance->datagroup_store[matrix_id]), (u8*)&matrix, 0, 0, 0 );
 
 	//create renderer from model and a list of rendercontexts
-	//Renderer* simplerenderer = resource_manager->create_renderer();
+	//Renderer* simplerenderer = newinstance->create_renderer();
 
 	//create world from a list of contextbases
-	//World* simpleworld = resource_manager->create_world();
+	//World* simpleworld = newinstance->create_world();
 
 	//RenderContext* simplecontext = simpleworld->add_rendercontext();
 	//create contexts from world

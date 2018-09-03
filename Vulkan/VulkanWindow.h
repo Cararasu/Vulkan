@@ -15,6 +15,7 @@
 
 struct FrameLocalData {
 	bool initialized = false;
+	u64 frame_index;
 	vk::Fence image_presented_fence;
 	vk::Semaphore render_ready_sem;
 	vk::Semaphore present_ready_sem;
@@ -23,8 +24,6 @@ struct FrameLocalData {
 	bool createcommandbuffer;
 	vk::CommandBuffer clear_command_buffer;
 	vk::CommandBuffer present_command_buffer;
-
-	Array<std::function<RendResult ( u32 ) >> deferred_calls;
 
 	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
@@ -69,6 +68,7 @@ struct VulkanWindow : public Window {
 	virtual Image* backed_image ();
 
 	virtual RendResult update();
+	RendResult v_update();
 	virtual RendResult destroy();
 
 	void framebuffer_size_changed ( Extent2D<s32> extend );
@@ -82,7 +82,9 @@ struct VulkanWindow : public Window {
 	inline FrameLocalData* current_framelocal_data() {
 		return &frame_local_data[present_image_index];
 	}
-
+	
+	u64 prepare_frame();
+	
 	void initialize();
 	void render_frame();
 	void create_command_buffers();
