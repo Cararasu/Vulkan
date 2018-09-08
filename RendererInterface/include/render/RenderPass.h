@@ -14,23 +14,24 @@
 //ShaderDef
 //create_shader(opengl3, opengl4, vulkan, direct3d, ...)
 
+struct ShaderBase {
+	
+};
+
 struct RendererBase {
+	ModelInstanceBase* model_instance_base;
+	Array<ContextBase*> context_bases;
 	//shader definitions and stuff
 };
 struct Renderer {
-	ModelInstanceBase* model_instance_base;
-	u32 context_base_count;
-	ContextBase* context_bases;
-	//and other changable stuff
+	//changeable stuff here?
 };
 struct RenderStage{
-	u32 renderer_count;
-	Renderer* renderers;
+	Array<Renderer*> renderers;
 };
 
 struct RenderPass {
-	u32 render_stage_count;
-	Renderer* render_stages;
+	Array<RenderStage*> render_stages;
 };
 struct RenderInformation{
 	
