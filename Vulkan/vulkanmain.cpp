@@ -314,7 +314,6 @@ int main ( int argc, char **argv ) {
 	Window* window = newinstance->create_window();
 
 	Extent2D<s32> window_size ( 1000, 600 );
-
 	*window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
 	*window->size() = window_size;
 	*window->visible() = true;
@@ -324,13 +323,28 @@ int main ( int argc, char **argv ) {
 	window->update();
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
-	*window->cursor_mode() = CursorMode::eNormal;
+	*window->cursor_mode() = CursorMode::eInvisible;
 
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for ( 20ms );
+		//this should happen internally in a seperate thread
+		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
+		
+		//RenderStage - defines one GPU pipeline
+		//	ContextBase - id
+		//	ModelInstanceBase - id
+		//RenderSection - groups multiple stages that can be done simultaniously
+		//	RenderStages
+		//RenderPass - groups sections that can be used in a deferred shading pass
+		//	RenderSections
+		//RenderInformation - list of renderpasses that are executed simultaneously
+		//	RenderPasses
+		//newinstance->render(renderinformation);
+		
+		newinstance->render_windows();
 	} while ( newinstance->is_window_open() );
 	WindowSection* section = window->root_section();
 	window->root_section ( nullptr );

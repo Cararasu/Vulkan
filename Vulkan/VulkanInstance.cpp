@@ -528,22 +528,21 @@ Array<Device*>& VulkanInstance::get_devices() {
 	return devices;
 }
 void VulkanInstance::process_events() {
-	/*u64 last_frame_index = std::numeric_limits<u64>::max();
-	for ( VulkanWindow* window : windows ) {
-		last_frame_index = std::min(window->prepare_frame(), last_frame_index);
-	}
-	for(auto it = deferred_calls.begin();; ++it){
-		if(it == deferred_calls.end() || it->frame_index > last_frame_index){
-			deferred_calls.erase(deferred_calls.begin(), it);
-			break;
-		}
-		it->call(it->frame_index);
-	}*/
+	glfwPollEvents();
+}
+void VulkanInstance::render_window(Window* window){
+	v_render_window(dynamic_cast<VulkanWindow*>(window));
+}
+void VulkanInstance::v_render_window(VulkanWindow* window) {
+	if(!window)
+		return;
+	window->v_update();
+	frame_index++;
+}
+void VulkanInstance::render_windows(){
 	for ( VulkanWindow* window : windows ) {
 		window->v_update();
 	}
-
-	glfwPollEvents();
 	frame_index++;
 }
 bool VulkanInstance::is_window_open() {

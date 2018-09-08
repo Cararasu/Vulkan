@@ -114,7 +114,7 @@ void VulkanWindow::initialize() {
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
-			vulkan_window->render_frame();
+			vulkan_window->m_instance->render_window(vulkan_window);
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}

@@ -68,6 +68,9 @@ struct VulkanInstance : public Instance {
 	
 	Array<VulkanDeferredCall> deferred_calls;
 	
+	//array of render
+	//
+	
 	QueueWrapper queues;
 
 	bool initialized = false;
@@ -80,6 +83,10 @@ struct VulkanInstance : public Instance {
 
 	virtual void process_events();
 	virtual bool is_window_open();
+	
+	virtual void render_window(Window* window);
+	virtual void v_render_window(VulkanWindow* window);
+	virtual void render_windows();
 
 	virtual Window* create_window();
 	virtual bool destroy_window ( Window* window );
