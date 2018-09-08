@@ -57,7 +57,7 @@ struct PGCQueueWrapper{
 };
 
 struct QueueWrapper{
-	Array<PGCQueueWrapper> pgc;
+	DynArray<PGCQueueWrapper> pgc;
 	u32 index = 0;
 	
 	bool dedicated_transfer_queue = false;

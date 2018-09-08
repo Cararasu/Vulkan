@@ -460,7 +460,7 @@ void VulkanWindow::render_frame() {
 
 		}
 	}
-	Array<vk::SubmitInfo> submitinfos;
+	DynArray<vk::SubmitInfo> submitinfos;
 	for ( SubmitInfo& submit_info : submit_store.submitinfos ) {
 		submitinfos.push_back (
 		    vk::SubmitInfo (

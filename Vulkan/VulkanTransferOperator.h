@@ -43,18 +43,18 @@ struct VulkanTransferJob {
 struct VulkanPerFrameTransferData {
 	vk::Fence fence;
 	vk::CommandBuffer commandbuffer;
-	Array<VulkanBuffer*> used_buffers;
+	DynArray<VulkanBuffer*> used_buffers;
 	
 	void init(VulkanInstance* v_instance, vk::CommandPool commandpool);
 	void destroy(VulkanInstance* v_instance);
 };
 struct VulkanTransferController {
 	VulkanInstance* v_instance;
-	Array<VulkanTransferBuffer*> transfer_buffers;
-	Array<VulkanPerFrameTransferData*> perframe_data;
-	Array<VulkanPerFrameTransferData*> available_perframe_data;
+	DynArray<VulkanTransferBuffer*> transfer_buffers;
+	DynArray<VulkanPerFrameTransferData*> perframe_data;
+	DynArray<VulkanPerFrameTransferData*> available_perframe_data;
 	
-	Array<VulkanTransferJob> jobs;
+	DynArray<VulkanTransferJob> jobs;
 	//Array<VulkanTransferJob> transfer_jobs;
 	vk::CommandPool commandpool;
 	vk::CommandBuffer synchron_commandbuffer;

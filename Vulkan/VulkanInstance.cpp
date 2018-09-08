@@ -139,10 +139,11 @@ VulkanMonitor::VulkanMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
 
 	int count;
 	const GLFWvidmode* videomode = glfwGetVideoModes ( monitor, &count );
+	videomodes.resize(count);
 	for ( int i = 0; i < count; ++i ) {
 		if ( videomode[i].redBits == 8 || videomode[i].greenBits == 8 || videomode[i].blueBits == 8 ) {
-			videomodes.push_back ( glfw_to_videomode ( videomode[i] ) );
-			this->extend = max_extend ( this->extend, videomodes.back().extend );
+			videomodes[i] = glfw_to_videomode ( videomode[i] );
+			this->extend = max_extend ( this->extend, videomodes[i].extend );
 			//printf ("\tVideomode %dx%d r%dg%db%d %dHz\n", videomode[i].width, videomode[i].height, videomode[i].redBits, videomode[i].greenBits, videomode[i].blueBits, videomode[i].refreshRate);
 		}
 	}
@@ -169,10 +170,11 @@ VulkanInstance::VulkanInstance() {
 	int count;
 	GLFWmonitor** glfw_monitors = glfwGetMonitors ( &count );
 
+	monitors.resize(count);
 	for ( int i = 0; i < count; ++i ) {
 		VulkanMonitor* vulkanmonitor = new VulkanMonitor ( glfw_monitors[i] );
 		monitor_map.insert ( std::make_pair ( glfw_monitors[i], vulkanmonitor ) );
-		monitors.push_back ( vulkanmonitor );
+		monitors[i] = vulkanmonitor;
 	}
 	if ( glfwVulkanSupported() ) {
 		printf ( "Vulkan supported\n" );

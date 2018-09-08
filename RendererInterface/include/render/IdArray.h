@@ -17,15 +17,15 @@ public:
 template<typename T>
 struct IdArray {
 	IdGenerator gen;
-	Array<T> list;
+	DynArray<T> list;
 
-	typedef typename Array<T>::iterator iterator;
+	typedef typename DynArray<T>::iterator iterator;
 
 	IdArray() {}
 	IdArray ( std::initializer_list<T> list ) : list ( list ) {
 		for ( T& e : list ) e.id = gen.next();
 	}
-	IdArray ( Array<T> list ) : list ( list ) {
+	IdArray ( DynArray<T> list ) : list ( list ) {
 		for ( T& e : list ) e.id = gen.next();
 	}
 
@@ -81,7 +81,7 @@ struct IdArray {
 template<typename T>
 struct IdPtrArray {
 	IdGenerator gen;
-	Array<T*> list;
+	DynArray<T*> list;
 
 	typedef typename Array<T*>::iterator iterator;
 

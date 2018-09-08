@@ -41,7 +41,7 @@ struct VulkanQuadRenderer : public VulkanRenderer {
 	
 	VulkanRenderTarget* render_target;
 
-	Array<PerFrameQuadRenderObj> per_target_data;
+	DynArray<PerFrameQuadRenderObj> per_target_data;
 
 	VulkanQuadRenderer ( VulkanInstance* instance );
 	~VulkanQuadRenderer();

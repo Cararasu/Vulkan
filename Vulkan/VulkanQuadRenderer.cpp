@@ -90,7 +90,7 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 		);
 		if ( descriptor_set_layouts.size() != 0 ) {
 			createInfo.setLayoutCount = descriptor_set_layouts.size();
-			createInfo.pSetLayouts = descriptor_set_layouts.data();
+			createInfo.pSetLayouts = descriptor_set_layouts.data;
 		}
 		if ( pushConstRanges.size() != 0 ) {
 			createInfo.pushConstantRangeCount = pushConstRanges.size();

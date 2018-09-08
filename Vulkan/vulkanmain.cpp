@@ -277,7 +277,7 @@ int main ( int argc, char **argv ) {
 
 	Array<u16> indices = {0, 1, 2};
 
-	const Model model = newinstance->load_generic_model ( simplemodel_id, (u8*)data_to_load.data(), 24, indices.data(), 3 );
+	const Model model = newinstance->load_generic_model ( simplemodel_id, (u8*)data_to_load.data, 24, indices.data, 3 );
 
 	//create instance from model
 	RId mod_instance = newinstance->register_modelinstancebase ( model, matrix_id );
@@ -333,10 +333,10 @@ int main ( int argc, char **argv ) {
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
 		
-		//RenderStage - defines one GPU pipeline
+		//Renderer - defines one GPU pipeline
 		//	ContextBase - id
 		//	ModelInstanceBase - id
-		//RenderSection - groups multiple stages that can be done simultaniously
+		//RenderStage - groups multiple renderers that can be done simultaniously
 		//	RenderStages
 		//RenderPass - groups sections that can be used in a deferred shading pass
 		//	RenderSections

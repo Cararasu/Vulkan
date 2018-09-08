@@ -1,32 +1,39 @@
 
 #include "Resources.h"
 
-struct RenderPassInput {
-	RId renderpass_id;
-	u32 index;
-	bool only_direct_pixel_access;
+//Renderer - defines one GPU pipeline
+//	ContextBase - id
+//	ModelInstanceBase - id
+//RenderStage - groups multiple renderers that can be done simultaniously
+//	RenderStages
+//RenderPass - groups sections that can be used in a deferred shading pass
+//	RenderSections
+//RenderInformation - list of renderpasses that are executed simultaneously
+//	RenderPasses
+
+//ShaderDef
+//create_shader(opengl3, opengl4, vulkan, direct3d, ...)
+
+struct RendererBase {
+	//shader definitions and stuff
 };
-struct RenderPassOutput {
-	ImageFormat format;
-	//multisample
+struct Renderer {
+	ModelInstanceBase* model_instance_base;
+	u32 context_base_count;
+	ContextBase* context_bases;
+	//and other changable stuff
+};
+struct RenderStage{
+	u32 renderer_count;
+	Renderer* renderers;
 };
 
-struct RenderPassDef {
-	RId modelbase_id;
-	Array<RenderPassInput> inputs;
-	Array<RenderPassOutput> outputs;
-	
-	RenderPassOutput depth_stencil;
-	bool depthtest, depthwrite, stenciltest;
-	f32 depthbias;
-	
+struct RenderPass {
+	u32 render_stage_count;
+	Renderer* render_stages;
 };
-struct RenderPass : public Resource {
-	const RenderPassDef def;
+struct RenderInformation{
 	
-	virtual RenderPass* cast_to_renderpass() {
-		return this;
-	}
 };
 //triangle/line/points mode
 //scissors?

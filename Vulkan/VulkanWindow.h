@@ -52,8 +52,8 @@ struct VulkanWindow : public Window {
 	Extent2D<u32> swap_chain_extend;
 	u32 queue_index = 0;
 	u32 present_image_index = 0;
-	Array<FrameLocalData> frame_local_data;
-	Array<vk::Semaphore> active_sems;
+	DynArray<FrameLocalData> frame_local_data;
+	DynArray<vk::Semaphore> active_sems;
 
 	vk::CommandPool window_graphics_command_pool;
 
@@ -103,8 +103,8 @@ struct SubmitInfo {
 	u32 sig_sem_index, sig_sem_count;
 };
 struct SubmitStore {
-	Array<vk::Semaphore> semaphores;
-	Array<vk::CommandBuffer> commandbuffers;
-	Array<SubmitInfo> submitinfos;
+	DynArray<vk::Semaphore> semaphores;
+	DynArray<vk::CommandBuffer> commandbuffers;
+	DynArray<SubmitInfo> submitinfos;
 	vk::Fence signal_fence;
 };
