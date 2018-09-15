@@ -33,14 +33,14 @@ void VulkanBufferStorage::reorganize ( ) {
 		while ( needed_size >= 1024 && buffer.size / 4 > needed_size ) buffer.size /= 2;
 		buffer.init();
 	}
-	std::pair<u8*, vk::Semaphore> data = buffer.v_instance->transfer_control->request_transfer_memory(&buffer, buffer.size, 0);
+	std::pair<void*, vk::Semaphore> data = buffer.v_instance->transfer_control->request_transfer_memory(&buffer, buffer.size, 0);
 	mapped_transfer_buffer = data.first;
 	semaphore = data.second;
 }
 u32 VulkanBufferStorage::get_offset ( RId index ) {
 	return sections[index].offset;
 }
-u8* VulkanBufferStorage::get_ptr ( RId index ) {
+void* VulkanBufferStorage::get_ptr ( RId index ) {
 	return mapped_transfer_buffer + sections[index].offset;
 }
 void VulkanBufferStorage::update_data ( ) {
@@ -96,7 +96,7 @@ VulkanTransferController::~VulkanTransferController() {
 		vulkan_device ( v_instance ).destroyCommandPool ( commandpool );
 	}
 }
-std::pair<u8*, vk::Semaphore> VulkanTransferController::request_transfer_memory ( VulkanBuffer* target_buffer, u32 size, u32 offset ) {
+std::pair<void*, vk::Semaphore> VulkanTransferController::request_transfer_memory ( VulkanBuffer* target_buffer, u32 size, u32 offset ) {
 	VulkanTransferBuffer* transfer_buffer = nullptr;
 	for ( auto it = transfer_buffers.begin(); it != transfer_buffers.end(); it++ ) {
 		VulkanTransferBuffer* buff = *it;
@@ -111,7 +111,7 @@ std::pair<u8*, vk::Semaphore> VulkanTransferController::request_transfer_memory 
 		transfer_buffer->buffer.map_mem();
 	}
 	jobs.push_back ( {transfer_buffer, target_buffer, offset, size} );
-	return std::make_pair ( ( u8* ) transfer_buffer->buffer.mapped_ptr, transfer_buffer->semaphore );
+	return std::make_pair ( ( void* ) transfer_buffer->buffer.mapped_ptr, transfer_buffer->semaphore );
 }
 void VulkanTransferController::do_transfers ( ) {
 	VulkanPerFrameTransferData* data;

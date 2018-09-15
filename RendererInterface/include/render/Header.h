@@ -28,14 +28,36 @@ struct Array {
 
 	Array() : count ( 0 ), data ( nullptr ) {}
 
+	Array ( const Array<T>& array ) : count ( array.size() ), data ( new T[count] ) {
+		u64 i = 0;
+		for ( const T& ele : array){
+			data[i++] = ele;
+		}
+	}
+	Array ( Array<T>&& array ) : count ( array.size() ), data ( new T[count] ) {
+		u64 i = 0;
+		for ( const T& ele : array){
+			data[i++] = std::move ( ele );
+		}
+	}
 	Array ( std::initializer_list<T> init_list ) : count ( init_list.size() ), data ( new T[count] ) {
 		u64 i = 0;
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
 		}
 	}
+	Array<T>& operator= ( std::initializer_list<T> init_list ) {
+		count = init_list.size();
+		data = new T[count];
+		u64 i = 0;
+		for ( const T& ele : init_list){
+			data[i++] = std::move ( ele );
+		}
+		return *this;
+	}
 	~Array() {
 		if(data) delete[] data;
+		data = nullptr;
 	}
 
 	void resize ( u64 size ) {
@@ -45,7 +67,7 @@ struct Array {
 			u64 min = std::min ( size, count );
 			for ( u64 i = 0; i < min; i++ ) tmp_data[i] = std::move ( data[i] );
 		}
-
+		
 		delete[] data;
 		data = tmp_data;
 		count = size;
@@ -60,10 +82,10 @@ struct Array {
 	u64 size() const {
 		return count;
 	}
-	iterator begin() {
+	iterator begin() const {
 		return data;
 	}
-	iterator end() {
+	iterator end() const {
 		return data + count;
 	}
 };
@@ -77,7 +99,9 @@ using StaticArray = std::vector<T>;
 template<typename T>
 using Set = std::set<T>;
 template<typename K, typename T>
-using Map = std::unordered_map<K, T>;
+using Map = std::map<K, T>;
+template<typename K, typename T>
+using HashMap = std::unordered_map<K, T>;
 
 enum class RendResult {
 	eFail = 0,
@@ -123,4 +147,32 @@ struct ChangeableValue {
 		wanted = val;
 		value = val;
 	}
+};
+
+struct IdHandle {
+	union{
+		struct{
+			uint32_t id = 0;
+			uint32_t uid = 0;
+		};
+		uint64_t hash;
+	};
+	IdHandle handle(){
+		return *this;
+	}
+};
+inline bool operator== ( IdHandle lh, IdHandle rh ) {
+	return lh.id == rh.id && lh.uid == rh.uid;
+}
+inline bool operator< ( IdHandle lh, IdHandle rh ) {
+	return lh.id == rh.id ? lh.uid < rh.uid : lh.id < rh.id;
+}
+inline bool operator> ( IdHandle lh, IdHandle rh ) {
+	return lh.id == rh.id ? lh.uid > rh.uid : lh.id > rh.id;
+}
+template<>
+struct std::hash<IdHandle> {
+    size_t operator()(const IdHandle &handle) const {
+        return handle.hash;
+    }
 };

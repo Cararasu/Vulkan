@@ -1,8 +1,19 @@
 #include "VulkanModel.h"
 
-VulkanModel::VulkanModel(VulkanInstance* v_instance, RId modelbase) : id(0), modelbase(modelbase), vertexbuffer(v_instance), indexbuffer(v_instance){
+VulkanModel::VulkanModel(VulkanInstance* v_instance, VulkanModelBase* modelbase) : 
+	Model(modelbase), vertexbuffer(v_instance), indexbuffer(v_instance){
 	
 }
-VulkanModelBase::VulkanModelBase(RId datagroup) : datagroup(datagroup) {
+VulkanModelBase::VulkanModelBase(const DataGroupDef* datagroup) : ModelBase(datagroup) {
+	
+}
+
+ModelInstance VulkanInstanceGroup::add_instance(ModelInstanceBase* base) {
+	
+}
+void* VulkanInstanceGroup::get_data_ptr(ModelInstance instance) {
+	
+}
+void VulkanInstanceGroup::clear() {
 	
 }

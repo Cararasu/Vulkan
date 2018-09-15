@@ -246,23 +246,16 @@ int main ( int argc, char **argv ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
 
-	DataGroupDef groupdef;
-	ContextBase contextbase;
-	ModelBase modelbase;
-
-	//create datagroups
-	groupdef = {1, { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, 3 * 4}, {ValueType::eF32Vec3, 1, 6 * 4} }, 9 * 4, 1};
-	RId vertex_id = newinstance->register_datagroupdef ( groupdef );
-
-	groupdef = {2, { {ValueType::eF32Mat4, 1, 0} }, 16 * 4, 1};
-	RId matrix_id = newinstance->register_datagroupdef ( groupdef );
+	const DataGroupDef* vertex_def = newinstance->register_datagroupdef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, 3 * 4}, {ValueType::eF32Vec3, 1, 6 * 4} }, 9 * 4, 1 );
+	const DataGroupDef* matrix_def = newinstance->register_datagroupdef ( { {ValueType::eF32Mat4, 1, 0} }, 16 * 4, 1 );
 
 	//create contextbase from datagroups
-	RId w2smatrix_id = newinstance->register_contextbase ( matrix_id );
-	RId m2wmatrix_id = newinstance->register_contextbase ( matrix_id );
+	const ContextBase* w2smatrix_base = newinstance->register_contextbase ( matrix_def );
+	const ContextBase* m2wmatrix_base = newinstance->register_contextbase ( matrix_def );
 
 	//create modelbase from datagroup and contextbases
-	RId simplemodel_id = newinstance->register_modelbase ( vertex_id );
+	const ModelBase* simplemodel_base = newinstance->register_modelbase ( vertex_def );
+	
 	//create model from modelbase
 	Array<glm::vec3> data_to_load = {
 		glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3(),
@@ -272,18 +265,26 @@ int main ( int argc, char **argv ) {
 		glm::vec3 ( 0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3(),
 		glm::vec3 ( -0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3(),
 		glm::vec3 ( 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 (- 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3(),
+		glm::vec3 ( - 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3(),
 	};
 
 	Array<u16> indices = {0, 1, 2};
 
-	const Model model = newinstance->load_generic_model ( simplemodel_id, (u8*)data_to_load.data, 24, indices.data, 3 );
+	const Model model = newinstance->load_generic_model ( simplemodel_base, data_to_load.data, 24, indices.data, 3 );
 
 	//create instance from model
-	RId mod_instance = newinstance->register_modelinstancebase ( model, matrix_id );
+	const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
 
-	const ModelInstance instance = newinstance->create_instance ( mod_instance );
-	//ModelInstance* mod_instance = model->create_instance ();
+	InstanceGroup* instancegroup = newinstance->create_instancegroup();
+
+
+	//contextgroup -> attachContext list of contexts
+	//instancegroup -> attachInstance
+
+	//render(renderinformation)
+	//renderinformation -> renderpass -> renderstage -> renderer
+	//	RenderContext: renderpass + instancegroup + contextgroup + priority
+
 
 	//VulkanStagingMemory
 	//	list of buffers that grows if the data is not enough
@@ -332,7 +333,7 @@ int main ( int argc, char **argv ) {
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
-		
+
 		//Renderer - defines one GPU pipeline
 		//	ContextBase - id
 		//	ModelInstanceBase - id
@@ -343,7 +344,7 @@ int main ( int argc, char **argv ) {
 		//RenderInformation - list of renderpasses that are executed simultaneously
 		//	RenderPasses
 		//newinstance->render(renderinformation);
-		
+
 		newinstance->render_windows();
 	} while ( newinstance->is_window_open() );
 	WindowSection* section = window->root_section();
@@ -356,69 +357,69 @@ int main ( int argc, char **argv ) {
 	destroy_instance ( newinstance );
 	return 0;
 
-/*
-	std::vector<u32> TiePartIds;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
-	TiePartIds.push_back ( loadDataFile ( "assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
+	/*
+		std::vector<u32> TiePartIds;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Body.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 0;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Arm_L.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Arm_R.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 1;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Wing_L.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie/Tie_Fighter_Wing_R.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
+		TiePartIds.push_back ( loadDataFile ( "assets/Tie_Fighter_Windows.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 2;
 
-	std::vector<u32> XPartIds;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Body.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Windows.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
-	XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher ) );
-	g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		std::vector<u32> XPartIds;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Body.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Windows.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_LB.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_LT.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_RB.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
+		XPartIds.push_back ( loadDataFile ( "assets/X/XWing_Wing_RT.data", &g_thread_data.dispatcher ) );
+		g_thread_data.dispatcher.parts.back().data.diffuseTexId = 3;
 
 
 
-	PerspectiveViewPort<float> viewport;
+		PerspectiveViewPort<float> viewport;
 
-	viewport.m_viewvector = {0.0f, 0.2f, -1.4f};
-	viewport.m_focalpoint = {0.0f, 0.0f, 0.0f};
-	viewport.m_upvector = {0.0f, 1.0f, 0.0f};
-	viewport.m_distance = 2.0f;
-	viewport.m_near = 0.01f;
-	viewport.m_far = 100.0f;
-	viewport.m_aspect = 1.0f;
+		viewport.m_viewvector = {0.0f, 0.2f, -1.4f};
+		viewport.m_focalpoint = {0.0f, 0.0f, 0.0f};
+		viewport.m_upvector = {0.0f, 1.0f, 0.0f};
+		viewport.m_distance = 2.0f;
+		viewport.m_near = 0.01f;
+		viewport.m_far = 100.0f;
+		viewport.m_aspect = 1.0f;
 
-	loadImage ( instance, "assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue );
-	loadImage ( instance, "assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue );
-	loadImage ( instance, "assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue );
-	loadImage ( instance, "assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue );
+		loadImage ( instance, "assets/Tie/Tie_Fighter_Body_Diffuse.png", imageWrapper, 0, transferCommandPool, instance->tqueue->transferQueue );
+		loadImage ( instance, "assets/Tie/Tie_Fighter_Arm_Diffuse.png", imageWrapper, 1, transferCommandPool, instance->tqueue->transferQueue );
+		loadImage ( instance, "assets/Tie/Tie_Fighter_Wing_Diffuse.png", imageWrapper, 2, transferCommandPool, instance->tqueue->transferQueue );
+		loadImage ( instance, "assets/X/XWing_Diffuse.png", imageWrapper, 3, transferCommandPool, instance->tqueue->transferQueue );
 
-	//@TODO Memory Barrier for graphics queue
-	//instance->tqueue->waitForFinish();
-	//vWindow->pgcQueue->waitForFinish();
+		//@TODO Memory Barrier for graphics queue
+		//instance->tqueue->waitForFinish();
+		//vWindow->pgcQueue->waitForFinish();
 
-	vk::Sampler sampler;
-	{
-		vk::SamplerCreateInfo samplerInfo (
-		    vk::SamplerCreateFlags(), vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
-		    vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat,
-		    0.0f,
-		    VK_TRUE, 16, //anisotrophic
-		    VK_FALSE, vk::CompareOp::eAlways, //compare
-		    0.0f, 12.0f, //lod
-		    vk::BorderColor::eFloatOpaqueBlack, VK_FALSE
-		);
-	}
-	*/
+		vk::Sampler sampler;
+		{
+			vk::SamplerCreateInfo samplerInfo (
+			    vk::SamplerCreateFlags(), vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+			    vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat,
+			    0.0f,
+			    VK_TRUE, 16, //anisotrophic
+			    VK_FALSE, vk::CompareOp::eAlways, //compare
+			    0.0f, 12.0f, //lod
+			    vk::BorderColor::eFloatOpaqueBlack, VK_FALSE
+			);
+		}
+		*/
 
 	return 0;
 }

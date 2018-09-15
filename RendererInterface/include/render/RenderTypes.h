@@ -124,18 +124,12 @@ enum class ResourceType {
 	eModelInstance,
 	eRenderPass,
 };
+
 struct ResourceHandle {
-	ResourceType type = ResourceType::eUndefined;
 	RId id = 0;
-	
-	operator bool(){
-		return id != 0;
-	}
-	bool is_type(ResourceType type){
-		return this->type == type;
-	}
+	RId uid = 0;
 };
 
 inline bool operator== ( ResourceHandle lh, ResourceHandle rh ) {
-	return lh.type == rh.type && lh.id == rh.id;
+	return lh.id == rh.id && lh.uid == rh.uid;
 }

@@ -596,38 +596,46 @@ static std::vector<char> readFile ( const char* filename ) {
 
 	return buffer;
 }
-RId VulkanInstance::register_datagroupdef ( DataGroupDef& datagroupdef ) {
-	return datagroup_store.insert ( new DataGroupDef ( datagroupdef ) );
+const DataGroupDef* VulkanInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) {
+	return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
 }
 const DataGroupDef* VulkanInstance::datagroupdef ( RId id ) {
 	return datagroup_store[id];
 }
 
-RId VulkanInstance::register_contextbase ( RId datagroup_id ) {
-	return contextbase_store.insert ( new VulkanContextBase ( this, datagroup_store[datagroup_id] ) );
+const ContextBase* VulkanInstance::register_contextbase ( RId datagroup_id ) {
+	return register_contextbase( datagroup_store[datagroup_id] );
 }
-const ContextBase VulkanInstance::contextbase ( RId id ) {
-	const VulkanContextBase* v_contextbase = contextbase_store.get ( id );
-	return {v_contextbase->id, v_contextbase->datagroup->id};
+const ContextBase* VulkanInstance::register_contextbase ( const DataGroupDef* datagroup ) {
+	return contextbase_store.insert ( new VulkanContextBase ( this, datagroup ) );
 }
-
-RId VulkanInstance::register_modelbase ( RId vertexdatagroup ) {
+const ContextBase* VulkanInstance::contextbase ( RId id ) {
+	return contextbase_store.get ( id );
+}
+const ModelBase* VulkanInstance::register_modelbase ( RId vertexdatagroup ) {
+	return register_modelbase ( datagroup_store[vertexdatagroup] );
+}
+const ModelBase* VulkanInstance::register_modelbase ( const DataGroupDef* vertexdatagroup ) {
 	return modelbase_store.insert ( new VulkanModelBase ( vertexdatagroup ) );
 }
-const ModelBase VulkanInstance::modelbase ( RId id ) {
-	const VulkanModelBase* v_modelbase = modelbase_store[id];
-	return {v_modelbase->id, v_modelbase->datagroup};
+const ModelBase* VulkanInstance::modelbase ( RId id ) {
+	return modelbase_store[id];
 }
-RId VulkanInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
-	VulkanModel* v_model = model_store[model.id];
 
-	return modelinstancebase_store.insert ( new VulkanModelInstanceBase ( this, datagroup_store[datagroup_id], v_model, modelbase_store[v_model->modelbase] ) );
+const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
+	return register_modelinstancebase ( model, datagroup_store[datagroup_id] );
 }
-const ModelInstanceBase VulkanInstance::modelinstancebase ( RId handle ) {
-
+const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model model, const DataGroupDef* datagroup ) {
+	return modelinstancebase_store.insert ( new VulkanModelInstanceBase ( this, datagroup, model ) );
 }
-const ModelInstance VulkanInstance::create_instance ( RId modelinstancebase ) {
-
+const ModelInstanceBase* VulkanInstance::modelinstancebase ( RId handle ) {
+	return modelinstancebase_store[handle];
+}
+InstanceGroup* VulkanInstance::create_instancegroup() {
+	return new VulkanInstanceGroup(this);
+}
+ContextGroup* VulkanInstance::create_contextgroup() {
+	return new VulkanContextGroup(this);
 }
 
 vk::ShaderModule VulkanInstance::load_shader_from_file ( const char* filename ) {
@@ -640,12 +648,15 @@ vk::ShaderModule VulkanInstance::load_shader_from_file ( const char* filename ) 
 	V_CHECKCALL ( vulkan_device ( this ).createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
 	return shadermodule;
 }
-const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
-	const VulkanModelBase* v_modelbase = modelbase_store[modelbase];
-	const DataGroupDef* datagroupdef = datagroup_store[v_modelbase->datagroup];
 
-	VulkanModel* newmodel = new VulkanModel ( this, modelbase );
-	newmodel->modelbase = modelbase;
+const Model VulkanInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
+}
+const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+	VulkanModelBase* v_modelbase = modelbase_store[modelbase->id];
+	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
+
+	VulkanModel* newmodel = new VulkanModel ( this, v_modelbase );
 	newmodel->index_is_2byte = true;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
@@ -658,21 +669,24 @@ const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u3
 	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
-	std::pair<u8*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
-	std::pair<u8*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u16 ) );
-	memcpy ( ( void* ) vertexdata.first, ( void* ) vertices, vertexcount * datagroupdef->size );
-	memcpy ( ( void* ) indexdata.first, ( void* ) indices, indexcount * sizeof ( u16 ) );
+	std::pair<void*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
+	std::pair<void*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u16 ) );
+	memcpy ( vertexdata.first, vertices, vertexcount * datagroupdef->size );
+	memcpy ( indexdata.first, indices, indexcount * sizeof ( u16 ) );
 	transfer_control->do_transfers();
 	transfer_control->check_free();
-	return {model_store.insert ( newmodel ), modelbase};
+	return Model(model_store.insert ( newmodel )->handle(), modelbase);
 }
-const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
-	const VulkanModelBase* v_modelbase = modelbase_store[modelbase];
-	const DataGroupDef* datagroupdef = datagroup_store[v_modelbase->datagroup];
+const Model VulkanInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
+}
+const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+	VulkanModelBase* v_modelbase = modelbase_store[modelbase->id];
+	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 	bool fitsin2bytes = vertexcount < 0x10000;
 
-	VulkanModel* newmodel = new VulkanModel ( this, modelbase );
-	newmodel->modelbase = modelbase;
+	VulkanModel* newmodel = new VulkanModel ( this, v_modelbase );
+	newmodel->modelbase = v_modelbase;
 	newmodel->index_is_2byte = false;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
@@ -685,13 +699,13 @@ const Model VulkanInstance::load_generic_model ( RId modelbase, u8* vertices, u3
 	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
-	std::pair<u8*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
-	std::pair<u8*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u32 ) );
-	memcpy ( ( void* ) vertexdata.first, ( void* ) vertices, vertexcount * datagroupdef->size );
-	memcpy ( ( void* ) indexdata.first, ( void* ) indices, indexcount * sizeof ( u16 ) );
+	std::pair<void*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
+	std::pair<void*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u32 ) );
+	memcpy ( vertexdata.first, vertices, vertexcount * datagroupdef->size );
+	memcpy ( indexdata.first, indices, indexcount * sizeof ( u16 ) );
 	transfer_control->do_transfers();
 	transfer_control->check_free();
-	return {model_store.insert ( newmodel ), modelbase};
+	return {model_store.insert ( newmodel )->handle(), modelbase};
 }
 
 

@@ -24,6 +24,7 @@ struct RendererBase {
 	//shader definitions and stuff
 };
 struct Renderer {
+	RendererBase* renderer_base;
 	//changeable stuff here?
 };
 struct RenderStage{

@@ -3,6 +3,7 @@
 #include "VulkanInstance.h"
 #include "VulkanHeader.h"
 #include "render/Dimensions.h"
+#include "render/RenderPass.h"
 #include "VulkanWindow.h"
 
 
@@ -28,7 +29,7 @@ struct VulkanRenderTarget;
 
 //can use secondary command buffer
 //or just add 
-struct VulkanRenderer {
+struct VulkanRenderer : public Renderer {
 	//one ModelId
 	//or none for empty invocation
 

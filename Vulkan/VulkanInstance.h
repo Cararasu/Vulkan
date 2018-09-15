@@ -102,27 +102,34 @@ struct VulkanInstance : public Instance {
 	IdPtrArray<DataGroupDef> datagroup_store;
 	IdPtrArray<VulkanContextBase> contextbase_store;
 	IdPtrArray<VulkanModelBase> modelbase_store;
-	IdPtrArray<VulkanModel> model_store;
+	UIdPtrArray<VulkanModel> model_store;
 	IdPtrArray<VulkanModelInstanceBase> modelinstancebase_store;
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
 	
-	virtual RId register_datagroupdef ( DataGroupDef& datagroupdef );
+	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount);
 	virtual const DataGroupDef* datagroupdef ( RId handle );
-
-	virtual RId register_contextbase ( RId datagroup/*image-defs*/ );
-	virtual const ContextBase contextbase ( RId handle );
-
-	virtual RId register_modelbase ( RId vertexdatagroup );
-	virtual const ModelBase modelbase ( RId handle );
-
-	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount );
-	virtual const Model load_generic_model ( RId modelbase_id, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount );
-
-	virtual RId register_modelinstancebase ( Model model, RId datagroup = 0 );
-	virtual const ModelInstanceBase modelinstancebase ( RId handle );
-
-	virtual const ModelInstance create_instance ( RId modelinstancebase );
+	
+	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ );
+	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ );
+	virtual const ContextBase* contextbase ( RId handle );
+	
+	virtual const ModelBase* register_modelbase ( RId vertexdatagroup );
+	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup );
+	virtual const ModelBase* modelbase ( RId handle );
+	
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount );
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount );
+	
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount );
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount );
+	
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 );
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr );
+	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) ;
+	
+	virtual InstanceGroup* create_instancegroup();
+	virtual ContextGroup* create_contextgroup();
 
 
 //------------ Instance/Device/Physicaldevice

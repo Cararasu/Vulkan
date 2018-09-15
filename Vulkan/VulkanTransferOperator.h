@@ -16,7 +16,7 @@ struct VulkanBufferStorage {
 	VulkanBuffer buffer;
 	vk::Semaphore semaphore;
 	IdArray<VulkanBufferSection> sections;
-	u8* mapped_transfer_buffer;
+	void* mapped_transfer_buffer;
 	u32 needed_size;
 
 	VulkanBufferStorage ( VulkanInstance* instance, vk::BufferUsageFlags usageflags );
@@ -25,7 +25,7 @@ struct VulkanBufferStorage {
 	void free_chunk ( RId index );
 	void reorganize();
 	u32 get_offset ( RId index );
-	u8* get_ptr ( RId index );
+	void* get_ptr ( RId index );
 	void update_data();
 };
 
@@ -62,7 +62,7 @@ struct VulkanTransferController {
 	VulkanTransferController (VulkanInstance* v_instance);
 	~VulkanTransferController();
 
-	std::pair<u8*, vk::Semaphore> request_transfer_memory ( VulkanBuffer* target_buffer, u32 size, u32 offset = 0 );
+	std::pair<void*, vk::Semaphore> request_transfer_memory ( VulkanBuffer* target_buffer, u32 size, u32 offset = 0 );
 	void do_transfers ( );
 	void check_free ( );
 };

@@ -32,22 +32,29 @@ struct Instance{
 	
 	
 //------------ Resources
-	virtual RId register_datagroupdef ( DataGroupDef& datagroupdef ) = 0;
+	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) = 0;
 	virtual const DataGroupDef* datagroupdef ( RId handle ) = 0;
 	
-	virtual RId register_contextbase ( RId datagroup/*image-defs*/ ) = 0;
-	virtual const ContextBase contextbase ( RId handle ) = 0;
+	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ ) = 0;
+	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ ) = 0;
+	virtual const ContextBase* contextbase ( RId handle ) = 0;
 	
-	virtual RId register_modelbase ( RId vertexdatagroup ) = 0;
-	virtual const ModelBase modelbase ( RId handle ) = 0;
+	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) = 0;
+	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) = 0;
+	virtual const ModelBase* modelbase ( RId handle ) = 0;
 	
-	virtual const Model load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
-	virtual const Model load_generic_model ( RId modelbase, u8* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
 	
-	virtual RId register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
-	virtual const ModelInstanceBase modelinstancebase ( RId handle ) = 0;
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
 	
-	virtual const ModelInstance create_instance( RId modelinstancebase ) = 0;
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
+	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
+	
+	virtual InstanceGroup* create_instancegroup() = 0;
+	virtual ContextGroup* create_contextgroup() = 0;
 	
 };
 

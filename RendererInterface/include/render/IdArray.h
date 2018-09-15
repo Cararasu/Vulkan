@@ -16,17 +16,22 @@ public:
 
 template<typename T>
 struct IdArray {
-	IdGenerator gen;
 	DynArray<T> list;
 
 	typedef typename DynArray<T>::iterator iterator;
 
 	IdArray() {}
 	IdArray ( std::initializer_list<T> list ) : list ( list ) {
-		for ( T& e : list ) e.id = gen.next();
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 	IdArray ( DynArray<T> list ) : list ( list ) {
-		for ( T& e : list ) e.id = gen.next();
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 
 	RId insert ( T& ele ) {
@@ -37,7 +42,7 @@ struct IdArray {
 				return ele.id;
 			}
 		}
-		ele.id = gen.next();
+		ele.id = list.size() + 1;
 		list.push_back ( ele );
 		return ele.id;
 	}
@@ -73,40 +78,117 @@ struct IdArray {
 		return *get ( id );
 	}
 	void clear() {
-		gen.clear();
+		list.clear();
+	}
+};
+
+template<typename T>
+struct UIdArray {
+	IdGenerator gen;
+	DynArray<T> list;
+
+	typedef typename DynArray<T>::iterator iterator;
+
+	UIdArray() {}
+	UIdArray ( std::initializer_list<T> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+			list[i].uid = gen.next();
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
+	}
+	UIdArray ( DynArray<T> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+			list[i].uid = gen.next();
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
+	}
+
+	IdHandle insert ( T& ele ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			if ( !list[i].id ) {
+				ele.id = i + 1;
+				ele.uid = gen.next();
+				list[i] = ele;
+				return ele.id;
+			}
+		}
+		ele.id = list.size() + 1;
+		ele.uid = gen.next();
+		list.push_back ( ele );
+		return {ele.id, ele.uid};
+	}
+	/*template< class... Args >
+	RId emplace_back ( Args&&... args ) {
+		list.emplace_back ( args... );
+		list.back().id = gen.next();
+		return list.back().id;
+	}*/
+	auto begin() -> decltype ( list.begin() ) {
+		return list.begin();
+	}
+	auto end() -> decltype ( list.end() ) {
+		return list.end();
+	}
+	auto size() -> decltype ( list.size() ) {
+		return list.size();
+	}
+	auto back() -> decltype ( list.back() ) {
+		return list.back();
+	}
+	iterator erase ( iterator it ) {
+		it->id = 0;
+		return ++it;
+	}
+	void remove ( IdHandle handle ) {
+		T* ptr = get ( handle );
+		if(ptr->uid == handle.uid) ptr->id = 0;
+	}
+	T* get ( IdHandle handle ) {
+		return handle.id && handle.id <= list.size() ? (list[handle.id - 1].uid == handle.uid ? &list[handle.id - 1] : nullptr) : nullptr;
+	}
+	T& operator[] ( RId id ) {
+		return *get ( id );
+	}
+	void clear() {
 		list.clear();
 	}
 };
 
 template<typename T>
 struct IdPtrArray {
-	IdGenerator gen;
 	DynArray<T*> list;
 
 	typedef typename Array<T*>::iterator iterator;
 
 	IdPtrArray() {}
-	IdPtrArray ( std::initializer_list<T*> list ) : list ( list ) {
-		for ( T* e : list ) e->id = gen.next();
+	IdPtrArray ( std::initializer_list<T> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
-	IdPtrArray ( Array<T*> list ) : list ( list ) {
-		for ( T* e : list ) e->id = gen.next();
+	IdPtrArray ( DynArray<T> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i].id = i + 1;
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 	~IdPtrArray ( ) {
-		
 	}
 
-	RId insert ( T* ele ) {
+	T* insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			if ( !list[i]->id ) {
 				ele->id = i + 1;
 				list[i] = ele;
-				return ele->id;
+				return list[i];
 			}
 		}
-		ele->id = gen.next();
+		ele->id = list.size() + 1;
 		list.push_back ( ele );
-		return ele->id;
+		return list.back();
 	}
 	/*template< class... Args >
 	RId emplace_back ( Args&&... args ) {
@@ -142,7 +224,81 @@ struct IdPtrArray {
 		return get ( id );
 	}
 	void clear() {
-		gen.clear();
+		list.clear();
+	}
+};
+template<typename T>
+struct UIdPtrArray {
+	IdGenerator gen;
+	DynArray<T*> list;
+
+	typedef typename Array<T*>::iterator iterator;
+
+	UIdPtrArray() {}
+	UIdPtrArray ( std::initializer_list<T*> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i]->id = i + 1;
+			list[i]->uid = gen.next();
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
+	}
+	UIdPtrArray ( DynArray<T*> list ) : list ( list ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			list[i]->id = i + 1;
+			list[i]->uid = gen.next();
+		}
+		this->list.insert(list.begin(), list.end(), this->list.begin());
+	}
+	~UIdPtrArray ( ) {
+	}
+
+	T* insert ( T* ele ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			if ( !list[i]->id ) {
+				ele->id = i + 1;
+				ele->uid = gen.next();
+				list[i] = ele;
+				return list[i];
+			}
+		}
+		ele->id = list.size() + 1;
+		ele->uid = gen.next();
+		list.push_back ( ele );
+		return list.back();
+	}
+	/*template< class... Args >
+	RId emplace_back ( Args&&... args ) {
+		list.emplace_back ( args... );
+		list.back().id = gen.next();
+		return list.back().id;
+	}*/
+	auto begin() -> decltype ( list.begin() ) {
+		return list.begin();
+	}
+	auto end() -> decltype ( list.end() ) {
+		return list.end();
+	}
+	auto size() -> decltype ( list.size() ) {
+		return list.size();
+	}
+	auto back() -> decltype ( list.back() ) {
+		return list.back();
+	}
+	iterator erase ( iterator it ) {
+		( *it )->id = 0;
+		return ++it;
+	}
+	void remove ( IdHandle handle ) {
+		T* ptr = get ( handle );
+		if(ptr->uid == handle.uid) ptr->id = 0;
+	}
+	T* get ( IdHandle handle ) {
+		return handle.id && handle.id <= list.size() ? (list[handle.id - 1]->uid == handle.uid ? list[handle.id - 1] : nullptr) : nullptr;
+	}
+	T* operator[] ( RId id ) {
+		return get ( id );
+	}
+	void clear() {
 		list.clear();
 	}
 };
@@ -287,7 +443,7 @@ struct SparseStore<void> {
 	u32 genericdatasize;
 	u32 size;
 	u32 capacity;
-	u8* data;
+	void* data;
 	u8* filled_bits;
 
 	SparseStore<void> ( u32 genericdatasize, u32 initial_capacity = 0 ) : genericdatasize ( genericdatasize ), size ( 0 ) {
@@ -295,11 +451,11 @@ struct SparseStore<void> {
 		while(capacity < initial_capacity){
 			capacity *= 2;
 		}
-		data = new u8[capacity * genericdatasize];
+		data = malloc(capacity * genericdatasize);
 		filled_bits = new u8[capacity / 8];
 	}
 	~SparseStore<void> ( ) {
-		if ( data ) delete[] data;
+		if ( data ) free(data);
 		if ( filled_bits ) delete[] filled_bits;
 	}
 	void set_filled ( u32 index ) {
@@ -319,7 +475,7 @@ struct SparseStore<void> {
 		memcpy ( newdata, data, std::min ( nextblockcount, capacity ) * genericdatasize );
 		memcpy ( newbits, filled_bits, std::min ( nextbitblockcount, capacity / 8 ) * sizeof ( u8 ) );
 
-		delete[] data;
+		free(data);
 		delete[] filled_bits;
 
 		data = newdata;
@@ -350,7 +506,7 @@ struct SparseStore<void> {
 		return new_index;
 	}
 	u8* operator[] ( u32 index ) {
-		return &data[index * genericdatasize];
+		return &((u8*)data)[index * genericdatasize];
 	}
 	void delete_chunk ( u32 index ) {
 		set_free ( index );
