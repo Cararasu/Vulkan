@@ -6,6 +6,8 @@
 #include "render/RenderPass.h"
 #include "VulkanWindow.h"
 
+struct VulkanInstance;
+struct SubmitStore;
 
 struct ModelStorage {
 	//here be descriptorsetlayouts for each model
@@ -27,6 +29,12 @@ struct VulkanRenderStage {
 
 struct VulkanRenderTarget;
 
+struct VulkanRendererBase : public RendererBase {
+	
+};
+struct VulkanRenderStageBase : public RenderStageBase {
+	
+};
 //can use secondary command buffer
 //or just add 
 struct VulkanRenderer : public Renderer {

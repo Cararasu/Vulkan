@@ -13,10 +13,10 @@ struct DataGroupDef : public IdHandle {
 	u32 size;
 	u32 arraycount;
 	mutable std::atomic<u32> uses;
-	
-	DataGroupDef(Array<DataValueDef> valuedefs, u32 size, u32 arraycount) : 
-		IdHandle(), valuedefs(valuedefs), size(size), arraycount(arraycount), uses(0) { 
-			
+
+	DataGroupDef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) :
+		IdHandle(), valuedefs ( valuedefs ), size ( size ), arraycount ( arraycount ), uses ( 0 ) {
+
 	}
 };
 
@@ -24,63 +24,53 @@ struct ContextBase : public IdHandle {
 	const DataGroupDef* datagroup;
 	mutable std::atomic<u32> uses;
 	//TODO something something images and samplers
-	
-	ContextBase(const DataGroupDef* datagroup) : IdHandle(), datagroup(datagroup), uses(0) { }
-	ContextBase(IdHandle idhandle, const DataGroupDef* datagroup) : IdHandle(idhandle), datagroup(datagroup), uses(0) { }
+
+	ContextBase ( const DataGroupDef* datagroup ) : IdHandle(), datagroup ( datagroup ), uses ( 0 ) { }
+	ContextBase ( IdHandle idhandle, const DataGroupDef* datagroup ) : IdHandle ( idhandle ), datagroup ( datagroup ), uses ( 0 ) { }
 };
 struct Context : public IdHandle {
 	RId id;
 	const ContextBase* contextbase;
-	
-	Context(Context&& context) : IdHandle(context), contextbase(context.contextbase) { }
-	Context(const Context& context) : IdHandle(context), contextbase(context.contextbase) { }
-	Context(const ContextBase* contextbase) : IdHandle(), contextbase(contextbase) { }
-	Context(IdHandle idhandle, const ContextBase* contextbase) : IdHandle(idhandle), contextbase(contextbase) { }
+
+	Context ( Context&& context ) : IdHandle ( context ), contextbase ( context.contextbase ) { }
+	Context ( const Context& context ) : IdHandle ( context ), contextbase ( context.contextbase ) { }
+	Context ( const ContextBase* contextbase ) : IdHandle(), contextbase ( contextbase ) { }
+	Context ( IdHandle idhandle, const ContextBase* contextbase ) : IdHandle ( idhandle ), contextbase ( contextbase ) { }
 };
 
 struct ModelBase : public IdHandle {
 	const DataGroupDef* datagroup;
 	mutable std::atomic<u32> uses;
-	
-	ModelBase(const DataGroupDef* datagroup) : IdHandle(), datagroup(datagroup) { }
-	ModelBase(IdHandle idhandle, const DataGroupDef* datagroup) : IdHandle(idhandle), datagroup(datagroup) { }
+
+	ModelBase ( const DataGroupDef* datagroup ) : IdHandle(), datagroup ( datagroup ) { }
+	ModelBase ( IdHandle idhandle, const DataGroupDef* datagroup ) : IdHandle ( idhandle ), datagroup ( datagroup ) { }
 };
 struct Model : public IdHandle {
 	const ModelBase* modelbase;
-	
-	Model(Model&& model) : IdHandle(model), modelbase(model.modelbase) { }
-	Model(const Model& model) : IdHandle(model), modelbase(model.modelbase) { }
-	Model(const ModelBase* modelbase) : IdHandle(), modelbase(modelbase) { }
-	Model(IdHandle idhandle, const ModelBase* modelbase) : IdHandle(idhandle), modelbase(modelbase) { }
+
+	Model ( Model&& model ) : IdHandle ( model ), modelbase ( model.modelbase ) { }
+	Model ( const Model& model ) : IdHandle ( model ), modelbase ( model.modelbase ) { }
+	Model ( const ModelBase* modelbase ) : IdHandle(), modelbase ( modelbase ) { }
+	Model ( IdHandle idhandle, const ModelBase* modelbase ) : IdHandle ( idhandle ), modelbase ( modelbase ) { }
 };
 
 struct ModelInstanceBase : public IdHandle {
 	const DataGroupDef* datagroup;
 	const Model model;
 	mutable std::atomic<u32> uses;
-	
-	ModelInstanceBase(const DataGroupDef* datagroup, const Model model) : IdHandle(), datagroup(datagroup), model(model) { }
-	ModelInstanceBase(IdHandle idhandle, const DataGroupDef* datagroup, const Model model) : IdHandle(idhandle), datagroup(datagroup), model(model) { }
-};
 
-struct ModelInstance {
-	RId id;
-	const ModelInstanceBase* const modelinstancebase;
-	
-	ModelInstance(ModelInstance&& modelinstance) : id(modelinstance.id), modelinstancebase(modelinstance.modelinstancebase) { }
-	ModelInstance(const ModelInstance& modelinstance) : id(modelinstance.id), modelinstancebase(modelinstance.modelinstancebase) { }
-	ModelInstance(const ModelInstanceBase* modelinstancebase) : id(0), modelinstancebase(modelinstancebase) { }
-	ModelInstance(RId id, const ModelInstanceBase* modelinstancebase) : id(id), modelinstancebase(modelinstancebase) { }
+	ModelInstanceBase ( const DataGroupDef* datagroup, const Model model ) : IdHandle(), datagroup ( datagroup ), model ( model ) { }
+	ModelInstanceBase ( IdHandle idhandle, const DataGroupDef* datagroup, const Model model ) : IdHandle ( idhandle ), datagroup ( datagroup ), model ( model ) { }
 };
 
 struct InstanceGroup {
-	virtual ModelInstance add_instance(ModelInstanceBase* base) = 0;
-	virtual void* get_data_ptr(ModelInstance instance) = 0;
+	virtual void register_instances ( ModelInstanceBase* base, u32 count ) = 0;
+	virtual void* get_data_ptr ( ModelInstanceBase* base ) = 0;
 	virtual void clear() = 0;
 };
-struct ContextGroup{
-	virtual void set_context(Context* context) = 0;
-	virtual void remove_context(ContextBase* base) = 0;
+struct ContextGroup {
+	virtual void set_context ( Context* context ) = 0;
+	virtual void remove_context ( ContextBase* base ) = 0;
 	virtual void clear() = 0;
 };
 

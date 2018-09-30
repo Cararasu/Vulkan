@@ -8,10 +8,10 @@ VulkanModelBase::VulkanModelBase(const DataGroupDef* datagroup) : ModelBase(data
 	
 }
 
-ModelInstance VulkanInstanceGroup::add_instance(ModelInstanceBase* base) {
+void VulkanInstanceGroup::register_instances(ModelInstanceBase* base, u32 count) {
 	
 }
-void* VulkanInstanceGroup::get_data_ptr(ModelInstance instance) {
+void* VulkanInstanceGroup::get_data_ptr(ModelInstanceBase* base) {
 	
 }
 void VulkanInstanceGroup::clear() {

@@ -16,20 +16,20 @@ void VulkanBufferStorage::free_chunk ( RId index ) {
 	sections.remove ( index );
 }
 void VulkanBufferStorage::reorganize ( ) {
-	if ( buffer.size > needed_size ) {
-		buffer.destroy();
-		while ( buffer.size < needed_size ) buffer.size *= 2;
-		buffer.init();
-	}
+	//new size we need
 	u32 offset = 0;
 	for ( VulkanBufferSection& section : sections ) {
-		if ( section.id = 0 ) continue;
+		if ( section.id == 0 ) continue;
 		section.offset = offset;
 		offset += section.size;
 	}
 	needed_size = offset;
-	if ( needed_size >= 1024 && needed_size < buffer.size / 4 ) {
+	
+	//if the buffer is too small we make it smaller
+	//or it is at least 4 times too big we make it smaller
+	if ( (buffer.size > needed_size) || (needed_size >= 1024 && needed_size < buffer.size / 4) ) {
 		buffer.destroy();
+		while ( buffer.size < needed_size ) buffer.size *= 2;
 		while ( needed_size >= 1024 && buffer.size / 4 > needed_size ) buffer.size /= 2;
 		buffer.init();
 	}
@@ -37,10 +37,7 @@ void VulkanBufferStorage::reorganize ( ) {
 	mapped_transfer_buffer = data.first;
 	semaphore = data.second;
 }
-u32 VulkanBufferStorage::get_offset ( RId index ) {
-	return sections[index].offset;
-}
-void* VulkanBufferStorage::get_ptr ( RId index ) {
+void* VulkanBufferStorage::get_data_ptr ( RId index ) {
 	return mapped_transfer_buffer + sections[index].offset;
 }
 void VulkanBufferStorage::update_data ( ) {

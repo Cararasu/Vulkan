@@ -14,10 +14,10 @@ public:
 	}
 };
 
+//maybe move to 2 arrays where the 1 references the second and we can implement a freelist in the mapping array
 template<typename T>
 struct IdArray {
 	DynArray<T> list;
-
 	typedef typename DynArray<T>::iterator iterator;
 
 	IdArray() {}
@@ -39,7 +39,7 @@ struct IdArray {
 			if ( !list[i].id ) {
 				ele.id = i + 1;
 				list[i] = ele;
-				return ele.id;
+				return i + 1;
 			}
 		}
 		ele.id = list.size() + 1;
@@ -90,19 +90,17 @@ struct UIdArray {
 	typedef typename DynArray<T>::iterator iterator;
 
 	UIdArray() {}
-	UIdArray ( std::initializer_list<T> list ) : list ( list ) {
+	UIdArray ( std::initializer_list<T> init_list ) : list ( init_list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
-			list[i].uid = gen.next();
+			this->list[i].id = i + 1;
+			this->list[i].uid = gen.next();
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
-	UIdArray ( DynArray<T> list ) : list ( list ) {
+	UIdArray ( DynArray<T>& dynarray ) : list ( dynarray.list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
-			list[i].uid = gen.next();
+			this->list[i].id = i + 1;
+			this->list[i].uid = gen.next();
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 
 	IdHandle insert ( T& ele ) {

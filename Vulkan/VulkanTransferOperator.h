@@ -23,9 +23,10 @@ struct VulkanBufferStorage {
 
 	RId allocate_chunk ( u32 size );
 	void free_chunk ( RId index );
+	
 	void reorganize();
-	u32 get_offset ( RId index );
-	void* get_ptr ( RId index );
+	
+	void* get_data_ptr ( RId index );
 	void update_data();
 };
 

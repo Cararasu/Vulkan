@@ -600,6 +600,12 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	if ( v_root_section )
 		v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 }
+
+vk::CommandPool VulkanWindow::graphics_command_pool() {
+	if ( !frame_local_data[present_image_index].graphics_command_pool )
+		frame_local_data[present_image_index].graphics_command_pool = m_instance->m_device.createCommandPool ( vk::CommandPoolCreateInfo() );
+	return frame_local_data[present_image_index].graphics_command_pool;
+}
 void VulkanWindow::create_frame_local_data ( u32 count ) {
 
 	frame_local_data.resize ( count );

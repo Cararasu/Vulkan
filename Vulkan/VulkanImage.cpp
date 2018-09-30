@@ -1,6 +1,26 @@
 
 #include "VulkanImage.h"
 
+
+VulkanBaseImage::VulkanBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VulkanInstance* instance,
+				  vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect ) :
+	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), v_instance ( instance ), v_format ( format ),
+	tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
+	if ( height == 0 ) {
+		type = vk::ImageType::e1D;
+		extent = vk::Extent3D ( width, 1, 1 );
+	} else if ( depth == 0 ) {
+		type = vk::ImageType::e2D;
+		extent = vk::Extent3D ( width, height, 1 );
+	} else {
+		type = vk::ImageType::e3D;
+		extent = vk::Extent3D ( width, height, depth );
+	}
+}
+VulkanBaseImage::~VulkanBaseImage() { 
+	
+}
+
 vk::Format transform_image_format ( ImageFormat format ) {
 	switch ( format ) {
 	case ImageFormat::eU8:
@@ -515,4 +535,29 @@ void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> arr
 	}
 	transition_image_layout ( targetLayout, mip_range, array_range, commandBuffer );
 
+}
+
+
+VulkanWindowImage::VulkanWindowImage ( VulkanInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format ) :
+	VulkanBaseImage ( format, extent.width, extent.height, extent.depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
+					  vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
+	current_index ( 0 ), per_image_data ( imagecount ) {
+	for ( size_t i = 0; i < imagecount; i++ ) {
+		per_image_data[i].layout = vk::ImageLayout::eUndefined;
+		per_image_data[i].image = images[i];
+		per_image_data[i].imageview = instance->createImageView2D ( images[i], 0, 1, format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
+	}
+	image = per_image_data[current_index].image;
+	imageview = per_image_data[current_index].imageview;
+}
+VulkanWindowImage::~VulkanWindowImage() {
+	for ( PerImageData& data : per_image_data ) {
+		v_instance->destroyImageView ( data.imageview );
+	}
+}
+
+void VulkanWindowImage::set_current_image ( u32 index ) {
+	current_index = index;
+	image = per_image_data[current_index].image;
+	imageview = per_image_data[current_index].imageview;
 }

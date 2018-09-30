@@ -631,6 +631,24 @@ const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model mode
 const ModelInstanceBase* VulkanInstance::modelinstancebase ( RId handle ) {
 	return modelinstancebase_store[handle];
 }
+const RendererBase* VulkanInstance::register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) {
+	return vulkanrendererbase_store.insert(new VulkanRendererBase());
+}
+const RendererBase* VulkanInstance::rendererbase ( RId handle ) {
+	return vulkanrendererbase_store[handle];
+}
+
+const RenderStageBase* VulkanInstance::register_renderstagebase (Array<const RendererBase*> rendererbases) {
+	return vulkanrenderstagebase_store.insert(new VulkanRenderStageBase());
+}
+const RenderStageBase* VulkanInstance::renderstagebase ( RId handle ) {
+	return vulkanrenderstagebase_store[handle];
+}
+
+RenderStage* VulkanInstance::create_renderstage (const RendererBase* renderer_base) {
+	return nullptr;
+}
+
 InstanceGroup* VulkanInstance::create_instancegroup() {
 	return new VulkanInstanceGroup(this);
 }

@@ -17,16 +17,6 @@
 
 #include <render/Window.h>
 
-template<typename T>
-struct ProxyObject {
-	T obj;
-	T* proxyObj = nullptr;
-
-	inline void update() {
-		if ( proxyObj ) memcpy ( &obj, proxyObj, sizeof ( T ) );
-		printf ( "Proxy_update\n" );
-	}
-};
 //Job system: Fork -> Meet -> Join ...
 
 //Stages
@@ -168,64 +158,10 @@ void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrap
 	stbi_image_free ( pixels );
 }*/
 
-struct Orientation {
-	glm::dvec3 position, rotation, scale;
-};
-struct BoundingBox {
-	glm::dvec3 pos_size, neg_size;
-};
-struct SimpleObject {
-	Orientation orientation;
-	BoundingBox bounding_box;
-};
-
-/*
- * VGlobal
- * 		VGlobal -> creates -> VInstance
- * VInstance - Device, Renderpasses, Queues, Vulkan-Object-Definitions, ...
- * 		VInstance -> creates -> RenderEnvironment
- * RenderEnvironment - Buffers, Descriptorsets, Objects, ...
- * 		RenderEnvironment -> creates -> PerFrameStuff
- * PerFrameStuff - OnEnd-Functions(After the Frame is definetly over(Fence)) they are called and clean up
- * 		PerFrameStuff -> creates -> PerThreadStuff
- * PerThreadStuff - Instances, ...
- * */
-
-/*
- * Data organisation
- *     ObjectStorage has the Objects with BoundingBoxes and the Orientation
- *         Organised by Type
- *         update calls update the proxyobject and then call individual update
- *         execute calls execute on every object
- *         create VertexInputAttributeDescription for per Object stuff
- *     VerticesIndicesStorage
- *         Organised maybe also by type but organised in different buffers, bufferid/offset/count
- *
- *         generate VertexInputAttributeDescriptions from this
- * */
-
 #include <render/Instance.h>
 #include <chrono>
 #include <thread>
 
-/*
- * ImageStore
- *
- * ResourceManager
- *     ResourceHandle loadImage()
- *     ResourceHandle loadModel() -> buffer with indices, vertices, uvs
- *     ResourceHandle load...
- *
- * setImage(ResourceHandle image, ResourceHandle default)
- *
- * Deferred Shading:
- *
- * Color rgb + specular? 16i VK_FORMAT_R16G16B16A16_SFLOAT/VK_FORMAT_R16G16B16A16_UNORM
- * depth 1 32f VK_FORMAT_R32_SFLOAT
- * normals 3 10f2i VK_FORMAT_A2B10G10R10_UNORM_PACK32
- * specular 1f?
- *
- */
 int main ( int argc, char **argv ) {
 
 	Instance* newinstance = initialize_instance ( "Vulkan" );
@@ -246,8 +182,8 @@ int main ( int argc, char **argv ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
 
-	const DataGroupDef* vertex_def = newinstance->register_datagroupdef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, 3 * 4}, {ValueType::eF32Vec3, 1, 6 * 4} }, 9 * 4, 1 );
-	const DataGroupDef* matrix_def = newinstance->register_datagroupdef ( { {ValueType::eF32Mat4, 1, 0} }, 16 * 4, 1 );
+	const DataGroupDef* vertex_def = newinstance->register_datagroupdef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 );
+	const DataGroupDef* matrix_def = newinstance->register_datagroupdef ( { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 );
 
 	//create contextbase from datagroups
 	const ContextBase* w2smatrix_base = newinstance->register_contextbase ( matrix_def );
@@ -255,7 +191,7 @@ int main ( int argc, char **argv ) {
 
 	//create modelbase from datagroup and contextbases
 	const ModelBase* simplemodel_base = newinstance->register_modelbase ( vertex_def );
-	
+
 	//create model from modelbase
 	Array<glm::vec3> data_to_load = {
 		glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3(),
@@ -276,7 +212,15 @@ int main ( int argc, char **argv ) {
 	const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
 
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();
+	ContextGroup* contextgroup = newinstance->create_contextgroup();
 
+	const RendererBase* rendererbase = newinstance->register_rendererbase ( mod_instance, {} );
+	const RenderStageBase* renderstagebase = newinstance->register_renderstagebase({rendererbase});
+	
+	RenderStage* renderstage = newinstance->create_renderstage(renderstagebase);
+	
+	
+	//
 
 	//contextgroup -> attachContext list of contexts
 	//instancegroup -> attachInstance
@@ -285,21 +229,8 @@ int main ( int argc, char **argv ) {
 	//renderinformation -> renderpass -> renderstage -> renderer
 	//	RenderContext: renderpass + instancegroup + contextgroup + priority
 
-
-	//VulkanStagingMemory
-	//	list of buffers that grows if the data is not enough
-	//	u8* create_transfer_job(size, dstbuffer);
-
-	//get context from model and is updated once?
-	//Context* context = &mod_instance->contexts[0];
-	//glm::mat4 matrix = glm::mat4();
-	//set_value_m4 ( context->blocks[0].dataptr, &(newinstance->datagroup_store[matrix_id]), (u8*)&matrix, 0, 0, 0 );
-
 	//create renderer from model and a list of rendercontexts
 	//Renderer* simplerenderer = newinstance->create_renderer();
-
-	//create world from a list of contextbases
-	//World* simpleworld = newinstance->create_world();
 
 	//RenderContext* simplecontext = simpleworld->add_rendercontext();
 	//create contexts from world
@@ -307,9 +238,10 @@ int main ( int argc, char **argv ) {
 	//simpleworld->add_renderer ( simplerenderer );
 
 	//loop
-	//update contexts of world
-	//update instances
-	//let it render
+	//	update contexts of world
+	//	update instances
+	//	transfer-break
+	//	let it render
 
 
 	Window* window = newinstance->create_window();
@@ -326,6 +258,10 @@ int main ( int argc, char **argv ) {
 	//*window->size() = {800, 800};
 	*window->cursor_mode() = CursorMode::eInvisible;
 
+	Image* windowimage = window->backed_image();
+
+
+
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
@@ -337,6 +273,7 @@ int main ( int argc, char **argv ) {
 		//Renderer - defines one GPU pipeline
 		//	ContextBase - id
 		//	ModelInstanceBase - id
+		//	Image
 		//RenderStage - groups multiple renderers that can be done simultaniously
 		//	RenderStages
 		//RenderPass - groups sections that can be used in a deferred shading pass

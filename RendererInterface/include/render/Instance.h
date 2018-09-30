@@ -4,6 +4,7 @@
 #include "Header.h"
 #include "Window.h"
 #include "Model.h"
+#include "RenderPass.h"
 
 struct Device{
 	const char* name;
@@ -52,6 +53,14 @@ struct Instance{
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
+	
+	virtual const RendererBase* register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) = 0;
+	virtual const RendererBase* rendererbase ( RId handle ) = 0;
+	
+	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases) = 0;
+	virtual const RenderStageBase* renderstagebase ( RId handle ) = 0;
+	
+	virtual RenderStage* create_renderstage (const RendererBase* renderer_base) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

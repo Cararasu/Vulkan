@@ -41,10 +41,11 @@ struct VulkanModelBase : public ModelBase {
 };
 struct VulkanInstanceGroup : public InstanceGroup {
 	VulkanInstance* instance;
+	VulkanBufferStorage buffer_storeage;
 	
-	VulkanInstanceGroup(VulkanInstance* instance) : InstanceGroup(), instance(instance) { }
+	VulkanInstanceGroup(VulkanInstance* instance) : InstanceGroup(), instance(instance), buffer_storeage(instance, vk::BufferUsageFlagBits::eVertexBuffer) { }
 	
-	virtual ModelInstance add_instance(ModelInstanceBase* base);
-	virtual void* get_data_ptr(ModelInstance instance);
-	virtual void clear();
+	virtual void register_instances(ModelInstanceBase* base, u32 count) override;
+	virtual void* get_data_ptr(ModelInstanceBase* base) override;
+	virtual void clear() override;
 };

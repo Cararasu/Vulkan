@@ -12,6 +12,7 @@
 
 #define MAX_PRESENTIMAGE_COUNT (3)
 
+struct VulkanWindowImage;
 
 struct FrameLocalData {
 	bool initialized = false;
@@ -73,11 +74,7 @@ struct VulkanWindow : public Window {
 
 	void framebuffer_size_changed ( Extent2D<s32> extend );
 
-	vk::CommandPool graphics_command_pool() {
-		if ( !frame_local_data[present_image_index].graphics_command_pool )
-			frame_local_data[present_image_index].graphics_command_pool = vulkan_device ( m_instance ).createCommandPool ( vk::CommandPoolCreateInfo() );
-		return frame_local_data[present_image_index].graphics_command_pool;
-	}
+	vk::CommandPool graphics_command_pool();
 
 	inline FrameLocalData* current_framelocal_data() {
 		return &frame_local_data[present_image_index];

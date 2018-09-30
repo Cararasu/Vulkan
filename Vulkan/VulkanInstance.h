@@ -4,6 +4,7 @@
 #include "render/Window.h"
 #include "VulkanHeader.h"
 #include <render/IdArray.h>
+#include "VulkanRenderer.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -51,6 +52,9 @@ struct VulkanContextBase;
 struct VulkanModelBase;
 struct VulkanModel;
 struct VulkanModelInstanceBase;
+struct VulkanRendererBase;
+struct VulkanRenderStageBase;
+struct VulkanRenderer;
 
 struct VulkanInstance : public Instance {
 	VulkanExtLayerStruct extLayers;
@@ -104,6 +108,8 @@ struct VulkanInstance : public Instance {
 	IdPtrArray<VulkanModelBase> modelbase_store;
 	UIdPtrArray<VulkanModel> model_store;
 	IdPtrArray<VulkanModelInstanceBase> modelinstancebase_store;
+	IdPtrArray<VulkanRendererBase> vulkanrendererbase_store;
+	IdPtrArray<VulkanRenderStageBase> vulkanrenderstagebase_store;
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
 	
@@ -127,6 +133,14 @@ struct VulkanInstance : public Instance {
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 );
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr );
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) ;
+	
+	virtual const RendererBase* register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases);
+	virtual const RendererBase* rendererbase ( RId handle );
+	
+	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases);
+	virtual const RenderStageBase* renderstagebase ( RId handle );
+	
+	virtual RenderStage* create_renderstage (const RendererBase* renderer_base);
 	
 	virtual InstanceGroup* create_instancegroup();
 	virtual ContextGroup* create_contextgroup();

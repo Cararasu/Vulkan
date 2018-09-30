@@ -2,10 +2,10 @@
 
 #include "render/Window.h"
 #include "VulkanHeader.h"
-#include "VulkanImage.h"
 
 struct VulkanWindow;
 struct VulkanInstance;
+struct VulkanBaseImage;
 
 struct ImageRenderTarget {
 	vk::ImageView imageview;
