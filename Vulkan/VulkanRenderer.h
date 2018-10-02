@@ -30,7 +30,10 @@ struct VulkanRenderStage {
 struct VulkanRenderTarget;
 
 struct VulkanRendererBase : public RendererBase {
-	
+	VulkanRendererBase(const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) : 
+		RendererBase({0, model_instance_base, context_bases}) {
+		
+	}
 };
 struct VulkanRenderStageBase : public RenderStageBase {
 	

@@ -220,14 +220,10 @@ int main ( int argc, char **argv ) {
 	RenderStage* renderstage = newinstance->create_renderstage(renderstagebase);
 	
 	
-	//
-
-	//contextgroup -> attachContext list of contexts
-	//instancegroup -> attachInstance
-
-	//render(renderinformation)
-	//renderinformation -> renderpass -> renderstage -> renderer
-	//	RenderContext: renderpass + instancegroup + contextgroup + priority
+	
+	//instancegroup->finish()
+	//contextgroup->finish()
+	//instance->render(renderstage, instancegroup, contextgroup);
 
 	//create renderer from model and a list of rendercontexts
 	//Renderer* simplerenderer = newinstance->create_renderer();

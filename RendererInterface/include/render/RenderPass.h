@@ -21,8 +21,8 @@ struct ShaderBase {
 
 struct RendererBase {
 	RId id;
-	ModelInstanceBase* model_instance_base;
-	Array<ContextBase*> context_bases;
+	const ModelInstanceBase*const model_instance_base;
+	Array<const ContextBase*> context_bases;
 	//GBuffer input
 	//	id of previous generated image
 	//Array outputdef

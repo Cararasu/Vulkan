@@ -60,7 +60,7 @@ struct Instance{
 	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases) = 0;
 	virtual const RenderStageBase* renderstagebase ( RId handle ) = 0;
 	
-	virtual RenderStage* create_renderstage (const RendererBase* renderer_base) = 0;
+	virtual RenderStage* create_renderstage (const RenderStageBase* renderer_base) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

@@ -113,37 +113,37 @@ struct VulkanInstance : public Instance {
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
 	
-	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount);
-	virtual const DataGroupDef* datagroupdef ( RId handle );
+	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) override;
+	virtual const DataGroupDef* datagroupdef ( RId handle ) override;
 	
-	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ );
-	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ );
-	virtual const ContextBase* contextbase ( RId handle );
+	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ ) override;
+	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ ) override;
+	virtual const ContextBase* contextbase ( RId handle ) override;
 	
-	virtual const ModelBase* register_modelbase ( RId vertexdatagroup );
-	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup );
-	virtual const ModelBase* modelbase ( RId handle );
+	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) override;
+	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) override;
+	virtual const ModelBase* modelbase ( RId handle ) override;
 	
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount );
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount );
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
 	
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount );
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount );
+	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
+	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
 	
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 );
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr );
-	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) ;
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) override;
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;
+	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) override;
 	
-	virtual const RendererBase* register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases);
-	virtual const RendererBase* rendererbase ( RId handle );
+	virtual const RendererBase* register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) override;
+	virtual const RendererBase* rendererbase ( RId handle ) override;
 	
-	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases);
-	virtual const RenderStageBase* renderstagebase ( RId handle );
+	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases) override;
+	virtual const RenderStageBase* renderstagebase ( RId handle ) override;
 	
-	virtual RenderStage* create_renderstage (const RendererBase* renderer_base);
+	virtual RenderStage* create_renderstage (const RenderStageBase* renderer_base) override;
 	
-	virtual InstanceGroup* create_instancegroup();
-	virtual ContextGroup* create_contextgroup();
+	virtual InstanceGroup* create_instancegroup() override;
+	virtual ContextGroup* create_contextgroup() override;
 
 
 //------------ Instance/Device/Physicaldevice
