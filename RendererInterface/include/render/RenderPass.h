@@ -34,8 +34,8 @@ struct RendererBase {
 struct RenderStageBase{
 	RId id;
 	Array<RendererBase*> renderers;
-	//Dependencies
-	//	Renderer*/index -> Renderer*/index
+	//Dependencies		Renderer*/index -> Renderer*/index
+	//Outputs			Renderer*/index
 };
 struct Renderer {
 	RendererBase* renderer_base;
@@ -44,8 +44,9 @@ struct Renderer {
 struct RenderStage {
 	RenderStageBase render_stage_base;
 	Array<Renderer*> renderers;
-	//Dependencies
-	//	Renderer*/index -> Renderer*/index
+	//Dependencies		Renderer*/index -> Renderer*/index
+	
+	//void set_output_image();
 };
 
 struct RenderInformation{

@@ -517,7 +517,7 @@ void VulkanWindow::create_swapchain() {
 	if ( depth_image ) {
 		delete depth_image;
 	}
-	vk::Format depth_format = m_instance->findDepthFormat();
+	vk::Format depth_format = m_instance->find_depth_format();
 	depth_image = new VulkanImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
 	                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 

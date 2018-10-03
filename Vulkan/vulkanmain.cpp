@@ -164,21 +164,31 @@ void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrap
 
 int main ( int argc, char **argv ) {
 
-	Instance* newinstance = initialize_instance ( "Vulkan" );
-
+	StringBuilder builder;
+	
+	for(int i = 0; i < 1000; i++){
+		u64 ii = i;
+		builder.append(ii).append('-');
+	}
+	String s = builder.build();
+	printf("%s\n", s.cstr);
+	return 0;
+	
+	Instance* newinstance = create_instance ( "Vulkan" );
+	
 	newinstance->initialize();
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
 	printf ( "Monitors\n" );
-	for ( Monitor* monitor : newinstance->get_monitors() ) {
+	for ( Monitor* monitor : newinstance->monitors ) {
 		if ( monitor == primMonitor )
 			printf ( "\tPrimary Monitor | %s %dx%d\n", monitor->name, monitor->extend.x, monitor->extend.y );
 		else
 			printf ( "\t%s %dx%d\n", monitor->name, monitor->extend.x, monitor->extend.y );
 	}
 	printf ( "Devices\n" );
-	for ( Device* device : newinstance->get_devices() ) {
+	for ( Device* device : newinstance->devices ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
 
@@ -214,10 +224,10 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();
 	ContextGroup* contextgroup = newinstance->create_contextgroup();
 
-	const RendererBase* rendererbase = newinstance->register_rendererbase ( mod_instance, {} );
-	const RenderStageBase* renderstagebase = newinstance->register_renderstagebase({rendererbase});
+	//const RendererBase* rendererbase = newinstance->register_rendererbase ( mod_instance, {} );
+	//const RenderStageBase* renderstagebase = newinstance->register_renderstagebase({rendererbase});
 	
-	RenderStage* renderstage = newinstance->create_renderstage(renderstagebase);
+	//RenderStage* renderstage = newinstance->create_renderstage(renderstagebase);
 	
 	
 	

@@ -37,7 +37,7 @@ void UIVulkanWindowSection::resize ( Viewport<f32> viewport, VulkanRenderTarget*
 		reset();
 	} else {
 		if ( !depth_image ) {
-			vk::Format depth_format = v_instance->findDepthFormat();
+			vk::Format depth_format = v_instance->find_depth_format();
 			vk::Extent3D extent ( viewport.extend.width, viewport.extend.height, 0 );
 			depth_image = new VulkanImageWrapper ( v_instance, extent, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
 			                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );

@@ -107,7 +107,7 @@ bool VulkanExtLayerStruct::activateExtension ( const char* name ) {
 }
 
 
-Instance* initialize_instance ( const char* name ) {
+Instance* create_instance ( const char* name ) {
 	if ( strcmp ( name, "Vulkan" ) == 0 ) {
 		glfwInit();
 		VulkanInstance* instance = new VulkanInstance();
@@ -523,12 +523,6 @@ bool VulkanInstance::initialize ( Device* device ) {
 	return true;
 }
 
-Array<Monitor*>& VulkanInstance::get_monitors() {
-	return monitors;
-}
-Array<Device*>& VulkanInstance::get_devices() {
-	return devices;
-}
 void VulkanInstance::process_events() {
 	glfwPollEvents();
 }
@@ -631,7 +625,15 @@ const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model mode
 const ModelInstanceBase* VulkanInstance::modelinstancebase ( RId handle ) {
 	return modelinstancebase_store[handle];
 }
-const RendererBase* VulkanInstance::register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) {
+const RendererBase* VulkanInstance::register_rendererbase (
+	    const ModelInstanceBase* model_instance_base,
+	    Array<const ContextBase*> context_bases,
+		StringReference vertex_shader,
+		StringReference fragment_shader,
+		StringReference geometry_shader,
+		StringReference tesselation_control_shader,
+		StringReference tesselation_evaluation_shader
+		) {
 	return vulkanrendererbase_store.insert(new VulkanRendererBase(model_instance_base, context_bases));
 }
 const RendererBase* VulkanInstance::rendererbase ( RId handle ) {
@@ -731,10 +733,10 @@ const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, voi
 GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
 	GPUMemory memory;
 
-	memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed | recommended );
+	memory.heap_index = find_memory_type ( mem_req.memoryTypeBits, needed | recommended );
 	memory.property_flags = needed | recommended;
 	if ( memory.heap_index == std::numeric_limits<u32>::max() ) {
-		memory.heap_index = findMemoryType ( mem_req.memoryTypeBits, needed );
+		memory.heap_index = find_memory_type ( mem_req.memoryTypeBits, needed );
 		memory.property_flags = needed;
 	}
 	if ( memory.heap_index != std::numeric_limits<u32>::max() ) {
@@ -816,7 +818,7 @@ void VulkanInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory,
 	vkUnmapMemory ( m_device, dstMemory );
 }
 
-u32 VulkanInstance::findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
+u32 VulkanInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
 	v_device->physical_device.getMemoryProperties ( &memProperties );
 
@@ -833,7 +835,7 @@ u32 VulkanInstance::findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags pro
 	return -1;
 }
 
-vk::Format VulkanInstance::findSupportedFormat ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
+vk::Format VulkanInstance::find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
 	for ( vk::Format format : candidates ) {
 		vk::FormatProperties props;
 		v_device->physical_device.getFormatProperties ( format, &props );
@@ -847,8 +849,8 @@ vk::Format VulkanInstance::findSupportedFormat ( const std::vector<vk::Format>& 
 	return vk::Format::eUndefined;
 }
 
-vk::Format VulkanInstance::findDepthFormat() {
-	return findSupportedFormat (
+vk::Format VulkanInstance::find_depth_format() {
+	return find_supported_format (
 	{vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
 	vk::ImageTiling::eOptimal,
 	vk::FormatFeatureFlagBits::eDepthStencilAttachment

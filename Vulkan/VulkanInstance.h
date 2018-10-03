@@ -8,15 +8,15 @@
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
-void gatherExtLayer (vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions);
-struct VulkanExtLayerStruct{
+void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions );
+struct VulkanExtLayerStruct {
 	std::vector<vk::LayerProperties> availableLayers;
 	std::vector<vk::ExtensionProperties> availableExtensions;
 	std::vector<const char*> neededLayers;
 	std::vector<const char*> neededExtensions;
-	
-	bool activateLayer(const char* name);
-	bool activateExtension(const char* name);
+
+	bool activateLayer ( const char* name );
+	bool activateExtension ( const char* name );
 };
 
 struct VulkanDevice : public Device {
@@ -30,9 +30,9 @@ struct VulkanDevice : public Device {
 
 	virtual ~VulkanDevice() {}
 };
-struct VulkanDeferredCall{
+struct VulkanDeferredCall {
 	u64 frame_index = 0;
-	std::function<RendResult ( u64 )> call;
+	std::function<RendResult ( u64 ) > call;
 };
 
 struct VulkanMonitor : public Monitor {
@@ -60,8 +60,6 @@ struct VulkanInstance : public Instance {
 	VulkanExtLayerStruct extLayers;
 	Map<GLFWmonitor*, VulkanMonitor*> monitor_map;
 	Map<GLFWwindow*, VulkanWindow*> window_map;
-	Array<Monitor*> monitors;
-	Array<Device*> devices;
 	Set<VulkanWindow*> windows;
 	Set<VulkanWindowSection*> window_sections;
 
@@ -69,12 +67,9 @@ struct VulkanInstance : public Instance {
 	VulkanDevice* v_device;
 	vk::Device m_device;
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
-	
+
 	Array<VulkanDeferredCall> deferred_calls;
-	
-	//array of render
-	//
-	
+
 	QueueWrapper queues;
 
 	bool initialized = false;
@@ -87,22 +82,20 @@ struct VulkanInstance : public Instance {
 
 	virtual void process_events();
 	virtual bool is_window_open();
-	
-	virtual void render_window(Window* window);
-	virtual void v_render_window(VulkanWindow* window);
+
+	virtual void render_window ( Window* window );
+	virtual void v_render_window ( VulkanWindow* window );
 	virtual void render_windows();
 
 	virtual Window* create_window();
 	virtual bool destroy_window ( Window* window );
 
-	virtual Array<Monitor*>& get_monitors();
-	virtual Array<Device*>& get_devices();
 	VulkanMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
 
 //------------ Resources
 	VulkanTransferController* transfer_control = nullptr;
-	
+
 	IdPtrArray<DataGroupDef> datagroup_store;
 	IdPtrArray<VulkanContextBase> contextbase_store;
 	IdPtrArray<VulkanModelBase> modelbase_store;
@@ -112,36 +105,44 @@ struct VulkanInstance : public Instance {
 	IdPtrArray<VulkanRenderStageBase> vulkanrenderstagebase_store;
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
-	
-	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) override;
+
+	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) override;
 	virtual const DataGroupDef* datagroupdef ( RId handle ) override;
-	
+
 	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ ) override;
 	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ ) override;
 	virtual const ContextBase* contextbase ( RId handle ) override;
-	
+
 	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) override;
 	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) override;
 	virtual const ModelBase* modelbase ( RId handle ) override;
-	
+
 	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
 	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
-	
+
 	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
 	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
-	
+
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) override;
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) override;
-	
-	virtual const RendererBase* register_rendererbase (const ModelInstanceBase* model_instance_base, Array<const ContextBase*> context_bases) override;
+
+	virtual const RendererBase* register_rendererbase (
+	    const ModelInstanceBase* model_instance_base,
+	    Array<const ContextBase*> context_bases,
+	    StringReference vertex_shader,
+	    StringReference fragment_shader,
+	    StringReference geometry_shader,
+	    StringReference tesselation_control_shader,
+	    StringReference tesselation_evaluation_shader
+	) override;
 	virtual const RendererBase* rendererbase ( RId handle ) override;
-	
-	virtual const RenderStageBase* register_renderstagebase (Array<const RendererBase*> rendererbases) override;
+
+	virtual const RenderStageBase* register_renderstagebase ( Array<const RendererBase*> rendererbases ) override;
 	virtual const RenderStageBase* renderstagebase ( RId handle ) override;
-	
-	virtual RenderStage* create_renderstage (const RenderStageBase* renderer_base) override;
-	
+
+	virtual RenderStage* create_renderstage ( const RenderStageBase* renderer_base ) override;
+
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
@@ -169,9 +170,9 @@ struct VulkanInstance : public Instance {
 	void deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer );
 	void copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size );
 
-	u32 findMemoryType ( u32 typeFilter, vk::MemoryPropertyFlags properties );
-	vk::Format findSupportedFormat ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features );
-	vk::Format findDepthFormat();
+	u32 find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties );
+	vk::Format find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features );
+	vk::Format find_depth_format();
 };
 
 inline QueueWrapper* vulkan_queue_wrapper ( VulkanInstance* instance ) {

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "RenderTypes.h"
+#include "String.h"
 
 //@TODO implement own DynamicArrayClass
 template<typename T>
@@ -152,8 +153,8 @@ struct ChangeableValue {
 struct IdHandle {
 	union{
 		struct{
-			uint32_t id = 0;
-			uint32_t uid = 0;
+			u32 id = 0;
+			u32 uid = 0;
 		};
 		uint64_t hash;
 	};
