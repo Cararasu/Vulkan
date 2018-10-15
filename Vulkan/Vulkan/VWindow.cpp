@@ -329,8 +329,6 @@ void VWindow::render_frame() {
 	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
 	
-	m_instance->
-	
 	v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", data->frame_index );
 	//reset for frame
 	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );

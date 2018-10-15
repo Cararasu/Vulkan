@@ -1,6 +1,8 @@
 #pragma once
 
 #include "RenderTypes.h"
+#include <cstring>
+#include <cstdlib>
 
 struct String{
 	const char* cstr;

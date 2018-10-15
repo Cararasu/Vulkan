@@ -3,9 +3,7 @@
 #include "VInstance.h"
 
 
-std::string vulkan_str = "vulkan";
-
-const Logger v_logger ( vulkan_str );
+const Logger v_logger ( "vulkan" );
 
 void printError(VkResult res){
 	switch(res){

@@ -122,6 +122,8 @@ clTabCtrl}*/
 #include <chrono>
 #include <thread>
 
+
+
 int main ( int argc, char **argv ) {
 	
 	Instance* newinstance = create_instance ( "Vulkan" );
@@ -184,12 +186,11 @@ int main ( int argc, char **argv ) {
 	//instancegroup->finish();
 	//contextgroup->finish();
 	//at the end
-	//if output is windowimage
+	//if output is windowimage get new image from window.
 	newinstance->render_bundles ( {bundle} );
 	
 	//loop
 	//	update contexts and instances
-	//	update instances
 	//	transfer-break
 	//	let it render
 

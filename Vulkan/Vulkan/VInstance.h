@@ -138,7 +138,7 @@ struct VInstance : public Instance {
 	) override;
 	virtual const Renderer* renderer ( RId handle ) override;
 
-	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs ) override;
+	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) override;
 	virtual const RenderStage* renderstage ( RId handle ) override;
 	
 	virtual InstanceGroup* create_instancegroup() override;

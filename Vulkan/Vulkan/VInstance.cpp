@@ -139,7 +139,7 @@ VMonitor::VMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
 
 	int count;
 	const GLFWvidmode* videomode = glfwGetVideoModes ( monitor, &count );
-	videomodes.resize(count);
+	videomodes.resize ( count );
 	for ( int i = 0; i < count; ++i ) {
 		if ( videomode[i].redBits == 8 || videomode[i].greenBits == 8 || videomode[i].blueBits == 8 ) {
 			videomodes[i] = glfw_to_videomode ( videomode[i] );
@@ -170,7 +170,7 @@ VInstance::VInstance() {
 	int count;
 	GLFWmonitor** glfw_monitors = glfwGetMonitors ( &count );
 
-	monitors.resize(count);
+	monitors.resize ( count );
 	for ( int i = 0; i < count; ++i ) {
 		VMonitor* vmonitor = new VMonitor ( glfw_monitors[i] );
 		monitor_map.insert ( std::make_pair ( glfw_monitors[i], vmonitor ) );
@@ -418,7 +418,7 @@ bool VInstance::initialize ( Device* device ) {
 	}
 	size_t queueFamilyCount = 0;
 	if ( queues.dedicated_transfer_queue ) {
-		printf("Dedicated Transfer Queue\n");
+		printf ( "Dedicated Transfer Queue\n" );
 		queueFamilyCount++;
 	}
 
@@ -511,16 +511,16 @@ bool VInstance::initialize ( Device* device ) {
 void VInstance::process_events() {
 	glfwPollEvents();
 }
-void VInstance::render_window(Window* window){
-	v_render_window(dynamic_cast<VWindow*>(window));
+void VInstance::render_window ( Window* window ) {
+	v_render_window ( dynamic_cast<VWindow*> ( window ) );
 }
-void VInstance::v_render_window(VWindow* window) {
-	if(!window)
+void VInstance::v_render_window ( VWindow* window ) {
+	if ( !window )
 		return;
 	window->v_update();
 	frame_index++;
 }
-void VInstance::render_windows(){
+void VInstance::render_windows() {
 	for ( VWindow* window : windows ) {
 		window->v_update();
 	}
@@ -575,7 +575,7 @@ static std::vector<char> readFile ( const char* filename ) {
 
 	return buffer;
 }
-const DataGroupDef* VInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) {
+const DataGroupDef* VInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
 	return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
 }
 const DataGroupDef* VInstance::datagroupdef ( RId id ) {
@@ -583,7 +583,7 @@ const DataGroupDef* VInstance::datagroupdef ( RId id ) {
 }
 
 const ContextBase* VInstance::register_contextbase ( RId datagroup_id ) {
-	return register_contextbase( datagroup_store[datagroup_id] );
+	return register_contextbase ( datagroup_store[datagroup_id] );
 }
 const ContextBase* VInstance::register_contextbase ( const DataGroupDef* datagroup ) {
 	return contextbase_store.insert ( new VContextBase ( this, datagroup ) );
@@ -611,22 +611,22 @@ const ModelInstanceBase* VInstance::modelinstancebase ( RId handle ) {
 	return modelinstancebase_store[handle];
 }
 const Renderer* VInstance::create_renderer (
-	    const ModelInstanceBase* model_instance_base,
-	    Array<const ContextBase*> context_bases/*,
+    const ModelInstanceBase* model_instance_base,
+    Array<const ContextBase*> context_bases/*,
 		StringReference vertex_shader,
 		StringReference fragment_shader,
 		StringReference geometry_shader,
 		StringReference tesselation_control_shader,
 		StringReference tesselation_evaluation_shader*/
-		) {
-	return vulkanrenderer_store.insert(new VRenderer(this, model_instance_base, context_bases));
+) {
+	return vulkanrenderer_store.insert ( new VRenderer ( this, model_instance_base, context_bases ) );
 }
 const Renderer* VInstance::renderer ( RId handle ) {
 	return vulkanrenderer_store[handle];
 }
 
-const RenderStage* VInstance::create_renderstage (Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs) {
-	return vulkanrenderstage_store.insert(new VRenderStage());
+const RenderStage* VInstance::create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) {
+	return vulkanrenderstage_store.insert ( new VRenderStage() );
 }
 const RenderStage* VInstance::renderstage ( RId handle ) {
 	return vulkanrenderstage_store[handle];
@@ -634,16 +634,16 @@ const RenderStage* VInstance::renderstage ( RId handle ) {
 
 
 InstanceGroup* VInstance::create_instancegroup() {
-	return new VInstanceGroup(this);
+	return new VInstanceGroup ( this );
 }
 ContextGroup* VInstance::create_contextgroup() {
-	return new VContextGroup(this);
+	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets) {
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets ) {
 	return nullptr;
 }
-void VInstance::render_bundles(Array<RenderBundle*> bundles) {
-	
+void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
+
 }
 
 vk::ShaderModule VInstance::load_shader_from_file ( const char* filename ) {
@@ -658,7 +658,7 @@ vk::ShaderModule VInstance::load_shader_from_file ( const char* filename ) {
 }
 
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
-	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
+	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
 }
 const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	VModelBase* v_modelbase = modelbase_store[modelbase->id];
@@ -683,10 +683,10 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	memcpy ( indexdata.first, indices, indexcount * sizeof ( u16 ) );
 	transfer_control->do_transfers();
 	transfer_control->check_free();
-	return Model(model_store.insert ( newmodel )->handle(), modelbase);
+	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
-	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
+	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
 }
 const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
 	VModelBase* v_modelbase = modelbase_store[modelbase->id];

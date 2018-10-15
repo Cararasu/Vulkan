@@ -1,5 +1,15 @@
 #pragma once
 
+#include <cassert>
+
+#ifdef NDEBUG
+	#define vassert(COND)  ((void)0)
+	#define vassert_exec(COND, CODE) ((void)0)
+#else
+	#define vassert(COND) if(!(COND)) {fprintf(stderr, "Triggered assert " #COND " in file " __FILE__ " on line %d\n", __LINE__);*((u8*)0) = 12;}
+	#define vassert_exec(COND, CODE) if(!(COND)) {[](const char* condition, const char* file, int line) { CODE } (#COND, __FILE__, __LINE__);*((u8*)0) = 12;}
+#endif
+
 #include <inttypes.h>
 
 typedef uint8_t u8;

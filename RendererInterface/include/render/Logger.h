@@ -2,7 +2,7 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <string>
+#include "String.h"
 
 enum class LogLevel {
 	eTrace,
@@ -13,11 +13,14 @@ enum class LogLevel {
 };
 
 struct Logger {
-	std::string module_name;
+	const String module_name;
 	LogLevel level;
 	FILE * log_output;
 
-	Logger ( std::string& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
+	Logger ( const String& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
+
+	}
+	Logger ( const String&& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
 
 	}
 	~Logger() = default;
@@ -25,7 +28,7 @@ struct Logger {
 	template<LogLevel LL>
 	void log ( const char* fstring, ... ) const {
 		if ( LL >= level ) {
-			printf ( "%s - ", module_name.c_str() );
+			printf ( "%s - ", module_name.cstr );
 			va_list args;
 			va_start ( args, fstring );
 			vfprintf ( log_output, fstring, args );
