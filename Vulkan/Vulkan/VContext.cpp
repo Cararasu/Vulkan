@@ -1,10 +1,10 @@
-#include "VulkanContext.h"
-#include "VulkanBuffer.h"
-#include "VulkanInstance.h"
-#include "VulkanTransferOperator.h"
+#include "VContext.h"
+#include "VBuffer.h"
+#include "VInstance.h"
+#include "VTransferOperator.h"
 
 
-VulkanGPUDataStore::VulkanGPUDataStore ( VulkanInstance* instance, const DataGroupDef* datagroup, vk::BufferUsageFlags usage ) :
+VGPUDataStore::VGPUDataStore ( VInstance* instance, const DataGroupDef* datagroup, vk::BufferUsageFlags usage ) :
 	instance ( instance ),
 	datagroup ( datagroup->id ),
 	buffer ( instance ),
@@ -14,16 +14,16 @@ VulkanGPUDataStore::VulkanGPUDataStore ( VulkanInstance* instance, const DataGro
 	              vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
 	            );
 }
-VulkanGPUDataStore::~VulkanGPUDataStore() {
+VGPUDataStore::~VGPUDataStore() {
 
 }
-RId VulkanGPUDataStore::allocate_block() {
+RId VGPUDataStore::allocate_block() {
 	return datastore.create_chunk();
 }
-void VulkanGPUDataStore::remove_block ( RId index ) {
+void VGPUDataStore::remove_block ( RId index ) {
 	return datastore.delete_chunk ( index );
 }
-void VulkanGPUDataStore::update_data() {
+void VGPUDataStore::update_data() {
 	std::pair<void*, vk::Semaphore> data = instance->transfer_control->request_transfer_memory ( &buffer, datastore.size, 0 );
 	memcpy(datastore.data, data.first, datastore.size);
 }

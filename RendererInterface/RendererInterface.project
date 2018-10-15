@@ -10,6 +10,7 @@
   <VirtualDirectory Name="src"/>
   <VirtualDirectory Name="include">
     <VirtualDirectory Name="render">
+      <File Name="include/render/Logger.h"/>
       <File Name="include/render/String.h"/>
       <File Name="include/render/IdArray.h"/>
       <File Name="include/render/RenderTypes.h"/>

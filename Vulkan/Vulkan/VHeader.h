@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "Logger.h"
+#include <render/Logger.h>
 #include <functional>
 #include <render/Header.h>
 #include <vulkan/vulkan.hpp>
@@ -43,7 +43,7 @@ struct ResettableCommandBuffer{
 	vk::CommandBuffer buffer;
 };
 
-struct PGCQueueWrapper{
+struct QueueWrapper{
 	u32 graphics_queue_id = -1;
 	vk::Queue graphics_queue;
 	
@@ -54,11 +54,6 @@ struct PGCQueueWrapper{
 	bool combined_graphics_compute_queue = false;
 	u32 compute_queue_id = -1;
 	vk::Queue compute_queue;
-};
-
-struct QueueWrapper{
-	DynArray<PGCQueueWrapper> pgc;
-	u32 index = 0;
 	
 	bool dedicated_transfer_queue = false;
 	u32 transfer_queue_id = -1;
@@ -80,3 +75,5 @@ struct GPUMemory {
 	u32 heap_index;
 	vk::MemoryPropertyFlags property_flags;
 };
+
+extern const Logger v_logger;

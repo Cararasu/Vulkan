@@ -10,7 +10,7 @@ struct String{
 	String(const char* str) : cstr(str) {hash_it();}
 	String(const char* str, u64 hash) : cstr(str), hash(hash) {}
 	String(const String& str) : cstr(str.cstr), hash(str.hash) {}
-	String(String&& str) : cstr(str.cstr), hash(str.hash) {}
+	String(const String&& str) : cstr(str.cstr), hash(str.hash) {}
 	
 	void hash_it() {//djb2 hash
 		uint64_t thash = 5381;
@@ -22,6 +22,9 @@ struct String{
 	}
 	String copy(){
 		return String();
+	}
+	void free_str(){
+		free(const_cast<char*>(cstr));
 	}
 };
 
@@ -75,7 +78,9 @@ struct StringBuilder{
 		return *this;
 	}
 	StringBuilder& append(const char* cstr) {
-		s64 length = strlen(cstr);
+		return append(cstr, strlen(cstr));
+	}
+	StringBuilder& append(const char* cstr, s64 length) {
 		s64 block_capacity = (((char_index / STRINGBUFFER_SIZE) + 1) * STRINGBUFFER_SIZE);
 		s64 charsleft = (char_index + length) - block_capacity;
 		if(charsleft >= 0){
@@ -115,19 +120,17 @@ struct StringBuilder{
 			tvalue /= base;
 			count++;
 		}
-		char buffer[21];//18,446,744,073,709,551,615 is the highest number and has 20 digits
-		data[count] = '\0';
-		
-		for(int i = 1; i <= count; i++){
+		char buffer[20];//18,446,744,073,709,551,615 is the highest number and has 20 digits
+		for(u32 i = 1; i <= count; i++){
 			int digit = value % base;
 			value /= base;
 			if(digit < 10){
-				data[count - i] = '0' + digit;
+				buffer[count - i] = '0' + digit;
 			}else{
-				data[count - i] = 'a' - 10 + digit;
+				buffer[count - i] = 'a' - 10 + digit;
 			}
 		}
-		append(data);
+		append(buffer, count);
 		return *this;
 	}
 	StringBuilder& append(u32 value, int base = 10) {
@@ -138,19 +141,17 @@ struct StringBuilder{
 			tvalue /= base;
 			count++;
 		}
-		char buffer[11];//4,294,967,295 is the highest number and has 10 digits
-		data[count] = '\0';
-		
-		for(int i = 1; i <= count; i++){
+		char buffer[10];//4,294,967,295 is the highest number and has 10 digits
+		for(u32 i = 1; i <= count; i++){
 			int digit = value % base;
 			value /= base;
 			if(digit < 10){
-				data[count - i] = '0' + digit;
+				buffer[count - i] = '0' + digit;
 			}else{
-				data[count - i] = 'a' - 10 + digit;
+				buffer[count - i] = 'a' - 10 + digit;
 			}
 		}
-		append(data);
+		append(buffer, count);
 		return *this;
 	}
 	
@@ -194,4 +195,11 @@ struct StringBuilder{
 struct StringReference {
 	String stringref;
 	RId id;
+	
+	StringReference(const String& stringref) : stringref(stringref), id(0){}
+	StringReference(const String&& stringref) : stringref(stringref), id(0){}
 };
+inline bool operator==(StringReference& lhs, StringReference& rhs){
+	if(lhs.id) return lhs.id == rhs.id;
+	else return lhs.stringref == rhs.stringref;
+}

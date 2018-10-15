@@ -2,14 +2,14 @@
 
 #include "render/Instance.h"
 #include "render/Window.h"
-#include "VulkanHeader.h"
+#include "VHeader.h"
 #include <render/IdArray.h>
-#include "VulkanRenderer.h"
+#include "VRenderer.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
 void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions );
-struct VulkanExtLayerStruct {
+struct VExtLayerStruct {
 	std::vector<vk::LayerProperties> availableLayers;
 	std::vector<vk::ExtensionProperties> availableExtensions;
 	std::vector<const char*> neededLayers;
@@ -19,7 +19,7 @@ struct VulkanExtLayerStruct {
 	bool activateExtension ( const char* name );
 };
 
-struct VulkanDevice : public Device {
+struct VDevice : public Device {
 	vk::PhysicalDevice physical_device;
 
 	std::vector<vk::ExtensionProperties> availableExtensions;
@@ -28,55 +28,55 @@ struct VulkanDevice : public Device {
 	vk::PhysicalDeviceProperties vkPhysDevProps;
 	vk::PhysicalDeviceFeatures  vkPhysDevFeatures;
 
-	virtual ~VulkanDevice() {}
+	virtual ~VDevice() {}
 };
-struct VulkanDeferredCall {
+struct VDeferredCall {
 	u64 frame_index = 0;
 	std::function<RendResult ( u64 ) > call;
 };
 
-struct VulkanMonitor : public Monitor {
+struct VMonitor : public Monitor {
 	GLFWmonitor* monitor;
 
-	VulkanMonitor ( GLFWmonitor* );
-	virtual ~VulkanMonitor();
+	VMonitor ( GLFWmonitor* );
+	virtual ~VMonitor();
 
 	virtual VideoMode current_mode();
 };
 
 
-struct VulkanWindow;
-struct VulkanWindowSection;
-struct VulkanTransferController;
-struct VulkanContextBase;
-struct VulkanModelBase;
-struct VulkanModel;
-struct VulkanModelInstanceBase;
-struct VulkanRendererBase;
-struct VulkanRenderStageBase;
-struct VulkanRenderer;
+struct VWindow;
+struct VWindowSection;
+struct VTransferController;
+struct VContextBase;
+struct VModelBase;
+struct VModel;
+struct VModelInstanceBase;
+struct VRenderer;
+struct VRenderStage;
+struct VRenderer;
 
-struct VulkanInstance : public Instance {
-	VulkanExtLayerStruct extLayers;
-	Map<GLFWmonitor*, VulkanMonitor*> monitor_map;
-	Map<GLFWwindow*, VulkanWindow*> window_map;
-	Set<VulkanWindow*> windows;
-	Set<VulkanWindowSection*> window_sections;
+struct VInstance : public Instance {
+	VExtLayerStruct extLayers;
+	Map<GLFWmonitor*, VMonitor*> monitor_map;
+	Map<GLFWwindow*, VWindow*> window_map;
+	Set<VWindow*> windows;
+	Set<VWindowSection*> window_sections;
 
 	vk::Instance m_instance;
-	VulkanDevice* v_device;
+	VDevice* v_device;
 	vk::Device m_device;
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
 
-	Array<VulkanDeferredCall> deferred_calls;
+	Array<VDeferredCall> deferred_calls;
 
 	QueueWrapper queues;
 
 	bool initialized = false;
 	u64 frame_index = 1;
 
-	VulkanInstance();
-	virtual ~VulkanInstance();
+	VInstance();
+	virtual ~VInstance();
 
 	virtual bool initialize ( Device* device = nullptr );
 
@@ -84,25 +84,25 @@ struct VulkanInstance : public Instance {
 	virtual bool is_window_open();
 
 	virtual void render_window ( Window* window );
-	virtual void v_render_window ( VulkanWindow* window );
+	virtual void v_render_window ( VWindow* window );
 	virtual void render_windows();
 
 	virtual Window* create_window();
 	virtual bool destroy_window ( Window* window );
 
-	VulkanMonitor* get_primary_monitor_vulkan();
+	VMonitor* get_primary_monitor_vulkan();
 	virtual Monitor* get_primary_monitor();
 
 //------------ Resources
-	VulkanTransferController* transfer_control = nullptr;
+	VTransferController* transfer_control = nullptr;
 
 	IdPtrArray<DataGroupDef> datagroup_store;
-	IdPtrArray<VulkanContextBase> contextbase_store;
-	IdPtrArray<VulkanModelBase> modelbase_store;
-	UIdPtrArray<VulkanModel> model_store;
-	IdPtrArray<VulkanModelInstanceBase> modelinstancebase_store;
-	IdPtrArray<VulkanRendererBase> vulkanrendererbase_store;
-	IdPtrArray<VulkanRenderStageBase> vulkanrenderstagebase_store;
+	IdPtrArray<VContextBase> contextbase_store;
+	IdPtrArray<VModelBase> modelbase_store;
+	UIdPtrArray<VModel> model_store;
+	IdPtrArray<VModelInstanceBase> modelinstancebase_store;
+	IdPtrArray<VRenderer> vulkanrenderer_store;
+	IdPtrArray<VRenderStage> vulkanrenderstage_store;
 
 	vk::ShaderModule load_shader_from_file ( const char* filename );
 
@@ -127,33 +127,31 @@ struct VulkanInstance : public Instance {
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) override;
 
-	virtual const RendererBase* register_rendererbase (
+	virtual const Renderer* create_renderer (
 	    const ModelInstanceBase* model_instance_base,
-	    Array<const ContextBase*> context_bases,
+	    Array<const ContextBase*> context_bases/*,
 	    StringReference vertex_shader,
 	    StringReference fragment_shader,
 	    StringReference geometry_shader,
 	    StringReference tesselation_control_shader,
-	    StringReference tesselation_evaluation_shader
+	    StringReference tesselation_evaluation_shader*/
 	) override;
-	virtual const RendererBase* rendererbase ( RId handle ) override;
+	virtual const Renderer* renderer ( RId handle ) override;
 
-	virtual const RenderStageBase* register_renderstagebase ( Array<const RendererBase*> rendererbases ) override;
-	virtual const RenderStageBase* renderstagebase ( RId handle ) override;
-
-	virtual RenderStage* create_renderstage ( const RenderStageBase* renderer_base ) override;
-
+	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs ) override;
+	virtual const RenderStage* renderstage ( RId handle ) override;
+	
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
-
+	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets);
+	
+	virtual void render_bundles(Array<RenderBundle*> bundles);
 //------------ Instance/Device/Physicaldevice
-
-	inline PGCQueueWrapper* vulkan_pgc_queue ( u32 index ) {
-		return &queues.pgc[index];
-	}
-
-
+	
+	//wait until frame completion
+	void v_wait_for_frame(u64 frame_index);
+	
 	GPUMemory allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended );
 	RendResult free_gpu_memory ( GPUMemory memory );
 
@@ -175,23 +173,21 @@ struct VulkanInstance : public Instance {
 	vk::Format find_depth_format();
 };
 
-inline QueueWrapper* vulkan_queue_wrapper ( VulkanInstance* instance ) {
+
+inline QueueWrapper* vulkan_queue_wrapper ( VInstance* instance ) {
 	return &instance->queues;
 }
-inline PGCQueueWrapper* vulkan_pgc_queue_wrapper ( VulkanInstance* instance, u32 pgc_index ) {
-	return &instance->queues.pgc[pgc_index];
-}
 
-inline vk::Device vulkan_device ( const VulkanInstance* instance ) {
+inline vk::Device vulkan_device ( const VInstance* instance ) {
 	return instance->m_device;
 }
-inline vk::PhysicalDevice vulkan_physical_device ( const VulkanInstance* instance ) {
+inline vk::PhysicalDevice vulkan_physical_device ( const VInstance* instance ) {
 	return instance->v_device->physical_device;
 }
-inline vk::Semaphore create_semaphore ( VulkanInstance* instance ) {
+inline vk::Semaphore create_semaphore ( VInstance* instance ) {
 	return instance->m_device.createSemaphore ( vk::SemaphoreCreateInfo(), nullptr );
 }
-inline RendResult destroy_semaphore ( const VulkanInstance* const instance, vk::Semaphore sem ) {
+inline RendResult destroy_semaphore ( const VInstance* const instance, vk::Semaphore sem ) {
 	instance->m_device.destroySemaphore ( sem, nullptr );
 	return RendResult::eSuccess;
 }
@@ -200,7 +196,7 @@ inline bool hasStencilComponent ( vk::Format format ) {
 	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }
 
-inline RendResult wrap_command ( std::function<RendResult ( vk::CommandBuffer ) > do_command, VulkanInstance* v_instance, vk::CommandPool commandpool, vk::CommandBuffer* cmdbuffer ) {
+inline RendResult wrap_command ( std::function<RendResult ( vk::CommandBuffer ) > do_command, VInstance* v_instance, vk::CommandPool commandpool, vk::CommandBuffer* cmdbuffer ) {
 	*cmdbuffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
 	cmdbuffer->begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
 	RendResult res = do_command ( *cmdbuffer );

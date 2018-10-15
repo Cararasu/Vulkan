@@ -44,5 +44,3 @@ struct Logger {
 		}
 	}
 };
-
-extern const Logger g_logger;

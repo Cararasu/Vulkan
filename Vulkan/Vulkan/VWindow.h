@@ -1,18 +1,16 @@
 #pragma once
 
 #include "render/Window.h"
-#include "VulkanHeader.h"
-#include "VulkanImage.h"
+#include "VHeader.h"
+#include "VImage.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <functional>
 
-#include "VulkanWindowSection.h"
-
 #define MAX_PRESENTIMAGE_COUNT (3)
 
-struct VulkanWindowImage;
+struct VWindowImage;
 
 struct FrameLocalData {
 	bool initialized = false;
@@ -30,19 +28,29 @@ struct FrameLocalData {
 	vk::CommandPool graphics_command_pool;
 };
 
-struct VulkanQuadRenderer;
+struct VQuadRenderer;
+struct VInstance;
+struct VBaseImage;
 
-struct VulkanWindow : public Window {
-	VulkanInstance* m_instance = nullptr;
-	VulkanWindowSection* v_root_section = nullptr;
+struct VRenderTarget : public RenderTarget {
+	Array<VBaseImage*> images;
+	VBaseImage* depth_image;
+	u32 target_count;
+};
+
+
+struct VWindow : public Window {
+	VInstance* m_instance = nullptr;
 
 	//glfw
 	GLFWwindow* window = nullptr;
 
-	VulkanQuadRenderer* quad_renderer;
-	VulkanWindowImage* present_image = nullptr;
-	VulkanBaseImage* depth_image = nullptr;
-
+	VQuadRenderer* quad_renderer;
+	VWindowImage* present_image = nullptr;
+	VBaseImage* depth_image = nullptr;
+	
+	VRenderTarget v_render_target_wrapper;
+	
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;
@@ -51,21 +59,15 @@ struct VulkanWindow : public Window {
 	vk::SurfaceCapabilitiesKHR capabilities;
 	vk::SwapchainKHR swap_chain;
 	Extent2D<u32> swap_chain_extend;
-	u32 queue_index = 0;
 	u32 present_image_index = 0;
 	DynArray<FrameLocalData> frame_local_data;
 	DynArray<vk::Semaphore> active_sems;
 
 	vk::CommandPool window_graphics_command_pool;
 
-	VulkanRenderTarget v_render_target_wrapper;
-
-	VulkanWindow ( VulkanInstance* instance );
-	virtual ~VulkanWindow();
-
-	virtual RendResult root_section ( WindowSection* section );
-	virtual WindowSection* root_section ( );
-
+	VWindow ( VInstance* instance );
+	virtual ~VWindow();
+	
 	virtual Image* backed_image ();
 
 	virtual RendResult update();

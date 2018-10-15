@@ -1,9 +1,9 @@
-#include "VulkanInstance.h"
-#include "VulkanWindow.h"
-#include "VulkanTransferOperator.h"
+#include "VInstance.h"
+#include "VWindow.h"
+#include "VTransferOperator.h"
 #include <fstream>
-#include "VulkanContext.h"
-#include "VulkanModel.h"
+#include "VContext.h"
+#include "VModel.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -69,7 +69,7 @@ void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties
 		}
 	}
 }
-bool VulkanExtLayerStruct::activateLayer ( const char* name ) {
+bool VExtLayerStruct::activateLayer ( const char* name ) {
 	bool found = false;
 	for ( vk::LayerProperties& layer : availableLayers ) {
 		if ( !strcmp ( layer.layerName, name ) ) {
@@ -87,7 +87,7 @@ bool VulkanExtLayerStruct::activateLayer ( const char* name ) {
 	neededLayers.push_back ( name );
 	return true;
 }
-bool VulkanExtLayerStruct::activateExtension ( const char* name ) {
+bool VExtLayerStruct::activateExtension ( const char* name ) {
 	bool found = false;
 	for ( vk::ExtensionProperties& ext : availableExtensions ) {
 		if ( !strcmp ( ext.extensionName, name ) ) {
@@ -110,14 +110,14 @@ bool VulkanExtLayerStruct::activateExtension ( const char* name ) {
 Instance* create_instance ( const char* name ) {
 	if ( strcmp ( name, "Vulkan" ) == 0 ) {
 		glfwInit();
-		VulkanInstance* instance = new VulkanInstance();
+		VInstance* instance = new VInstance();
 		return instance;
 	}
 	return nullptr;
 }
 
 void destroy_instance ( Instance* instance ) {
-	if ( VulkanInstance* vulkan_instance = dynamic_cast<VulkanInstance*> ( instance ) ) {
+	if ( VInstance* vulkan_instance = dynamic_cast<VInstance*> ( instance ) ) {
 		delete vulkan_instance;
 		glfwTerminate();
 	} else {
@@ -128,7 +128,7 @@ VideoMode glfw_to_videomode ( GLFWvidmode glfw_videomode ) {
 	return {Extent2D<s32> ( glfw_videomode.width, glfw_videomode.height ), ( u32 ) glfw_videomode.refreshRate};
 }
 
-VulkanMonitor::VulkanMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
+VMonitor::VMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
 	this->name = glfwGetMonitorName ( monitor );
 
 	int xpos, ypos;
@@ -149,10 +149,10 @@ VulkanMonitor::VulkanMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
 	}
 	printf ( "Monitor %s: %dx%d %dx%d\n", this->name, this->offset.x, this->offset.y, this->extend.x, this->extend.y );
 }
-VulkanMonitor::~VulkanMonitor() {
+VMonitor::~VMonitor() {
 
 }
-VideoMode VulkanMonitor::current_mode() {
+VideoMode VMonitor::current_mode() {
 	return glfw_to_videomode ( *glfwGetVideoMode ( this->monitor ) );
 }
 VkBool32 VKAPI_PTR debugLogger (
@@ -166,15 +166,15 @@ VkBool32 VKAPI_PTR debugLogger (
 PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
 
-VulkanInstance::VulkanInstance() {
+VInstance::VInstance() {
 	int count;
 	GLFWmonitor** glfw_monitors = glfwGetMonitors ( &count );
 
 	monitors.resize(count);
 	for ( int i = 0; i < count; ++i ) {
-		VulkanMonitor* vulkanmonitor = new VulkanMonitor ( glfw_monitors[i] );
-		monitor_map.insert ( std::make_pair ( glfw_monitors[i], vulkanmonitor ) );
-		monitors[i] = vulkanmonitor;
+		VMonitor* vmonitor = new VMonitor ( glfw_monitors[i] );
+		monitor_map.insert ( std::make_pair ( glfw_monitors[i], vmonitor ) );
+		monitors[i] = vmonitor;
 	}
 	if ( glfwVulkanSupported() ) {
 		printf ( "Vulkan supported\n" );
@@ -248,7 +248,7 @@ VulkanInstance::VulkanInstance() {
 	V_CHECKCALL ( m_instance.enumeratePhysicalDevices ( &devicecount, physDevices ), printf ( "Get physical-devicec Failed\n" ) );
 
 	for ( size_t i = 0; i < devicecount; i++ ) {
-		VulkanDevice* vulkan_device = new VulkanDevice();
+		VDevice* vulkan_device = new VDevice();
 		devices[i] = vulkan_device;
 
 		vulkan_device->physical_device = physDevices[i];
@@ -278,7 +278,7 @@ VulkanInstance::VulkanInstance() {
 		}
 		for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
 			printf ( "Heap %d\n", i );
-			printf ( "\tSize %I64u\n", memProperties.memoryHeaps[i].size );
+			printf ( "\tSize %" PRIu64 "\n", memProperties.memoryHeaps[i].size );
 			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal )
 				printf ( "\tDevice Local\n" );
 		}
@@ -322,9 +322,9 @@ VulkanInstance::VulkanInstance() {
 	initialized = true;
 }
 
-VulkanInstance::~VulkanInstance() {
+VInstance::~VInstance() {
 
-	for ( VulkanDeferredCall& def_call : deferred_calls ) {
+	for ( VDeferredCall& def_call : deferred_calls ) {
 		def_call.call ( def_call.frame_index );
 	}
 	for ( auto entry : monitor_map ) {
@@ -349,13 +349,13 @@ VulkanInstance::~VulkanInstance() {
 	m_device.destroy ( nullptr );
 
 }
-bool VulkanInstance::initialize ( Device* device ) {
+bool VInstance::initialize ( Device* device ) {
 	if ( !device )
 		device = devices[0];
-	v_device = dynamic_cast<VulkanDevice*> ( device );
-	if ( !initialized && !vulkan_device )
+	v_device = dynamic_cast<VDevice*> ( device );
+	if ( !initialized && !device )
 		return false;
-	VulkanExtLayerStruct extLayers;
+	VExtLayerStruct extLayers;
 	extLayers.availableExtensions = v_device->availableExtensions;
 	extLayers.availableLayers = v_device->availableLayers;
 	printf ( "Device Extensions available:\n" );
@@ -385,7 +385,7 @@ bool VulkanInstance::initialize ( Device* device ) {
 	for ( size_t j = 0; j < v_device->queueFamilyProps.size(); ++j ) {
 		u32 rating = 0;
 
-		if ( vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags ) == vk::QueueFlagBits::eTransfer && v_device->queueFamilyProps[j].queueCount < 1 ) {
+		if ( vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags ) == vk::QueueFlagBits::eTransfer && v_device->queueFamilyProps[j].queueCount >= 1 ) {
 			queues.dedicated_transfer_queue = true;
 			queues.transfer_queue_id = j;
 		}
@@ -417,8 +417,10 @@ bool VulkanInstance::initialize ( Device* device ) {
 			highestRate = rating;
 	}
 	size_t queueFamilyCount = 0;
-	if ( queues.dedicated_transfer_queue )
+	if ( queues.dedicated_transfer_queue ) {
+		printf("Dedicated Transfer Queue\n");
 		queueFamilyCount++;
+	}
 
 	if ( pgcId != ( u32 ) - 1 ) {
 		pId = pgcId;
@@ -435,51 +437,38 @@ bool VulkanInstance::initialize ( Device* device ) {
 
 	vk::DeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount];
 	size_t currentIndex = 0;
-	size_t pgcCount = 0;
-	bool separateTransferQueue = false;
 	if ( queues.dedicated_transfer_queue ) {
 		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), queues.transfer_queue_id, 1, &priority );
 		v_device->queueFamilyProps[queues.transfer_queue_id].queueCount--;
 		currentIndex++;
-		separateTransferQueue = true;
 	}
 	if ( pgcId != ( u32 ) - 1 ) {
-		pgcCount = v_device->queueFamilyProps[pgcId].queueCount;
-		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
-		assert ( pgcCount );
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgcId, pgcCount, &priority );
-		v_device->queueFamilyProps[pgcId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgcId, 1, &priority );
+		v_device->queueFamilyProps[pgcId].queueCount -= 1;
 		currentIndex++;
 	} else if ( pgId != ( u32 ) - 1 ) {
-		pgcCount = std::min<u32> ( v_device->queueFamilyProps[pgId].queueCount, v_device->queueFamilyProps[cId].queueCount );
-		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
-		assert ( pgcCount );
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgId, pgcCount, &priority );
-		v_device->queueFamilyProps[pgId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pgId, 1, &priority );
+		v_device->queueFamilyProps[pgId].queueCount -= 1;
 		currentIndex++;
 
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority );
-		v_device->queueFamilyProps[cId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, 1, &priority );
+		v_device->queueFamilyProps[cId].queueCount -= 1;
 		currentIndex++;
 	} else {
-		pgcCount = std::min<u32> ( v_device->queueFamilyProps[pId].queueCount,
-		                           std::min<u32> ( v_device->queueFamilyProps[gId].queueCount, v_device->queueFamilyProps[cId].queueCount ) );
-		pgcCount = std::min<u32> ( V_MAX_PGCQUEUE_COUNT, pgcCount );
-		assert ( pgcCount );
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pId, pgcCount, &priority );
-		v_device->queueFamilyProps[pId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), pId, 1, &priority );
+		v_device->queueFamilyProps[pId].queueCount -= 1;
 		currentIndex++;
 
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), gId, pgcCount, &priority );
-		v_device->queueFamilyProps[gId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), gId, 1, &priority );
+		v_device->queueFamilyProps[gId].queueCount -= 1;
 		currentIndex++;
 
-		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, pgcCount, &priority );
-		v_device->queueFamilyProps[cId].queueCount -= pgcCount;
+		deviceQueueCreateInfos[currentIndex] = vk::DeviceQueueCreateInfo ( vk::DeviceQueueCreateFlags(), cId, 1, &priority );
+		v_device->queueFamilyProps[cId].queueCount -= 1;
 		currentIndex++;
 	}
 
-	printf ( "Create %d Present-Graphics-Compute Queues\n", pgcCount );
+	printf ( "Create %d Present-Graphics-Compute Queues\n", 1 );
 
 	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -496,52 +485,48 @@ bool VulkanInstance::initialize ( Device* device ) {
 	if ( queues.dedicated_transfer_queue ) {
 		m_device.getQueue ( queues.transfer_queue_id, 0, &queues.transfer_queue );
 	}
-	for ( size_t i = 0; i < pgcCount; ++i ) {
-		PGCQueueWrapper queue_wrapper;
-		if ( pgcId != ( u32 ) - 1 ) {
-			m_device.getQueue ( pgcId, i, &queue_wrapper.graphics_queue );
-			queue_wrapper.present_queue = queue_wrapper.graphics_queue;
-			queue_wrapper.compute_queue = queue_wrapper.graphics_queue;
-		} else if ( pgId != ( u32 ) - 1 ) {
-			m_device.getQueue ( pgcId, i, &queue_wrapper.graphics_queue );
-			m_device.getQueue ( pgcId, i, &queue_wrapper.compute_queue );
-			queue_wrapper.present_queue = queue_wrapper.graphics_queue;
-		} else {
-			m_device.getQueue ( gId, i, &queue_wrapper.graphics_queue );
-			m_device.getQueue ( pId, i, &queue_wrapper.present_queue );
-			m_device.getQueue ( cId, i, &queue_wrapper.compute_queue );
-		}
-		queue_wrapper.graphics_queue_id = gId;
-		queue_wrapper.present_queue_id = pId;
-		queue_wrapper.compute_queue_id = cId;
-		queue_wrapper.combined_graphics_present_queue = ( pId == gId );
-		queue_wrapper.combined_graphics_compute_queue = ( gId == cId );
-		queues.pgc.push_back ( queue_wrapper );
+	if ( pgcId != ( u32 ) - 1 ) {
+		m_device.getQueue ( pgcId, 0, &queues.graphics_queue );
+		queues.present_queue = queues.graphics_queue;
+		queues.compute_queue = queues.graphics_queue;
+	} else if ( pgId != ( u32 ) - 1 ) {
+		m_device.getQueue ( pgcId, 0, &queues.graphics_queue );
+		m_device.getQueue ( pgcId, 0, &queues.compute_queue );
+		queues.present_queue = queues.graphics_queue;
+	} else {
+		m_device.getQueue ( gId, 0, &queues.graphics_queue );
+		m_device.getQueue ( pId, 0, &queues.present_queue );
+		m_device.getQueue ( cId, 0, &queues.compute_queue );
 	}
+	queues.graphics_queue_id = gId;
+	queues.present_queue_id = pId;
+	queues.compute_queue_id = cId;
+	queues.combined_graphics_present_queue = ( pId == gId );
+	queues.combined_graphics_compute_queue = ( gId == cId );
 
-	transfer_control = new VulkanTransferController ( this );
+	transfer_control = new VTransferController ( this );
 	return true;
 }
 
-void VulkanInstance::process_events() {
+void VInstance::process_events() {
 	glfwPollEvents();
 }
-void VulkanInstance::render_window(Window* window){
-	v_render_window(dynamic_cast<VulkanWindow*>(window));
+void VInstance::render_window(Window* window){
+	v_render_window(dynamic_cast<VWindow*>(window));
 }
-void VulkanInstance::v_render_window(VulkanWindow* window) {
+void VInstance::v_render_window(VWindow* window) {
 	if(!window)
 		return;
 	window->v_update();
 	frame_index++;
 }
-void VulkanInstance::render_windows(){
-	for ( VulkanWindow* window : windows ) {
+void VInstance::render_windows(){
+	for ( VWindow* window : windows ) {
 		window->v_update();
 	}
 	frame_index++;
 }
-bool VulkanInstance::is_window_open() {
+bool VInstance::is_window_open() {
 	for ( Window* window : windows ) {
 		if ( window->visible()->value )
 			return true;
@@ -549,19 +534,19 @@ bool VulkanInstance::is_window_open() {
 	return false;
 }
 
-VulkanMonitor* VulkanInstance::get_primary_monitor_vulkan() {
+VMonitor* VInstance::get_primary_monitor_vulkan() {
 	return monitor_map.find ( glfwGetPrimaryMonitor() )->second;
 }
-Monitor* VulkanInstance::get_primary_monitor() {
+Monitor* VInstance::get_primary_monitor() {
 	return get_primary_monitor_vulkan();
 }
-Window* VulkanInstance::create_window() {
-	VulkanWindow* window = new VulkanWindow ( this );
+Window* VInstance::create_window() {
+	VWindow* window = new VWindow ( this );
 	windows.insert ( window );
 	return window;
 }
-bool VulkanInstance::destroy_window ( Window* window ) {
-	if ( VulkanWindow* vulk_window = dynamic_cast<VulkanWindow*> ( window ) ) {
+bool VInstance::destroy_window ( Window* window ) {
+	if ( VWindow* vulk_window = dynamic_cast<VWindow*> ( window ) ) {
 		if ( windows.erase ( vulk_window ) > 0 ) {
 			delete vulk_window;
 			return true;
@@ -590,75 +575,78 @@ static std::vector<char> readFile ( const char* filename ) {
 
 	return buffer;
 }
-const DataGroupDef* VulkanInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) {
+const DataGroupDef* VInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount) {
 	return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
 }
-const DataGroupDef* VulkanInstance::datagroupdef ( RId id ) {
+const DataGroupDef* VInstance::datagroupdef ( RId id ) {
 	return datagroup_store[id];
 }
 
-const ContextBase* VulkanInstance::register_contextbase ( RId datagroup_id ) {
+const ContextBase* VInstance::register_contextbase ( RId datagroup_id ) {
 	return register_contextbase( datagroup_store[datagroup_id] );
 }
-const ContextBase* VulkanInstance::register_contextbase ( const DataGroupDef* datagroup ) {
-	return contextbase_store.insert ( new VulkanContextBase ( this, datagroup ) );
+const ContextBase* VInstance::register_contextbase ( const DataGroupDef* datagroup ) {
+	return contextbase_store.insert ( new VContextBase ( this, datagroup ) );
 }
-const ContextBase* VulkanInstance::contextbase ( RId id ) {
+const ContextBase* VInstance::contextbase ( RId id ) {
 	return contextbase_store.get ( id );
 }
-const ModelBase* VulkanInstance::register_modelbase ( RId vertexdatagroup ) {
+const ModelBase* VInstance::register_modelbase ( RId vertexdatagroup ) {
 	return register_modelbase ( datagroup_store[vertexdatagroup] );
 }
-const ModelBase* VulkanInstance::register_modelbase ( const DataGroupDef* vertexdatagroup ) {
-	return modelbase_store.insert ( new VulkanModelBase ( vertexdatagroup ) );
+const ModelBase* VInstance::register_modelbase ( const DataGroupDef* vertexdatagroup ) {
+	return modelbase_store.insert ( new VModelBase ( vertexdatagroup ) );
 }
-const ModelBase* VulkanInstance::modelbase ( RId id ) {
+const ModelBase* VInstance::modelbase ( RId id ) {
 	return modelbase_store[id];
 }
 
-const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
+const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
 	return register_modelinstancebase ( model, datagroup_store[datagroup_id] );
 }
-const ModelInstanceBase* VulkanInstance::register_modelinstancebase ( Model model, const DataGroupDef* datagroup ) {
-	return modelinstancebase_store.insert ( new VulkanModelInstanceBase ( this, datagroup, model ) );
+const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, const DataGroupDef* datagroup ) {
+	return modelinstancebase_store.insert ( new VModelInstanceBase ( this, datagroup, model ) );
 }
-const ModelInstanceBase* VulkanInstance::modelinstancebase ( RId handle ) {
+const ModelInstanceBase* VInstance::modelinstancebase ( RId handle ) {
 	return modelinstancebase_store[handle];
 }
-const RendererBase* VulkanInstance::register_rendererbase (
+const Renderer* VInstance::create_renderer (
 	    const ModelInstanceBase* model_instance_base,
-	    Array<const ContextBase*> context_bases,
+	    Array<const ContextBase*> context_bases/*,
 		StringReference vertex_shader,
 		StringReference fragment_shader,
 		StringReference geometry_shader,
 		StringReference tesselation_control_shader,
-		StringReference tesselation_evaluation_shader
+		StringReference tesselation_evaluation_shader*/
 		) {
-	return vulkanrendererbase_store.insert(new VulkanRendererBase(model_instance_base, context_bases));
+	return vulkanrenderer_store.insert(new VRenderer(this, model_instance_base, context_bases));
 }
-const RendererBase* VulkanInstance::rendererbase ( RId handle ) {
-	return vulkanrendererbase_store[handle];
-}
-
-const RenderStageBase* VulkanInstance::register_renderstagebase (Array<const RendererBase*> rendererbases) {
-	return vulkanrenderstagebase_store.insert(new VulkanRenderStageBase());
-}
-const RenderStageBase* VulkanInstance::renderstagebase ( RId handle ) {
-	return vulkanrenderstagebase_store[handle];
+const Renderer* VInstance::renderer ( RId handle ) {
+	return vulkanrenderer_store[handle];
 }
 
-RenderStage* VulkanInstance::create_renderstage (const RenderStageBase* renderer_base) {
+const RenderStage* VInstance::create_renderstage (Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs) {
+	return vulkanrenderstage_store.insert(new VRenderStage());
+}
+const RenderStage* VInstance::renderstage ( RId handle ) {
+	return vulkanrenderstage_store[handle];
+}
+
+
+InstanceGroup* VInstance::create_instancegroup() {
+	return new VInstanceGroup(this);
+}
+ContextGroup* VInstance::create_contextgroup() {
+	return new VContextGroup(this);
+}
+RenderBundle* VInstance::create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets) {
 	return nullptr;
 }
-
-InstanceGroup* VulkanInstance::create_instancegroup() {
-	return new VulkanInstanceGroup(this);
-}
-ContextGroup* VulkanInstance::create_contextgroup() {
-	return new VulkanContextGroup(this);
+void VInstance::render_bundles(Array<RenderBundle*> bundles) {
+	
 }
 
-vk::ShaderModule VulkanInstance::load_shader_from_file ( const char* filename ) {
+vk::ShaderModule VInstance::load_shader_from_file ( const char* filename ) {
 
 	std::vector<char> shaderCode = readFile ( filename );
 
@@ -669,14 +657,14 @@ vk::ShaderModule VulkanInstance::load_shader_from_file ( const char* filename ) 
 	return shadermodule;
 }
 
-const Model VulkanInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
 }
-const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
-	VulkanModelBase* v_modelbase = modelbase_store[modelbase->id];
+const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+	VModelBase* v_modelbase = modelbase_store[modelbase->id];
 	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 
-	VulkanModel* newmodel = new VulkanModel ( this, v_modelbase );
+	VModel* newmodel = new VModel ( this, v_modelbase );
 	newmodel->index_is_2byte = true;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
@@ -697,15 +685,15 @@ const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, voi
 	transfer_control->check_free();
 	return Model(model_store.insert ( newmodel )->handle(), modelbase);
 }
-const Model VulkanInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
 	return load_generic_model(modelbase_store[modelbase], vertices, vertexcount, indices, indexcount);
 }
-const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
-	VulkanModelBase* v_modelbase = modelbase_store[modelbase->id];
+const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+	VModelBase* v_modelbase = modelbase_store[modelbase->id];
 	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 	bool fitsin2bytes = vertexcount < 0x10000;
 
-	VulkanModel* newmodel = new VulkanModel ( this, v_modelbase );
+	VModel* newmodel = new VModel ( this, v_modelbase );
 	newmodel->modelbase = v_modelbase;
 	newmodel->index_is_2byte = false;
 	newmodel->vertexoffset = 0;
@@ -730,7 +718,7 @@ const Model VulkanInstance::load_generic_model ( const ModelBase* modelbase, voi
 
 
 
-GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+GPUMemory VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
 	GPUMemory memory;
 
 	memory.heap_index = find_memory_type ( mem_req.memoryTypeBits, needed | recommended );
@@ -741,27 +729,27 @@ GPUMemory VulkanInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, 
 	}
 	if ( memory.heap_index != std::numeric_limits<u32>::max() ) {
 		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory.heap_index );
-		printf ( "Allocate %d Bytes\n", mem_req.size );
+		printf ( "Allocate %" PRIu64 " Bytes\n", mem_req.size );
 
 		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory.memory ), printf ( "Failed To Create Image Memory\n" ) );
 
 		memory.size = mem_req.size;
 	} else {
-		printf ( "Cannot Allocate %d bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x\n",
+		printf ( "Cannot Allocate %" PRIu64 " bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x\n",
 		         mem_req.size, mem_req.memoryTypeBits,
 		         static_cast<VkMemoryPropertyFlags> ( needed ), static_cast<VkMemoryPropertyFlags> ( recommended ) );
 	}
 	return memory;
 }
-RendResult VulkanInstance::free_gpu_memory ( GPUMemory memory ) {
+RendResult VInstance::free_gpu_memory ( GPUMemory memory ) {
 	if ( memory.memory ) {
-		printf ( "Freeing %d Bytes of Memory\n", memory.size );
+		printf ( "Freeing %" PRIu64 " Bytes of Memory\n", memory.size );
 		vulkan_device ( this ).freeMemory ( memory.memory, nullptr );
 		memory.memory = vk::DeviceMemory();
 	}
 	return RendResult::eSuccess;
 }
-vk::ImageView VulkanInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
+vk::ImageView VInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -777,7 +765,7 @@ vk::ImageView VulkanInstance::createImageView2D ( vk::Image image, u32 mipBase, 
 
 	return imageView;
 }
-vk::ImageView VulkanInstance::createImageView2DArray ( vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
+vk::ImageView VInstance::createImageView2DArray ( vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
 	vk::ImageViewCreateInfo imageViewCreateInfo (
 	    vk::ImageViewCreateFlags(),
@@ -793,32 +781,32 @@ vk::ImageView VulkanInstance::createImageView2DArray ( vk::Image image, u32 mipB
 
 	return imageView;
 }
-void VulkanInstance::destroyImageView ( vk::ImageView imageview ) {
+void VInstance::destroyImageView ( vk::ImageView imageview ) {
 	m_device.destroyImageView ( imageview );
 }
 
-void VulkanInstance::destroyCommandPool ( vk::CommandPool commandPool ) {
+void VInstance::destroyCommandPool ( vk::CommandPool commandPool ) {
 	vkDestroyCommandPool ( m_device, commandPool, nullptr );
 }
-vk::CommandBuffer VulkanInstance::createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel ) {
+vk::CommandBuffer VInstance::createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel ) {
 	vk::CommandBufferAllocateInfo allocateInfo ( commandPool, bufferLevel, 1 );
 
 	vk::CommandBuffer commandBuffer;
 	m_device.allocateCommandBuffers ( &allocateInfo, &commandBuffer );
 	return commandBuffer;
 }
-void VulkanInstance::deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {
+void VInstance::deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {
 	m_device.freeCommandBuffers ( commandPool, 1, &commandBuffer );
 }
 
-void VulkanInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
+void VInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
 	void* data;
 	vkMapMemory ( m_device, dstMemory, offset, size, 0, &data );
 	memcpy ( data, srcData, size );
 	vkUnmapMemory ( m_device, dstMemory );
 }
 
-u32 VulkanInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
+u32 VInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
 	v_device->physical_device.getMemoryProperties ( &memProperties );
 
@@ -835,7 +823,7 @@ u32 VulkanInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags p
 	return -1;
 }
 
-vk::Format VulkanInstance::find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
+vk::Format VInstance::find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
 	for ( vk::Format format : candidates ) {
 		vk::FormatProperties props;
 		v_device->physical_device.getFormatProperties ( format, &props );
@@ -849,7 +837,7 @@ vk::Format VulkanInstance::find_supported_format ( const std::vector<vk::Format>
 	return vk::Format::eUndefined;
 }
 
-vk::Format VulkanInstance::find_depth_format() {
+vk::Format VInstance::find_depth_format() {
 	return find_supported_format (
 	{vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
 	vk::ImageTiling::eOptimal,

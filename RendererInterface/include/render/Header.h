@@ -83,10 +83,16 @@ struct Array {
 	u64 size() const {
 		return count;
 	}
-	iterator begin() const {
+	iterator begin() {
 		return data;
 	}
-	iterator end() const {
+	iterator end() {
+		return data + count;
+	}
+	const iterator begin() const {
+		return data;
+	}
+	const iterator end() const {
 		return data + count;
 	}
 };
@@ -156,7 +162,7 @@ struct IdHandle {
 			u32 id = 0;
 			u32 uid = 0;
 		};
-		uint64_t hash;
+		u64 hash;
 	};
 	IdHandle handle(){
 		return *this;

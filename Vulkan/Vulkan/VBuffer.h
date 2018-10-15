@@ -1,11 +1,11 @@
 #pragma once
 
-#include "VulkanHeader.h"
+#include "VHeader.h"
 
-struct VulkanInstance;
+struct VInstance;
 
-struct VulkanBuffer {
-	VulkanInstance* v_instance;
+struct VBuffer {
+	VInstance* v_instance;
 	GPUMemory memory;
 	vk::Buffer buffer;
 	vk::DeviceSize size;
@@ -15,9 +15,9 @@ struct VulkanBuffer {
 	
 	void* mapped_ptr = nullptr;
 
-	VulkanBuffer ( VulkanInstance* instance );
-	VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
-	~VulkanBuffer();
+	VBuffer ( VInstance* instance );
+	VBuffer ( VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
+	~VBuffer();
 	
 	RendResult init(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 	RendResult init();
@@ -25,9 +25,9 @@ struct VulkanBuffer {
 	RendResult map_mem();
 	RendResult unmap_mem();
 	
-	RendResult transfer_to(VulkanBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer);
+	RendResult transfer_to(VBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer);
 	
-	inline RendResult transfer_to(VulkanBuffer* dst, vk::CommandBuffer commandBuffer){
+	inline RendResult transfer_to(VBuffer* dst, vk::CommandBuffer commandBuffer){
 		return transfer_to(dst, 0, std::min(memory.size, dst->memory.size), commandBuffer);
 	}
 

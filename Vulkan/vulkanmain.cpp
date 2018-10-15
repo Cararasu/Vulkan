@@ -19,47 +19,7 @@
 
 //Job system: Fork -> Meet -> Join ...
 
-//Stages
-//	GameTick
-//		GameLogic
-//	FrameTick
-//	GraphicsTick
-//	UpdatePhase
-
-//Stages
-//	WorkStage
-//		GraphicsTick(working on obj)
-//		LogicTick(working on ProxyObjects)
-//			FrameTick + opt. GameTick
-//	SubmitStage
-//		UpdateStage(proxyObj -> obj)
-//		SubmitTick(data -> gpu)
-
 //GameLogic -> Camera Query -> Graphics Queue -> other Queries -> update GPU Data
-
-#include <stdint.h>
-
-struct DefDrawData {
-	glm::dvec3 pos, rot, scale;
-};
-struct CullingStrategy {
-//CameraFlagList
-//QuadTree(Box(Index of Obj))
-
-	//virtual void update(ObjectStore<DrawObject>* objectStore) = 0;
-
-	virtual void addToStrat ( DefDrawData& obj ) = 0;
-	virtual void removeFromStrat ( DefDrawData& obj ) = 0;
-};
-struct RenderContext {
-	//ObjectStore<DrawObject, u32> objStore;
-	CullingStrategy* strategy;
-
-	template<typename OBJDATA>
-	u64 createObject();
-	template<typename OBJDATA>
-	void removeObject ( u64 id );
-};
 
 /*
 u32 loadDataFile ( std::string file, OpaqueObjectDispatcher* dispatcher ) {
@@ -156,23 +116,13 @@ void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrap
 	                         vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue );
 
 	stbi_image_free ( pixels );
-}*/
+clTabCtrl}*/
 
 #include <render/Instance.h>
 #include <chrono>
 #include <thread>
 
 int main ( int argc, char **argv ) {
-
-	StringBuilder builder;
-	
-	for(int i = 0; i < 1000; i++){
-		u64 ii = i;
-		builder.append(ii).append('-');
-	}
-	String s = builder.build();
-	printf("%s\n", s.cstr);
-	return 0;
 	
 	Instance* newinstance = create_instance ( "Vulkan" );
 	
@@ -221,30 +171,24 @@ int main ( int argc, char **argv ) {
 	//create instance from model
 	const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
 
-	InstanceGroup* instancegroup = newinstance->create_instancegroup();
-	ContextGroup* contextgroup = newinstance->create_contextgroup();
-
-	//const RendererBase* rendererbase = newinstance->register_rendererbase ( mod_instance, {} );
-	//const RenderStageBase* renderstagebase = newinstance->register_renderstagebase({rendererbase});
+	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
+	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
 	
-	//RenderStage* renderstage = newinstance->create_renderstage(renderstagebase);
+	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {});
+	const RenderStage* renderstage = newinstance->create_renderstage({renderer}, {}/*dependencies*/, {}/*input-def*/, {}/*output-def*/, {}/*temporary-def*/);
 	
 	
+	RenderBundle* bundle = newinstance->create_renderbundle(instancegroup, contextgroup, renderstage, {}/*images*/);
 	
-	//instancegroup->finish()
-	//contextgroup->finish()
-	//instance->render(renderstage, instancegroup, contextgroup);
-
-	//create renderer from model and a list of rendercontexts
-	//Renderer* simplerenderer = newinstance->create_renderer();
-
-	//RenderContext* simplecontext = simpleworld->add_rendercontext();
-	//create contexts from world
-	//add renderers to world
-	//simpleworld->add_renderer ( simplerenderer );
-
+	//upload data implicit?
+	//instancegroup->finish();
+	//contextgroup->finish();
+	//at the end
+	//if output is windowimage
+	newinstance->render_bundles ( {bundle} );
+	
 	//loop
-	//	update contexts of world
+	//	update contexts and instances
 	//	update instances
 	//	transfer-break
 	//	let it render
@@ -290,12 +234,7 @@ int main ( int argc, char **argv ) {
 
 		newinstance->render_windows();
 	} while ( newinstance->is_window_open() );
-	WindowSection* section = window->root_section();
-	window->root_section ( nullptr );
-
 	window->destroy();
-	if ( section )
-		delete section;
 
 	destroy_instance ( newinstance );
 	return 0;

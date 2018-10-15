@@ -29,7 +29,6 @@ struct ContextBase : public IdHandle {
 	ContextBase ( IdHandle idhandle, const DataGroupDef* datagroup ) : IdHandle ( idhandle ), datagroup ( datagroup ), uses ( 0 ) { }
 };
 struct Context : public IdHandle {
-	RId id;
 	const ContextBase* contextbase;
 
 	Context ( Context&& context ) : IdHandle ( context ), contextbase ( context.contextbase ) { }
@@ -74,6 +73,9 @@ struct ContextGroup {
 	virtual void clear() = 0;
 };
 
+struct RenderBundle {
+	
+};
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
 		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size() && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\

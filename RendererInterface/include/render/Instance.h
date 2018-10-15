@@ -54,25 +54,27 @@ struct Instance {
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
 
-	virtual const RendererBase* register_rendererbase (
+	virtual const Renderer* create_renderer (
 	    const ModelInstanceBase* model_instance_base,
-	    Array<const ContextBase*> context_bases,
+	    const Array<const ContextBase*> context_bases/*,
 		StringReference vertex_shader,
 		StringReference fragment_shader,
 		StringReference geometry_shader,
 		StringReference tesselation_control_shader,
-		StringReference tesselation_evaluation_shader
+		StringReference tesselation_evaluation_shader*/
 	) = 0;
-	virtual const RendererBase* rendererbase ( RId handle ) = 0;
+	virtual const Renderer* renderer ( RId handle ) = 0;
 
-	virtual const RenderStageBase* register_renderstagebase ( Array<const RendererBase*> rendererbases ) = 0;
-	virtual const RenderStageBase* renderstagebase ( RId handle ) = 0;
-	
-	virtual RenderStage* create_renderstage (const RenderStageBase* renderer_base) = 0;
+	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs ) = 0;
+	virtual const RenderStage* renderstage ( RId handle ) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
+	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets) = 0;
+	
+	virtual void render_bundles(Array<RenderBundle*> bundles) = 0;
+	
 };
 
 Instance* create_instance ( const char* name );

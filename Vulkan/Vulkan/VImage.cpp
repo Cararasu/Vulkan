@@ -1,8 +1,8 @@
 
-#include "VulkanImage.h"
+#include "VImage.h"
 
 
-VulkanBaseImage::VulkanBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VulkanInstance* instance,
+VBaseImage::VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VInstance* instance,
 				  vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), v_instance ( instance ), v_format ( format ),
 	tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
@@ -17,7 +17,7 @@ VulkanBaseImage::VulkanBaseImage ( vk::Format format, u32 width, u32 height, u32
 		extent = vk::Extent3D ( width, height, depth );
 	}
 }
-VulkanBaseImage::~VulkanBaseImage() { 
+VBaseImage::~VBaseImage() { 
 	
 }
 
@@ -290,8 +290,8 @@ ImageFormat transform_image_format ( vk::Format format ) {
 	}
 }
 
-VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	VulkanBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ), 
+VImageWrapper::VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ), 
 		memory(), layouts ( layers, vk::ImageLayout::eUndefined ) {
 
 	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), this->type, format, this->extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
@@ -312,11 +312,11 @@ VulkanImageWrapper::VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D 
 		imageview = instance->createImageView2DArray(image, 0, mipmap_layers, 0, layers, format, aspect);
 	}
 }
-VulkanImageWrapper::~VulkanImageWrapper() {
+VImageWrapper::~VImageWrapper() {
 	destroy();
 }
 
-void VulkanImageWrapper::destroy() {
+void VImageWrapper::destroy() {
 	if ( memory.memory ) { //if the image is managed externally
 		v_instance->destroyImageView(imageview);
 		v_instance->m_device.destroyImage ( image );
@@ -325,7 +325,7 @@ void VulkanImageWrapper::destroy() {
 		memory.memory = vk::DeviceMemory();
 	}
 }
-vk::ImageMemoryBarrier VulkanBaseImage::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
+vk::ImageMemoryBarrier VBaseImage::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 
@@ -448,7 +448,7 @@ vk::ImageMemoryBarrier VulkanBaseImage::transition_image_layout_impl ( vk::Image
 	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
 }
-void VulkanWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
+void VWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 	
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	vk::ImageMemoryBarrier barrier = transition_image_layout_impl ( per_image_data[current_index].layout, newLayout, mip_range, {0, 1}, &sourceStage, &destinationStage );
@@ -461,7 +461,7 @@ void VulkanWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Ran
 		{barrier} //imageBarriers
 	);
 }
-void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
+void VImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
 		mip_range.max = mipmap_layers;
@@ -511,10 +511,10 @@ void VulkanImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Ra
 	}
 }
 
-void VulkanWindowImage::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+void VWindowImage::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
 
 }
-void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+void VImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
 		mip_range.max = mipmap_layers;
@@ -538,8 +538,8 @@ void VulkanImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> arr
 }
 
 
-VulkanWindowImage::VulkanWindowImage ( VulkanInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format ) :
-	VulkanBaseImage ( format, extent.width, extent.height, extent.depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
+VWindowImage::VWindowImage ( VInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format ) :
+	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
 					  vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	current_index ( 0 ), per_image_data ( imagecount ) {
 	for ( size_t i = 0; i < imagecount; i++ ) {
@@ -550,13 +550,13 @@ VulkanWindowImage::VulkanWindowImage ( VulkanInstance* instance, u32 imagecount,
 	image = per_image_data[current_index].image;
 	imageview = per_image_data[current_index].imageview;
 }
-VulkanWindowImage::~VulkanWindowImage() {
+VWindowImage::~VWindowImage() {
 	for ( PerImageData& data : per_image_data ) {
 		v_instance->destroyImageView ( data.imageview );
 	}
 }
 
-void VulkanWindowImage::set_current_image ( u32 index ) {
+void VWindowImage::set_current_image ( u32 index ) {
 	current_index = index;
 	image = per_image_data[current_index].image;
 	imageview = per_image_data[current_index].imageview;

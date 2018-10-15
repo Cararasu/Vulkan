@@ -17,32 +17,30 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="VulkanTransferOperator.cpp"/>
-    <File Name="VulkanTransferOperator.h"/>
-    <File Name="VulkanModel.cpp"/>
-    <File Name="VulkanModel.h"/>
     <File Name="Quads.h"/>
-    <File Name="VulkanContext.cpp"/>
-    <File Name="VulkanContext.h"/>
-    <File Name="VulkanRenderer.cpp"/>
-    <File Name="VulkanRenderer.h"/>
-    <File Name="Logger.cpp"/>
-    <File Name="Logger.h"/>
+    <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VWindow.h"/>
+      <File Name="Vulkan/VWindow.cpp"/>
+      <File Name="Vulkan/VTransferOperator.h"/>
+      <File Name="Vulkan/VTransferOperator.cpp"/>
+      <File Name="Vulkan/VRenderer.h"/>
+      <File Name="Vulkan/VRenderer.cpp"/>
+      <File Name="Vulkan/VQuadRenderer.h"/>
+      <File Name="Vulkan/VQuadRenderer.cpp"/>
+      <File Name="Vulkan/VModel.h"/>
+      <File Name="Vulkan/VModel.cpp"/>
+      <File Name="Vulkan/VInstance.cpp"/>
+      <File Name="Vulkan/VInstance.h"/>
+      <File Name="Vulkan/VImage.cpp"/>
+      <File Name="Vulkan/VImage.h"/>
+      <File Name="Vulkan/VHeader.h"/>
+      <File Name="Vulkan/VHeader.cpp"/>
+      <File Name="Vulkan/VContext.h"/>
+      <File Name="Vulkan/VContext.cpp"/>
+      <File Name="Vulkan/VBuffer.h"/>
+      <File Name="Vulkan/VBuffer.cpp"/>
+    </VirtualDirectory>
     <File Name="TODO.txt"/>
-    <File Name="VulkanHeader.cpp"/>
-    <File Name="VulkanBuffer.cpp"/>
-    <File Name="VulkanBuffer.h"/>
-    <File Name="VulkanQuadRenderer.cpp"/>
-    <File Name="VulkanQuadRenderer.h"/>
-    <File Name="VulkanWindowSection.cpp"/>
-    <File Name="VulkanWindowSection.h"/>
-    <File Name="VulkanImage.h"/>
-    <File Name="VulkanImage.cpp"/>
-    <File Name="VulkanHeader.h"/>
-    <File Name="VulkanWindow.cpp"/>
-    <File Name="VulkanWindow.h"/>
-    <File Name="VulkanInstance.cpp"/>
-    <File Name="VulkanInstance.h"/>
     <File Name="vulkanmain.cpp"/>
     <File Name="ViewPort.h"/>
   </VirtualDirectory>

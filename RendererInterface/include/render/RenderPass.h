@@ -19,31 +19,16 @@ struct ShaderBase {
 	
 };
 
-struct RendererBase {
-	RId id;
-	const ModelInstanceBase*const model_instance_base;
-	Array<const ContextBase*> context_bases;
-	//GBuffer input
-	//	id of previous generated image
-	//Array outputdef
-	//	Transform Feedback Opengl
-	//Image outputdef
-	//	Normal Rendering
-	//shader definitions and stuff
-};
-struct RenderStageBase{
-	RId id;
-	Array<RendererBase*> renderers;
-	//Dependencies		Renderer*/index -> Renderer*/index
-	//Outputs			Renderer*/index
-};
-struct Renderer {
-	RendererBase* renderer_base;
+struct Renderer : public IdHandle {
+	const ModelInstanceBase* model_instance_base;
+	const Array<const ContextBase*> contexts;
 	//changeable stuff here like options?
+	Renderer(const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts) : model_instance_base(model_instance_base), contexts(contexts){}
 };
-struct RenderStage {
-	RenderStageBase render_stage_base;
+struct RenderStage : public IdHandle {
 	Array<Renderer*> renderers;
+	//inputs
+	//outouts
 	//Dependencies		Renderer*/index -> Renderer*/index
 	
 	//void set_output_image();

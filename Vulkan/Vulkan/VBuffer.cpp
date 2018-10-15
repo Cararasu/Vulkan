@@ -1,14 +1,14 @@
-#include "VulkanBuffer.h"
-#include "VulkanInstance.h"
+#include "VBuffer.h"
+#include "VInstance.h"
 
-VulkanBuffer::VulkanBuffer ( VulkanInstance* instance ) :
+VBuffer::VBuffer ( VInstance* instance ) :
 	v_instance ( instance ), size(0) {
 }
-VulkanBuffer::VulkanBuffer ( VulkanInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+VBuffer::VBuffer ( VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	v_instance ( instance ) {
 	init ( size, usage, needed, recommended );
 }
-RendResult VulkanBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+RendResult VBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
 	this->memory = { vk::DeviceMemory(), size };
 	this->buffer = vk::Buffer(),
 	this->size = size;
@@ -17,7 +17,7 @@ RendResult VulkanBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage,
 	this->recommended = recommended;
 	return init();
 }
-RendResult VulkanBuffer::init() {
+RendResult VBuffer::init() {
 	vk::Device device = vulkan_device ( v_instance );
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
 
@@ -33,7 +33,7 @@ RendResult VulkanBuffer::init() {
 		return RendResult::eFail;
 	return RendResult::eSuccess;
 }
-RendResult VulkanBuffer::map_mem() {
+RendResult VBuffer::map_mem() {
 	if ( !memory.memory ) {
 		return RendResult::eUninitialized;
 	}
@@ -45,14 +45,14 @@ RendResult VulkanBuffer::map_mem() {
 	vulkan_device ( v_instance ).mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
 	return mapped_ptr ? RendResult::eSuccess : RendResult::eFail;
 }
-RendResult VulkanBuffer::unmap_mem() {
+RendResult VBuffer::unmap_mem() {
 	vulkan_device ( v_instance ).unmapMemory ( memory.memory );
 	mapped_ptr = nullptr;
 }
-RendResult VulkanBuffer::transfer_to ( VulkanBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer ) {
+RendResult VBuffer::transfer_to ( VBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer ) {
 	commandBuffer.copyBuffer ( buffer, dst->buffer, {vk::BufferCopy ( offset, offset, size ) } );
 }
-void VulkanBuffer::destroy() {
+void VBuffer::destroy() {
 	if ( mapped_ptr )
 		unmap_mem();
 	if ( buffer ) {
@@ -63,6 +63,6 @@ void VulkanBuffer::destroy() {
 		v_instance->free_gpu_memory ( memory );
 	}
 }
-VulkanBuffer::~VulkanBuffer() {
+VBuffer::~VBuffer() {
 	destroy();
 }

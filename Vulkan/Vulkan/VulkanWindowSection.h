@@ -11,11 +11,6 @@ struct ImageRenderTarget {
 	vk::ImageView imageview;
 };
 
-struct VulkanRenderTarget : public RenderTarget {
-	Array<VulkanBaseImage*> images;
-	VulkanBaseImage* depth_image;
-	u32 target_count;
-};
 
 struct VulkanQuadRenderer;
 

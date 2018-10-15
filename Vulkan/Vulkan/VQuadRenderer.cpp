@@ -1,16 +1,15 @@
-#include "VulkanQuadRenderer.h"
-#include "VulkanWindowSection.h"
-#include "VulkanWindow.h"
+#include "VQuadRenderer.h"
+#include "VWindow.h"
 #include "Quads.h"
 
 
-VulkanQuadRenderer::VulkanQuadRenderer ( VulkanInstance* instance ) : VulkanRenderer ( instance ) {
+VQuadRenderer::VQuadRenderer ( VInstance* instance ) : VRenderer ( instance, nullptr, {} ) {
 
 }
-VulkanQuadRenderer::~VulkanQuadRenderer() {
+VQuadRenderer::~VQuadRenderer() {
 	destroy();
 }
-void VulkanQuadRenderer::destroy ( ) {
+void VQuadRenderer::destroy ( ) {
 	if ( pipeline ) {
 		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
 		pipeline = vk::Pipeline();
@@ -53,7 +52,7 @@ void VulkanQuadRenderer::destroy ( ) {
 		dsl = vk::DescriptorSetLayout();
 	}
 }
-void VulkanQuadRenderer::destroy_framebuffers() {
+void VQuadRenderer::destroy_framebuffers() {
 	for ( auto& fb : per_target_data ) {
 		if ( fb.framebuffer ) {
 			vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
@@ -62,7 +61,7 @@ void VulkanQuadRenderer::destroy_framebuffers() {
 	}
 }
 
-RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper ) {
+RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget* target_wrapper ) {
 	this->viewport = viewport;
 	this->render_target = target_wrapper;
 	//TODO move most of the things here to the resourcemanager
@@ -256,17 +255,17 @@ RendResult VulkanQuadRenderer::update_extend ( Viewport<f32> viewport, VulkanRen
 	printf ( "Update Quad-Renderer\n" );
 }
 
-void VulkanQuadRenderer::init() {
+void VQuadRenderer::init() {
 
 	const static u32 vertexbuffer_size = sizeof ( QuadVertex ) * 6 + sizeof ( QuadInstance ) * 100;
 	if ( !vertex_buffer ) {
-		vertex_buffer = new VulkanBuffer (
+		vertex_buffer = new VBuffer (
 		    v_instance, vertexbuffer_size,
 		    vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 	}
 	if ( !staging_vertex_buffer ) {
-		staging_vertex_buffer = new VulkanBuffer (
+		staging_vertex_buffer = new VBuffer (
 		    v_instance, vertexbuffer_size,
 		    vk::BufferUsageFlagBits::eTransferSrc,
 		    vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
@@ -292,7 +291,7 @@ void VulkanQuadRenderer::init() {
 		staging_vertex_buffer->unmap_mem();
 	}
 	if ( !g_commandpool ) {
-		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->vulkan_pgc_queue ( 0 )->graphics_queue_id );
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
 		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &g_commandpool );
 	}
 	if ( !t_commandpool && v_instance->queues.dedicated_transfer_queue ) {
@@ -300,7 +299,7 @@ void VulkanQuadRenderer::init() {
 		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &t_commandpool );
 	}
 }
-RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
+RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
 
 	init();
 	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
@@ -332,7 +331,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		{}/*memoryBarrier*/, {
 			vk::BufferMemoryBarrier (
 				vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
-				v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+				v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
 				staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
 			)
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
@@ -345,7 +344,7 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 		{}/*memoryBarrier*/, {
 			vk::BufferMemoryBarrier (
 				vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-				v_instance->queues.pgc[0].graphics_queue_id, v_instance->queues.pgc[0].graphics_queue_id,
+				v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
 				vertex_buffer->buffer, 0, vertex_buffer->size
 			)
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
@@ -392,11 +391,11 @@ RendResult VulkanQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32
 	*final_sem_index = wait_sem_index;
 	return RendResult::eSuccess;
 }
-void VulkanQuadRenderer::inherit ( VulkanRenderer* old_renderer ) {
-	v_inherit(dynamic_cast<VulkanQuadRenderer*>(old_renderer));
+void VQuadRenderer::inherit ( VRenderer* old_renderer ) {
+	v_inherit(dynamic_cast<VQuadRenderer*>(old_renderer));
 }
 
-void VulkanQuadRenderer::v_inherit ( VulkanQuadRenderer* old_quad_renderer ) {
+void VQuadRenderer::v_inherit ( VQuadRenderer* old_quad_renderer ) {
 
 	pipeline = vk::Pipeline();
 	g_commandpool = vk::CommandPool();

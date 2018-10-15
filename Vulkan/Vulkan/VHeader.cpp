@@ -1,8 +1,11 @@
 
-#include "VulkanHeader.h"
-#include "VulkanInstance.h"
+#include "VHeader.h"
+#include "VInstance.h"
 
 
+std::string vulkan_str = "vulkan";
+
+const Logger v_logger ( vulkan_str );
 
 void printError(VkResult res){
 	switch(res){

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "VulkanInstance.h"
+#include "VInstance.h"
 #include "render/Resources.h"
 
 //maybe...
 extern ImageFormat format_to_imagetype_map[185];
 
-struct VulkanInstance;
+struct VInstance;
 
 vk::Format transform_image_format ( ImageFormat format );
 ImageFormat transform_image_format ( vk::Format format );
 
-struct VulkanBaseImage : public Image {
-	VulkanInstance* v_instance;
+struct VBaseImage : public Image {
+	VInstance* v_instance;
 	vk::Format v_format;
 	vk::Extent3D extent;
 	vk::Image image;
@@ -22,9 +22,9 @@ struct VulkanBaseImage : public Image {
 	vk::ImageUsageFlags usage;
 	vk::ImageAspectFlags aspect;
 
-	VulkanBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VulkanInstance* instance,
+	VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VInstance* instance,
 	                  vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect );
-	virtual ~VulkanBaseImage();
+	virtual ~VBaseImage();
 	
 	vk::ImageMemoryBarrier transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );
 
@@ -47,12 +47,12 @@ struct PerImageData {
 	vk::Image image;
 	vk::ImageView imageview;
 };
-struct VulkanWindowImage : public VulkanBaseImage {
+struct VWindowImage : public VBaseImage {
 	u32 current_index;
 	StaticArray<PerImageData> per_image_data;
 
-	VulkanWindowImage ( VulkanInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format );
-	virtual ~VulkanWindowImage();
+	VWindowImage ( VInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format );
+	virtual ~VWindowImage();
 
 	void set_current_image ( u32 index );
 	
@@ -60,12 +60,12 @@ struct VulkanWindowImage : public VulkanBaseImage {
 	virtual void generate_mipmaps ( Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
 };
 
-struct VulkanImageWrapper : public VulkanBaseImage {
+struct VImageWrapper : public VBaseImage {
 	GPUMemory memory;
 	StaticArray<vk::ImageLayout> layouts;
 
-	VulkanImageWrapper ( VulkanInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
-	virtual ~VulkanImageWrapper();
+	VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
+	virtual ~VImageWrapper();
 
 	void destroy();
 

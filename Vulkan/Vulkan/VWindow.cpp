@@ -1,13 +1,13 @@
-#include "VulkanWindow.h"
-#include "VulkanInstance.h"
-#include "VulkanQuadRenderer.h"
+#include "VWindow.h"
+#include "VInstance.h"
+#include "VQuadRenderer.h"
 
 
 
-VulkanWindow::VulkanWindow ( VulkanInstance* instance ) : m_instance ( instance ), quad_renderer ( new VulkanQuadRenderer(instance) ), depth_image ( nullptr ) {
+VWindow::VWindow ( VInstance* instance ) : m_instance ( instance ), quad_renderer ( new VQuadRenderer(instance) ), depth_image ( nullptr ) {
 
 }
-VulkanWindow::~VulkanWindow() {
+VWindow::~VWindow() {
 	m_instance->destroy_window ( this );
 	if ( depth_image )
 		delete depth_image;
@@ -16,40 +16,7 @@ VulkanWindow::~VulkanWindow() {
 	delete quad_renderer;
 }
 
-RendResult VulkanWindow::root_section ( WindowSection* section ) {
-	if ( section ) {
-		VulkanWindowSection* root_section = static_cast<VulkanWindowSection*> ( section->ptr );
-		if ( root_section->v_instance != m_instance )
-			return RendResult::eWrongInstance;
-		if ( v_root_section ) {
-			v_root_section->unregister_parent();
-			v_root_section->v_update_viewport ( Viewport<f32> (), nullptr );
-			v_root_section->register_parent ( nullptr, nullptr );
-		}
-		RendResult res;
-		if ( ( res = root_section->register_parent ( this, nullptr ) ) != RendResult::eSuccess ) {
-			return res;
-		}
-		v_root_section = root_section;
-		if ( swap_chain ) {
-			v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
-		}
-	} else if ( !section ) {//nullptr passed
-		if ( v_root_section ) {//reset the current section
-			v_root_section->v_update_viewport ( Viewport<f32> (), nullptr );
-			v_root_section = nullptr;
-		}
-	} else {
-		return RendResult::eWrongType;
-	}
-	return RendResult::eSuccess;
-}
-WindowSection* VulkanWindow::root_section () {
-	if ( v_root_section )
-		return v_root_section->window_section;
-	return nullptr;
-}
-void VulkanWindow::initialize() {
+void VWindow::initialize() {
 	glfwWindowHint ( GLFW_CLIENT_API, GLFW_NO_API );
 	glfwWindowHint ( GLFW_MAXIMIZED, ( bool ) m_maximized.wanted );
 	glfwWindowHint ( GLFW_AUTO_ICONIFY, ( bool ) m_minimized.wanted );
@@ -58,7 +25,7 @@ void VulkanWindow::initialize() {
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
 
-	VulkanMonitor* fullscreen_monitor = dynamic_cast<VulkanMonitor*> ( this->m_fullscreen_monitor.wanted );
+	VMonitor* fullscreen_monitor = dynamic_cast<VMonitor*> ( this->m_fullscreen_monitor.wanted );
 	if ( fullscreen_monitor ) { //it is fullscreen
 		VideoMode wanted_mode = fullscreen_monitor->find_best_videomode ( m_size.wanted, m_refreshrate.wanted );
 		m_size = wanted_mode.extend;
@@ -83,7 +50,7 @@ void VulkanWindow::initialize() {
 	m_size.apply();
 
 	glfwSetWindowPosCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			printf ( "Position of Window %dx%d\n", x, y );
 			vulkan_window->m_position.apply ( {x, y} );
@@ -92,7 +59,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetWindowSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			printf ( "Size of Window %dx%d\n", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
@@ -101,7 +68,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetWindowCloseCallback ( window, [] ( GLFWwindow * window ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			glfwHideWindow ( window );
 			vulkan_window->m_visible.apply ( false );
@@ -110,7 +77,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetWindowRefreshCallback ( window, [] ( GLFWwindow * window ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
@@ -120,7 +87,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetWindowFocusCallback ( window, [] ( GLFWwindow * window, int focus ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
 		} else {
@@ -128,7 +95,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetWindowIconifyCallback ( window, [] ( GLFWwindow * window, int iconified ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			vulkan_window->m_minimized.apply ( iconified == GLFW_TRUE );
 		} else {
@@ -136,7 +103,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetFramebufferSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			vulkan_window->framebuffer_size_changed ( {x, y} );
 		} else {
@@ -144,7 +111,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			switch ( action ) {
 			case GLFW_PRESS:
@@ -171,7 +138,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetCharModsCallback ( window, [] ( GLFWwindow * window, unsigned int codepoint, int mods ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			printf ( "%lc ", ( wint_t ) codepoint );
 			if ( mods & GLFW_MOD_SHIFT )
@@ -188,7 +155,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetCursorPosCallback ( window, [] ( GLFWwindow * window, double xpos, double ypos ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//printf ( "Mouse Position %f, %f\n", xpos,  ypos);
 		} else {
@@ -196,7 +163,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			if ( entered )
 				printf ( "Mouse Entered\n" );
@@ -207,7 +174,7 @@ void VulkanWindow::initialize() {
 		}
 	} );
 	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
-		VulkanWindow* vulkan_window = static_cast<VulkanWindow*> ( glfwGetWindowUserPointer ( window ) );
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 
 		} else {
@@ -266,15 +233,15 @@ void VulkanWindow::initialize() {
 	framebuffer_size_changed ( m_size.value );
 
 }
-Image* VulkanWindow::backed_image () {
+Image* VWindow::backed_image () {
 	return present_image;
 }
-RendResult VulkanWindow::update() {
+RendResult VWindow::update() {
 	RendResult res = v_update();
 	m_instance->frame_index++;
 	return res;
 }
-RendResult VulkanWindow::v_update() {
+RendResult VWindow::v_update() {
 	static double oldTime = 0.0;
 	double newTime = glfwGetTime();
 	//printf("Time: %f\n", 1.0 / (newTime - oldTime));
@@ -302,7 +269,7 @@ RendResult VulkanWindow::v_update() {
 			}
 			//fullscreen, window mode cnd coming out of minimized or maximized
 			else if ( m_minimized.changed() || m_maximized.changed() || m_fullscreen_monitor.changed() ) {
-				VulkanMonitor* vulkan_monitor = dynamic_cast<VulkanMonitor*> ( m_fullscreen_monitor.wanted );
+				VMonitor* vulkan_monitor = dynamic_cast<VMonitor*> ( m_fullscreen_monitor.wanted );
 				if ( vulkan_monitor ) {
 					VideoMode wanted_mode = vulkan_monitor->find_best_videomode ( m_size.wanted, m_refreshrate.wanted );
 					m_size = wanted_mode.extend;
@@ -340,27 +307,31 @@ RendResult VulkanWindow::v_update() {
 	}
 	render_frame();
 }
-void VulkanWindow::create_command_buffers() {
+void VWindow::create_command_buffers() {
 	if ( !window_graphics_command_pool ) {
-		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, vulkan_pgc_queue_wrapper ( m_instance, queue_index )->graphics_queue_id );
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_instance->queues.graphics_queue_id );
 		vulkan_device ( m_instance ).createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
 	}
 
 }
 
-void VulkanWindow::create_command_buffer ( u32 index ){
+void VWindow::create_command_buffer ( u32 index ){
 	
 }
 
-void VulkanWindow::render_frame() {
+void VWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
 	
-	g_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------\n", m_instance->frame_index );
+	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
 	vulkan_device ( m_instance ).acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 	
-	g_logger.log<LogLevel::eDebug> ( "PresetImageId: %d\n", present_image_index );
+	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
+	
+	m_instance->
+	
+	v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", data->frame_index );
 	//reset for frame
 	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 
@@ -368,7 +339,7 @@ void VulkanWindow::render_frame() {
 	
 	data->frame_index = m_instance->frame_index;
 	
-	PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue ( queue_index );
+	QueueWrapper* queue_wrapper = &m_instance->queues;
 	
 	present_image->set_current_image ( present_image_index );
 	
@@ -451,15 +422,7 @@ void VulkanWindow::render_frame() {
 	submit_store.submitinfos.push_back ( si );
 
 	submit_store.signal_fence = data->image_presented_fence;
-	//draw child stuff
-	if ( v_root_section ) {
-		if ( ( bool ) m_visible ) {
-			//somehow pass semaphores through here
-			v_root_section->render_frame ( present_image_index );
-		} else {
-
-		}
-	}
+	
 	DynArray<vk::SubmitInfo> submitinfos;
 	for ( SubmitInfo& submit_info : submit_store.submitinfos ) {
 		submitinfos.push_back (
@@ -471,9 +434,9 @@ void VulkanWindow::render_frame() {
 		    )
 		);
 	}
-	pgc_queue_wrapper->graphics_queue.submit ( submitinfos, submit_store.signal_fence );
+	queue_wrapper->graphics_queue.submit ( submitinfos, submit_store.signal_fence );
 
-	if ( !pgc_queue_wrapper->combined_graphics_present_queue ) {
+	if ( !queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
 	}
 	//present image
@@ -483,13 +446,13 @@ void VulkanWindow::render_frame() {
 	    //active_sems.size(), active_sems.data(),
 	    1, swapChains,
 	    &present_image_index, &results );
-	pgc_queue_wrapper->present_queue.presentKHR ( &presentInfo );
+	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	active_sems.clear();
-	g_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
+	v_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
 }
 
 
-void VulkanWindow::create_swapchain() {
+void VWindow::create_swapchain() {
 
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
 	destroy_frame_local_data();
@@ -518,7 +481,7 @@ void VulkanWindow::create_swapchain() {
 		delete depth_image;
 	}
 	vk::Format depth_format = m_instance->find_depth_format();
-	depth_image = new VulkanImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
+	depth_image = new VImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
 	                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 
 	{
@@ -539,16 +502,16 @@ void VulkanWindow::create_swapchain() {
 		    vk::PresentModeKHR::eImmediate,
 		    0,
 		    swap_chain );
-		PGCQueueWrapper* pgc_queue_wrapper = m_instance->vulkan_pgc_queue ( queue_index );
-		if ( pgc_queue_wrapper->combined_graphics_present_queue ) {
+		QueueWrapper* queue_wrapper = &m_instance->queues;
+		if ( queue_wrapper->combined_graphics_present_queue ) {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
-			u32 queueFamilyIndices[] = {pgc_queue_wrapper->graphics_queue_id};
+			u32 queueFamilyIndices[] = {queue_wrapper->graphics_queue_id};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices; // Optional
 		} else {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 			swapchainCreateInfo.queueFamilyIndexCount = 2;
-			u32 queueFamilyIndices[] = {pgc_queue_wrapper->present_queue_id, pgc_queue_wrapper->graphics_queue_id};
+			u32 queueFamilyIndices[] = {queue_wrapper->present_queue_id, queue_wrapper->graphics_queue_id};
 			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		}
 		swapchainCreateInfo.preTransform = capabilities.currentTransform;//VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR??
@@ -563,7 +526,7 @@ void VulkanWindow::create_swapchain() {
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		printf ( "SUPPORTED %d\n", vulkan_physical_device ( m_instance ).getSurfaceSupportKHR ( pgc_queue_wrapper->present_queue_id, surface ) );
+		printf ( "SUPPORTED %d\n", vulkan_physical_device ( m_instance ).getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
 
 		V_CHECKCALL ( vulkan_device ( m_instance ).createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
 		vulkan_device ( m_instance ).destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
@@ -574,14 +537,12 @@ void VulkanWindow::create_swapchain() {
 		present_image = nullptr;
 	}
 	std::vector<vk::Image> images = vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain );
-	present_image = new VulkanWindowImage ( m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
+	present_image = new VWindowImage ( m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
 
 	create_frame_local_data ( images.size() );
 
 }
-void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
-	if ( v_root_section )
-		v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), nullptr );
+void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	printf ( "Size of Framebuffer %dx%d\n", extent.x, extent.y );
 	printf ( "Minimized %d\n", m_minimized.value );
 	printf ( "Visible %d\n", m_minimized.value );
@@ -597,16 +558,14 @@ void VulkanWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	
 	quad_renderer->update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 
-	if ( v_root_section )
-		v_root_section->v_update_viewport ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 }
 
-vk::CommandPool VulkanWindow::graphics_command_pool() {
+vk::CommandPool VWindow::graphics_command_pool() {
 	if ( !frame_local_data[present_image_index].graphics_command_pool )
 		frame_local_data[present_image_index].graphics_command_pool = m_instance->m_device.createCommandPool ( vk::CommandPoolCreateInfo() );
 	return frame_local_data[present_image_index].graphics_command_pool;
 }
-void VulkanWindow::create_frame_local_data ( u32 count ) {
+void VWindow::create_frame_local_data ( u32 count ) {
 
 	frame_local_data.resize ( count );
 	for ( u32 i = 0; i < count; i++ ) {
@@ -617,7 +576,7 @@ void VulkanWindow::create_frame_local_data ( u32 count ) {
 	}
 	create_command_buffers();
 }
-void VulkanWindow::destroy_frame_local_data() {
+void VWindow::destroy_frame_local_data() {
 	printf ( "Wait For Queues to clear out\n" );
 	m_instance->m_device.waitIdle();
 	u32 index = 0;
@@ -635,7 +594,7 @@ void VulkanWindow::destroy_frame_local_data() {
 	//@Debugging clear so we assert in case we access it in a state, that we should not
 	frame_local_data.clear();
 }
-RendResult VulkanWindow::destroy() {
+RendResult VWindow::destroy() {
 	printf ( "Destroy Semaphores\n" );
 	if ( image_available_guard_sem )
 		destroy_semaphore ( m_instance, image_available_guard_sem );

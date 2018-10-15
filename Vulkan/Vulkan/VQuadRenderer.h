@@ -1,6 +1,6 @@
 #pragma once
-#include "VulkanBuffer.h"
-#include "VulkanRenderer.h"
+#include "VBuffer.h"
+#include "VRenderer.h"
 
 
 //full image
@@ -24,10 +24,10 @@ struct Quads{
 	QuadType type;
 };
 
-struct VulkanRenderTarget;
+struct VRenderTarget;
 struct SubmitStore;
 
-struct VulkanQuadRenderer : public VulkanRenderer {
+struct VQuadRenderer : public VRenderer {
 	Viewport<f32> viewport;
 
 	vk::ShaderModule vertex_shader;
@@ -36,27 +36,27 @@ struct VulkanQuadRenderer : public VulkanRenderer {
 	vk::CommandPool g_commandpool;
 	vk::CommandPool t_commandpool;
 
-	VulkanBuffer* vertex_buffer = nullptr;
-	VulkanBuffer* staging_vertex_buffer = nullptr;
+	VBuffer* vertex_buffer = nullptr;
+	VBuffer* staging_vertex_buffer = nullptr;
 	
-	VulkanRenderTarget* render_target;
+	VRenderTarget* render_target;
 
 	DynArray<PerFrameQuadRenderObj> per_target_data;
 
-	VulkanQuadRenderer ( VulkanInstance* instance );
-	~VulkanQuadRenderer();
+	VQuadRenderer ( VInstance* instance );
+	~VQuadRenderer();
 
 	void init();
-	void v_inherit ( VulkanQuadRenderer* oldquadrenderer );
+	void v_inherit ( VQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
 	
 	void destroy ( );
 	
-	virtual void inherit ( VulkanRenderer* oldrenderer );
+	virtual void inherit ( VRenderer* oldrenderer );
 	
 	virtual void use_commandpool ( vk::CommandPool commandpool ){}
 
-	virtual RendResult update_extend ( Viewport<f32> viewport, VulkanRenderTarget* target_wrapper );
+	virtual RendResult update_extend ( Viewport<f32> viewport, VRenderTarget* target_wrapper );
 
 	virtual RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index );
 	
