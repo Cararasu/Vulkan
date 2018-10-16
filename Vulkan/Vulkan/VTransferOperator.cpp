@@ -6,7 +6,7 @@ VBufferStorage::VBufferStorage ( VInstance* instance, vk::BufferUsageFlags usage
 	sections(),
 	mapped_transfer_buffer ( nullptr ),
 	needed_size ( 0 ) {
-
+	buffer.usage = usageflags;
 }
 RId VBufferStorage::allocate_chunk ( u32 size ) {
 	VBufferSection section = {0, 0, size};
@@ -15,7 +15,7 @@ RId VBufferStorage::allocate_chunk ( u32 size ) {
 void VBufferStorage::free_chunk ( RId index ) {
 	sections.remove ( index );
 }
-void VBufferStorage::reorganize ( ) {
+void VBufferStorage::allocate_transferbuffer ( ) {
 	//new size we need
 	u32 offset = 0;
 	for ( VBufferSection& section : sections ) {
@@ -25,23 +25,34 @@ void VBufferStorage::reorganize ( ) {
 	}
 	needed_size = offset;
 	
+	//buffer is not yet initialized
+	if(buffer.size == 0){
+		u32 calcsize = 1024;
+		while ( calcsize < needed_size ) calcsize *= 2;
+		buffer.init(calcsize, buffer.usage, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	}
 	//if the buffer is too small we make it smaller
 	//or it is at least 4 times too big we make it smaller
-	if ( (buffer.size > needed_size) || (needed_size >= 1024 && needed_size < buffer.size / 4) ) {
+	else if ( ( buffer.size > needed_size ) || ( needed_size >= 1024 && needed_size < buffer.size / 4 ) ) {
 		buffer.destroy();
 		while ( buffer.size < needed_size ) buffer.size *= 2;
 		while ( needed_size >= 1024 && buffer.size / 4 > needed_size ) buffer.size /= 2;
 		buffer.init();
 	}
-	std::pair<void*, vk::Semaphore> data = buffer.v_instance->transfer_control->request_transfer_memory(&buffer, buffer.size, 0);
+	
+	std::pair<void*, vk::Semaphore> data = buffer.v_instance->transfer_control->request_transfer_memory ( &buffer, buffer.size, 0 );
 	mapped_transfer_buffer = data.first;
 	semaphore = data.second;
 }
 void* VBufferStorage::get_data_ptr ( RId index ) {
 	return mapped_transfer_buffer + sections[index].offset;
 }
-void VBufferStorage::update_data ( ) {
+void VBufferStorage::transfer_data ( ) {
 
+}
+
+void VBufferStorage::clear_transfer() {
+	//TODO implement
 }
 
 void VPerFrameTransferData::init ( VInstance* v_instance, vk::CommandPool commandpool ) {
@@ -149,6 +160,6 @@ void VTransferController::check_free ( ) {
 			break;
 		}
 	}
-	if(it != perframe_data.end())
+	if ( it != perframe_data.end() )
 		perframe_data.erase ( it );
 }

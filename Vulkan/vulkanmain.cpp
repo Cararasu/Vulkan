@@ -118,11 +118,13 @@ void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrap
 	stbi_image_free ( pixels );
 clTabCtrl}*/
 
+
+#include <render/Logger.h>
 #include <render/Instance.h>
 #include <chrono>
 #include <thread>
 
-
+Logger g_logger("main");
 
 int main ( int argc, char **argv ) {
 	
@@ -179,6 +181,15 @@ int main ( int argc, char **argv ) {
 	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {});
 	const RenderStage* renderstage = newinstance->create_renderstage({renderer}, {}/*dependencies*/, {}/*input-def*/, {}/*output-def*/, {}/*temporary-def*/);
 	
+	instancegroup->clear();
+	//select instances with occlusion culling and stuff
+	instancegroup->register_instances(mod_instance, 2);
+	
+	instancegroup->finish_register();
+	
+	void* data = instancegroup->get_data_ptr(mod_instance);
+	
+	g_logger.log<LogLevel::eInfo>("Pointer %p", data);
 	
 	RenderBundle* bundle = newinstance->create_renderbundle(instancegroup, contextgroup, renderstage, {}/*images*/);
 	

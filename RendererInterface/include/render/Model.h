@@ -63,13 +63,15 @@ struct ModelInstanceBase : public IdHandle {
 };
 
 struct InstanceGroup {
-	virtual void register_instances ( ModelInstanceBase* base, u32 count ) = 0;
-	virtual void* get_data_ptr ( ModelInstanceBase* base ) = 0;
+	virtual void register_instances ( const ModelInstanceBase* base, u32 count ) = 0;
+	virtual void finish_register() = 0;
+	virtual void* get_data_ptr ( const ModelInstanceBase* base ) = 0;
+	virtual void finish() = 0;
 	virtual void clear() = 0;
 };
 struct ContextGroup {
 	virtual void set_context ( Context* context ) = 0;
-	virtual void remove_context ( ContextBase* base ) = 0;
+	virtual void remove_context ( const ContextBase* base ) = 0;
 	virtual void clear() = 0;
 };
 

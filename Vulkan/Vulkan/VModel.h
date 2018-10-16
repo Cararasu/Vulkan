@@ -42,10 +42,14 @@ struct VModelBase : public ModelBase {
 struct VInstanceGroup : public InstanceGroup {
 	VInstance* instance;
 	VBufferStorage buffer_storeage;
+	Map<const ModelInstanceBase*, RId> base_to_id_map;
+	bool finished = false;
 	
 	VInstanceGroup(VInstance* instance) : InstanceGroup(), instance(instance), buffer_storeage(instance, vk::BufferUsageFlagBits::eVertexBuffer) { }
 	
-	virtual void register_instances(ModelInstanceBase* base, u32 count) override;
-	virtual void* get_data_ptr(ModelInstanceBase* base) override;
+	virtual void register_instances(const ModelInstanceBase* base, u32 count) override;
+	virtual void finish_register() override;
+	virtual void* get_data_ptr(const ModelInstanceBase* base) override;
+	virtual void finish() override;
 	virtual void clear() override;
 };

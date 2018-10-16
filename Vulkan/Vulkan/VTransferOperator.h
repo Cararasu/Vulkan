@@ -24,10 +24,15 @@ struct VBufferStorage {
 	RId allocate_chunk ( u32 size );
 	void free_chunk ( RId index );
 	
-	void reorganize();
+	//will allocate a transfer buffer
+	void allocate_transferbuffer();
 	
 	void* get_data_ptr ( RId index );
-	void update_data();
+	
+	//updates the data to the buffer
+	void transfer_data();
+	
+	void clear_transfer();
 };
 
 struct VTransferBuffer {

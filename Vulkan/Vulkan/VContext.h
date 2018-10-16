@@ -21,20 +21,6 @@ struct VContextBase : public ContextBase {
 	}
 };
 
-struct VGPUDataStore {
-	VInstance* instance;
-	RId datagroup;
-	VBuffer buffer;
-	SparseStore<void> datastore;
-
-	VGPUDataStore ( VInstance* instance, const DataGroupDef* datagroup, vk::BufferUsageFlags usage );
-	~VGPUDataStore();
-
-	RId allocate_block();
-	void remove_block ( RId index );
-	void update_data();
-};
-
 struct VContextGroup : public ContextGroup {
 	VInstance* instance;
 	HashMap<IdHandle, Context*> context_map;
@@ -44,7 +30,7 @@ struct VContextGroup : public ContextGroup {
 	virtual void set_context ( Context* context ) override {
 		context_map.insert ( std::make_pair ( ( IdHandle ) *context->contextbase, context ) );
 	}
-	virtual void remove_context ( ContextBase* base ) override {
+	virtual void remove_context ( const ContextBase* base ) override {
 		context_map.erase ( *base );
 	}
 	virtual void clear() override {
