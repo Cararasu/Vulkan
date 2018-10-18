@@ -37,19 +37,19 @@ struct Array {
 			data[i++] = ele;
 		}
 	}
-	Array ( Array<T>&& array ) : size ( array.size ), data ( new T[size] ) {
+	Array ( const Array<T>&& array ) : size ( array.size ), data ( new T[size] ) {
 		u64 i = 0;
 		for ( const T& ele : array){
 			data[i++] = std::move ( ele );
 		}
 	}
-	Array ( std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( new T[size] ) {
+	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( new T[size] ) {
 		u64 i = 0;
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
 		}
 	}
-	Array<T>& operator= ( std::initializer_list<T> init_list ) {
+	Array<T>& operator= ( const std::initializer_list<T> init_list ) {
 		size = init_list.size();
 		data = new T[size];
 		u64 i = 0;
@@ -96,12 +96,12 @@ struct Array {
 	}
 };
 
+template<typename T, u64 COUNT>
+using StaticArray = std::array<T, COUNT>;
 template<typename T>
 using DynArray = std::vector<T>;
 template<typename T>
 using List = std::list<T>;
-template<typename T>
-using StaticArray = std::vector<T>;
 template<typename T>
 using Set = std::set<T>;
 template<typename K, typename T>
@@ -132,7 +132,7 @@ struct ChangeableValue {
 		wanted = newvalue;
 		return this->wanted;
 	}
-	T& operator= ( T&& newvalue ) const {
+	T& operator= ( const T&& newvalue ) const {
 		wanted = newvalue;
 		return this->wanted;
 	}

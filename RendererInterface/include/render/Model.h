@@ -63,10 +63,10 @@ struct ModelInstanceBase : public IdHandle {
 };
 
 struct InstanceGroup {
-	virtual void register_instances ( const ModelInstanceBase* base, u32 count ) = 0;
-	virtual void finish_register() = 0;
-	virtual void* get_data_ptr ( const ModelInstanceBase* base ) = 0;
-	virtual void finish() = 0;
+	//returns offset
+	virtual u64 register_instances ( const ModelInstanceBase* base, u32 count ) = 0;
+	//get base offset
+	virtual void* finish_register () = 0;
 	virtual void clear() = 0;
 };
 struct ContextGroup {
@@ -76,7 +76,7 @@ struct ContextGroup {
 };
 
 struct RenderBundle {
-	
+
 };
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VHeader.h"
+#include "VInstance.h"
 
 struct VInstance;
 
@@ -24,12 +25,8 @@ struct VBuffer {
 
 	RendResult map_mem();
 	RendResult unmap_mem();
-	
-	RendResult transfer_to(VBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer);
-	
-	inline RendResult transfer_to(VBuffer* dst, vk::CommandBuffer commandBuffer){
-		return transfer_to(dst, 0, std::min(memory.size, dst->memory.size), commandBuffer);
-	}
 
 	void destroy();
 };
+
+RendResult transfer_buffer_data(VSimpleTransferJob& job, vk::CommandBuffer commandBuffer);

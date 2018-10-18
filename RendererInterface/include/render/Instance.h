@@ -71,12 +71,12 @@ struct Instance {
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
-	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets) = 0;
+	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets) = 0;
 	
 	virtual void render_bundles(Array<RenderBundle*> bundles) = 0;
 	
 };
 
-Instance* create_instance ( const char* name );
+Instance* create_instance ( String name );
 
 void destroy_instance ( Instance* instance );

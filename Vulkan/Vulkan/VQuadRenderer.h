@@ -50,7 +50,7 @@ struct VQuadRenderer : public VRenderer {
 	void v_inherit ( VQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
 	
-	void destroy ( );
+	void destroy ();
 	
 	virtual void inherit ( VRenderer* oldrenderer );
 	

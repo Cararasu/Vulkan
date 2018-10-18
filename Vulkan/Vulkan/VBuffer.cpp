@@ -18,19 +18,20 @@ RendResult VBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::
 	return init();
 }
 RendResult VBuffer::init() {
-	vk::Device device = vulkan_device ( v_instance );
+	vk::Device device = v_instance->vk_device ();
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
 
 	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), printf ( "Failed To Create Buffer\n" ) );
 
-	printf ( "Create Buffer of size %d with usage %s\n", size, to_string(usage).c_str() );
+	printf ( "Create Buffer of size %d with usage %s with buffer 0x%" PRIx64 "\n", size, to_string(usage).c_str(), reinterpret_cast<u64>(static_cast<VkBuffer>(buffer)) );
 
 	vk::MemoryRequirements mem_req;
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
 	memory = v_instance->allocate_gpu_memory ( mem_req, needed, recommended );
 	device.bindBufferMemory ( buffer, memory.memory, 0 );
-	if(memory.memory)
+	if(memory.memory) {
 		return RendResult::eFail;
+	}
 	return RendResult::eSuccess;
 }
 RendResult VBuffer::map_mem() {
@@ -42,21 +43,18 @@ RendResult VBuffer::map_mem() {
 	}
 	if ( mapped_ptr )
 		return RendResult::eSuccess;
-	vulkan_device ( v_instance ).mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
+	v_instance->vk_device ().mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
 	return mapped_ptr ? RendResult::eSuccess : RendResult::eFail;
 }
 RendResult VBuffer::unmap_mem() {
-	vulkan_device ( v_instance ).unmapMemory ( memory.memory );
+	v_instance->vk_device ().unmapMemory ( memory.memory );
 	mapped_ptr = nullptr;
-}
-RendResult VBuffer::transfer_to ( VBuffer* dst, vk::DeviceSize offset, vk::DeviceSize size, vk::CommandBuffer commandBuffer ) {
-	commandBuffer.copyBuffer ( buffer, dst->buffer, {vk::BufferCopy ( offset, offset, size ) } );
 }
 void VBuffer::destroy() {
 	if ( mapped_ptr )
 		unmap_mem();
 	if ( buffer ) {
-		vulkan_device ( v_instance ).destroyBuffer ( buffer, nullptr );
+		v_instance->vk_device ().destroyBuffer ( buffer, nullptr );
 		buffer = vk::Buffer();
 	}
 	if ( memory.memory ) {
@@ -65,4 +63,11 @@ void VBuffer::destroy() {
 }
 VBuffer::~VBuffer() {
 	destroy();
+}
+
+RendResult transfer_buffer_data(VSimpleTransferJob& job, vk::CommandBuffer commandBuffer){
+	commandBuffer.copyBuffer ( 
+		job.source_buffer->buffer, 
+		job.target_buffer->buffer, 
+		job.sections );
 }

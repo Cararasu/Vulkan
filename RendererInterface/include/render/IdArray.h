@@ -173,7 +173,7 @@ struct IdPtrArray {
 		}
 		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
-	~IdPtrArray ( ) {
+	~IdPtrArray () {
 		
 	}
 
@@ -248,7 +248,7 @@ struct UIdPtrArray {
 		}
 		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
-	~UIdPtrArray ( ) {
+	~UIdPtrArray () {
 	}
 
 	T* insert ( T* ele ) {
@@ -376,7 +376,7 @@ struct SparseStore {
 		data = new T[capacity];
 		filled_bits = new u8[capacity / 8];
 	}
-	~SparseStore ( ) {
+	~SparseStore () {
 		if ( data ) delete[] data;
 		if ( filled_bits ) delete[] filled_bits;
 	}
@@ -453,7 +453,7 @@ struct SparseStore<void> {
 		data = malloc(capacity * genericdatasize);
 		filled_bits = new u8[capacity / 8];
 	}
-	~SparseStore<void> ( ) {
+	~SparseStore<void> () {
 		if ( data ) free(data);
 		if ( filled_bits ) delete[] filled_bits;
 	}

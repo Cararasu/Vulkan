@@ -47,9 +47,10 @@ struct VInstanceGroup : public InstanceGroup {
 	
 	VInstanceGroup(VInstance* instance) : InstanceGroup(), instance(instance), buffer_storeage(instance, vk::BufferUsageFlagBits::eVertexBuffer) { }
 	
-	virtual void register_instances(const ModelInstanceBase* base, u32 count) override;
-	virtual void finish_register() override;
-	virtual void* get_data_ptr(const ModelInstanceBase* base) override;
-	virtual void finish() override;
+	
+	//returns offset
+	virtual u64 register_instances ( const ModelInstanceBase* base, u32 count ) override;
+	//get base offset
+	virtual void* finish_register () override;
 	virtual void clear() override;
 };

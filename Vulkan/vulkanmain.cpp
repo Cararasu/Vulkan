@@ -124,12 +124,12 @@ clTabCtrl}*/
 #include <chrono>
 #include <thread>
 
-Logger g_logger("main");
+Logger g_logger ( "main" );
 
 int main ( int argc, char **argv ) {
-	
+
 	Instance* newinstance = create_instance ( "Vulkan" );
-	
+
 	newinstance->initialize();
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
@@ -177,30 +177,27 @@ int main ( int argc, char **argv ) {
 
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
-	
-	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {});
-	const RenderStage* renderstage = newinstance->create_renderstage({renderer}, {}/*dependencies*/, {}/*input-def*/, {}/*output-def*/, {}/*temporary-def*/);
-	
+
+	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {} );
+	const RenderStage* renderstage = newinstance->create_renderstage (
+		{renderer},
+		{}/*dependencies*/,
+		{}/*input-def*/,
+		{}/*output-def*/,
+		{}/*temporary-def*/
+		);
 	instancegroup->clear();
-	
+
 	//upload pattern:
 	//	register/allocate
 	//	-----finish register/allocate
 	//	set data
 	//	upload
-	
-	instancegroup->register_instances(mod_instance, 2);
-	
-	instancegroup->finish_register();
-	
-	void* data = instancegroup->get_data_ptr(mod_instance);
-	
-	RenderBundle* bundle = newinstance->create_renderbundle(instancegroup, contextgroup, renderstage, {}/*images*/);
-	
+
 	//cleanup the cache, wait for old rendering processes to finish, resize if needed, get new window images
 	//can stall cpu
 	//newinstance->prepare_frame();
-	
+
 	//loop
 	//	update contexts and instances
 	//	transfer-break
@@ -222,6 +219,12 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image();
 
+	RenderBundle* bundle;
+	{
+		Array<Image*> targetimages = {windowimage};
+		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage, targetimages );
+	}
+
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
@@ -229,6 +232,9 @@ int main ( int argc, char **argv ) {
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
+		instancegroup->clear();
+		instancegroup->register_instances ( mod_instance, 2 );
+		void* data = instancegroup->finish_register();
 
 		newinstance->render_bundles ( {bundle} );
 		newinstance->render_windows();

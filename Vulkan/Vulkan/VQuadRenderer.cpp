@@ -9,33 +9,33 @@ VQuadRenderer::VQuadRenderer ( VInstance* instance ) : VRenderer ( instance, nul
 VQuadRenderer::~VQuadRenderer() {
 	destroy();
 }
-void VQuadRenderer::destroy ( ) {
+void VQuadRenderer::destroy () {
 	if ( pipeline ) {
-		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
+		v_instance->vk_device ().destroyPipeline ( pipeline );
 		pipeline = vk::Pipeline();
 	}
 	if ( g_commandpool ) {
-		vulkan_device ( v_instance ).destroyCommandPool ( g_commandpool );
+		v_instance->vk_device ().destroyCommandPool ( g_commandpool );
 		g_commandpool = vk::CommandPool();
 	}
 	if ( t_commandpool ) {
-		vulkan_device ( v_instance ).destroyCommandPool ( t_commandpool );
+		v_instance->vk_device ().destroyCommandPool ( t_commandpool );
 		t_commandpool = vk::CommandPool();
 	}
 	if ( renderpass ) {
-		vulkan_device ( v_instance ).destroyRenderPass ( renderpass );
+		v_instance->vk_device ().destroyRenderPass ( renderpass );
 		renderpass = vk::RenderPass();
 	}
 	if ( vertex_shader ) {
-		vulkan_device ( v_instance ).destroyShaderModule ( vertex_shader );
+		v_instance->vk_device ().destroyShaderModule ( vertex_shader );
 		vertex_shader = vk::ShaderModule();
 	}
 	if ( fragment_shader ) {
-		vulkan_device ( v_instance ).destroyShaderModule ( fragment_shader );
+		v_instance->vk_device ().destroyShaderModule ( fragment_shader );
 		fragment_shader = vk::ShaderModule();
 	}
 	if ( pipeline_layout ) {
-		vulkan_device ( v_instance ).destroyPipelineLayout ( pipeline_layout );
+		v_instance->vk_device ().destroyPipelineLayout ( pipeline_layout );
 		pipeline_layout = vk::PipelineLayout();
 	}
 	destroy_framebuffers();
@@ -48,14 +48,14 @@ void VQuadRenderer::destroy ( ) {
 		staging_vertex_buffer = nullptr;
 	}
 	for ( auto dsl : descriptor_set_layouts ) {
-		vulkan_device ( v_instance ).destroyDescriptorSetLayout ( dsl );
+		v_instance->vk_device ().destroyDescriptorSetLayout ( dsl );
 		dsl = vk::DescriptorSetLayout();
 	}
 }
 void VQuadRenderer::destroy_framebuffers() {
 	for ( auto& fb : per_target_data ) {
 		if ( fb.framebuffer ) {
-			vulkan_device ( v_instance ).destroyFramebuffer ( fb.framebuffer );
+			v_instance->vk_device ().destroyFramebuffer ( fb.framebuffer );
 			fb.framebuffer = vk::Framebuffer();
 		}
 	}
@@ -76,8 +76,8 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		};
 
 		descriptor_set_layouts = {
-			//vulkan_device ( v_instance ).createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 1, bindings1 ), nullptr ),
-			//vulkan_device ( v_instance ).createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 2, bindings2 ), nullptr )
+			//v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 1, bindings1 ), nullptr ),
+			//v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 2, bindings2 ), nullptr )
 		};
 
 		std::array<vk::PushConstantRange, 0> pushConstRanges = {};//{vk::PushConstantRange ( vk::ShaderStageFlagBits::eFragment, 0, sizeof ( ObjectPartData ) ) };
@@ -95,7 +95,7 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 			createInfo.pushConstantRangeCount = pushConstRanges.size();
 			createInfo.pPushConstantRanges = pushConstRanges.data();
 		}
-		pipeline_layout = vulkan_device ( v_instance ).createPipelineLayout ( createInfo, nullptr );
+		pipeline_layout = v_instance->vk_device ().createPipelineLayout ( createInfo, nullptr );
 	}
 
 
@@ -141,14 +141,14 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 
 		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 2, attachments, 1, &subpass, 0, nullptr/*dependencies*/ );
 
-		renderpass = vulkan_device ( v_instance ).createRenderPass ( renderPassInfo, nullptr );
+		renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 	}
 	destroy_framebuffers();
 	if(per_target_data.size() < render_target->target_count )
 		per_target_data.resize ( render_target->target_count );
 	
 	if ( pipeline ) {
-		vulkan_device ( v_instance ).destroyPipeline ( pipeline );
+		v_instance->vk_device ().destroyPipeline ( pipeline );
 	}
 
 
@@ -250,7 +250,7 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 	    -1
 	);
 
-	pipeline = vulkan_device ( v_instance ).createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+	pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 
 	printf ( "Update Quad-Renderer\n" );
 }
@@ -292,11 +292,11 @@ void VQuadRenderer::init() {
 	}
 	if ( !g_commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
-		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &g_commandpool );
+		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &g_commandpool );
 	}
 	if ( !t_commandpool && v_instance->queues.dedicated_transfer_queue ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.transfer_queue_id );
-		vulkan_device ( v_instance ).createCommandPool ( &createInfo, nullptr, &t_commandpool );
+		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &t_commandpool );
 	}
 }
 RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index ) {
@@ -311,7 +311,7 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 			2, attachments,
 			(u32)viewport.extend.width, (u32)viewport.extend.height, 1
 		};
-		per_frame.framebuffer = vulkan_device ( v_instance ).createFramebuffer ( frameBufferCreateInfo );
+		per_frame.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 	}
 	
 	if(per_frame.command.should_reset){
@@ -335,8 +335,10 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 				staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
 			)
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
-
-		staging_vertex_buffer->transfer_to ( vertex_buffer, per_frame.command.buffer );
+		{
+			VSimpleTransferJob transferjob = {staging_vertex_buffer, vertex_buffer, {0, 0, staging_vertex_buffer->size} };
+			transfer_buffer_data(transferjob, per_frame.command.buffer);
+		}
 
 		per_frame.command.buffer.pipelineBarrier (
 			vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
@@ -350,8 +352,8 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
 
 		vk::ClearValue clearColors[2] = {
-			vk::ClearValue ( ),
-			vk::ClearValue ( )
+			vk::ClearValue (),
+			vk::ClearValue ()
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			renderpass, per_frame.framebuffer,

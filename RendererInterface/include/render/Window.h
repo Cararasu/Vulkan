@@ -17,7 +17,7 @@ struct WindowSection {
 	Viewport<f32> viewport;
 	void* ptr = nullptr;
 	
-	WindowSection ( ) {}
+	WindowSection () {}
 	virtual ~WindowSection() {}
 
 	virtual void create() = 0;

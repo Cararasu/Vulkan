@@ -4,7 +4,7 @@
 
 
 
-VWindow::VWindow ( VInstance* instance ) : m_instance ( instance ), quad_renderer ( new VQuadRenderer(instance) ), depth_image ( nullptr ) {
+VWindow::VWindow ( VInstance* instance ) : m_instance ( instance ), quad_renderer ( new VQuadRenderer ( instance ) ), depth_image ( nullptr ) {
 
 }
 VWindow::~VWindow() {
@@ -81,7 +81,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
-			vulkan_window->m_instance->render_window(vulkan_window);
+			vulkan_window->m_instance->render_window ( vulkan_window );
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -183,14 +183,14 @@ void VWindow::initialize() {
 	} );
 	//initialize Vulkan stuff
 
-	image_available_guard_sem = create_semaphore ( m_instance );
+	image_available_guard_sem = m_instance->create_semaphore ();
 
 	{
 		u32 formatCount;
-		vulkan_physical_device ( m_instance ).getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
+		m_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
 		if ( formatCount != 0 ) {
 			vk::SurfaceFormatKHR formats[formatCount];
-			vulkan_physical_device ( m_instance ).getSurfaceFormatsKHR ( surface, &formatCount, formats );
+			m_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, formats );
 
 			present_swap_format = formats[0];
 
@@ -211,10 +211,10 @@ void VWindow::initialize() {
 	chosen_presentation_mode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 	{
 		u32 presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR ( vulkan_physical_device ( m_instance ), surface, &presentModeCount, nullptr );
+		vkGetPhysicalDeviceSurfacePresentModesKHR ( m_instance->vk_physical_device(), surface, &presentModeCount, nullptr );
 		if ( presentModeCount != 0 ) {
 			vk::PresentModeKHR presentModes[presentModeCount];
-			vulkan_physical_device ( m_instance ).getSurfacePresentModesKHR ( surface, &presentModeCount, presentModes );
+			m_instance->vk_physical_device().getSurfacePresentModesKHR ( surface, &presentModeCount, presentModes );
 			chosen_presentation_mode = vk::PresentModeKHR::eFifo;
 			for ( size_t i = 0; i < presentModeCount; i++ ) {
 				if ( presentModes[i] == vk::PresentModeKHR::eMailbox ) {
@@ -310,42 +310,42 @@ RendResult VWindow::v_update() {
 void VWindow::create_command_buffers() {
 	if ( !window_graphics_command_pool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_instance->queues.graphics_queue_id );
-		vulkan_device ( m_instance ).createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
+		m_instance->vk_device().createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
 	}
 
 }
 
-void VWindow::create_command_buffer ( u32 index ){
-	
+void VWindow::create_command_buffer ( u32 index ) {
+
 }
 
 void VWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
-	
+
 	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
-	vulkan_device ( m_instance ).acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-	
+	m_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
+
 	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
-	
+
 	v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", data->frame_index );
 	//reset for frame
-	vulkan_device ( m_instance ).waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
+	m_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 
-	vulkan_device ( m_instance ).resetFences ( {data->image_presented_fence} );
-	
+	m_instance->vk_device().resetFences ( {data->image_presented_fence} );
+
 	data->frame_index = m_instance->frame_index;
-	
+
 	QueueWrapper* queue_wrapper = &m_instance->queues;
-	
+
 	present_image->set_current_image ( present_image_index );
-	
-	if(data->clear_command_buffer){
-		data->clear_command_buffer.reset(vk::CommandBufferResetFlags());
+
+	if ( data->clear_command_buffer ) {
+		data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
 	}
-	if(data->present_command_buffer){
-		data->present_command_buffer.reset(vk::CommandBufferResetFlags());
+	if ( data->present_command_buffer ) {
+		data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
 	}
 	{
 		vk::CommandBufferAllocateInfo allocateInfo ( window_graphics_command_pool, vk::CommandBufferLevel::ePrimary, 2 );
@@ -355,7 +355,7 @@ void VWindow::render_frame() {
 			data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
 			data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
 		} else {
-			vulkan_device ( m_instance ).allocateCommandBuffers ( &allocateInfo, buffers );
+			m_instance->vk_device().allocateCommandBuffers ( &allocateInfo, buffers );
 			data->clear_command_buffer = buffers[0];
 			data->present_command_buffer = buffers[1];
 		}
@@ -420,7 +420,7 @@ void VWindow::render_frame() {
 	submit_store.submitinfos.push_back ( si );
 
 	submit_store.signal_fence = data->image_presented_fence;
-	
+
 	DynArray<vk::SubmitInfo> submitinfos;
 	for ( SubmitInfo& submit_info : submit_store.submitinfos ) {
 		submitinfos.push_back (
@@ -455,7 +455,7 @@ void VWindow::create_swapchain() {
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
 	destroy_frame_local_data();
 
-	capabilities = vulkan_physical_device ( m_instance ).getSurfaceCapabilitiesKHR ( surface );
+	capabilities = m_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
 
 	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
 	{
@@ -478,9 +478,9 @@ void VWindow::create_swapchain() {
 	if ( depth_image ) {
 		delete depth_image;
 	}
-	vk::Format depth_format = m_instance->find_depth_format();
+	vk::Format depth_format = m_instance->find_depth_image_format();
 	depth_image = new VImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-	                                       vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+	                                  vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 
 	{
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo (
@@ -524,17 +524,17 @@ void VWindow::create_swapchain() {
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		printf ( "SUPPORTED %d\n", vulkan_physical_device ( m_instance ).getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
+		printf ( "SUPPORTED %d\n", m_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
 
-		V_CHECKCALL ( vulkan_device ( m_instance ).createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
-		vulkan_device ( m_instance ).destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
+		V_CHECKCALL ( m_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
+		m_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
 
 	if ( present_image ) {
 		delete present_image;
 		present_image = nullptr;
 	}
-	std::vector<vk::Image> images = vulkan_device ( m_instance ).getSwapchainImagesKHR ( swap_chain );
+	std::vector<vk::Image> images = m_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
 	present_image = new VWindowImage ( m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
 
 	create_frame_local_data ( images.size() );
@@ -553,7 +553,7 @@ void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	v_render_target_wrapper.images[0] = present_image;
 	v_render_target_wrapper.depth_image = depth_image;
 	v_render_target_wrapper.target_count = present_image->per_image_data.size();
-	
+
 	quad_renderer->update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
 
 }
@@ -568,9 +568,9 @@ void VWindow::create_frame_local_data ( u32 count ) {
 	frame_local_data.resize ( count );
 	for ( u32 i = 0; i < count; i++ ) {
 
-		frame_local_data[i].image_presented_fence = vulkan_device ( m_instance ).createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
-		frame_local_data[i].present_ready_sem = create_semaphore ( m_instance );
-		frame_local_data[i].render_ready_sem = create_semaphore ( m_instance );
+		frame_local_data[i].image_presented_fence = m_instance->vk_device().createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
+		frame_local_data[i].present_ready_sem = m_instance->create_semaphore();
+		frame_local_data[i].render_ready_sem = m_instance->create_semaphore();
 	}
 	create_command_buffers();
 }
@@ -581,12 +581,11 @@ void VWindow::destroy_frame_local_data() {
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
 			//@TODO figure out why this freezes the Screen on Ubuntu/GNOME
-			//vulkan_device ( m_instance ).waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
-			vulkan_device ( m_instance ).destroyFence ( data.image_presented_fence );
+			//m_instance->vk_device().waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
+			m_instance->vk_device().destroyFence ( data.image_presented_fence );
 		}
-
-		destroy_semaphore ( m_instance, data.present_ready_sem );
-		destroy_semaphore ( m_instance, data.render_ready_sem );
+		m_instance->destroy_semaphore(data.present_ready_sem);
+		m_instance->destroy_semaphore(data.render_ready_sem);
 		index++;
 	}
 	//@Debugging clear so we assert in case we access it in a state, that we should not
@@ -595,15 +594,15 @@ void VWindow::destroy_frame_local_data() {
 RendResult VWindow::destroy() {
 	printf ( "Destroy Semaphores\n" );
 	if ( image_available_guard_sem )
-		destroy_semaphore ( m_instance, image_available_guard_sem );
+		m_instance->destroy_semaphore(image_available_guard_sem);
 	printf ( "Destroy Local Data\n" );
 	destroy_frame_local_data();
 	printf ( "Destroy Swap Chain\n" );
 	if ( swap_chain )
-		vulkan_device ( m_instance ).destroySwapchainKHR ( swap_chain );
+		m_instance->vk_device().destroySwapchainKHR ( swap_chain );
 	printf ( "Destroy Command Pools\n" );
 	if ( window_graphics_command_pool ) {
-		vulkan_device ( m_instance ).destroyCommandPool ( window_graphics_command_pool );
+		m_instance->vk_device().destroyCommandPool ( window_graphics_command_pool );
 		window_graphics_command_pool = vk::CommandPool();
 	}
 	printf ( "Destroyed Everything\n" );

@@ -220,19 +220,23 @@ VInstance::VInstance() {
 
 	vk::ApplicationInfo appInfo ( "Vulcan Instance", VK_MAKE_VERSION ( 1, 0, 0 ), "Wupl-Engine", VK_MAKE_VERSION ( 1, 0, 0 ), VK_MAKE_VERSION ( 1, 0, 61 ) );
 
-	Array<const char*> neededLayers(extLayers.neededLayers.size());
-	for(int i = 0; i < extLayers.neededLayers.size(); i++){
-		neededLayers[i] = extLayers.neededLayers[i].cstr;
-	}
-	Array<const char*> neededExtensions(extLayers.neededExtensions.size());
-	for(int i = 0; i < extLayers.neededExtensions.size(); i++){
-		neededExtensions[i] = extLayers.neededExtensions[i].cstr;
-	}
-	vk::InstanceCreateInfo instanceCreateInfo ( vk::InstanceCreateFlags(), &appInfo,
-	        neededLayers.size, neededLayers.data,
-	        neededExtensions.size, neededExtensions.data );
-	V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &m_instance ), printf ( "Instance Creation Failed\n" ) );
+	{
+		//Array<const char*> neededLayers(extLayers.neededLayers.size());
+		const char* neededLayers[extLayers.neededLayers.size()];
+		for ( int i = 0; i < extLayers.neededLayers.size(); i++ ) {
+			neededLayers[i] = extLayers.neededLayers[i].cstr;
+		}
+		//Array<const char*> neededExtensions(extLayers.neededExtensions.size());
+		const char* neededExtensions[extLayers.neededExtensions.size()];
+		for ( int i = 0; i < extLayers.neededExtensions.size(); i++ ) {
+			neededExtensions[i] = extLayers.neededExtensions[i].cstr;
+		}
+		vk::InstanceCreateInfo instanceCreateInfo ( vk::InstanceCreateFlags(), &appInfo,
+		        extLayers.neededLayers.size(), neededLayers,
+		        extLayers.neededExtensions.size(), neededExtensions );
+		V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &m_instance ), printf ( "Instance Creation Failed\n" ) );
 
+	}
 	pfn_vkCreateDebugReportCallbackEXT = ( PFN_vkCreateDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( m_instance, "vkCreateDebugReportCallbackEXT" );
 	pfn_vkDestroyDebugReportCallbackEXT = ( PFN_vkDestroyDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( m_instance, "vkDestroyDebugReportCallbackEXT" );
 
@@ -272,23 +276,11 @@ VInstance::VInstance() {
 
 		for ( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ ) {
 			printf ( "Memory %d\n", i );
-			printf ( "\tHeap Index %d\n", memProperties.memoryTypes[i].heapIndex );
-			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal )
-				printf ( "\tDevice Local\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible )
-				printf ( "\tHost Visible\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent )
-				printf ( "\tHost Coherent\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostCached )
-				printf ( "\tHost Cached\n" );
-			if ( memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eLazilyAllocated )
-				printf ( "\tLazily Allocated\n" );
+			printf ( "\tHeap Index %d %s\n", memProperties.memoryTypes[i].heapIndex, to_string ( memProperties.memoryTypes[i].propertyFlags ).c_str() );
 		}
 		for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
 			printf ( "Heap %d\n", i );
-			printf ( "\tSize %" PRIu64 "\n", memProperties.memoryHeaps[i].size );
-			if ( memProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal )
-				printf ( "\tDevice Local\n" );
+			printf ( "\tSize %" PRIu64 " %s\n", memProperties.memoryHeaps[i].size, to_string ( memProperties.memoryHeaps[i].flags ).c_str() );
 		}
 
 
@@ -350,7 +342,6 @@ VInstance::~VInstance() {
 	for ( auto ele : model_store ) {
 		delete ele;
 	}
-	delete transfer_control;
 	m_device.destroy ( nullptr );
 
 }
@@ -480,12 +471,26 @@ bool VInstance::initialize ( Device* device ) {
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
 
-	vk::DeviceCreateInfo deviceCreateInfo ( vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos,
-	                                        extLayers.neededLayers.size(), extLayers.neededLayers.data(),
-	                                        extLayers.neededExtensions.size(), extLayers.neededExtensions.data(),
-	                                        &physicalDeviceFeatures );
 
-	V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
+	{
+		//Array<const char*> neededLayers(extLayers.neededLayers.size());
+		const char* neededLayers[extLayers.neededLayers.size()];
+		for ( int i = 0; i < extLayers.neededLayers.size(); i++ ) {
+			neededLayers[i] = extLayers.neededLayers[i].cstr;
+		}
+		//Array<const char*> neededExtensions(extLayers.neededExtensions.size());
+		const char* neededExtensions[extLayers.neededExtensions.size()];
+		for ( int i = 0; i < extLayers.neededExtensions.size(); i++ ) {
+			neededExtensions[i] = extLayers.neededExtensions[i].cstr;
+		}
+		vk::DeviceCreateInfo deviceCreateInfo ( vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos,
+		                                        extLayers.neededLayers.size(), neededLayers,
+		                                        extLayers.neededExtensions.size(), neededExtensions,
+		                                        &physicalDeviceFeatures );
+		V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
+
+	}
+
 
 	if ( queues.dedicated_transfer_queue ) {
 		m_device.getQueue ( queues.transfer_queue_id, 0, &queues.transfer_queue );
@@ -509,7 +514,6 @@ bool VInstance::initialize ( Device* device ) {
 	queues.combined_graphics_present_queue = ( pId == gId );
 	queues.combined_graphics_compute_queue = ( gId == cId );
 
-	transfer_control = new VTransferController ( this );
 	return true;
 }
 
@@ -644,7 +648,7 @@ InstanceGroup* VInstance::create_instancegroup() {
 ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, void* targets ) {
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets ) {
 	return nullptr;
 }
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
@@ -663,7 +667,7 @@ vk::ShaderModule VInstance::load_shader_from_file ( String filename ) {
 	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
 
 	vk::ShaderModule shadermodule;
-	V_CHECKCALL ( vulkan_device ( this ).createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
+	V_CHECKCALL ( vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
 	return shadermodule;
 }
 
@@ -674,25 +678,36 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	VModelBase* v_modelbase = modelbase_store[modelbase->id];
 	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 
+	u64 vertexbuffersize = vertexcount * datagroupdef->size;
+	u64 indexbuffersize = indexcount * sizeof ( u16 );
+
 	VModel* newmodel = new VModel ( this, v_modelbase );
 	newmodel->index_is_2byte = true;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
 	newmodel->indexoffset = 0;
 	newmodel->indexcount = indexcount;
-	newmodel->vertexbuffer.init ( vertexcount * datagroupdef->size,
+	newmodel->vertexbuffer.init ( vertexbuffersize,
 	                              vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 	                              vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
-	newmodel->indexbuffer.init ( indexcount * sizeof ( u16 ),
+	newmodel->indexbuffer.init ( indexbuffersize,
 	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
-	std::pair<void*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
-	std::pair<void*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u16 ) );
-	memcpy ( vertexdata.first, vertices, vertexcount * datagroupdef->size );
-	memcpy ( indexdata.first, indices, indexcount * sizeof ( u16 ) );
-	transfer_control->do_transfers();
-	transfer_control->check_free();
+
+	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
+
+	staging_buffer->map_mem();
+
+	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
+	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
+
+	Array<VSimpleTransferJob> jobs = {
+		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
+		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
+	};
+	transfer_data (jobs );
+	free_staging_buffer ( staging_buffer );
 	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
@@ -703,6 +718,8 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 	bool fitsin2bytes = vertexcount < 0x10000;
 
+	u64 vertexbuffersize = vertexcount * datagroupdef->size;
+	u64 indexbuffersize = indexcount * sizeof ( u32 );
 	VModel* newmodel = new VModel ( this, v_modelbase );
 	newmodel->modelbase = v_modelbase;
 	newmodel->index_is_2byte = false;
@@ -710,20 +727,28 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	newmodel->vertexcount = vertexcount;
 	newmodel->indexoffset = 0;
 	newmodel->indexcount = indexcount;
-	newmodel->vertexbuffer.init ( vertexcount * datagroupdef->size,
+	newmodel->vertexbuffer.init ( vertexbuffersize,
 	                              vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
 	                              vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
-	newmodel->indexbuffer.init ( indexcount * sizeof ( u32 ),
+	newmodel->indexbuffer.init ( indexbuffersize,
 	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
-	std::pair<void*, vk::Semaphore> vertexdata = transfer_control->request_transfer_memory ( &newmodel->vertexbuffer, vertexcount * datagroupdef->size );
-	std::pair<void*, vk::Semaphore> indexdata = transfer_control->request_transfer_memory ( &newmodel->indexbuffer, indexcount * sizeof ( u32 ) );
-	memcpy ( vertexdata.first, vertices, vertexcount * datagroupdef->size );
-	memcpy ( indexdata.first, indices, indexcount * sizeof ( u16 ) );
-	transfer_control->do_transfers();
-	transfer_control->check_free();
-	return {model_store.insert ( newmodel )->handle(), modelbase};
+	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
+
+	staging_buffer->map_mem();
+
+	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
+	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
+
+	Array<VSimpleTransferJob> jobs = {
+		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
+		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
+	};
+	transfer_data ( jobs );
+
+	free_staging_buffer ( staging_buffer );
+	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
 
 
@@ -754,7 +779,7 @@ GPUMemory VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::M
 RendResult VInstance::free_gpu_memory ( GPUMemory memory ) {
 	if ( memory.memory ) {
 		printf ( "Freeing %" PRIu64 " Bytes of Memory\n", memory.size );
-		vulkan_device ( this ).freeMemory ( memory.memory, nullptr );
+		vk_device ().freeMemory ( memory.memory, nullptr );
 		memory.memory = vk::DeviceMemory();
 	}
 	return RendResult::eSuccess;
@@ -809,13 +834,6 @@ void VInstance::delete_command_buffer ( vk::CommandPool commandPool, vk::Command
 	m_device.freeCommandBuffers ( commandPool, 1, &commandBuffer );
 }
 
-void VInstance::copy_data ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
-	void* data;
-	vkMapMemory ( m_device, dstMemory, offset, size, 0, &data );
-	memcpy ( data, srcData, size );
-	vkUnmapMemory ( m_device, dstMemory );
-}
-
 u32 VInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
 	v_device->physical_device.getMemoryProperties ( &memProperties );
@@ -833,7 +851,7 @@ u32 VInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags proper
 	return -1;
 }
 
-vk::Format VInstance::find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
+vk::Format VInstance::find_supported_image_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features ) {
 	for ( vk::Format format : candidates ) {
 		vk::FormatProperties props;
 		v_device->physical_device.getFormatProperties ( format, &props );
@@ -847,8 +865,8 @@ vk::Format VInstance::find_supported_format ( const std::vector<vk::Format>& can
 	return vk::Format::eUndefined;
 }
 
-vk::Format VInstance::find_depth_format() {
-	return find_supported_format (
+vk::Format VInstance::find_depth_image_format() {
+	return find_supported_image_format (
 	{vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint, vk::Format::eD32Sfloat},
 	vk::ImageTiling::eOptimal,
 	vk::FormatFeatureFlagBits::eDepthStencilAttachment

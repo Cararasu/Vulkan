@@ -19,6 +19,7 @@
   <VirtualDirectory Name="src">
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VInstance_Transfer.cpp"/>
       <File Name="Vulkan/VWindow.h"/>
       <File Name="Vulkan/VWindow.cpp"/>
       <File Name="Vulkan/VTransferOperator.h"/>

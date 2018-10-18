@@ -49,7 +49,7 @@ struct PerImageData {
 };
 struct VWindowImage : public VBaseImage {
 	u32 current_index;
-	StaticArray<PerImageData> per_image_data;
+	DynArray<PerImageData> per_image_data;
 
 	VWindowImage ( VInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format );
 	virtual ~VWindowImage();
@@ -62,7 +62,7 @@ struct VWindowImage : public VBaseImage {
 
 struct VImageWrapper : public VBaseImage {
 	GPUMemory memory;
-	StaticArray<vk::ImageLayout> layouts;
+	DynArray<vk::ImageLayout> layouts;
 
 	VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectFlags, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
 	virtual ~VImageWrapper();
