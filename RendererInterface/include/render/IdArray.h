@@ -174,11 +174,12 @@ struct IdPtrArray {
 		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 	~IdPtrArray ( ) {
+		
 	}
 
 	T* insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			if ( !list[i]->id ) {
+			if ( !list[i] ) {
 				ele->id = i + 1;
 				list[i] = ele;
 				return list[i];
@@ -207,7 +208,7 @@ struct IdPtrArray {
 		return list.back();
 	}
 	iterator erase ( iterator it ) {
-		( *it )->id = 0;
+		( *it ) = nullptr;
 		return ++it;
 	}
 	T* remove ( RId id ) {

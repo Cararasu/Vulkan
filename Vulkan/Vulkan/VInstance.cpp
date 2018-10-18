@@ -69,36 +69,36 @@ void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties
 		}
 	}
 }
-bool VExtLayerStruct::activateLayer ( const char* name ) {
+bool VExtLayerStruct::activateLayer ( String name ) {
 	bool found = false;
 	for ( vk::LayerProperties& layer : availableLayers ) {
-		if ( !strcmp ( layer.layerName, name ) ) {
+		if ( layer.layerName == name ) {
 			found = true;
 			break;
 		}
 	}
 	if ( !found )
 		return false;
-	for ( const char* layName : neededLayers ) {
-		if ( !strcmp ( layName, name ) ) {
+	for ( String& layName : neededLayers ) {
+		if ( layName == name ) {
 			return true;
 		}
 	}
 	neededLayers.push_back ( name );
 	return true;
 }
-bool VExtLayerStruct::activateExtension ( const char* name ) {
+bool VExtLayerStruct::activateExtension ( String name ) {
 	bool found = false;
 	for ( vk::ExtensionProperties& ext : availableExtensions ) {
-		if ( !strcmp ( ext.extensionName, name ) ) {
+		if ( ext.extensionName == name ) {
 			found = true;
 			break;
 		}
 	}
 	if ( !found )
 		return false;
-	for ( const char* extName : neededExtensions ) {
-		if ( !strcmp ( extName, name ) ) {
+	for ( String& extName : neededExtensions ) {
+		if ( extName == name ) {
 			return true;
 		}
 	}
@@ -107,8 +107,8 @@ bool VExtLayerStruct::activateExtension ( const char* name ) {
 }
 
 
-Instance* create_instance ( const char* name ) {
-	if ( strcmp ( name, "Vulkan" ) == 0 ) {
+Instance* create_instance ( String name ) {
+	if ( name == "Vulkan" ) {
 		glfwInit();
 		VInstance* instance = new VInstance();
 		return instance;
@@ -220,9 +220,17 @@ VInstance::VInstance() {
 
 	vk::ApplicationInfo appInfo ( "Vulcan Instance", VK_MAKE_VERSION ( 1, 0, 0 ), "Wupl-Engine", VK_MAKE_VERSION ( 1, 0, 0 ), VK_MAKE_VERSION ( 1, 0, 61 ) );
 
+	Array<const char*> neededLayers(extLayers.neededLayers.size());
+	for(int i = 0; i < extLayers.neededLayers.size(); i++){
+		neededLayers[i] = extLayers.neededLayers[i].cstr;
+	}
+	Array<const char*> neededExtensions(extLayers.neededExtensions.size());
+	for(int i = 0; i < extLayers.neededExtensions.size(); i++){
+		neededExtensions[i] = extLayers.neededExtensions[i].cstr;
+	}
 	vk::InstanceCreateInfo instanceCreateInfo ( vk::InstanceCreateFlags(), &appInfo,
-	        extLayers.neededLayers.size(), extLayers.neededLayers.data(),
-	        extLayers.neededExtensions.size(), extLayers.neededExtensions.data() );
+	        neededLayers.size, neededLayers.data,
+	        neededExtensions.size, neededExtensions.data );
 	V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &m_instance ), printf ( "Instance Creation Failed\n" ) );
 
 	pfn_vkCreateDebugReportCallbackEXT = ( PFN_vkCreateDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( m_instance, "vkCreateDebugReportCallbackEXT" );
@@ -324,9 +332,6 @@ VInstance::VInstance() {
 
 VInstance::~VInstance() {
 
-	for ( VDeferredCall& def_call : deferred_calls ) {
-		def_call.call ( def_call.frame_index );
-	}
 	for ( auto entry : monitor_map ) {
 		delete entry.second;
 	}
@@ -558,11 +563,11 @@ bool VInstance::destroy_window ( Window* window ) {
 }
 
 
-static std::vector<char> readFile ( const char* filename ) {
-	std::ifstream file ( filename, std::ios::ate | std::ios::binary );
+static std::vector<char> readFile ( String filename ) {
+	std::ifstream file ( filename.cstr, std::ios::ate | std::ios::binary );
 
 	if ( !file.is_open() ) {
-		printf ( "Couldn't open File %s\n", filename );
+		printf ( "Couldn't open File %s\n", filename.cstr );
 		return std::vector<char>();
 	}
 
@@ -646,9 +651,14 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 
 }
 
-vk::ShaderModule VInstance::load_shader_from_file ( const char* filename ) {
+vk::ShaderModule VInstance::load_shader_from_file ( String filename ) {
 
 	std::vector<char> shaderCode = readFile ( filename );
+
+	if ( !shaderCode.size() ) {
+		v_logger.log<LogLevel::eWarn> ( "Shader from File %s could not be loaded or is empty", filename.cstr );
+		return vk::ShaderModule();
+	}
 
 	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
 
@@ -795,11 +805,11 @@ vk::CommandBuffer VInstance::createCommandBuffer ( vk::CommandPool commandPool, 
 	m_device.allocateCommandBuffers ( &allocateInfo, &commandBuffer );
 	return commandBuffer;
 }
-void VInstance::deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {
+void VInstance::delete_command_buffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {
 	m_device.freeCommandBuffers ( commandPool, 1, &commandBuffer );
 }
 
-void VInstance::copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
+void VInstance::copy_data ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size ) {
 	void* data;
 	vkMapMemory ( m_device, dstMemory, offset, size, 0, &data );
 	memcpy ( data, srcData, size );

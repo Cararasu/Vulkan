@@ -80,7 +80,7 @@ struct RenderBundle {
 };
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
-		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size() && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
+		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, &value, sizeof(__TYPE));\
 	}
@@ -98,7 +98,7 @@ GEN_SETTER ( ValueType::eF32, f32 )
 GEN_SETTER ( ValueType::eF64, f64 )
 #undef GEN_SETTER
 #define GEN_SETTER(__VALUETYPE, __TYPE, __COUNT) inline void set_value_v##__COUNT ( void* datablock, const DataGroupDef* groupdef, const __TYPE* valptr, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
-		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size() && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
+		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + __COUNT*sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, valptr, __COUNT*sizeof(__TYPE));\
 	}
@@ -136,7 +136,7 @@ GEN_SETTER ( ValueType::eF64, f64, 3 )
 GEN_SETTER ( ValueType::eF64, f64, 4 )
 #undef GEN_SETTER
 #define GEN_SETTER(__VALUETYPE, __TYPE, __COUNT) inline void set_value_m##__COUNT ( void* datablock, const DataGroupDef* groupdef, const __TYPE* valptr, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
-		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size() && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
+		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + __COUNT*__COUNT*sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, valptr, __COUNT*__COUNT*sizeof(__TYPE));\
 	}

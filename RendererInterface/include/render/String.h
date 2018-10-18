@@ -4,20 +4,23 @@
 #include <cstring>
 #include <cstdlib>
 
+
+constexpr uint64_t djb2_hash(const char* ptr) {
+	return *ptr ? (djb2_hash(ptr + 1) * 33) ^ *ptr : 5381;
+}
+
 struct String{
 	const char* cstr;
 	u64 hash;
 	
-	String() : cstr(nullptr), hash(0) {}
-	String(const char* str) : cstr(str) {hash_it();}
-	String(const char* str, u64 hash) : cstr(str), hash(hash) {}
-	String(const String& str) : cstr(str.cstr), hash(str.hash) {}
-	String(const String&& str) : cstr(str.cstr), hash(str.hash) {}
+	constexpr String() : cstr(nullptr), hash(0) {}
+	constexpr String(const char* str) : cstr(str), hash(djb2_hash(str)) {}
+	constexpr String(const char* str, u64 hash) : cstr(str), hash(hash) {}
+	constexpr String(const String& str) : cstr(str.cstr), hash(str.hash) {}
+	constexpr String(const String&& str) : cstr(str.cstr), hash(str.hash) {}
 	
-	void hash_it() {//djb2 hash
-		uint64_t thash = 5381;
-		for (int i = 0; cstr[i]; i++) thash = (thash * 33) ^ cstr[i];
-		hash = thash;
+	void calc_hash() {
+		hash = djb2_hash(cstr);
 	}
 	size_t len() {
 		return strlen(cstr);
@@ -32,6 +35,21 @@ struct String{
 
 inline bool operator==(String& lhs, String& rhs){
 	return lhs.hash == rhs.hash ? strcmp(lhs.cstr, rhs.cstr) == 0 : false;
+}
+inline bool operator==(String& lhs, const char* rhs){
+	return strcmp(lhs.cstr, rhs) == 0;
+}
+inline bool operator==(const char* lhs, String& rhs){
+	return strcmp(lhs, rhs.cstr) == 0;
+}
+inline bool operator!=(String& lhs, String& rhs){
+	return !(lhs == rhs);
+}
+inline bool operator!=(String& lhs, const char* rhs){
+	return !(lhs == rhs);
+}
+inline bool operator!=(const char* lhs, String& rhs){
+	return !(lhs == rhs);
 }
 inline bool operator<(String& lhs, String& rhs){
 	return lhs.hash < rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) < 0;

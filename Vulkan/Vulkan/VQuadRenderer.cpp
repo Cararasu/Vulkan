@@ -87,8 +87,8 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		    0, nullptr,//setLayouts
 		    0, nullptr//pushConstRanges
 		);
-		if ( descriptor_set_layouts.size() != 0 ) {
-			createInfo.setLayoutCount = descriptor_set_layouts.size();
+		if ( descriptor_set_layouts.size != 0 ) {
+			createInfo.setLayoutCount = descriptor_set_layouts.size;
 			createInfo.pSetLayouts = descriptor_set_layouts.data;
 		}
 		if ( pushConstRanges.size() != 0 ) {

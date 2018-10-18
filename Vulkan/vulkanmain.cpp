@@ -182,29 +182,29 @@ int main ( int argc, char **argv ) {
 	const RenderStage* renderstage = newinstance->create_renderstage({renderer}, {}/*dependencies*/, {}/*input-def*/, {}/*output-def*/, {}/*temporary-def*/);
 	
 	instancegroup->clear();
-	//select instances with occlusion culling and stuff
+	
+	//upload pattern:
+	//	register/allocate
+	//	-----finish register/allocate
+	//	set data
+	//	upload
+	
 	instancegroup->register_instances(mod_instance, 2);
 	
 	instancegroup->finish_register();
 	
 	void* data = instancegroup->get_data_ptr(mod_instance);
 	
-	g_logger.log<LogLevel::eInfo>("Pointer %p", data);
-	
 	RenderBundle* bundle = newinstance->create_renderbundle(instancegroup, contextgroup, renderstage, {}/*images*/);
 	
-	//upload data implicit?
-	//instancegroup->finish();
-	//contextgroup->finish();
-	//at the end
-	//if output is windowimage get new image from window.
-	newinstance->render_bundles ( {bundle} );
+	//cleanup the cache, wait for old rendering processes to finish, resize if needed, get new window images
+	//can stall cpu
+	//newinstance->prepare_frame();
 	
 	//loop
 	//	update contexts and instances
 	//	transfer-break
 	//	let it render
-
 
 	Window* window = newinstance->create_window();
 
@@ -222,8 +222,6 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image();
 
-
-
 	printf ( "Start Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
@@ -232,18 +230,7 @@ int main ( int argc, char **argv ) {
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
 
-		//Renderer - defines one GPU pipeline
-		//	ContextBase - id
-		//	ModelInstanceBase - id
-		//	Image
-		//RenderStage - groups multiple renderers that can be done simultaniously
-		//	RenderStages
-		//RenderPass - groups sections that can be used in a deferred shading pass
-		//	RenderSections
-		//RenderInformation - list of renderpasses that are executed simultaneously
-		//	RenderPasses
-		//newinstance->render(renderinformation);
-
+		newinstance->render_bundles ( {bundle} );
 		newinstance->render_windows();
 	} while ( newinstance->is_window_open() );
 	window->destroy();

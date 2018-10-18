@@ -298,7 +298,7 @@ VImageWrapper::VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 lay
 
 	V_CHECKCALL ( instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
 
-	printf ( "Create Image of dimensions %dx%dx%d\n", extent.width, extent.height, extent.depth );
+	printf ( "Create Image of dimensions %dx%dx%d with usage %s\n", extent.width, extent.height, extent.depth, to_string(usage).c_str() );
 
 	vk::MemoryRequirements mem_req;
 	instance->m_device.getImageMemoryRequirements ( image, &mem_req );

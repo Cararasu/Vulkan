@@ -22,34 +22,36 @@
 //@TODO implement own DynamicArrayClass
 template<typename T>
 struct Array {
-	u64 count;
+	u64 size;
 	T* data;
 
 	typedef T* iterator;
 
-	Array() : count ( 0 ), data ( nullptr ) {}
+	Array() : size ( 0 ), data ( nullptr ) {}
 
-	Array ( const Array<T>& array ) : count ( array.size() ), data ( new T[count] ) {
+	Array(u64 size) : size ( size ), data ( new T[size] ) {}
+
+	Array ( const Array<T>& array ) : size ( array.size ), data ( new T[size] ) {
 		u64 i = 0;
 		for ( const T& ele : array){
 			data[i++] = ele;
 		}
 	}
-	Array ( Array<T>&& array ) : count ( array.size() ), data ( new T[count] ) {
+	Array ( Array<T>&& array ) : size ( array.size ), data ( new T[size] ) {
 		u64 i = 0;
 		for ( const T& ele : array){
 			data[i++] = std::move ( ele );
 		}
 	}
-	Array ( std::initializer_list<T> init_list ) : count ( init_list.size() ), data ( new T[count] ) {
+	Array ( std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( new T[size] ) {
 		u64 i = 0;
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
 		}
 	}
 	Array<T>& operator= ( std::initializer_list<T> init_list ) {
-		count = init_list.size();
-		data = new T[count];
+		size = init_list.size();
+		data = new T[size];
 		u64 i = 0;
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
@@ -65,13 +67,13 @@ struct Array {
 		T* tmp_data = nullptr;
 		if(size != 0){
 			tmp_data = new T[size];
-			u64 min = std::min ( size, count );
+			u64 min = std::min ( size, this->size );
 			for ( u64 i = 0; i < min; i++ ) tmp_data[i] = std::move ( data[i] );
 		}
 		
 		delete[] data;
 		data = tmp_data;
-		count = size;
+		this->size = size;
 	}
 
 	T& operator[] ( u64 i ) {
@@ -80,20 +82,17 @@ struct Array {
 	const T& operator[] ( u64 i ) const {
 		return data[i];
 	}
-	u64 size() const {
-		return count;
-	}
 	iterator begin() {
 		return data;
 	}
 	iterator end() {
-		return data + count;
+		return data + size;
 	}
 	const iterator begin() const {
 		return data;
 	}
 	const iterator end() const {
-		return data + count;
+		return data + size;
 	}
 };
 

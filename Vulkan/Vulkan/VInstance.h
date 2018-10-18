@@ -9,14 +9,15 @@
 #define V_MAX_PGCQUEUE_COUNT (2)
 
 void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions );
+
 struct VExtLayerStruct {
 	std::vector<vk::LayerProperties> availableLayers;
 	std::vector<vk::ExtensionProperties> availableExtensions;
-	std::vector<const char*> neededLayers;
-	std::vector<const char*> neededExtensions;
+	std::vector<String> neededLayers;
+	std::vector<String> neededExtensions;
 
-	bool activateLayer ( const char* name );
-	bool activateExtension ( const char* name );
+	bool activateLayer ( String name );
+	bool activateExtension ( String name );
 };
 
 struct VDevice : public Device {
@@ -30,9 +31,14 @@ struct VDevice : public Device {
 
 	virtual ~VDevice() {}
 };
-struct VDeferredCall {
-	u64 frame_index = 0;
-	std::function<RendResult ( u64 ) > call;
+
+struct VInstance;
+
+typedef std::function<void (VInstance* instance, u64 frame_index)> FrameFinishCallback;
+
+struct VFrameCleanupStore {
+	u64 frame_index;
+	DynArray<FrameFinishCallback> finish_callbacks;
 };
 
 struct VMonitor : public Monitor {
@@ -68,8 +74,6 @@ struct VInstance : public Instance {
 	vk::Device m_device;
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
 
-	Array<VDeferredCall> deferred_calls;
-
 	QueueWrapper queues;
 
 	bool initialized = false;
@@ -104,7 +108,7 @@ struct VInstance : public Instance {
 	IdPtrArray<VRenderer> vulkanrenderer_store;
 	IdPtrArray<VRenderStage> vulkanrenderstage_store;
 
-	vk::ShaderModule load_shader_from_file ( const char* filename );
+	vk::ShaderModule load_shader_from_file ( String filename );
 
 	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) override;
 	virtual const DataGroupDef* datagroupdef ( RId handle ) override;
@@ -152,6 +156,9 @@ struct VInstance : public Instance {
 	//wait until frame completion
 	void v_wait_for_frame(u64 frame_index);
 	
+	void v_on_frame_finish(FrameFinishCallback callback);
+	void v_on_current_frame_finish(FrameFinishCallback callback);
+	
 	GPUMemory allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended );
 	RendResult free_gpu_memory ( GPUMemory memory );
 
@@ -159,14 +166,14 @@ struct VInstance : public Instance {
 	vk::ImageView createImageView2DArray ( vk::Image image, u32 mipBase, u32 mipOffset, u32 arrayOffset, u32 arraySize, vk::Format format, vk::ImageAspectFlags aspectFlags );
 	void destroyImageView ( vk::ImageView imageview );
 
-	vk::DeviceMemory allocateMemory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties );
+	vk::DeviceMemory allocate_memory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties );
 
 	vk::CommandPool createTransferCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
 	vk::CommandPool createGraphicsCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
 	void destroyCommandPool ( vk::CommandPool commandPool );
 	vk::CommandBuffer createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel );
-	void deleteCommandBuffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer );
-	void copyData ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size );
+	void delete_command_buffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer );
+	void copy_data ( const void* srcData, vk::DeviceMemory dstMemory, vk::DeviceSize offset, vk::DeviceSize size );
 
 	u32 find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties );
 	vk::Format find_supported_format ( const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features );
@@ -192,7 +199,7 @@ inline RendResult destroy_semaphore ( const VInstance* const instance, vk::Semap
 	return RendResult::eSuccess;
 }
 
-inline bool hasStencilComponent ( vk::Format format ) {
+inline bool delete_command_buffer ( vk::Format format ) {
 	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
 }
 
