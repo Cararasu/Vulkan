@@ -81,7 +81,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
-			vulkan_window->m_instance->render_window ( vulkan_window );
+			//vulkan_window->m_instance->render_window ( vulkan_window );
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -233,13 +233,26 @@ void VWindow::initialize() {
 	framebuffer_size_changed ( m_size.value );
 
 }
+
+void VWindow::prepare_frame() {
+	printf("Prepare_Window\n");
+	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
+	m_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
+
+	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
+	FrameLocalData* data = current_framelocal_data();
+
+	m_instance->wait_for_frame(data->frame_index);
+	//reset for frame
+	m_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
+	
+	m_instance->vk_device().resetFences ( {data->image_presented_fence} );
+}
 Image* VWindow::backed_image () {
 	return present_image;
 }
 RendResult VWindow::update() {
-	RendResult res = v_update();
-	m_instance->frame_index++;
-	return res;
+	return v_update();
 }
 RendResult VWindow::v_update() {
 	static double oldTime = 0.0;
@@ -305,7 +318,6 @@ RendResult VWindow::v_update() {
 	} else {
 		initialize();
 	}
-	render_frame();
 }
 void VWindow::create_command_buffers() {
 	if ( !window_graphics_command_pool ) {
@@ -323,17 +335,7 @@ void VWindow::render_frame() {
 	if ( m_minimized.value )
 		return;
 
-	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
-	m_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-
-	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
-
-	v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", data->frame_index );
-	//reset for frame
-	m_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
-
-	m_instance->vk_device().resetFences ( {data->image_presented_fence} );
 
 	data->frame_index = m_instance->frame_index;
 
@@ -446,6 +448,7 @@ void VWindow::render_frame() {
 	    &present_image_index, &results );
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	active_sems.clear();
+	
 	v_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
 }
 

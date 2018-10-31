@@ -63,6 +63,8 @@ struct ModelInstanceBase : public IdHandle {
 };
 
 struct InstanceGroup {
+	InstanceGroup() {};
+	virtual ~InstanceGroup() {};
 	//returns offset
 	virtual u64 register_instances ( const ModelInstanceBase* base, u32 count ) = 0;
 	//get base offset
@@ -70,13 +72,22 @@ struct InstanceGroup {
 	virtual void clear() = 0;
 };
 struct ContextGroup {
+	ContextGroup() {};
+	virtual ~ContextGroup() {};
 	virtual void set_context ( Context* context ) = 0;
 	virtual void remove_context ( const ContextBase* base ) = 0;
 	virtual void clear() = 0;
 };
+struct RenderTargetGroup {
+	RenderTargetGroup() {};//imagetypes
+	virtual ~RenderTargetGroup() {};
+	//virtual void set_color_target ( Image* image ) = 0;
+	virtual void clear() = 0;
+};
 
 struct RenderBundle {
-
+	
+	virtual ~RenderBundle() {}
 };
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\

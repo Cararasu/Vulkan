@@ -27,6 +27,8 @@ struct Renderer : public IdHandle {
 };
 struct RenderStage : public IdHandle {
 	Array<Renderer*> renderers;
+	
+	virtual ~RenderStage() {}
 	//inputs
 	//outouts
 	//Dependencies		Renderer*/index -> Renderer*/index

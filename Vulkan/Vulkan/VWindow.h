@@ -82,7 +82,7 @@ struct VWindow : public Window {
 		return &frame_local_data[present_image_index];
 	}
 	
-	u64 prepare_frame();
+	void prepare_frame();
 	
 	void initialize();
 	void render_frame();

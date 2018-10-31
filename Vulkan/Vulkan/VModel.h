@@ -2,7 +2,7 @@
 #include <render/IdArray.h>
 #include <render/Model.h>
 #include "VBuffer.h"
-#include "VTransferOperator.h"
+#include "VBufferStorage.h"
 
 struct VModelInstances {
 	SparseStore<void> store;
@@ -13,7 +13,7 @@ struct VModel;
 struct VModelBase;
 
 struct VModelInstanceBase : public ModelInstanceBase {
-	VBufferStorage bufferstorage;
+	VTransientBufferStorage bufferstorage;
 	
 	VModelInstanceBase(VInstance* instance, const ModelInstanceBase* modelinstancebase) : ModelInstanceBase(modelinstancebase->datagroup, modelinstancebase->model),
 		bufferstorage(instance, vk::BufferUsageFlagBits::eVertexBuffer){
@@ -41,11 +41,12 @@ struct VModelBase : public ModelBase {
 };
 struct VInstanceGroup : public InstanceGroup {
 	VInstance* instance;
-	VBufferStorage buffer_storeage;
+	VTransientBufferStorage buffer_storeage;
 	Map<const ModelInstanceBase*, RId> base_to_id_map;
 	bool finished = false;
 	
 	VInstanceGroup(VInstance* instance) : InstanceGroup(), instance(instance), buffer_storeage(instance, vk::BufferUsageFlagBits::eVertexBuffer) { }
+	virtual ~VInstanceGroup() {}
 	
 	
 	//returns offset

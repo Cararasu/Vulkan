@@ -59,13 +59,17 @@ struct VModelInstanceBase;
 struct VRenderer;
 struct VRenderStage;
 struct VBuffer;
+struct VInstanceGroup;
 
 struct VSimpleTransferJob {
 	VBuffer* source_buffer, *target_buffer;
 	vk::BufferCopy sections;
 };
 
+
 struct VInstance : public Instance {
+	InstanceOptions options;
+	
 	VExtLayerStruct extLayers;
 	Map<GLFWmonitor*, VMonitor*> monitor_map;
 	Map<GLFWwindow*, VWindow*> window_map;
@@ -84,7 +88,7 @@ struct VInstance : public Instance {
 	VInstance();
 	virtual ~VInstance();
 
-	virtual bool initialize ( Device* device = nullptr );
+	virtual bool initialize ( InstanceOptions options, Device* device = nullptr );
 
 	virtual void process_events();
 	virtual bool is_window_open();
@@ -106,8 +110,9 @@ struct VInstance : public Instance {
 	IdPtrArray<VModelBase> modelbase_store;
 	UIdPtrArray<VModel> model_store;
 	IdPtrArray<VModelInstanceBase> modelinstancebase_store;
-	IdPtrArray<VRenderer> vulkanrenderer_store;
-	IdPtrArray<VRenderStage> vulkanrenderstage_store;
+	IdPtrArray<VRenderer> renderer_store;
+	IdPtrArray<VRenderStage> renderstage_store;
+	DynArray<VInstanceGroup*> instancegroup_store;
 
 	vk::ShaderModule load_shader_from_file ( String filename );
 
@@ -151,6 +156,9 @@ struct VInstance : public Instance {
 
 	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets );
 
+	virtual void prepare_render ();
+	virtual void prepare_render (Array<Window*> windows);
+	
 	virtual void render_bundles ( Array<RenderBundle*> bundles );
 
 //------------ Transfer Data
@@ -160,9 +168,8 @@ struct VInstance : public Instance {
 
 	//immediate transfer
 	void transfer_data ( Array<VSimpleTransferJob>& jobs );
-	//high priority transfer
+	//high priority/ per frame transfer
 	vk::Semaphore schedule_transfer_data ( Array<VSimpleTransferJob>& jobs );
-	void transfer_data();
 	//a fence for optional cpu-synchronization and cpu-side check for completion
 	//maybe do it in a queue that has lower priority
 	vk::Fence do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs );
@@ -171,10 +178,10 @@ struct VInstance : public Instance {
 //------------ Synchronization
 
 	//wait until frame completion
-	void v_wait_for_frame ( u64 frame_index );
+	void wait_for_frame ( u64 frame_index );
 
-	void v_on_frame_finish ( FrameFinishCallback callback );
-	void v_on_current_frame_finish ( FrameFinishCallback callback );
+	void schedule_on_frame_finish ( FrameFinishCallback callback );
+	void schedule_on_current_frame_finish ( FrameFinishCallback callback );
 	
 
 //------------ Memory allocation

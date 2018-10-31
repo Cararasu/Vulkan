@@ -5,7 +5,7 @@
 #include "VBuffer.h"
 #include <render/IdArray.h>
 #include <render/Model.h>
-#include "VTransferOperator.h"
+#include "VBufferStorage.h"
 
 struct VBuffer;
 struct VInstance;
@@ -13,7 +13,7 @@ struct VModel;
 struct VModelBase;
 
 struct VContextBase : public ContextBase {
-	VBufferStorage bufferstorage;
+	VTransientBufferStorage bufferstorage;
 
 	VContextBase ( VInstance* instance, const DataGroupDef* datagroup ) : ContextBase ( datagroup ),
 		bufferstorage ( instance, vk::BufferUsageFlagBits::eUniformBuffer ) {

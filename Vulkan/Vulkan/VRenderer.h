@@ -10,6 +10,7 @@ struct VInstance;
 struct SubmitStore;
 
 struct VRenderStage : public RenderStage {
+	virtual ~VRenderStage() {}
 //    List of renderers
 //    List of rendertargets
 };

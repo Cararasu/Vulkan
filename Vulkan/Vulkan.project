@@ -19,12 +19,14 @@
   <VirtualDirectory Name="src">
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VRenderBundle.cpp"/>
+      <File Name="Vulkan/VRenderBundle.h"/>
+      <File Name="Vulkan/VRenderer.h"/>
+      <File Name="Vulkan/VBufferStorage.h"/>
+      <File Name="Vulkan/VBufferStorage.cpp"/>
       <File Name="Vulkan/VInstance_Transfer.cpp"/>
       <File Name="Vulkan/VWindow.h"/>
       <File Name="Vulkan/VWindow.cpp"/>
-      <File Name="Vulkan/VTransferOperator.h"/>
-      <File Name="Vulkan/VTransferOperator.cpp"/>
-      <File Name="Vulkan/VRenderer.h"/>
       <File Name="Vulkan/VRenderer.cpp"/>
       <File Name="Vulkan/VQuadRenderer.h"/>
       <File Name="Vulkan/VQuadRenderer.cpp"/>

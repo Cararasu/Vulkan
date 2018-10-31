@@ -12,6 +12,10 @@ struct Device {
 	virtual ~Device() {}
 };
 
+struct InstanceOptions{
+	u64 max_number_of_window_frames_in_pipeline = 3;
+};
+
 struct Instance {
 	Array<Monitor*> monitors;
 	Array<Device*> devices;
@@ -19,7 +23,7 @@ struct Instance {
 	
 	virtual ~Instance() {}
 
-	virtual bool initialize ( Device* device = nullptr ) = 0;
+	virtual bool initialize ( InstanceOptions options, Device* device = nullptr ) = 0;
 
 	virtual Window* create_window() = 0;
 	virtual bool destroy_window ( Window* window ) = 0;
@@ -29,6 +33,11 @@ struct Instance {
 	virtual void render_windows() = 0;
 	virtual bool is_window_open() = 0;
 
+	virtual void prepare_render () = 0;
+	virtual void prepare_render (Array<Window*> windows) = 0;
+	
+	virtual void render_bundles(Array<RenderBundle*> bundles) = 0;
+	
 	virtual Monitor* get_primary_monitor() = 0;
 
 
@@ -73,7 +82,6 @@ struct Instance {
 
 	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets) = 0;
 	
-	virtual void render_bundles(Array<RenderBundle*> bundles) = 0;
 	
 };
 

@@ -130,7 +130,7 @@ int main ( int argc, char **argv ) {
 
 	Instance* newinstance = create_instance ( "Vulkan" );
 
-	newinstance->initialize();
+	newinstance->initialize(InstanceOptions());
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
@@ -178,14 +178,20 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
 
+	/*
+	struct ImageDef {
+		u32 width, height, depth;
+		u32 count;
+	};
+	*/
 	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {} );
 	const RenderStage* renderstage = newinstance->create_renderstage (
 		{renderer},
-		{}/*dependencies*/,
-		{}/*input-def*/,
-		{}/*output-def*/,
+		{}/*dependencies*/,// what dependency: ... / context / output
+		{}/*input-defs*/,
+		{}/*output-def*/,// 
 		{}/*temporary-def*/
-		);
+	);
 	instancegroup->clear();
 
 	//upload pattern:
@@ -225,15 +231,17 @@ int main ( int argc, char **argv ) {
 		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage, targetimages );
 	}
 
-	printf ( "Start Main Loop\n" );
+	printf ( "Starting Main Loop\n" );
 	do {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for ( 20ms );
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
+		newinstance->prepare_render();
 		newinstance->process_events();
 		instancegroup->clear();
-		instancegroup->register_instances ( mod_instance, 2 );
+		
+		u64 offset = instancegroup->register_instances ( mod_instance, 2 );
 		void* data = instancegroup->finish_register();
 
 		newinstance->render_bundles ( {bundle} );

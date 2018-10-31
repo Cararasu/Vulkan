@@ -1,9 +1,10 @@
 #include "VInstance.h"
 #include "VWindow.h"
-#include "VTransferOperator.h"
+#include "VBufferStorage.h"
 #include <fstream>
 #include "VContext.h"
 #include "VModel.h"
+#include "VRenderBundle.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -336,18 +337,28 @@ VInstance::~VInstance() {
 	for ( auto ele : contextbase_store ) {
 		delete ele;
 	}
-	for ( auto ele : modelbase_store ) {
+	for ( auto ele : instancegroup_store ) {
+		delete ele;
+	}
+	for ( auto ele : renderstage_store ) {
+		delete ele;
+	}
+	for ( auto ele : renderer_store ) {
 		delete ele;
 	}
 	for ( auto ele : model_store ) {
 		delete ele;
 	}
+	for ( auto ele : modelbase_store ) {
+		delete ele;
+	}
 	m_device.destroy ( nullptr );
 
 }
-bool VInstance::initialize ( Device* device ) {
+bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	if ( !device )
 		device = devices[0];
+	this->options = options;
 	v_device = dynamic_cast<VDevice*> ( device );
 	if ( !initialized && !device )
 		return false;
@@ -628,31 +639,45 @@ const Renderer* VInstance::create_renderer (
 		StringReference tesselation_control_shader,
 		StringReference tesselation_evaluation_shader*/
 ) {
-	return vulkanrenderer_store.insert ( new VRenderer ( this, model_instance_base, context_bases ) );
+	return renderer_store.insert ( new VRenderer ( this, model_instance_base, context_bases ) );
 }
 const Renderer* VInstance::renderer ( RId handle ) {
-	return vulkanrenderer_store[handle];
+	return renderer_store[handle];
 }
 
 const RenderStage* VInstance::create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) {
-	return vulkanrenderstage_store.insert ( new VRenderStage() );
+	return renderstage_store.insert ( new VRenderStage() );
 }
 const RenderStage* VInstance::renderstage ( RId handle ) {
-	return vulkanrenderstage_store[handle];
+	return renderstage_store[handle];
 }
 
 
 InstanceGroup* VInstance::create_instancegroup() {
-	return new VInstanceGroup ( this );
+	VInstanceGroup* instancegroup = new VInstanceGroup ( this );
+	instancegroup_store.push_back ( instancegroup );
+	return instancegroup;
 }
 ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets ) {
-	return nullptr;
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup,
+        const RenderStage* rstage, Array<Image*>& targets ) {
+	return new VRenderBundle(igroup, cgroup, rstage, targets);
+}
+void VInstance::prepare_render () {
+	for(VWindow* window : windows) {
+		window->prepare_frame();
+	}
+}
+void VInstance::prepare_render ( Array<Window*> windows ) {
+	prepare_render();
 }
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
-
+	for ( RenderBundle* b : bundles ) {
+		VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b );
+		if ( bundle ) bundle->v_dispatch();
+	}
 }
 
 vk::ShaderModule VInstance::load_shader_from_file ( String filename ) {
@@ -706,7 +731,8 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
 		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
 	};
-	transfer_data (jobs );
+	//TODO make asynch
+	transfer_data ( jobs );
 	free_staging_buffer ( staging_buffer );
 	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
@@ -745,6 +771,7 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
 		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
 	};
+	//TODO make asynch
 	transfer_data ( jobs );
 
 	free_staging_buffer ( staging_buffer );
@@ -778,7 +805,7 @@ GPUMemory VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::M
 }
 RendResult VInstance::free_gpu_memory ( GPUMemory memory ) {
 	if ( memory.memory ) {
-		printf ( "Freeing %" PRIu64 " Bytes of Memory\n", memory.size );
+		printf ( "Freeing %" PRIu64 " Bytes of Memory 0x%" PRIx64 "\n", memory.size, memory.memory );
 		vk_device ().freeMemory ( memory.memory, nullptr );
 		memory.memory = vk::DeviceMemory();
 	}

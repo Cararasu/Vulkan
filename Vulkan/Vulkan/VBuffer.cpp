@@ -54,6 +54,7 @@ void VBuffer::destroy() {
 	if ( mapped_ptr )
 		unmap_mem();
 	if ( buffer ) {
+		printf("Destroying Buffer 0x%" PRIx64 "\n", buffer);
 		v_instance->vk_device ().destroyBuffer ( buffer, nullptr );
 		buffer = vk::Buffer();
 	}
