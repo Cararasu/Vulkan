@@ -81,7 +81,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
-			//vulkan_window->m_instance->render_window ( vulkan_window );
+			//vulkan_window->m_instance->present_window ( vulkan_window );
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -238,14 +238,11 @@ void VWindow::prepare_frame() {
 	printf("Prepare_Window\n");
 	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
 	m_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-
-	v_logger.log<LogLevel::eDebug> ( "PresetImageId: %d", present_image_index );
+	
 	FrameLocalData* data = current_framelocal_data();
-
 	m_instance->wait_for_frame(data->frame_index);
 	//reset for frame
 	m_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
-	
 	m_instance->vk_device().resetFences ( {data->image_presented_fence} );
 }
 Image* VWindow::backed_image () {

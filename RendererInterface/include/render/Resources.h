@@ -3,22 +3,6 @@
 #include "Header.h"
 #include <atomic>
 
-//World
-//    contextid -> context
-//    modelid -> instances
-
-//Context
-//    contextid
-//    contextdata
-//    
-/*
-//type, count, datadef_id, 
-struct RenderContext{
-	u32 id;
-	Array<u32> data_def_ids;
-	Array<u32> data_def_ids;other stuff
-};*/
-
 template<typename IT>
 struct ObjectInstance {
 	glm::vec3 pos;
@@ -26,46 +10,48 @@ struct ObjectInstance {
 	IT instance;
 };
 
-//IdArray
-
-//Vertex, VertexDef, VertexId
-//Model, ModelDef, ModelId
-
-//Context, ContextDef, ContextId
-
-//TypeDef
-//    Array of ValueDef
-
-//Textures
-//	ImageType
-
-
 struct Image;
 //contiguous GPU memory
 struct Buffer;
 struct RenderPass;
 
+struct StringReference {
+	const String name;
+	const u64 id;
+	
+	StringReference(const String& name) : name(name), id(0){}
+	StringReference(const String&& name) : name(name), id(0){}
+	StringReference(const String name, u64 id) : name(name), id(id){}
+};
+
+inline bool operator==(const StringReference& lhs, const StringReference& rhs){
+	if(lhs.id) return lhs.id == rhs.id;
+	else return lhs.name == rhs.name;
+}
+
+
 struct Resource {
-	ResourceHandle handle;
+	u64 id;
 	//String sid
 	//ResourceURI
 	std::atomic<bool> loading;
 	std::atomic<bool> loaded;
 
-	virtual Image* cast_to_image() {
-		return nullptr;
-	}
-	virtual Buffer* cast_to_buffer() {
-		return nullptr;
-	}
-	virtual RenderPass* cast_to_renderpass() {
-		return nullptr;
-	}
 };
 
 //stores the objects to dispatch
 struct DispatchQueue {
 
+};
+
+struct ImageDependency {
+private:
+	u64 id;
+	u32 width, height, depth;
+	u64 last_change_frame;
+public:
+	virtual void add_dependentcy(Image* image, float factor = 1.0f) = 0;
+	virtual void remove_dependency(Image* image, float factor = 1.0f) = 0;
 };
 
 struct Image : public Resource {
@@ -79,13 +65,21 @@ struct Image : public Resource {
 
 	}
 
-	virtual Image* cast_to_image() {
-		return this;
-	}
 };
 struct Buffer : public Resource {
 
-	virtual Buffer* cast_to_buffer() {
-		return this;
-	}
+};
+
+enum class ShaderType {
+	eVertex,
+	eTessEval,
+	eTessControl,
+	eGeometry,
+	eFragment,
+	eCompute
+};
+
+struct ShaderModule : public Resource {
+	ShaderType shadertype;
+	String shadername;
 };

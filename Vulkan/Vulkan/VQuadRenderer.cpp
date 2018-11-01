@@ -1,6 +1,7 @@
 #include "VQuadRenderer.h"
 #include "VWindow.h"
 #include "Quads.h"
+#include "VResourceManager.h"
 
 
 VQuadRenderer::VQuadRenderer ( VInstance* instance ) : VRenderer ( instance, nullptr, {} ) {
@@ -100,10 +101,12 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 
 
 	if ( !vertex_shader ) {
-		vertex_shader = v_instance->load_shader_from_file ( "shader/quad.vert.sprv" );
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader(StringReference("vert_quad_shader"));
+		vertex_shader = vmod->shadermodule;
 	}
 	if ( !fragment_shader ) {
-		fragment_shader = v_instance->load_shader_from_file ( "shader/quad.frag.sprv" );
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader(StringReference("frag_quad_shader"));
+		fragment_shader = fmod->shadermodule;
 	}
 	if ( !renderpass ) {// Color and depth-stencil buffers
 		vk::AttachmentDescription attachments[2] = {

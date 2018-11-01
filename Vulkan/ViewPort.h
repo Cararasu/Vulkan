@@ -1,6 +1,5 @@
 #pragma once
 
-#include <inttypes.h>
 #include <VHeader.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>

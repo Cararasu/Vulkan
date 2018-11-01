@@ -1,14 +1,13 @@
 #pragma once
 #include "String.h"
+#include "Resources.h"
 
 
-
-class ResourceManager {
-private:
-	Map<String, RId> shader_id_map;
-	IdArray<Shader> shaders;
-public:
+struct ResourceManager {
 	
-	virtual StringReference load_vertex_shader (String file);
-	virtual StringReference load_fragment_shader (String file);
-}
+	virtual ~ResourceManager() {}
+	//shaders
+	virtual u64 load_shader (ShaderType type, String name, String file) = 0;
+	
+	virtual ShaderModule* get_shader(StringReference ref) = 0;
+};

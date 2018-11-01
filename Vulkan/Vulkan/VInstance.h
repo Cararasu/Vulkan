@@ -22,9 +22,8 @@ struct VExtLayerStruct {
 
 struct VDevice : public Device {
 	vk::PhysicalDevice physical_device;
-
-	std::vector<vk::ExtensionProperties> availableExtensions;
-	std::vector<vk::LayerProperties> availableLayers;
+	
+	VExtLayerStruct extLayers;
 	std::vector<vk::QueueFamilyProperties> queueFamilyProps;
 	vk::PhysicalDeviceProperties vkPhysDevProps;
 	vk::PhysicalDeviceFeatures  vkPhysDevFeatures;
@@ -60,6 +59,7 @@ struct VRenderer;
 struct VRenderStage;
 struct VBuffer;
 struct VInstanceGroup;
+struct VResourceManager;
 
 struct VSimpleTransferJob {
 	VBuffer* source_buffer, *target_buffer;
@@ -93,9 +93,9 @@ struct VInstance : public Instance {
 	virtual void process_events();
 	virtual bool is_window_open();
 
-	virtual void render_window ( Window* window );
-	virtual void v_render_window ( VWindow* window );
-	virtual void render_windows();
+	virtual void present_window ( Window* window );
+	virtual void v_present_window ( VWindow* window );
+	virtual void present_windows();
 
 	virtual Window* create_window();
 	virtual bool destroy_window ( Window* window );
@@ -103,6 +103,10 @@ struct VInstance : public Instance {
 	virtual Monitor* get_primary_monitor();
 
 	VMonitor* get_primary_monitor_vulkan();
+	
+	VResourceManager* m_resource_manager = nullptr;
+	virtual ResourceManager* resource_manager() override;
+	
 //------------ Resources
 
 	IdPtrArray<DataGroupDef> datagroup_store;
@@ -113,9 +117,7 @@ struct VInstance : public Instance {
 	IdPtrArray<VRenderer> renderer_store;
 	IdPtrArray<VRenderStage> renderstage_store;
 	DynArray<VInstanceGroup*> instancegroup_store;
-
-	vk::ShaderModule load_shader_from_file ( String filename );
-
+	
 	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) override;
 	virtual const DataGroupDef* datagroupdef ( RId handle ) override;
 
@@ -154,7 +156,7 @@ struct VInstance : public Instance {
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
-	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets );
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage );
 
 	virtual void prepare_render ();
 	virtual void prepare_render (Array<Window*> windows);

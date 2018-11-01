@@ -10,6 +10,7 @@
 	#define vassert_exec(COND, CODE) if(!(COND)) {[](const char* condition, const char* file, int line) { CODE } (#COND, __FILE__, __LINE__);*((u8*)0) = 12;}
 #endif
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 typedef uint8_t u8;
@@ -90,7 +91,7 @@ enum class ValueType {
 //type U, S, Unorm, Snorm, Float
 enum class ImageFormat {
 	eUndefined,
-	
+	//color
 	eU8, eU16, eU32, eU64,
 	eS8, eS16, eS32, eS64,
 	     eF16, eF32, eF64,
@@ -116,8 +117,11 @@ enum class ImageFormat {
 	e3Unorm10_Unorm2,
 	e3Snorm10_Snorm2,
 	
+	//depth
 	eD16Unorm, eD32F, 
+	//depthstencil
 	eD24Unorm_St8U, eD32F_St8Uint,
+	//stencil
 	eSt8Uint
 };
 enum class ResourceType {
@@ -134,12 +138,3 @@ enum class ResourceType {
 	eModelInstance,
 	eRenderPass,
 };
-
-struct ResourceHandle {
-	RId id = 0;
-	RId uid = 0;
-};
-
-inline bool operator== ( ResourceHandle lh, ResourceHandle rh ) {
-	return lh.id == rh.id && lh.uid == rh.uid;
-}

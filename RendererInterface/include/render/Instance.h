@@ -5,6 +5,7 @@
 #include "Window.h"
 #include "Model.h"
 #include "RenderPass.h"
+#include "ResourceManager.h"
 
 struct Device {
 	const char* name;
@@ -15,6 +16,7 @@ struct Device {
 struct InstanceOptions{
 	u64 max_number_of_window_frames_in_pipeline = 3;
 };
+
 
 struct Instance {
 	Array<Monitor*> monitors;
@@ -29,8 +31,8 @@ struct Instance {
 	virtual bool destroy_window ( Window* window ) = 0;
 
 	virtual void process_events() = 0;
-	virtual void render_window ( Window* window ) = 0;
-	virtual void render_windows() = 0;
+	virtual void present_window ( Window* window ) = 0;
+	virtual void present_windows() = 0;
 	virtual bool is_window_open() = 0;
 
 	virtual void prepare_render () = 0;
@@ -40,7 +42,7 @@ struct Instance {
 	
 	virtual Monitor* get_primary_monitor() = 0;
 
-
+	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
 	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) = 0;
 	virtual const DataGroupDef* datagroupdef ( RId handle ) = 0;
@@ -80,7 +82,7 @@ struct Instance {
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
-	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage, Array<Image*>& targets) = 0;
+	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage) = 0;
 	
 	
 };

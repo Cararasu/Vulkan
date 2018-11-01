@@ -38,6 +38,7 @@ void VInstance::transfer_data ( Array<VSimpleTransferJob>& jobs ) {
 }
 
 void VInstance::wait_for_frame ( u64 frame_index ) {
-
-	v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", frame_index );
+	if(frame_index) {
+		v_logger.log<LogLevel::eWarn> ( "Waiting for Frame %d", frame_index );
+	}
 }

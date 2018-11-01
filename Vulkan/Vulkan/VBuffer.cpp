@@ -23,7 +23,7 @@ RendResult VBuffer::init() {
 
 	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), printf ( "Failed To Create Buffer\n" ) );
 
-	printf ( "Create Buffer of size %d with usage %s with buffer 0x%" PRIx64 "\n", size, to_string(usage).c_str(), reinterpret_cast<u64>(static_cast<VkBuffer>(buffer)) );
+	printf ( "Create Buffer of size %" PRId64 " with usage %s with buffer 0x%" PRIx64 "\n", size, to_string(usage).c_str(), reinterpret_cast<u64>(static_cast<VkBuffer>(buffer)) );
 
 	vk::MemoryRequirements mem_req;
 	device.getBufferMemoryRequirements ( buffer, &mem_req );

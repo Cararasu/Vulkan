@@ -9,12 +9,6 @@
 struct VInstance;
 struct SubmitStore;
 
-struct VRenderStage : public RenderStage {
-	virtual ~VRenderStage() {}
-//    List of renderers
-//    List of rendertargets
-};
-
 struct VRenderTarget;
 
 //can use secondary command buffer
@@ -36,11 +30,16 @@ struct VRenderer : public Renderer {
 	vk::RenderPass renderpass;
 	vk::Pipeline pipeline;
 
-	vk::CommandPool commandpool;
-
 	VRenderer ( VInstance* instance, const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts ) : Renderer(model_instance_base, contexts), v_instance ( instance ) {}
 	virtual ~VRenderer() {}
 
 	//virtual RendResult render(u32 frame_index, vk::CommandBuffer commandbuffer) = 0;
 	//virtual RendResult render(u32 frame_index, vk::CommandBuffer commandbuffer) = 0;
+};
+
+struct VRenderStage : public RenderStage {
+	Array<VRenderer*> renderers;
+	virtual ~VRenderStage() {}
+//    List of renderers
+//    List of rendertargets
 };

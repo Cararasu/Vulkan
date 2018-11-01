@@ -26,8 +26,6 @@ struct Renderer : public IdHandle {
 	Renderer(const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts) : model_instance_base(model_instance_base), contexts(contexts){}
 };
 struct RenderStage : public IdHandle {
-	Array<Renderer*> renderers;
-	
 	virtual ~RenderStage() {}
 	//inputs
 	//outouts

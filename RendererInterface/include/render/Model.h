@@ -78,12 +78,6 @@ struct ContextGroup {
 	virtual void remove_context ( const ContextBase* base ) = 0;
 	virtual void clear() = 0;
 };
-struct RenderTargetGroup {
-	RenderTargetGroup() {};//imagetypes
-	virtual ~RenderTargetGroup() {};
-	//virtual void set_color_target ( Image* image ) = 0;
-	virtual void clear() = 0;
-};
 
 struct RenderBundle {
 	

@@ -132,6 +132,10 @@ int main ( int argc, char **argv ) {
 
 	newinstance->initialize(InstanceOptions());
 
+	//preload-shaders
+	newinstance->resource_manager()->load_shader(ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv");
+	newinstance->resource_manager()->load_shader(ShaderType::eVertex, "frag_quad_shader", "shader/quad.frag.sprv");
+	
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
 	printf ( "Monitors\n" );
@@ -189,7 +193,7 @@ int main ( int argc, char **argv ) {
 		{renderer},
 		{}/*dependencies*/,// what dependency: ... / context / output
 		{}/*input-defs*/,
-		{}/*output-def*/,// 
+		{}/*output-def*/,
 		{}/*temporary-def*/
 	);
 	instancegroup->clear();
@@ -227,8 +231,7 @@ int main ( int argc, char **argv ) {
 
 	RenderBundle* bundle;
 	{
-		Array<Image*> targetimages = {windowimage};
-		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage, targetimages );
+		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage );
 	}
 
 	printf ( "Starting Main Loop\n" );
@@ -245,7 +248,7 @@ int main ( int argc, char **argv ) {
 		void* data = instancegroup->finish_register();
 
 		newinstance->render_bundles ( {bundle} );
-		newinstance->render_windows();
+		newinstance->present_windows();
 	} while ( newinstance->is_window_open() );
 	window->destroy();
 

@@ -33,34 +33,34 @@ struct String{
 	}
 };
 
-inline bool operator==(String& lhs, String& rhs){
+inline bool operator==(const String& lhs, const String& rhs){
 	return lhs.hash == rhs.hash ? strcmp(lhs.cstr, rhs.cstr) == 0 : false;
 }
-inline bool operator==(String& lhs, const char* rhs){
+inline bool operator==(const String& lhs, const char* rhs){
 	return strcmp(lhs.cstr, rhs) == 0;
 }
-inline bool operator==(const char* lhs, String& rhs){
+inline bool operator==(const char* lhs, const String& rhs){
 	return strcmp(lhs, rhs.cstr) == 0;
 }
-inline bool operator!=(String& lhs, String& rhs){
+inline bool operator!=(const String& lhs, const String& rhs){
 	return !(lhs == rhs);
 }
-inline bool operator!=(String& lhs, const char* rhs){
+inline bool operator!=(const String& lhs, const char* rhs){
 	return !(lhs == rhs);
 }
-inline bool operator!=(const char* lhs, String& rhs){
+inline bool operator!=(const char* lhs, const String& rhs){
 	return !(lhs == rhs);
 }
-inline bool operator<(String& lhs, String& rhs){
+inline bool operator<(const String& lhs, const String& rhs){
 	return lhs.hash < rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) < 0;
 }
-inline bool operator<=(String& lhs, String& rhs){
+inline bool operator<=(const String& lhs, const String& rhs){
 	return lhs.hash <= rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) <= 0;
 }
-inline bool operator>(String& lhs, String& rhs){
+inline bool operator>(const String& lhs, const String& rhs){
 	return lhs.hash > rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) > 0;
 }
-inline bool operator>=(String& lhs, String& rhs){
+inline bool operator>=(const String& lhs, const String& rhs){
 	return lhs.hash >= rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) >= 0;
 }
 
@@ -211,15 +211,3 @@ struct StringBuilder{
 	}
 };
 #undef STRINGBUFFER_SIZE
-
-struct StringReference {
-	String stringref;
-	RId id;
-	
-	StringReference(const String& stringref) : stringref(stringref), id(0){}
-	StringReference(const String&& stringref) : stringref(stringref), id(0){}
-};
-inline bool operator==(StringReference& lhs, StringReference& rhs){
-	if(lhs.id) return lhs.id == rhs.id;
-	else return lhs.stringref == rhs.stringref;
-}

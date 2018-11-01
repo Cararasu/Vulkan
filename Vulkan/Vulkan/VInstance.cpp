@@ -5,6 +5,7 @@
 #include "VContext.h"
 #include "VModel.h"
 #include "VRenderBundle.h"
+#include "VResourceManager.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -214,9 +215,9 @@ VInstance::VInstance() {
 	if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_swapchain" ) ) {
 		printf ( "Layer VK_LAYER_LUNARG_swapchain not available\n" );
 	}
-	if ( !extLayers.activateLayer ( "VK_LAYER_RENDERDOC_Capture" ) ) {
+	/*if ( !extLayers.activateLayer ( "VK_LAYER_RENDERDOC_Capture" ) ) {
 		printf ( "Layer VK_LAYER_RENDERDOC_Capture not available\n" );
-	}
+	}*/
 
 
 	vk::ApplicationInfo appInfo ( "Vulcan Instance", VK_MAKE_VERSION ( 1, 0, 0 ), "Wupl-Engine", VK_MAKE_VERSION ( 1, 0, 0 ), VK_MAKE_VERSION ( 1, 0, 61 ) );
@@ -243,7 +244,7 @@ VInstance::VInstance() {
 
 	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo (
 	    vk::DebugReportFlagsEXT (
-	        //vk::DebugReportFlagBitsEXT::eInformation |
+	        vk::DebugReportFlagBitsEXT::eInformation |
 	        vk::DebugReportFlagBitsEXT::eWarning |
 	        vk::DebugReportFlagBitsEXT::ePerformanceWarning |
 	        vk::DebugReportFlagBitsEXT::eError |
@@ -268,7 +269,7 @@ VInstance::VInstance() {
 		physDevices[i].getProperties ( &vulkan_device->vkPhysDevProps );
 		physDevices[i].getFeatures ( &vulkan_device->vkPhysDevFeatures );
 
-		gatherExtLayer ( physDevices[i], &vulkan_device->availableLayers, &vulkan_device->availableExtensions );
+		gatherExtLayer ( physDevices[i], &vulkan_device->extLayers.availableLayers, &vulkan_device->extLayers.availableExtensions );
 
 		printf ( "Physical Device %s\n", vulkan_device->vkPhysDevProps.deviceName );
 
@@ -362,23 +363,23 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	v_device = dynamic_cast<VDevice*> ( device );
 	if ( !initialized && !device )
 		return false;
-	VExtLayerStruct extLayers;
-	extLayers.availableExtensions = v_device->availableExtensions;
-	extLayers.availableLayers = v_device->availableLayers;
 	printf ( "Device Extensions available:\n" );
-	for ( vk::ExtensionProperties& prop : extLayers.availableExtensions ) {
+	for ( vk::ExtensionProperties& prop : v_device->extLayers.availableExtensions ) {
 		printf ( "\t%s\n", prop.extensionName );
 	}
 	printf ( "Device Layers available:\n" );
-	for ( vk::LayerProperties& prop : extLayers.availableLayers ) {
+	for ( vk::LayerProperties& prop : v_device->extLayers.availableLayers ) {
 		printf ( "\t%s\n", prop.layerName );
 	}
 
-	if ( !extLayers.activateExtension ( VK_KHR_SWAPCHAIN_EXTENSION_NAME ) ) {
+	if ( !v_device->extLayers.activateExtension ( VK_KHR_SWAPCHAIN_EXTENSION_NAME ) ) {
 		printf ( "Extension %s not available\n", VK_KHR_SWAPCHAIN_EXTENSION_NAME );
 	}
-	if ( !extLayers.activateExtension ( VK_NV_GLSL_SHADER_EXTENSION_NAME ) ) {
+	if ( !v_device->extLayers.activateExtension ( VK_NV_GLSL_SHADER_EXTENSION_NAME ) ) {
 		printf ( "Extension %s not available\n", VK_NV_GLSL_SHADER_EXTENSION_NAME );
+	}
+	if ( !v_device->extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" ) ) {
+		printf ( "Layer VK_LAYER_LUNARG_standard_validation not available\n" );
 	}
 	const float priority = 1.0f;
 
@@ -485,18 +486,18 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 
 	{
 		//Array<const char*> neededLayers(extLayers.neededLayers.size());
-		const char* neededLayers[extLayers.neededLayers.size()];
-		for ( int i = 0; i < extLayers.neededLayers.size(); i++ ) {
-			neededLayers[i] = extLayers.neededLayers[i].cstr;
+		const char* neededLayers[v_device->extLayers.neededLayers.size()];
+		for ( int i = 0; i < v_device->extLayers.neededLayers.size(); i++ ) {
+			neededLayers[i] = v_device->extLayers.neededLayers[i].cstr;
 		}
 		//Array<const char*> neededExtensions(extLayers.neededExtensions.size());
-		const char* neededExtensions[extLayers.neededExtensions.size()];
-		for ( int i = 0; i < extLayers.neededExtensions.size(); i++ ) {
-			neededExtensions[i] = extLayers.neededExtensions[i].cstr;
+		const char* neededExtensions[v_device->extLayers.neededExtensions.size()];
+		for ( int i = 0; i < v_device->extLayers.neededExtensions.size(); i++ ) {
+			neededExtensions[i] = v_device->extLayers.neededExtensions[i].cstr;
 		}
 		vk::DeviceCreateInfo deviceCreateInfo ( vk::DeviceCreateFlags(), queueFamilyCount, deviceQueueCreateInfos,
-		                                        extLayers.neededLayers.size(), neededLayers,
-		                                        extLayers.neededExtensions.size(), neededExtensions,
+		                                        v_device->extLayers.neededLayers.size(), neededLayers,
+		                                        v_device->extLayers.neededExtensions.size(), neededExtensions,
 		                                        &physicalDeviceFeatures );
 		V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), printf ( "Device Creation Failed\n" ) );
 
@@ -531,18 +532,19 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 void VInstance::process_events() {
 	glfwPollEvents();
 }
-void VInstance::render_window ( Window* window ) {
-	v_render_window ( dynamic_cast<VWindow*> ( window ) );
+void VInstance::present_window ( Window* window ) {
+	v_present_window ( dynamic_cast<VWindow*> ( window ) );
 }
-void VInstance::v_render_window ( VWindow* window ) {
+void VInstance::v_present_window ( VWindow* window ) {
 	if ( !window )
 		return;
 	window->v_update();
+	window->render_frame();
 	frame_index++;
 }
-void VInstance::render_windows() {
+void VInstance::present_windows() {
 	for ( VWindow* window : windows ) {
-		window->v_update();
+		window->render_frame();
 	}
 	frame_index++;
 }
@@ -559,6 +561,11 @@ VMonitor* VInstance::get_primary_monitor_vulkan() {
 }
 Monitor* VInstance::get_primary_monitor() {
 	return get_primary_monitor_vulkan();
+}
+ResourceManager* VInstance::resource_manager() {
+	if(m_resource_manager) return m_resource_manager;
+	m_resource_manager = new VResourceManager(this);
+	return m_resource_manager;
 }
 Window* VInstance::create_window() {
 	VWindow* window = new VWindow ( this );
@@ -577,24 +584,6 @@ bool VInstance::destroy_window ( Window* window ) {
 	return false;
 }
 
-
-static std::vector<char> readFile ( String filename ) {
-	std::ifstream file ( filename.cstr, std::ios::ate | std::ios::binary );
-
-	if ( !file.is_open() ) {
-		printf ( "Couldn't open File %s\n", filename.cstr );
-		return std::vector<char>();
-	}
-
-	size_t fileSize = ( size_t ) file.tellg();
-	std::vector<char> buffer ( fileSize );
-
-	file.seekg ( 0 );
-	file.read ( buffer.data(), fileSize );
-	file.close();
-
-	return buffer;
-}
 const DataGroupDef* VInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
 	return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
 }
@@ -661,9 +650,8 @@ InstanceGroup* VInstance::create_instancegroup() {
 ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup,
-        const RenderStage* rstage, Array<Image*>& targets ) {
-	return new VRenderBundle(igroup, cgroup, rstage, targets);
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage ) {
+	return new VRenderBundle(igroup, cgroup, rstage);
 }
 void VInstance::prepare_render () {
 	for(VWindow* window : windows) {
@@ -676,25 +664,15 @@ void VInstance::prepare_render ( Array<Window*> windows ) {
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {
 		VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b );
+		
+		for(VRenderer* renderer : bundle->rstage->renderers) {
+			
+		}
+		
 		if ( bundle ) bundle->v_dispatch();
 	}
 }
 
-vk::ShaderModule VInstance::load_shader_from_file ( String filename ) {
-
-	std::vector<char> shaderCode = readFile ( filename );
-
-	if ( !shaderCode.size() ) {
-		v_logger.log<LogLevel::eWarn> ( "Shader from File %s could not be loaded or is empty", filename.cstr );
-		return vk::ShaderModule();
-	}
-
-	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
-
-	vk::ShaderModule shadermodule;
-	V_CHECKCALL ( vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
-	return shadermodule;
-}
 
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
