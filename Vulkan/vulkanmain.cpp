@@ -192,9 +192,7 @@ int main ( int argc, char **argv ) {
 	const RenderStage* renderstage = newinstance->create_renderstage (
 		{renderer},
 		{}/*dependencies*/,// what dependency: ... / context / output
-		{}/*input-defs*/,
-		{}/*output-def*/,
-		{}/*temporary-def*/
+		{ {RenderImageType::eColorRGBA8}, {RenderImageType::eDepthImage} }//
 	);
 	instancegroup->clear();
 
@@ -232,6 +230,8 @@ int main ( int argc, char **argv ) {
 	RenderBundle* bundle;
 	{
 		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage );
+		bundle->set_rendertarget(0, windowimage);
+		bundle->set_rendertarget(1, newinstance->resource_manager()->create_dependant_image(windowimage, ImageFormat::eD24Unorm_St8U, 1.0f) );
 	}
 
 	printf ( "Starting Main Loop\n" );
@@ -240,8 +240,8 @@ int main ( int argc, char **argv ) {
 		std::this_thread::sleep_for ( 20ms );
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
-		newinstance->prepare_render();
 		newinstance->process_events();
+		newinstance->prepare_render();
 		instancegroup->clear();
 		
 		u64 offset = instancegroup->register_instances ( mod_instance, 2 );

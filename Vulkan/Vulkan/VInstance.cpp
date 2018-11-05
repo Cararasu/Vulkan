@@ -236,15 +236,15 @@ VInstance::VInstance() {
 		vk::InstanceCreateInfo instanceCreateInfo ( vk::InstanceCreateFlags(), &appInfo,
 		        extLayers.neededLayers.size(), neededLayers,
 		        extLayers.neededExtensions.size(), neededExtensions );
-		V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &m_instance ), printf ( "Instance Creation Failed\n" ) );
+		V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &v_instance ), printf ( "Instance Creation Failed\n" ) );
 
 	}
-	pfn_vkCreateDebugReportCallbackEXT = ( PFN_vkCreateDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( m_instance, "vkCreateDebugReportCallbackEXT" );
-	pfn_vkDestroyDebugReportCallbackEXT = ( PFN_vkDestroyDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( m_instance, "vkDestroyDebugReportCallbackEXT" );
+	pfn_vkCreateDebugReportCallbackEXT = ( PFN_vkCreateDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( v_instance, "vkCreateDebugReportCallbackEXT" );
+	pfn_vkDestroyDebugReportCallbackEXT = ( PFN_vkDestroyDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( v_instance, "vkDestroyDebugReportCallbackEXT" );
 
 	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo (
 	    vk::DebugReportFlagsEXT (
-	        vk::DebugReportFlagBitsEXT::eInformation |
+	        //vk::DebugReportFlagBitsEXT::eInformation |
 	        vk::DebugReportFlagBitsEXT::eWarning |
 	        vk::DebugReportFlagBitsEXT::ePerformanceWarning |
 	        vk::DebugReportFlagBitsEXT::eError |
@@ -252,14 +252,14 @@ VInstance::VInstance() {
 	    &debugLogger,
 	    nullptr
 	);
-	pfn_vkCreateDebugReportCallbackEXT ( m_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
+	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
 
 	u32 devicecount = 0;
-	V_CHECKCALL ( m_instance.enumeratePhysicalDevices ( &devicecount, nullptr ), printf ( "Get physical-device count Failed\n" ) );
+	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, nullptr ), printf ( "Get physical-device count Failed\n" ) );
 
 	vk::PhysicalDevice physDevices[devicecount];
 	devices.resize ( devicecount );
-	V_CHECKCALL ( m_instance.enumeratePhysicalDevices ( &devicecount, physDevices ), printf ( "Get physical-devicec Failed\n" ) );
+	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, physDevices ), printf ( "Get physical-devicec Failed\n" ) );
 
 	for ( size_t i = 0; i < devicecount; i++ ) {
 		VDevice* vulkan_device = new VDevice();
@@ -305,7 +305,7 @@ VInstance::VInstance() {
 			}
 			bool canPresent = false;
 			for ( size_t j = 0; j < vulkan_device->queueFamilyProps.size(); j++ ) {
-				if ( glfwGetPhysicalDevicePresentationSupport ( m_instance, physDevices[i], j ) ) {
+				if ( glfwGetPhysicalDevicePresentationSupport ( v_instance, physDevices[i], j ) ) {
 					canPresent = true;
 					break;
 				}
@@ -397,7 +397,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 			queues.dedicated_transfer_queue = true;
 			queues.transfer_queue_id = j;
 		}
-		bool present = glfwGetPhysicalDevicePresentationSupport ( m_instance, v_device->physical_device, j );
+		bool present = glfwGetPhysicalDevicePresentationSupport ( v_instance, v_device->physical_device, j );
 		bool graphics = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eGraphics );
 		bool compute = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eCompute );
 		bool sparse = ( bool ) vk::QueueFlags ( v_device->queueFamilyProps[j].queueFlags & vk::QueueFlagBits::eSparseBinding );
@@ -634,8 +634,8 @@ const Renderer* VInstance::renderer ( RId handle ) {
 	return renderer_store[handle];
 }
 
-const RenderStage* VInstance::create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) {
-	return renderstage_store.insert ( new VRenderStage() );
+const RenderStage* VInstance::create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<RenderImageDef> image_defs ) {
+	return renderstage_store.insert ( new VRenderStage({}, image_defs ) );
 }
 const RenderStage* VInstance::renderstage ( RId handle ) {
 	return renderstage_store[handle];
@@ -758,28 +758,26 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 
 
 
-GPUMemory VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
-	GPUMemory memory;
+void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {
 
-	memory.heap_index = find_memory_type ( mem_req.memoryTypeBits, needed | recommended );
-	memory.property_flags = needed | recommended;
-	if ( memory.heap_index == std::numeric_limits<u32>::max() ) {
-		memory.heap_index = find_memory_type ( mem_req.memoryTypeBits, needed );
-		memory.property_flags = needed;
+	memory->heap_index = find_memory_type ( mem_req.memoryTypeBits, memory->needed | memory->recommended );
+	memory->property_flags = memory->needed | memory->recommended;
+	if ( memory->heap_index == std::numeric_limits<u32>::max() ) {
+		memory->heap_index = find_memory_type ( mem_req.memoryTypeBits, memory->needed );
+		memory->property_flags = memory->needed;
 	}
-	if ( memory.heap_index != std::numeric_limits<u32>::max() ) {
-		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory.heap_index );
+	if ( memory->heap_index != std::numeric_limits<u32>::max() ) {
+		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory->heap_index );
 		printf ( "Allocate %" PRIu64 " Bytes\n", mem_req.size );
 
-		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory.memory ), printf ( "Failed To Create Image Memory\n" ) );
+		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory->memory ), printf ( "Failed To Create Image Memory\n" ) );
 
-		memory.size = mem_req.size;
+		memory->size = mem_req.size;
 	} else {
 		printf ( "Cannot Allocate %" PRIu64 " bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x\n",
 		         mem_req.size, mem_req.memoryTypeBits,
-		         static_cast<VkMemoryPropertyFlags> ( needed ), static_cast<VkMemoryPropertyFlags> ( recommended ) );
+		         static_cast<VkMemoryPropertyFlags> ( memory->needed ), static_cast<VkMemoryPropertyFlags> ( memory->recommended ) );
 	}
-	return memory;
 }
 RendResult VInstance::free_gpu_memory ( GPUMemory memory ) {
 	if ( memory.memory ) {

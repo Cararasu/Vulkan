@@ -2,7 +2,9 @@
 
 #include "Header.h"
 #include <atomic>
+#include "Resources.h"
 
+class Image;
 struct DataValueDef {
 	ValueType type;
 	u32 arraycount;
@@ -82,6 +84,8 @@ struct ContextGroup {
 struct RenderBundle {
 	
 	virtual ~RenderBundle() {}
+	
+	virtual void set_rendertarget(u32 index, Image* image) = 0;
 };
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\

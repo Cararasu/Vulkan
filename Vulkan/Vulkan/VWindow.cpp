@@ -1,14 +1,15 @@
 #include "VWindow.h"
 #include "VInstance.h"
 #include "VQuadRenderer.h"
+#include "VResourceManager.h"
 
 
 
-VWindow::VWindow ( VInstance* instance ) : m_instance ( instance ), quad_renderer ( new VQuadRenderer ( instance ) ), depth_image ( nullptr ) {
+VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ), quad_renderer ( new VQuadRenderer ( instance ) ), depth_image ( nullptr ) {
 
 }
 VWindow::~VWindow() {
-	m_instance->destroy_window ( this );
+	v_instance->destroy_window ( this );
 	if ( depth_image )
 		delete depth_image;
 	if ( present_image )
@@ -40,11 +41,11 @@ void VWindow::initialize() {
 
 	glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 
-	VCHECKCALL ( glfwCreateWindowSurface ( m_instance->m_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), printf ( "Creation of Surface failed" ) );
+	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), printf ( "Creation of Surface failed" ) );
 
 	glfwSetWindowUserPointer ( window, this );
 
-	m_instance->window_map.insert ( std::make_pair ( window, this ) );
+	v_instance->window_map.insert ( std::make_pair ( window, this ) );
 	m_visible.apply();
 	m_position.apply();
 	m_size.apply();
@@ -81,7 +82,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
 			printf ( "Refresh\n" );
-			//vulkan_window->m_instance->present_window ( vulkan_window );
+			//vulkan_window->v_instance->present_window ( vulkan_window );
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -183,14 +184,14 @@ void VWindow::initialize() {
 	} );
 	//initialize Vulkan stuff
 
-	image_available_guard_sem = m_instance->create_semaphore ();
+	image_available_guard_sem = v_instance->create_semaphore ();
 
 	{
 		u32 formatCount;
-		m_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
+		v_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
 		if ( formatCount != 0 ) {
 			vk::SurfaceFormatKHR formats[formatCount];
-			m_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, formats );
+			v_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, formats );
 
 			present_swap_format = formats[0];
 
@@ -211,10 +212,10 @@ void VWindow::initialize() {
 	chosen_presentation_mode = vk::PresentModeKHR::eFifo;//can be turned into global flags of what is supported
 	{
 		u32 presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR ( m_instance->vk_physical_device(), surface, &presentModeCount, nullptr );
+		vkGetPhysicalDeviceSurfacePresentModesKHR ( v_instance->vk_physical_device(), surface, &presentModeCount, nullptr );
 		if ( presentModeCount != 0 ) {
 			vk::PresentModeKHR presentModes[presentModeCount];
-			m_instance->vk_physical_device().getSurfacePresentModesKHR ( surface, &presentModeCount, presentModes );
+			v_instance->vk_physical_device().getSurfacePresentModesKHR ( surface, &presentModeCount, presentModes );
 			chosen_presentation_mode = vk::PresentModeKHR::eFifo;
 			for ( size_t i = 0; i < presentModeCount; i++ ) {
 				if ( presentModes[i] == vk::PresentModeKHR::eMailbox ) {
@@ -236,14 +237,14 @@ void VWindow::initialize() {
 
 void VWindow::prepare_frame() {
 	printf("Prepare_Window\n");
-	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", m_instance->frame_index );
-	m_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
+	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
+	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 	
 	FrameLocalData* data = current_framelocal_data();
-	m_instance->wait_for_frame(data->frame_index);
+	v_instance->wait_for_frame(data->frame_index);
 	//reset for frame
-	m_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
-	m_instance->vk_device().resetFences ( {data->image_presented_fence} );
+	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
+	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
 }
 Image* VWindow::backed_image () {
 	return present_image;
@@ -318,8 +319,8 @@ RendResult VWindow::v_update() {
 }
 void VWindow::create_command_buffers() {
 	if ( !window_graphics_command_pool ) {
-		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, m_instance->queues.graphics_queue_id );
-		m_instance->vk_device().createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
+		v_instance->vk_device().createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
 	}
 
 }
@@ -334,9 +335,9 @@ void VWindow::render_frame() {
 
 	FrameLocalData* data = current_framelocal_data();
 
-	data->frame_index = m_instance->frame_index;
+	data->frame_index = v_instance->frame_index;
 
-	QueueWrapper* queue_wrapper = &m_instance->queues;
+	QueueWrapper* queue_wrapper = &v_instance->queues;
 
 	present_image->set_current_image ( present_image_index );
 
@@ -354,7 +355,7 @@ void VWindow::render_frame() {
 			data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
 			data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
 		} else {
-			m_instance->vk_device().allocateCommandBuffers ( &allocateInfo, buffers );
+			v_instance->vk_device().allocateCommandBuffers ( &allocateInfo, buffers );
 			data->clear_command_buffer = buffers[0];
 			data->present_command_buffer = buffers[1];
 		}
@@ -455,7 +456,7 @@ void VWindow::create_swapchain() {
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
 	destroy_frame_local_data();
 
-	capabilities = m_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
+	capabilities = v_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
 
 	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
 	{
@@ -475,13 +476,6 @@ void VWindow::create_swapchain() {
 		printf ( "Present Image Counts: %d\n", image_buffer_count );
 	}
 
-	if ( depth_image ) {
-		delete depth_image;
-	}
-	vk::Format depth_format = m_instance->find_depth_image_format();
-	depth_image = new VImageWrapper ( m_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-	                                  vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
-
 	{
 		vk::SwapchainCreateInfoKHR swapchainCreateInfo (
 		    vk::SwapchainCreateFlagsKHR(),
@@ -500,7 +494,7 @@ void VWindow::create_swapchain() {
 		    vk::PresentModeKHR::eImmediate,
 		    0,
 		    swap_chain );
-		QueueWrapper* queue_wrapper = &m_instance->queues;
+		QueueWrapper* queue_wrapper = &v_instance->queues;
 		if ( queue_wrapper->combined_graphics_present_queue ) {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
@@ -524,21 +518,24 @@ void VWindow::create_swapchain() {
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		printf ( "SUPPORTED %d\n", m_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
+		printf ( "SUPPORTED %d\n", v_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
 
-		V_CHECKCALL ( m_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
-		m_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
+		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
+		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
-
+	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
 	if ( present_image ) {
-		delete present_image;
-		present_image = nullptr;
+		present_image->new_window_images(images, {swap_chain_extend.x, swap_chain_extend.y, 0}, present_swap_format.format);
+	} else {
+		present_image = new VWindowImage ( v_instance, images, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
+		
+		depth_image = v_instance->m_resource_manager->v_create_dependant_image(present_image, ImageFormat::eD24Unorm_St8U, 1.0f);
+		//depth_image = new VImageWrapper ( v_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
+		//								vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+
 	}
-	std::vector<vk::Image> images = m_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
-	present_image = new VWindowImage ( m_instance, images.size(), images.data(), {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
-
+	
 	create_frame_local_data ( images.size() );
-
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	printf ( "Size of Framebuffer %dx%d\n", extent.x, extent.y );
@@ -560,7 +557,7 @@ void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 
 vk::CommandPool VWindow::graphics_command_pool() {
 	if ( !frame_local_data[present_image_index].graphics_command_pool )
-		frame_local_data[present_image_index].graphics_command_pool = m_instance->m_device.createCommandPool ( vk::CommandPoolCreateInfo() );
+		frame_local_data[present_image_index].graphics_command_pool = v_instance->m_device.createCommandPool ( vk::CommandPoolCreateInfo() );
 	return frame_local_data[present_image_index].graphics_command_pool;
 }
 void VWindow::create_frame_local_data ( u32 count ) {
@@ -568,24 +565,24 @@ void VWindow::create_frame_local_data ( u32 count ) {
 	frame_local_data.resize ( count );
 	for ( u32 i = 0; i < count; i++ ) {
 
-		frame_local_data[i].image_presented_fence = m_instance->vk_device().createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
-		frame_local_data[i].present_ready_sem = m_instance->create_semaphore();
-		frame_local_data[i].render_ready_sem = m_instance->create_semaphore();
+		frame_local_data[i].image_presented_fence = v_instance->vk_device().createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
+		frame_local_data[i].present_ready_sem = v_instance->create_semaphore();
+		frame_local_data[i].render_ready_sem = v_instance->create_semaphore();
 	}
 	create_command_buffers();
 }
 void VWindow::destroy_frame_local_data() {
 	printf ( "Wait For Queues to clear out\n" );
-	m_instance->m_device.waitIdle();
+	v_instance->m_device.waitIdle();
 	u32 index = 0;
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
 			//@TODO figure out why this freezes the Screen on Ubuntu/GNOME
-			//m_instance->vk_device().waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
-			m_instance->vk_device().destroyFence ( data.image_presented_fence );
+			//v_instance->vk_device().waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
+			v_instance->vk_device().destroyFence ( data.image_presented_fence );
 		}
-		m_instance->destroy_semaphore(data.present_ready_sem);
-		m_instance->destroy_semaphore(data.render_ready_sem);
+		v_instance->destroy_semaphore(data.present_ready_sem);
+		v_instance->destroy_semaphore(data.render_ready_sem);
 		index++;
 	}
 	//@Debugging clear so we assert in case we access it in a state, that we should not
@@ -594,15 +591,15 @@ void VWindow::destroy_frame_local_data() {
 RendResult VWindow::destroy() {
 	printf ( "Destroy Semaphores\n" );
 	if ( image_available_guard_sem )
-		m_instance->destroy_semaphore(image_available_guard_sem);
+		v_instance->destroy_semaphore(image_available_guard_sem);
 	printf ( "Destroy Local Data\n" );
 	destroy_frame_local_data();
 	printf ( "Destroy Swap Chain\n" );
 	if ( swap_chain )
-		m_instance->vk_device().destroySwapchainKHR ( swap_chain );
+		v_instance->vk_device().destroySwapchainKHR ( swap_chain );
 	printf ( "Destroy Command Pools\n" );
 	if ( window_graphics_command_pool ) {
-		m_instance->vk_device().destroyCommandPool ( window_graphics_command_pool );
+		v_instance->vk_device().destroyCommandPool ( window_graphics_command_pool );
 		window_graphics_command_pool = vk::CommandPool();
 	}
 	printf ( "Destroyed Everything\n" );

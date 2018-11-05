@@ -31,7 +31,8 @@ inline bool operator==(const StringReference& lhs, const StringReference& rhs){
 
 
 struct Resource {
-	u64 id;
+	u64 created_frame_index;
+	RId id;
 	//String sid
 	//ResourceURI
 	std::atomic<bool> loading;
@@ -54,17 +55,28 @@ public:
 	virtual void remove_dependency(Image* image, float factor = 1.0f) = 0;
 };
 
+enum class RenderImageType {
+	eColorR8,
+	eColorRG8,
+	eColorRGB8,
+	eColorRGBA8,
+	eDepthImage,
+	eStencilImage,
+	eDepthStencilImage,
+};
+
 struct Image : public Resource {
-	const ImageFormat format;
-	const u32 width, height, depth;
-	const u32 layers, mipmap_layers;
+	ImageFormat format;
+	u32 width, height, depth;
+	u32 layers;//arra-layers
+	u32 mipmap_layers;
 	const bool window_target;
 
 	Image ( ImageFormat format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target ) :
 		format ( format ), width ( width ), height ( height ), depth ( depth ), layers ( layers ), mipmap_layers ( mipmap_layers ), window_target ( window_target ) {
 
 	}
-
+	virtual ~Image() {}
 };
 struct Buffer : public Resource {
 

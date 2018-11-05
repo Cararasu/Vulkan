@@ -1,25 +1,7 @@
 
 #include "VImage.h"
+#include "VResourceManager.h"
 
-
-VBaseImage::VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VInstance* instance,
-				  vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect ) :
-	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), v_instance ( instance ), v_format ( format ),
-	tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
-	if ( height == 0 ) {
-		type = vk::ImageType::e1D;
-		extent = vk::Extent3D ( width, 1, 1 );
-	} else if ( depth == 0 ) {
-		type = vk::ImageType::e2D;
-		extent = vk::Extent3D ( width, height, 1 );
-	} else {
-		type = vk::ImageType::e3D;
-		extent = vk::Extent3D ( width, height, depth );
-	}
-}
-VBaseImage::~VBaseImage() { 
-	
-}
 
 vk::Format transform_image_format ( ImageFormat format ) {
 	switch ( format ) {
@@ -290,40 +272,29 @@ ImageFormat transform_image_format ( vk::Format format ) {
 	}
 }
 
-VImageWrapper::VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ), 
-		memory(), layouts ( layers, vk::ImageLayout::eUndefined ) {
-
-	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), this->type, format, this->extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
-
-	V_CHECKCALL ( instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
-
-	printf ( "Create Image of dimensions %dx%dx%d with usage %s\n", extent.width, extent.height, extent.depth, to_string(usage).c_str() );
-
-	vk::MemoryRequirements mem_req;
-	instance->m_device.getImageMemoryRequirements ( image, &mem_req );
-	memory = instance->allocate_gpu_memory ( mem_req, needed, recommended );
-	vkBindImageMemory ( instance->m_device, image, memory.memory, 0 );
-	
-	if(type == vk::ImageType::e2D && layers == 1){
-		imageview = instance->createImageView2D(image, 0, mipmap_layers, format, aspect);
-	}
-	else if(type == vk::ImageType::e2D){
-		imageview = instance->createImageView2DArray(image, 0, mipmap_layers, 0, layers, format, aspect);
-	}
+VBaseImage::VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VInstance* instance,
+                         vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect ) :
+	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), v_instance ( instance ), v_format ( format ),
+	tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
+	v_set_extent (width, height, depth);
 }
-VImageWrapper::~VImageWrapper() {
-	destroy();
-}
+VBaseImage::~VBaseImage() {
 
-void VImageWrapper::destroy() {
-	if ( memory.memory ) { //if the image is managed externally
-		v_instance->destroyImageView(imageview);
-		v_instance->m_device.destroyImage ( image );
-		image = vk::Image();
-		v_instance->free_gpu_memory ( memory );
-		memory.memory = vk::DeviceMemory();
+}
+void VBaseImage::v_set_extent(u32 width, u32 height, u32 depth) {
+	if ( height == 0 ) {
+		type = vk::ImageType::e1D;
+		extent = vk::Extent3D ( width, 1, 1 );
+	} else if ( depth == 0 ) {
+		type = vk::ImageType::e2D;
+		extent = vk::Extent3D ( width, height, 1 );
+	} else {
+		type = vk::ImageType::e3D;
+		extent = vk::Extent3D ( width, height, depth );
 	}
+	this->width = width;
+	this->height = height;
+	this->depth = depth;
 }
 vk::ImageMemoryBarrier VBaseImage::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
@@ -448,8 +419,58 @@ vk::ImageMemoryBarrier VBaseImage::transition_image_layout_impl ( vk::ImageLayou
 	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
 }
+
+
+VImageWrapper::VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ),
+	memory ( needed, recommended ), layouts ( layers, vk::ImageLayout::eUndefined ),
+	dependent ( false ), fraction ( 0.0f ) {
+
+	init();
+}
+VImageWrapper::~VImageWrapper() {
+	destroy();
+}
+
+void VImageWrapper::init() {
+	created_frame_index = v_instance->frame_index;
+	for(vk::ImageLayout& layout : layouts) layout = vk::ImageLayout::eUndefined;
+	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), this->type, v_format, this->extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
+
+	V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
+
+	printf ( "Create Image of dimensions %dx%dx%d with usage %s\n", extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
+
+	vk::MemoryRequirements mem_req;
+	v_instance->m_device.getImageMemoryRequirements ( image, &mem_req );
+	v_instance->allocate_gpu_memory ( mem_req, &memory );
+	vkBindImageMemory ( v_instance->m_device, image, memory.memory, 0 );
+
+	if ( type == vk::ImageType::e2D && layers == 1 ) {
+		imageview = v_instance->createImageView2D ( image, 0, mipmap_layers, v_format, aspect );
+	} else if ( type == vk::ImageType::e2D ) {
+		imageview = v_instance->createImageView2DArray ( image, 0, mipmap_layers, 0, layers, v_format, aspect );
+	}
+}
+
+void VImageWrapper::destroy() {
+	if ( memory.memory ) { //if the image is managed externally
+		v_instance->destroyImageView ( imageview );
+		imageview = vk::ImageView();
+		v_instance->m_device.destroyImage ( image );
+		image = vk::Image();
+		v_instance->free_gpu_memory ( memory );
+		memory.memory = vk::DeviceMemory();
+	}
+}
+void VImageWrapper::rebuild_image ( vk::Extent3D extent ) {
+	destroy();
+	v_set_extent (extent.width * fraction, extent.height * fraction, extent.depth * fraction);
+	init();
+}
+
 void VWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
-	
+
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	vk::ImageMemoryBarrier barrier = transition_image_layout_impl ( per_image_data[current_index].layout, newLayout, mip_range, {0, 1}, &sourceStage, &destinationStage );
 
@@ -457,8 +478,8 @@ void VWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u3
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
 	    {},//memoryBarriers
-		{},//bufferBarriers
-		{barrier} //imageBarriers
+	{},//bufferBarriers
+	{barrier} //imageBarriers
 	);
 }
 void VImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
@@ -538,26 +559,55 @@ void VImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_ra
 }
 
 
-VWindowImage::VWindowImage ( VInstance* instance, u32 imagecount, vk::Image* images, vk::Extent3D extent, u32 layers, vk::Format format ) :
+VWindowImage::VWindowImage ( VInstance* instance, DynArray<vk::Image>& images, vk::Extent3D extent, u32 layers, vk::Format format ) :
 	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
-					  vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
-	current_index ( 0 ), per_image_data ( imagecount ) {
-	for ( size_t i = 0; i < imagecount; i++ ) {
+	             vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
+	current_index ( 0 ), per_image_data ( images.size() ) {
+
+	init ( images, format );
+}
+VWindowImage::~VWindowImage() {
+	destroy();
+}
+void VWindowImage::init ( DynArray<vk::Image>& images,
+                          vk::Format format ) {
+	created_frame_index = v_instance->frame_index;
+	per_image_data.resize ( images.size() );
+	for ( size_t i = 0; i < images.size(); i++ ) {
 		per_image_data[i].layout = vk::ImageLayout::eUndefined;
 		per_image_data[i].image = images[i];
-		per_image_data[i].imageview = instance->createImageView2D ( images[i], 0, 1, format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
+		per_image_data[i].imageview = v_instance->createImageView2D ( images[i], 0, 1, format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
 	}
 	image = per_image_data[current_index].image;
 	imageview = per_image_data[current_index].imageview;
 }
-VWindowImage::~VWindowImage() {
+void VWindowImage::destroy() {
 	for ( PerImageData& data : per_image_data ) {
 		v_instance->destroyImageView ( data.imageview );
 	}
+	per_image_data.clear();
 }
 
 void VWindowImage::set_current_image ( u32 index ) {
 	current_index = index;
 	image = per_image_data[current_index].image;
 	imageview = per_image_data[current_index].imageview;
+}
+
+void VWindowImage::new_window_images ( DynArray<vk::Image>& images,
+                                       vk::Extent3D extent,
+                                       vk::Format format ) {
+	destroy();
+	printf ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32 "\n",
+	         this->width, this->height, this->depth, extent.width, extent.height, extent.depth );
+	v_set_extent (extent.width, extent.height, extent.depth);
+	init ( images, format );
+
+	auto it = v_instance->m_resource_manager->dependency_map.find ( this );
+	if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
+		printf ( "Found %d dependant Image(s)\n", it->second.size() );
+		for ( VImageWrapper* image : it->second ) {
+			image->rebuild_image ( extent );
+		}
+	}
 }

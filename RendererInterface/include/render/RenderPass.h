@@ -24,7 +24,13 @@ struct Renderer : public IdHandle {
 	const Array<const ContextBase*> contexts;
 	//changeable stuff here like options?
 	Renderer(const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts) : model_instance_base(model_instance_base), contexts(contexts){}
+	virtual ~Renderer() {}
 };
+
+struct RenderImageDef {
+	RenderImageType imagetype;
+};
+
 struct RenderStage : public IdHandle {
 	virtual ~RenderStage() {}
 	//inputs

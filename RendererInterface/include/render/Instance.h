@@ -76,7 +76,7 @@ struct Instance {
 	) = 0;
 	virtual const Renderer* renderer ( RId handle ) = 0;
 
-	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) = 0;
+	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<RenderImageDef> image_defs ) = 0;
 	virtual const RenderStage* renderstage ( RId handle ) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;

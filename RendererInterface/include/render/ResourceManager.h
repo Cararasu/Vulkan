@@ -10,4 +10,7 @@ struct ResourceManager {
 	virtual u64 load_shader (ShaderType type, String name, String file) = 0;
 	
 	virtual ShaderModule* get_shader(StringReference ref) = 0;
+	
+	virtual Image* create_dependant_image(Image* image, ImageFormat type, float scaling) = 0;
+	virtual void delete_image(Image* image) = 0;
 };

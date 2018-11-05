@@ -73,7 +73,11 @@ struct GPUMemory {
 	vk::DeviceMemory memory;
 	vk::DeviceSize size;
 	u32 heap_index;
-	vk::MemoryPropertyFlags property_flags;
+	vk::MemoryPropertyFlags property_flags, needed, recommended;
+	
+	GPUMemory() {}
+	GPUMemory(vk::DeviceSize size, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) : size(size), needed(needed), recommended(recommended) {}
+	GPUMemory(vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended) : needed(needed), recommended(recommended) {}
 };
 
 extern const Logger v_logger;

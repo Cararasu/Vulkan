@@ -2,12 +2,16 @@
 #include "VRenderer.h"
 
 VRenderBundle::VRenderBundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage) :
-	igroup(dynamic_cast<VInstanceGroup*>(igroup)), cgroup(dynamic_cast<VContextGroup*>(cgroup)), rstage(dynamic_cast<const VRenderStage*>(rstage)) {
+	igroup(dynamic_cast<VInstanceGroup*>(igroup)), cgroup(dynamic_cast<VContextGroup*>(cgroup)), rstage(dynamic_cast<const VRenderStage*>(rstage)), rendertargets(this->rstage->image_defs.size) {
 	
 }
 
 VRenderBundle::~VRenderBundle() {
 	
+}
+void VRenderBundle::set_rendertarget(u32 index, Image* image) {
+	rendertargets[index].external = true;
+	rendertargets[index].baseimage = dynamic_cast<VBaseImage*>(image);
 }
 
 void VRenderBundle::v_dispatch() {

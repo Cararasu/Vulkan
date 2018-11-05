@@ -75,7 +75,7 @@ struct VInstance : public Instance {
 	Map<GLFWwindow*, VWindow*> window_map;
 	Set<VWindow*> windows;
 
-	vk::Instance m_instance;
+	vk::Instance v_instance;
 	VDevice* v_device;
 	vk::Device m_device;
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
@@ -150,7 +150,7 @@ struct VInstance : public Instance {
 	) override;
 	virtual const Renderer* renderer ( RId handle ) override;
 
-	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<void*> inputs, Array<void*> outputs, Array<void*> temporaries ) override;
+	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<RenderImageDef> image_defs ) override;
 	virtual const RenderStage* renderstage ( RId handle ) override;
 
 	virtual InstanceGroup* create_instancegroup() override;
@@ -191,7 +191,7 @@ struct VInstance : public Instance {
 	u32 find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties );
 
 	vk::DeviceMemory allocate_memory ( vk::MemoryRequirements memoryRequirement, vk::MemoryPropertyFlags properties );
-	GPUMemory allocate_gpu_memory ( vk::MemoryRequirements mem_req, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended );
+	void allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory );
 
 	RendResult free_gpu_memory ( GPUMemory memory );
 

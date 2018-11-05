@@ -9,7 +9,7 @@ VBuffer::VBuffer ( VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlag
 	init ( size, usage, needed, recommended );
 }
 RendResult VBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
-	this->memory = { vk::DeviceMemory(), size };
+	this->memory = GPUMemory(size, needed, recommended);
 	this->buffer = vk::Buffer(),
 	this->size = size;
 	this->usage = usage;
@@ -27,7 +27,7 @@ RendResult VBuffer::init() {
 
 	vk::MemoryRequirements mem_req;
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
-	memory = v_instance->allocate_gpu_memory ( mem_req, needed, recommended );
+	v_instance->allocate_gpu_memory ( mem_req, &memory );
 	device.bindBufferMemory ( buffer, memory.memory, 0 );
 	if(memory.memory) {
 		return RendResult::eFail;

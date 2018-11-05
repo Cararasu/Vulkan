@@ -40,7 +40,7 @@ struct VRenderTarget : public RenderTarget {
 
 
 struct VWindow : public Window {
-	VInstance* m_instance = nullptr;
+	VInstance* v_instance = nullptr;
 
 	//glfw
 	GLFWwindow* window = nullptr;
