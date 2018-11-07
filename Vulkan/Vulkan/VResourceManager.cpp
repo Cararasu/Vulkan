@@ -99,7 +99,9 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	}
 	//TODO make eSampled and eInputAttachment dynamically
 	VImageWrapper* v_wrapper = new VImageWrapper ( base_image->v_instance,
-	        base_image->extent,
+	        base_image->width,
+			base_image->height,
+			base_image->depth,
 	        1,
 	        base_image->mipmap_layers,
 	        format,
@@ -116,6 +118,15 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	v_wrapper->dependent = true;
 	v_wrapper->fraction = scaling;
 	return 	v_wrapper;
+}
+void VResourceManager::v_delete_dependant_images(VBaseImage* image) {
+	auto it = dependency_map.find(image);
+	if(it != dependency_map.end()) {
+		for(VImageWrapper* image : it->second) {
+			delete image;
+		}
+		dependency_map.erase(it);
+	}
 }
 void VResourceManager::delete_image ( Image* image ) {
 

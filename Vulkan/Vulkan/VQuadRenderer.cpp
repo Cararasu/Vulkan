@@ -112,18 +112,18 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            render_target->images[0]->v_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eDontCare,//loadOp
+			                            vk::AttachmentLoadOp::eClear,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
-			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			                            vk::AttachmentLoadOp::eClear,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
 			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
 			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            render_target->depth_image->v_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eDontCare,//loadOp
+			                            vk::AttachmentLoadOp::eClear,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
-			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			                            vk::AttachmentLoadOp::eClear,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal,//initialLaylout
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal//finalLayout
@@ -355,8 +355,8 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
 
 		vk::ClearValue clearColors[2] = {
-			vk::ClearValue (),
-			vk::ClearValue ()
+			vk::ClearValue (vk::ClearColorValue(std::array<float, 4>({1.0f, 1.0f, 1.0f, 1.0f}))),
+			vk::ClearValue (vk::ClearDepthStencilValue(0.0f, 0))
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			renderpass, per_frame.framebuffer,
@@ -369,7 +369,7 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 		per_frame.command.buffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
 		per_frame.command.buffer.draw ( 6, 2, 0, 0 );
 
-		/*VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+		/*VkViewport viewport = vks::initializers::view^port((float)width, (float)height, 0.0f, 1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
 		VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);

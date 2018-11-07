@@ -279,7 +279,7 @@ VBaseImage::VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u3
 	v_set_extent (width, height, depth);
 }
 VBaseImage::~VBaseImage() {
-
+	v_instance->m_resource_manager->v_delete_dependant_images(this);
 }
 void VBaseImage::v_set_extent(u32 width, u32 height, u32 depth) {
 	if ( height == 0 ) {
@@ -421,8 +421,8 @@ vk::ImageMemoryBarrier VBaseImage::transition_image_layout_impl ( vk::ImageLayou
 }
 
 
-VImageWrapper::VImageWrapper ( VInstance* instance, vk::Extent3D extent, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
-	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ),
+VImageWrapper::VImageWrapper ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+	VBaseImage ( format, width, height, depth, layers, mipmap_layers, false, instance, tiling, usage, aspect ),
 	memory ( needed, recommended ), layouts ( layers, vk::ImageLayout::eUndefined ),
 	dependent ( false ), fraction ( 0.0f ) {
 
@@ -439,7 +439,7 @@ void VImageWrapper::init() {
 
 	V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &image ), printf ( "Failed To Create Image\n" ) );
 
-	printf ( "Create Image of dimensions %dx%dx%d with usage %s\n", extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
+	printf ( "Create Image 0x%x of dimensions %dx%dx%d with usage %s\n", image, extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
 
 	vk::MemoryRequirements mem_req;
 	v_instance->m_device.getImageMemoryRequirements ( image, &mem_req );
@@ -450,6 +450,9 @@ void VImageWrapper::init() {
 		imageview = v_instance->createImageView2D ( image, 0, mipmap_layers, v_format, aspect );
 	} else if ( type == vk::ImageType::e2D ) {
 		imageview = v_instance->createImageView2DArray ( image, 0, mipmap_layers, 0, layers, v_format, aspect );
+	} else {
+		printf("Not implemented %s\n", to_string(type).c_str());
+		assert(false);
 	}
 }
 
@@ -559,8 +562,8 @@ void VImageWrapper::generate_mipmaps ( Range<u32> mip_range, Range<u32> array_ra
 }
 
 
-VWindowImage::VWindowImage ( VInstance* instance, DynArray<vk::Image>& images, vk::Extent3D extent, u32 layers, vk::Format format ) :
-	VBaseImage ( format, extent.width, extent.height, extent.depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
+VWindowImage::VWindowImage ( VInstance* instance, DynArray<vk::Image>& images, u32 width, u32 height, u32 depth, u32 layers, vk::Format format ) :
+	VBaseImage ( format, width, height, depth, layers, 1, true, instance, vk::ImageTiling::eOptimal,
 	             vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	current_index ( 0 ), per_image_data ( images.size() ) {
 

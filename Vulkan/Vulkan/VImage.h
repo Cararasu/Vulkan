@@ -57,7 +57,7 @@ struct VWindowImage : public VBaseImage {
 
 	VWindowImage ( VInstance* instance,
 	               DynArray<vk::Image>& images,
-	               vk::Extent3D extent,
+	               u32 width, u32 height, u32 depth,
 	               u32 layers,
 	               vk::Format format );
 	virtual ~VWindowImage();
@@ -90,7 +90,7 @@ struct VImageWrapper : public VBaseImage {
 	float fraction;
 
 	VImageWrapper ( VInstance* instance,
-	                vk::Extent3D extent,
+	                u32 width, u32 height, u32 depth,
 	                u32 layers,
 	                u32 mipmap_layers,
 	                vk::Format format,

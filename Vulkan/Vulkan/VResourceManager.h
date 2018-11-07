@@ -25,5 +25,6 @@ struct VResourceManager : public ResourceManager{
 	
 	virtual Image* create_dependant_image(Image* image, ImageFormat type, float scaling) override;
 	VImageWrapper* v_create_dependant_image(VBaseImage* image, ImageFormat type, float scaling);
+	void v_delete_dependant_images(VBaseImage* image);
 	virtual void delete_image(Image* image) override;
 };

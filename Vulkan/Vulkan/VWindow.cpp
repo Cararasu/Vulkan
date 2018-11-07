@@ -10,8 +10,6 @@ VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ), quad_rendere
 }
 VWindow::~VWindow() {
 	v_instance->destroy_window ( this );
-	if ( depth_image )
-		delete depth_image;
 	if ( present_image )
 		delete present_image;
 	delete quad_renderer;
@@ -436,6 +434,7 @@ void VWindow::render_frame() {
 
 	if ( !queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
+		assert(false);
 	}
 	//present image
 	vk::Result results;
@@ -457,8 +456,7 @@ void VWindow::create_swapchain() {
 	destroy_frame_local_data();
 
 	capabilities = v_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
-
-	Extent2D<u32> old_swap_chain_extend = swap_chain_extend;
+	
 	{
 		Extent2D<s32> actualExtent = m_size.value;
 		if ( capabilities.currentExtent.width != std::numeric_limits<u32>::max() ) {
@@ -527,7 +525,7 @@ void VWindow::create_swapchain() {
 	if ( present_image ) {
 		present_image->new_window_images(images, {swap_chain_extend.x, swap_chain_extend.y, 0}, present_swap_format.format);
 	} else {
-		present_image = new VWindowImage ( v_instance, images, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, present_swap_format.format );
+		present_image = new VWindowImage ( v_instance, images, swap_chain_extend.x, swap_chain_extend.y, 0, 1, present_swap_format.format );
 		
 		depth_image = v_instance->m_resource_manager->v_create_dependant_image(present_image, ImageFormat::eD24Unorm_St8U, 1.0f);
 		//depth_image = new VImageWrapper ( v_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
