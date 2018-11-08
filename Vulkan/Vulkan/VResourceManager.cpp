@@ -109,7 +109,7 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	        aspectFlags,
 	        vk::MemoryPropertyFlagBits::eDeviceLocal );
-	images.push_back ( v_wrapper );
+	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {
 		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VImageWrapper*>() ) );
@@ -117,7 +117,7 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	it->second.push_back ( v_wrapper );
 	v_wrapper->dependent = true;
 	v_wrapper->fraction = scaling;
-	return 	v_wrapper;
+	return v_wrapper;
 }
 void VResourceManager::v_delete_dependant_images(VBaseImage* image) {
 	auto it = dependency_map.find(image);

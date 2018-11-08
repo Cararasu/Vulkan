@@ -65,24 +65,21 @@ struct Instance {
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
 
-	virtual const Renderer* create_renderer (
+	virtual const RenderStage* create_renderstage ( 
 	    const ModelInstanceBase* model_instance_base,
-	    const Array<const ContextBase*> context_bases/*,
+	    const Array<const ContextBase*> context_bases,
 		StringReference vertex_shader,
 		StringReference fragment_shader,
 		StringReference geometry_shader,
-		StringReference tesselation_control_shader,
-		StringReference tesselation_evaluation_shader*/
-	) = 0;
-	virtual const Renderer* renderer ( RId handle ) = 0;
-
-	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<RenderImageDef> image_defs ) = 0;
+		StringReference tess_cntrl_shader,
+		StringReference tess_eval_shader,
+		Array<RenderImageDef> input_image_defs ) = 0;
 	virtual const RenderStage* renderstage ( RId handle ) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
-	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage) = 0;
+	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies) = 0;
 	
 	
 };

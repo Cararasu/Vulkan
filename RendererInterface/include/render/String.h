@@ -6,7 +6,7 @@
 
 
 constexpr uint64_t djb2_hash(const char* ptr) {
-	return *ptr ? (djb2_hash(ptr + 1) * 33) ^ *ptr : 5381;
+	return ptr ? (*ptr ? (djb2_hash(ptr + 1) * 33) ^ *ptr : 5381) : 0;
 }
 
 struct String{
@@ -18,6 +18,10 @@ struct String{
 	constexpr String(const char* str, u64 hash) : cstr(str), hash(hash) {}
 	constexpr String(const String& str) : cstr(str.cstr), hash(str.hash) {}
 	constexpr String(const String&& str) : cstr(str.cstr), hash(str.hash) {}
+	
+	operator bool(){
+		return cstr != nullptr;
+	}
 	
 	void calc_hash() {
 		hash = djb2_hash(cstr);

@@ -114,7 +114,6 @@ struct VInstance : public Instance {
 	IdPtrArray<VModelBase> modelbase_store;
 	UIdPtrArray<VModel> model_store;
 	IdPtrArray<VModelInstanceBase> modelinstancebase_store;
-	IdPtrArray<VRenderer> renderer_store;
 	IdPtrArray<VRenderStage> renderstage_store;
 	DynArray<VInstanceGroup*> instancegroup_store;
 	
@@ -139,24 +138,21 @@ struct VInstance : public Instance {
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) override;
 
-	virtual const Renderer* create_renderer (
+	virtual const RenderStage* create_renderstage ( 
 	    const ModelInstanceBase* model_instance_base,
-	    Array<const ContextBase*> context_bases/*,
-	    StringReference vertex_shader,
-	    StringReference fragment_shader,
-	    StringReference geometry_shader,
-	    StringReference tesselation_control_shader,
-	    StringReference tesselation_evaluation_shader*/
-	) override;
-	virtual const Renderer* renderer ( RId handle ) override;
-
-	virtual const RenderStage* create_renderstage ( Array<const Renderer*> renderer, Array<void*> dependencies, Array<RenderImageDef> image_defs ) override;
+	    const Array<const ContextBase*> context_bases,
+		StringReference vertex_shader,
+		StringReference fragment_shader,
+		StringReference geometry_shader,
+		StringReference tess_cntrl_shader,
+		StringReference tess_eval_shader,
+		Array<RenderImageDef> input_image_defs ) override;
 	virtual const RenderStage* renderstage ( RId handle ) override;
 
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
-	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage );
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies );
 
 	virtual void prepare_render ();
 	virtual void prepare_render (Array<Window*> windows);

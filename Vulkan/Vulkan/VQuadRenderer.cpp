@@ -112,18 +112,18 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            render_target->images[0]->v_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
-			                            vk::AttachmentLoadOp::eClear,//stencilLoadOp
+			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
 			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
 			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            render_target->depth_image->v_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentLoadOp::eDontCare,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
-			                            vk::AttachmentLoadOp::eClear,//stencilLoadOp
+			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal,//initialLaylout
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal//finalLayout

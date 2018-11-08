@@ -15,11 +15,13 @@ struct VRenderImageWrapper {
 struct VRenderBundle : public RenderBundle {
 	VInstanceGroup* igroup;
 	VContextGroup* cgroup;
-	const VRenderStage* rstage;
+	Array<const VRenderStage*> rstages;
+	Array<ImageType> image_types;
+	Array<ImageDependency> dependencies;
 	
 	Array<VRenderImageWrapper> rendertargets;
 	
-	VRenderBundle(InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage);
+	VRenderBundle(InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies);
 	virtual ~VRenderBundle();
 
 	virtual void set_rendertarget(u32 index, Image* image) override;

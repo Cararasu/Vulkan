@@ -88,6 +88,12 @@ enum class ValueType {
 	eS8Mat4, eS16Mat4, eS32Mat4, eS64Mat4,
 	                   eF32Mat4, eF64Mat4,
 };
+enum class ImageType {
+	eColor,
+	eDepth,
+	eDepthStencil,
+	eStencil,
+};
 //type U, S, Unorm, Snorm, Float
 enum class ImageFormat {
 	eUndefined,

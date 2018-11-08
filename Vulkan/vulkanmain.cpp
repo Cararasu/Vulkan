@@ -188,11 +188,15 @@ int main ( int argc, char **argv ) {
 		u32 count;
 	};
 	*/
-	const Renderer* renderer = newinstance->create_renderer ( mod_instance, {} );
 	const RenderStage* renderstage = newinstance->create_renderstage (
-		{renderer},
-		{}/*dependencies*/,// what dependency: ... / context / output
-		{ {RenderImageType::eColorRGBA8}, {RenderImageType::eDepthImage} }//
+		mod_instance,
+		{},//context_bases
+		StringReference("vert_quad_shader"),
+		StringReference("frag_quad_shader"),
+		StringReference(nullptr),
+		StringReference(nullptr),
+		StringReference(nullptr),
+		{ {ImageType::eColor, ImageUsage::eWrite}, {ImageType::eDepth, ImageUsage::eReadWrite} }
 	);
 	instancegroup->clear();
 
@@ -229,7 +233,10 @@ int main ( int argc, char **argv ) {
 
 	RenderBundle* bundle;
 	{
-		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, renderstage );
+		Array<const RenderStage*> stages({renderstage});
+		Array<ImageType> imagetypes = {ImageType::eColor, ImageType::eDepth};
+		Array<ImageDependency> dependencies = {};
+		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, stages, imagetypes, dependencies );
 		bundle->set_rendertarget(0, windowimage);
 		bundle->set_rendertarget(1, newinstance->resource_manager()->create_dependant_image(windowimage, ImageFormat::eD24Unorm_St8U, 1.0f) );
 	}

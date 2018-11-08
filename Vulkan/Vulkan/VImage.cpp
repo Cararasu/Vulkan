@@ -274,8 +274,8 @@ ImageFormat transform_image_format ( vk::Format format ) {
 
 VBaseImage::VBaseImage ( vk::Format format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target, VInstance* instance,
                          vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect ) :
-	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), v_instance ( instance ), v_format ( format ),
-	tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
+	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, window_target ), 
+	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ) {
 	v_set_extent (width, height, depth);
 }
 VBaseImage::~VBaseImage() {
@@ -295,6 +295,10 @@ void VBaseImage::v_set_extent(u32 width, u32 height, u32 depth) {
 	this->width = width;
 	this->height = height;
 	this->depth = depth;
+}
+void VBaseImage::v_set_format(vk::Format format) {
+	this->v_format = format;
+	this->format = transform_image_format(format);
 }
 vk::ImageMemoryBarrier VBaseImage::transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
@@ -481,8 +485,8 @@ void VWindowImage::transition_image_layout ( vk::ImageLayout newLayout, Range<u3
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
 	    {},//memoryBarriers
-	{},//bufferBarriers
-	{barrier} //imageBarriers
+		{},//bufferBarriers
+		{barrier} //imageBarriers
 	);
 }
 void VImageWrapper::transition_image_layout ( vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
@@ -567,19 +571,18 @@ VWindowImage::VWindowImage ( VInstance* instance, DynArray<vk::Image>& images, u
 	             vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ), vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	current_index ( 0 ), per_image_data ( images.size() ) {
 
-	init ( images, format );
+	init ( images );
 }
 VWindowImage::~VWindowImage() {
 	destroy();
 }
-void VWindowImage::init ( DynArray<vk::Image>& images,
-                          vk::Format format ) {
+void VWindowImage::init ( DynArray<vk::Image>& images ) {
 	created_frame_index = v_instance->frame_index;
 	per_image_data.resize ( images.size() );
 	for ( size_t i = 0; i < images.size(); i++ ) {
 		per_image_data[i].layout = vk::ImageLayout::eUndefined;
 		per_image_data[i].image = images[i];
-		per_image_data[i].imageview = v_instance->createImageView2D ( images[i], 0, 1, format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
+		per_image_data[i].imageview = v_instance->createImageView2D ( images[i], 0, 1, v_format, vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) );
 	}
 	image = per_image_data[current_index].image;
 	imageview = per_image_data[current_index].imageview;
@@ -603,8 +606,10 @@ void VWindowImage::new_window_images ( DynArray<vk::Image>& images,
 	destroy();
 	printf ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32 "\n",
 	         this->width, this->height, this->depth, extent.width, extent.height, extent.depth );
+	
 	v_set_extent (extent.width, extent.height, extent.depth);
-	init ( images, format );
+	v_set_format (format);
+	init ( images );
 
 	auto it = v_instance->m_resource_manager->dependency_map.find ( this );
 	if ( it != v_instance->m_resource_manager->dependency_map.end() ) {

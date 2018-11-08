@@ -38,11 +38,9 @@ struct VRenderer : public Renderer {
 };
 
 struct VRenderStage : public RenderStage {
-	Array<VRenderer*> renderers;
-	Array<RenderImageDef> image_defs;
+	Array<RenderImageDef> input_image_defs;
 	
-	VRenderStage(Array<Renderer*>& renderers, Array<RenderImageDef> image_defs);
-	VRenderStage(Array<Renderer*>&& renderers, Array<RenderImageDef> image_defs);
+	VRenderStage(Array<RenderImageDef> input_image_defs);
 	
 	virtual ~VRenderStage() {}
 //    List of renderers

@@ -26,28 +26,40 @@ struct Array {
 
 	Array() : size ( 0 ), data ( nullptr ) {}
 
-	Array(u64 size) : size ( size ), data ( new T[size] ) {}
+	Array(u64 size) : size ( size ) {
+		if(!size) return;
+		data = new T[size];
+	}
 
-	Array ( const Array<T>& array ) : size ( array.size ), data ( new T[size] ) {
+	Array ( const Array<T>& array ) : size ( array.size ), data ( nullptr ) {
+		if(!size) return;
+		data = new T[size];
 		u64 i = 0;
 		for ( const T& ele : array){
 			data[i++] = ele;
 		}
 	}
-	Array ( const Array<T>&& array ) : size ( array.size ), data ( new T[size] ) {
+	Array ( const Array<T>&& array ) : size ( array.size ), data ( nullptr ) {
+		if(!size) return;
+		data = new T[size];
 		u64 i = 0;
 		for ( const T& ele : array){
 			data[i++] = std::move ( ele );
 		}
 	}
-	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( new T[size] ) {
+	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( nullptr ) {
+		if(!size) return;
+		data = new T[size];
 		u64 i = 0;
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
 		}
 	}
 	Array<T>& operator= ( const std::initializer_list<T> init_list ) {
+		if(data) delete[] data;
+		data = nullptr;
 		size = init_list.size();
+		if(!size) return *this;
 		data = new T[size];
 		u64 i = 0;
 		for ( const T& ele : init_list){

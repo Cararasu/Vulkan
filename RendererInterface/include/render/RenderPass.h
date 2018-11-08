@@ -26,12 +26,35 @@ struct Renderer : public IdHandle {
 	Renderer(const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts) : model_instance_base(model_instance_base), contexts(contexts){}
 	virtual ~Renderer() {}
 };
+enum class ImageUsage {
+	eContextRead = 0x1,
+	eRead = 0x2,
+	eWrite = 0x3,
+	eReadWrite = 0x4,
+};
 
 struct RenderImageDef {
-	RenderImageType imagetype;
+	ImageType type;
+	ImageUsage usage;
+};
+struct StageImage {
+	u32 stage_index, image_index;
+};
+struct ImageDependency {
+	u32 imageindex;
+	StageImage source_image;
+	StageImage target_image;
+};
+
+enum class RenderStageType {
+	eRenderer,
+	ePresenter,
+	eComposer,
 };
 
 struct RenderStage : public IdHandle {
+	RenderStageType type;
+	
 	virtual ~RenderStage() {}
 	//inputs
 	//outouts

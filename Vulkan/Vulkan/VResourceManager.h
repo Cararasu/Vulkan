@@ -12,7 +12,7 @@ struct VResourceManager : public ResourceManager{
 	Map<String, u64> shader_string_id_map;
 	IdPtrArray<VShaderModule> shader_array;
 	
-	DynArray<VImageWrapper*> images;
+	IdPtrArray<VImageWrapper> images;
 	Map<VBaseImage*, DynArray<VImageWrapper*>> dependency_map;
 	
 	VResourceManager(VInstance* instance);

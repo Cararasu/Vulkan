@@ -344,9 +344,6 @@ VInstance::~VInstance() {
 	for ( auto ele : renderstage_store ) {
 		delete ele;
 	}
-	for ( auto ele : renderer_store ) {
-		delete ele;
-	}
 	for ( auto ele : model_store ) {
 		delete ele;
 	}
@@ -619,24 +616,18 @@ const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, co
 const ModelInstanceBase* VInstance::modelinstancebase ( RId handle ) {
 	return modelinstancebase_store[handle];
 }
-const Renderer* VInstance::create_renderer (
-    const ModelInstanceBase* model_instance_base,
-    Array<const ContextBase*> context_bases/*,
-		StringReference vertex_shader,
-		StringReference fragment_shader,
-		StringReference geometry_shader,
-		StringReference tesselation_control_shader,
-		StringReference tesselation_evaluation_shader*/
-) {
-	return renderer_store.insert ( new VRenderer ( this, model_instance_base, context_bases ) );
-}
-const Renderer* VInstance::renderer ( RId handle ) {
-	return renderer_store[handle];
+const RenderStage* VInstance::create_renderstage ( 
+	const ModelInstanceBase* model_instance_base,
+	const Array<const ContextBase*> context_bases,
+	StringReference vertex_shader,
+	StringReference fragment_shader,
+	StringReference geometry_shader,
+	StringReference tess_cntrl_shader,
+	StringReference tess_eval_shader,
+	Array<RenderImageDef> input_image_defs ) {
+	return new VRenderStage(input_image_defs);
 }
 
-const RenderStage* VInstance::create_renderstage ( Array<const Renderer*> renderers, Array<void*> dependencies, Array<RenderImageDef> image_defs ) {
-	return renderstage_store.insert ( new VRenderStage({}, image_defs ) );
-}
 const RenderStage* VInstance::renderstage ( RId handle ) {
 	return renderstage_store[handle];
 }
@@ -650,8 +641,8 @@ InstanceGroup* VInstance::create_instancegroup() {
 ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, const RenderStage* rstage ) {
-	return new VRenderBundle(igroup, cgroup, rstage);
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) {
+	return new VRenderBundle(igroup, cgroup, rstages, image_types, dependencies);
 }
 void VInstance::prepare_render () {
 	for(VWindow* window : windows) {
@@ -665,7 +656,7 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {
 		VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b );
 		
-		for(VRenderer* renderer : bundle->rstage->renderers) {
+		for(const VRenderStage* stage : bundle->rstages) {
 			
 		}
 		

@@ -2,3 +2,6 @@
 /.codelite/
 /Vulkan.*
 /Vulkan
+
+*.dll
+.gdb_history

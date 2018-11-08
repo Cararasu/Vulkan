@@ -29,6 +29,7 @@ struct VBaseImage : public Image {
 	virtual ~VBaseImage() override;
 	
 	void v_set_extent(u32 width, u32 height, u32 depth);
+	void v_set_format(vk::Format format);
 
 	vk::ImageMemoryBarrier transition_image_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );
 
@@ -54,7 +55,7 @@ struct PerImageData {
 struct VWindowImage : public VBaseImage {
 	u32 current_index;
 	DynArray<PerImageData> per_image_data;
-
+	
 	VWindowImage ( VInstance* instance,
 	               DynArray<vk::Image>& images,
 	               u32 width, u32 height, u32 depth,
@@ -62,8 +63,7 @@ struct VWindowImage : public VBaseImage {
 	               vk::Format format );
 	virtual ~VWindowImage();
 
-	void init ( DynArray<vk::Image>& images,
-	            vk::Format format );
+	void init ( DynArray<vk::Image>& images );
 	void destroy();
 
 	void set_current_image ( u32 index );
