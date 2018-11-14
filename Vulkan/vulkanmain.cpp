@@ -121,6 +121,7 @@ clTabCtrl}*/
 
 #include <render/Logger.h>
 #include <render/Instance.h>
+#include <render/Specialization.h>
 #include <chrono>
 #include <thread>
 
@@ -134,7 +135,10 @@ int main ( int argc, char **argv ) {
 
 	//preload-shaders
 	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "frag_quad_shader", "shader/quad.frag.sprv" );
+	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_quad_shader", "shader/quad.frag.sprv" );
+	
+	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shader", "shader/tri.vert.sprv" );
+	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shader", "shader/tri.frag.sprv" );
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
@@ -150,9 +154,12 @@ int main ( int argc, char **argv ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
 
-	const DataGroupDef* vertex_def = newinstance->register_datagroupdef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 );
-	const DataGroupDef* matrix_def = newinstance->register_datagroupdef ( { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 );
-
+	const DataGroupDef* vertex_def = newinstance->static_datagroup_store.insert ( new DataGroupDef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 ) );
+	const DataGroupDef* matrix_def = newinstance->static_datagroup_store.insert ( new DataGroupDef ( { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 ) );
+	
+	vertex_datagroup_def = vertex_def->id;
+	matrix_datagroup_def = matrix_def->id;
+	
 	//create contextbase from datagroups
 	const ContextBase* w2smatrix_base = newinstance->register_contextbase ( matrix_def );
 	const ContextBase* m2wmatrix_base = newinstance->register_contextbase ( matrix_def );
@@ -174,10 +181,10 @@ int main ( int argc, char **argv ) {
 
 	Array<u16> indices = {0, 1, 2};
 
-	const Model model = newinstance->load_generic_model ( simplemodel_base, data_to_load.data, 24, indices.data, 3 );
+	//const Model model = newinstance->load_generic_model ( simplemodel_base, data_to_load.data, 24, indices.data, 3 );
 
 	//create instance from model
-	const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
+	//const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
 
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
@@ -233,7 +240,7 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image();
 
-	RenderBundle* bundle = newinstance->create_main_bundle(instancegroup, contextgroup);
+	RenderBundle* bundle = newinstance->create_main_bundle ( instancegroup, contextgroup );
 	/*{
 		Array<const RenderStage*> stages ( {renderstage} );
 		Array<ImageType> imagetypes = {ImageType::eColor, ImageType::eDepth};
@@ -253,8 +260,8 @@ int main ( int argc, char **argv ) {
 		newinstance->prepare_render();
 		instancegroup->clear();
 
-		u64 offset = instancegroup->register_instances ( mod_instance, 2 );
-		void* data = instancegroup->finish_register();
+		//u64 offset = instancegroup->register_instances ( mod_instance, 2 );
+		//void* data = instancegroup->finish_register();
 
 		newinstance->render_bundles ( {bundle} );
 		newinstance->present_windows();

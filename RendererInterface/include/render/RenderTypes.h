@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <string>
 
 #ifdef NDEBUG
 	#define vassert(COND)  ((void)0)
@@ -21,6 +22,8 @@ typedef int8_t s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
+
+#define RID_STATIC_IDS (0x80000000)
 
 typedef uint32_t RId;
 
@@ -60,6 +63,7 @@ u32 valuetype_sizes[] = {
 };*/
 
 enum class ValueType {
+	eUndefinded = 0,
 	eU8, eU16, eU32, eU64,
 	eS8, eS16, eS32, eS64,
 	           eF32, eF64,
@@ -88,6 +92,88 @@ enum class ValueType {
 	eS8Mat4, eS16Mat4, eS32Mat4, eS64Mat4,
 	                   eF32Mat4, eF64Mat4,
 };
+inline const char* to_string(ValueType type){
+	switch(type) {
+	case ValueType::eU8: return "u8";
+	case ValueType::eU16: return "u16";
+	case ValueType::eU32: return "u32";
+	case ValueType::eU64: return "u64";
+	case ValueType::eS8: return "s8";
+	case ValueType::eS16: return "s16";
+	case ValueType::eS32: return "s32";
+	case ValueType::eS64: return "s64";
+	case ValueType::eF32: return "f32";
+	case ValueType::eF64: return "f64";
+	
+	case ValueType::eU8Vec2: return "u8Vec2";
+	case ValueType::eU16Vec2: return "u16Vec2";
+	case ValueType::eU32Vec2: return "u32Vec2";
+	case ValueType::eU64Vec2: return "u64Vec2";
+	case ValueType::eS8Vec2: return "s8Vec2";
+	case ValueType::eS16Vec2: return "s16Vec2";
+	case ValueType::eS32Vec2: return "s32Vec2";
+	case ValueType::eS64Vec2: return "s64Vec2";
+	case ValueType::eF32Vec2: return "f32Vec2";
+	case ValueType::eF64Vec2: return "f64Vec2";
+	
+	case ValueType::eU8Vec3: return "u8Vec3";
+	case ValueType::eU16Vec3: return "u16Vec3";
+	case ValueType::eU32Vec3: return "u32Vec3";
+	case ValueType::eU64Vec3: return "u64Vec3";
+	case ValueType::eS8Vec3: return "s8Vec3";
+	case ValueType::eS16Vec3: return "s16Vec3";
+	case ValueType::eS32Vec3: return "s32Vec3";
+	case ValueType::eS64Vec3: return "s64Vec3";
+	case ValueType::eF32Vec3: return "f32Vec3";
+	case ValueType::eF64Vec3: return "f64Vec3";
+	
+	case ValueType::eU8Vec4: return "u8Vec4";
+	case ValueType::eU16Vec4: return "u16Vec4";
+	case ValueType::eU32Vec4: return "u32Vec4";
+	case ValueType::eU64Vec4: return "u64Vec4";
+	case ValueType::eS8Vec4: return "s8Vec4";
+	case ValueType::eS16Vec4: return "s16Vec4";
+	case ValueType::eS32Vec4: return "s32Vec4";
+	case ValueType::eS64Vec4: return "s64Vec4";
+	case ValueType::eF32Vec4: return "f32Vec4";
+	case ValueType::eF64Vec4: return "f64Vec4";
+
+	case ValueType::eU8Mat2: return "u8Mat2";
+	case ValueType::eU16Mat2: return "u16Mat2";
+	case ValueType::eU32Mat2: return "u32Mat2";
+	case ValueType::eU64Mat2: return "u64Mat2";
+	case ValueType::eS8Mat2: return "s8Mat2";
+	case ValueType::eS16Mat2: return "s16Mat2";
+	case ValueType::eS32Mat2: return "s32Mat2";
+	case ValueType::eS64Mat2: return "s64Mat2";
+	case ValueType::eF32Mat2: return "f32Mat2";
+	case ValueType::eF64Mat2: return "f64Mat2";
+	
+	case ValueType::eU8Mat3: return "u8Mat3";
+	case ValueType::eU16Mat3: return "u16Mat3";
+	case ValueType::eU32Mat3: return "u32Mat3";
+	case ValueType::eU64Mat3: return "u64Mat3";
+	case ValueType::eS8Mat3: return "s8Mat3";
+	case ValueType::eS16Mat3: return "s16Mat3";
+	case ValueType::eS32Mat3: return "s32Mat3";
+	case ValueType::eS64Mat3: return "s64Mat3";
+	case ValueType::eF32Mat3: return "f32Mat3";
+	case ValueType::eF64Mat3: return "f64Mat3";
+	
+	case ValueType::eU8Mat4: return "u8Mat4";
+	case ValueType::eU16Mat4: return "u16Mat4";
+	case ValueType::eU32Mat4: return "u32Mat4";
+	case ValueType::eU64Mat4: return "u64Mat4";
+	case ValueType::eS8Mat4: return "s8Mat4";
+	case ValueType::eS16Mat4: return "s16Mat4";
+	case ValueType::eS32Mat4: return "s32Mat4";
+	case ValueType::eS64Mat4: return "s64Mat4";
+	case ValueType::eF32Mat4: return "f32Mat4";
+	case ValueType::eF64Mat4: return "f64Mat4";
+	}
+	return "undefined Type";
+}
+
 enum class ImageType {
 	eColor,
 	eDepth,

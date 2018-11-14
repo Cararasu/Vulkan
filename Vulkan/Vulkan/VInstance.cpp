@@ -583,22 +583,6 @@ bool VInstance::destroy_window ( Window* window ) {
 	return false;
 }
 
-const DataGroupDef* VInstance::register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
-	return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
-}
-const DataGroupDef* VInstance::datagroupdef ( RId id ) {
-	return datagroup_store[id];
-}
-
-const ContextBase* VInstance::register_contextbase ( RId datagroup_id ) {
-	return register_contextbase ( datagroup_store[datagroup_id] );
-}
-const ContextBase* VInstance::register_contextbase ( const DataGroupDef* datagroup ) {
-	return contextbase_store.insert ( new VContextBase ( this, datagroup ) );
-}
-const ContextBase* VInstance::contextbase ( RId id ) {
-	return contextbase_store.get ( id );
-}
 const ModelBase* VInstance::register_modelbase ( RId vertexdatagroup ) {
 	return register_modelbase ( datagroup_store[vertexdatagroup] );
 }
@@ -677,7 +661,7 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 RenderBundle* VInstance::create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) {
 	return new VMainBundle(this, igroup, cgroup);
 }
-
+/*
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
 }
@@ -759,7 +743,7 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	free_staging_buffer ( staging_buffer );
 	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
-
+*/
 
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {

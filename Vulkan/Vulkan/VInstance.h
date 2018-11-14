@@ -107,30 +107,15 @@ struct VInstance : public Instance {
 	
 //------------ Resources
 
-	IdPtrArray<DataGroupDef> datagroup_store;
-	IdPtrArray<VContextBase> contextbase_store;
 	IdPtrArray<VModelBase> modelbase_store;
 	UIdPtrArray<VModel> model_store;
 	IdPtrArray<VModelInstanceBase> modelinstancebase_store;
 	IdPtrArray<VRenderStage> renderstage_store;
 	DynArray<VInstanceGroup*> instancegroup_store;
 	
-	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) override;
-	virtual const DataGroupDef* datagroupdef ( RId handle ) override;
-
-	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ ) override;
-	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ ) override;
-	virtual const ContextBase* contextbase ( RId handle ) override;
-
 	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) override;
 	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) override;
 	virtual const ModelBase* modelbase ( RId handle ) override;
-
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
-
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
 
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) override;
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;

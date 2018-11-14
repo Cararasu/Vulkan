@@ -4,6 +4,10 @@
 #include "../VContext.h"
 #include "../VImage.h"
 #include "../VInstance.h"
+#include <render/Specialization.h>
+#include "../VShader.h"
+#include "../VResourceManager.h"
+#include "../VTransformEnums.h"
 
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
 	v_instance ( instance ),
@@ -14,11 +18,11 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGr
 }
 
 VMainBundle::~VMainBundle() {
-	v_destroy_pipelines();
-	v_destroy_renderpasses();
 	v_destroy_pipeline_layouts();
 }
 void VMainBundle::v_destroy_pipeline_layouts() {
+	v_destroy_renderpasses();
+	v_destroy_pipelines();
 	if ( v_object_pipeline_layout ) {
 		v_instance->vk_device ().destroyPipelineLayout ( v_object_pipeline_layout );
 		v_object_pipeline_layout = vk::PipelineLayout();
@@ -46,9 +50,10 @@ void VMainBundle::set_rendertarget ( u32 index, Image* image ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 		v_destroy_renderpasses();
 	}
-
+	
 }
 void VMainBundle::v_check_rebuild_pipelines() {
+	u32 width = 0, height = 0;
 	for ( VBundleImageState& imagestate : v_bundleStates ) {
 		if ( !imagestate.actual_image ) {
 			printf ( "One or more Images not set for MainBundle\n" );
@@ -58,7 +63,16 @@ void VMainBundle::v_check_rebuild_pipelines() {
 		if ( last_frame_index_pipeline_built <= imagestate.actual_image->created_frame_index ) {
 			v_destroy_pipeline_layouts();
 		}
+		
+		assert(!width || width == imagestate.actual_image->extent.width);
+		assert(!height || height == imagestate.actual_image->extent.height);
+		width = imagestate.actual_image->extent.width;
+		height = imagestate.actual_image->extent.height;
+		
 	}
+	if(viewport.extend.width != width || viewport.extend.height != height)
+		
+	viewport = Viewport<f32> ( 0.0f, 0.0f, width, height, 0.0f, 1.0f );
 }
 
 void VMainBundle::v_rebuild_pipelines() {
@@ -142,26 +156,35 @@ void VMainBundle::v_rebuild_pipelines() {
 		
 		const ModelInstanceBase* modelinstancebase = v_instance->modelinstancebase(0);
 		
-		DataGroupDef* vertex_datagroup_def = modelinstancebase->datagroup(0);
-		DataGroupDef* instance_datagroup_def = modelinstancebase->datagroup(0);
+		const DataGroupDef* vertex_datagroup = v_instance->datagroupdef(vertex_datagroup_def);
+		const DataGroupDef* instance_datagroup = v_instance->datagroupdef(matrix_datagroup_def);
+		
 		
 		std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
-			vk::VertexInputBindingDescription ( 0, vertex_datagroup_def->size, vk::VertexInputRate::eVertex ),
-			vk::VertexInputBindingDescription ( 1, instance_datagroup_def->size, vk::VertexInputRate::eInstance )
+			vk::VertexInputBindingDescription ( 0, vertex_datagroup->size, vk::VertexInputRate::eVertex ),
+			vk::VertexInputBindingDescription ( 1, instance_datagroup->size, vk::VertexInputRate::eInstance )
 		};
 		
-		std::array<vk::VertexInputAttributeDescription, 5> vertexInputAttributes = {
-			vk::VertexInputAttributeDescription ( 0, 0, vk::Format::eR32G32Sfloat, offsetof ( QuadVertex, pos ) ),
-
-			vk::VertexInputAttributeDescription ( 1, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, dim ) ),
-			vk::VertexInputAttributeDescription ( 2, 1, vk::Format::eR32G32B32A32Sfloat, offsetof ( QuadInstance, uvdim ) ),
-			vk::VertexInputAttributeDescription ( 3, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, data ) ),
-			vk::VertexInputAttributeDescription ( 4, 1, vk::Format::eR32G32Sfloat, offsetof ( QuadInstance, color ) ),
-		};
+		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
+		u32 valuecount = 0;
+		for(DataValueDef& valuedef : vertex_datagroup->valuedefs) {
+			valuecount += to_v_format(valuedef.type).count * valuedef.arraycount;
+			printf("Value: %s %d[%d]\n", to_string(valuedef.type), valuedef.offset, valuedef.arraycount);
+		}
+		vertexInputAttributes.resize(valuecount);
+		u32 offset = 0;
+		for(DataValueDef& valuedef : vertex_datagroup->valuedefs) {
+			VFormatData formatdata = to_v_format(valuedef.type);
+			u32 count = formatdata.count * valuedef.arraycount;
+			for(int i = 0; i < count; i++) {
+				vertexInputAttributes[offset + i] = vk::VertexInputAttributeDescription ( offset + i, 0, formatdata.format, valuedef.offset/* + value*/ );
+			}
+			offset += count;
+		}
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
 				vertexInputBindings.size(), vertexInputBindings.data(),
-				vertexInputAttributes.size(), vertexInputAttributes.data() );
+				vertexInputAttributes.size, vertexInputAttributes.data );
 
 		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
 
@@ -218,16 +241,19 @@ void VMainBundle::v_rebuild_pipelines() {
 			1, colorBlendAttachments, // attachments
 			{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
+		
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader(StringReference("vert_shader"));
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader(StringReference("frag_shader"));
 
 		vk::PipelineShaderStageCreateInfo shaderStages[2] = {
 			vk::PipelineShaderStageCreateInfo (
 				vk::PipelineShaderStageCreateFlags(),
-				vk::ShaderStageFlagBits::eVertex, vertex_shader,
+				vk::ShaderStageFlagBits::eVertex, vmod->shadermodule,
 				"main", nullptr//name, specialization
 			),
 			vk::PipelineShaderStageCreateInfo (
 				vk::PipelineShaderStageCreateFlags(),
-				vk::ShaderStageFlagBits::eFragment, fragment_shader,
+				vk::ShaderStageFlagBits::eFragment, fmod->shadermodule,
 				"main", nullptr//name, specialization
 			),
 		};
@@ -237,13 +263,13 @@ void VMainBundle::v_rebuild_pipelines() {
 			&vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
 			nullptr,
 			v_object_pipeline_layout,
-			renderpass,
+			v_renderpass,
 			0,
 			vk::Pipeline(),
 			-1
 		);
 
-		pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		v_object_pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 
 	}
 	last_frame_index_pipeline_built = v_instance->frame_index;
@@ -252,7 +278,6 @@ void VMainBundle::v_dispatch() {
 	v_check_rebuild_pipelines();
 	v_rebuild_pipelines();
 
-	//this->v_igroup->
 
 	last_used = v_instance->frame_index;
 }

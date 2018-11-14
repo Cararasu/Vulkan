@@ -19,7 +19,11 @@
   <VirtualDirectory Name="src">
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VTransformEnums.cpp"/>
+      <File Name="Vulkan/VTransformEnums.h"/>
       <VirtualDirectory Name="Specialization">
+        <File Name="Vulkan/Specialization/VSpecializations.cpp"/>
+        <File Name="Vulkan/Specialization/VSpecializations.h"/>
         <File Name="Vulkan/Specialization/VMainBundle.h"/>
         <File Name="Vulkan/Specialization/VMainBundle.cpp"/>
       </VirtualDirectory>
@@ -101,6 +105,8 @@
       <PreBuild>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/tri.vert -o ../workingdir/shader/tri.vert.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/tri.frag -o ../workingdir/shader/tri.frag.sprv</Command>
       </PreBuild>
       <PostBuild/>
       <CustomBuild Enabled="no">

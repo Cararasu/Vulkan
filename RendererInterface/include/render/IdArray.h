@@ -154,7 +154,7 @@ struct UIdArray {
 	}
 };
 
-template<typename T>
+template<typename T, u32 STRIDE = 0>
 struct IdPtrArray {
 	DynArray<T*> list;
 
@@ -163,13 +163,13 @@ struct IdPtrArray {
 	IdPtrArray() {}
 	IdPtrArray ( std::initializer_list<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
+			list[i].id = STRIDE + i + 1;
 		}
 		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
 	IdPtrArray ( DynArray<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
+			list[i].id = STRIDE + i + 1;
 		}
 		this->list.insert(list.begin(), list.end(), this->list.begin());
 	}
@@ -180,12 +180,12 @@ struct IdPtrArray {
 	T* insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			if ( !list[i] ) {
-				ele->id = i + 1;
+				ele->id = STRIDE + i + 1;
 				list[i] = ele;
 				return list[i];
 			}
 		}
-		ele->id = list.size() + 1;
+		ele->id = STRIDE + list.size() + 1;
 		list.push_back ( ele );
 		return list.back();
 	}
@@ -217,7 +217,7 @@ struct IdPtrArray {
 		return ptr;
 	}
 	T* get ( RId id ) {
-		return id && id <= list.size() ? list[id - 1] : nullptr;
+		return id > STRIDE && id <= STRIDE + list.size() ? list[id - 1 - STRIDE] : nullptr;
 	}
 	T* operator[] ( RId id ) {
 		return get ( id );

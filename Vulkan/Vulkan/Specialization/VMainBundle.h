@@ -5,6 +5,7 @@
 #include <render/Resources.h>
 
 #include "../VHeader.h"
+#include <render/Dimensions.h>
 
 struct VInstanceGroup;
 struct VContextGroup;
@@ -21,6 +22,8 @@ struct VMainBundle : public RenderBundle {
 	VInstanceGroup* v_igroup;
 	VContextGroup* v_cgroup;
 	Array<VBundleImageState> v_bundleStates;
+
+	Viewport<f32> viewport;
 
 	vk::PipelineLayout v_object_pipeline_layout;
 	vk::Pipeline v_object_pipeline;

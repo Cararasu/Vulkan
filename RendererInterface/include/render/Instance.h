@@ -6,6 +6,7 @@
 #include "Model.h"
 #include "RenderPass.h"
 #include "ResourceManager.h"
+#include "IdArray.h"
 
 struct Device {
 	const char* name;
@@ -44,23 +45,36 @@ struct Instance {
 
 	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
-	virtual const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) = 0;
-	virtual const DataGroupDef* datagroupdef ( RId handle ) = 0;
 
-	virtual const ContextBase* register_contextbase ( RId datagroup/*image-defs*/ ) = 0;
-	virtual const ContextBase* register_contextbase ( const DataGroupDef* datagroup/*image-defs*/ ) = 0;
-	virtual const ContextBase* contextbase ( RId handle ) = 0;
+	IdPtrArray<DataGroupDef> datagroup_store;
+	IdPtrArray<DataGroupDef, RID_STATIC_IDS> static_datagroup_store;
+	const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
+		return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
+	}
+	const DataGroupDef* datagroupdef ( RId id ) {
+		if(id >= RID_STATIC_IDS)
+			return static_datagroup_store[id];
+		return datagroup_store[id];
+	}
+
+	IdPtrArray<ContextBase> contextbase_store;
+	IdPtrArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
+	const ContextBase* register_contextbase ( RId datagroup_id ) {
+		return register_contextbase ( datagroup_store[datagroup_id] );
+	}
+	const ContextBase* register_contextbase ( const DataGroupDef* datagroup ) {
+		return contextbase_store.insert ( new ContextBase ( datagroup ) );
+	}
+	const ContextBase* contextbase ( RId id ) {
+		if(id >= RID_STATIC_IDS)
+			return static_contextbase_store[id];
+		return contextbase_store.get ( id );
+	}
 
 	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) = 0;
 	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) = 0;
 	virtual const ModelBase* modelbase ( RId handle ) = 0;
-
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
-
-	virtual const Model load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
-	virtual const Model load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
-
+	
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;

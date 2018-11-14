@@ -56,6 +56,11 @@ VShaderModule* VResourceManager::v_get_shader ( StringReference ref ) {
 	if ( it != shader_string_id_map.end() ) {
 		return shader_array.get ( it->second );
 	}
+	for(auto& it : shader_string_id_map){
+		//TODO HACK
+		if(it.first == ref.name)
+			return shader_array.get(it.second);
+	}
 	return nullptr;
 }
 ShaderModule* VResourceManager::get_shader ( StringReference ref ) {
