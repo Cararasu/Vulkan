@@ -74,6 +74,7 @@ struct Instance {
 		StringReference tess_cntrl_shader,
 		StringReference tess_eval_shader,
 		Array<RenderImageDef> input_image_defs ) = 0;
+	//virtual const RenderStage* create_present_renderstage ( Window* window ) = 0;
 	virtual const RenderStage* renderstage ( RId handle ) = 0;
 	
 	virtual InstanceGroup* create_instancegroup() = 0;
@@ -81,7 +82,9 @@ struct Instance {
 
 	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies) = 0;
 	
-	
+//---------- Specialized Functions
+
+	virtual RenderBundle* create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) = 0;
 };
 
 Instance* create_instance ( String name );

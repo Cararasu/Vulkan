@@ -6,6 +6,7 @@
 struct VRenderStage;
 struct RenderStage;
 struct Image;
+struct VBaseImage;
 
 struct VRenderImageWrapper {
 	bool external = false;

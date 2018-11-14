@@ -3,9 +3,6 @@
 #include "VInstance.h"
 #include "render/Resources.h"
 
-//maybe...
-extern ImageFormat format_to_imagetype_map[185];
-
 struct VInstance;
 struct VImageWrapper;
 

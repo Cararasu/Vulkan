@@ -2,10 +2,7 @@
 
 #include "Resources.h"
 
-//Renderer - defines one GPU pipeline
-//	ContextBase - id
-//	ModelInstanceBase - id
-//RenderStage - groups multiple renderers that can be done simultaniously
+//RenderStage - ...
 //	RenderStages
 //RenderPass - groups sections that can be used in a deferred shading pass
 //	RenderSections
@@ -15,17 +12,6 @@
 //ShaderDef
 //create_shader(opengl3, opengl4, vulkan, direct3d, ...)
 
-struct ShaderBase {
-	
-};
-
-struct Renderer : public IdHandle {
-	const ModelInstanceBase* model_instance_base;
-	const Array<const ContextBase*> contexts;
-	//changeable stuff here like options?
-	Renderer(const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts) : model_instance_base(model_instance_base), contexts(contexts){}
-	virtual ~Renderer() {}
-};
 enum class ImageUsage {
 	eContextRead = 0x1,
 	eRead = 0x2,
@@ -59,8 +45,6 @@ struct RenderStage : public IdHandle {
 	//inputs
 	//outouts
 	//Dependencies		Renderer*/index -> Renderer*/index
-	
-	//void set_output_image();
 };
 
 struct RenderInformation{

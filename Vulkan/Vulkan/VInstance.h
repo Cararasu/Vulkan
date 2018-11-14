@@ -4,7 +4,6 @@
 #include "render/Window.h"
 #include "VHeader.h"
 #include <render/IdArray.h>
-#include "VRenderer.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -55,7 +54,6 @@ struct VContextBase;
 struct VModelBase;
 struct VModel;
 struct VModelInstanceBase;
-struct VRenderer;
 struct VRenderStage;
 struct VBuffer;
 struct VInstanceGroup;
@@ -158,6 +156,11 @@ struct VInstance : public Instance {
 	virtual void prepare_render (Array<Window*> windows);
 	
 	virtual void render_bundles ( Array<RenderBundle*> bundles );
+
+
+//------------ Specialized Functions
+	virtual RenderBundle* create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) override;
+
 
 //------------ Transfer Data
 

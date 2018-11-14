@@ -130,12 +130,12 @@ int main ( int argc, char **argv ) {
 
 	Instance* newinstance = create_instance ( "Vulkan" );
 
-	newinstance->initialize(InstanceOptions());
+	newinstance->initialize ( InstanceOptions() );
 
 	//preload-shaders
-	newinstance->resource_manager()->load_shader(ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv");
-	newinstance->resource_manager()->load_shader(ShaderType::eVertex, "frag_quad_shader", "shader/quad.frag.sprv");
-	
+	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv" );
+	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "frag_quad_shader", "shader/quad.frag.sprv" );
+
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
 	printf ( "Monitors\n" );
@@ -188,17 +188,19 @@ int main ( int argc, char **argv ) {
 		u32 count;
 	};
 	*/
-	const RenderStage* renderstage = newinstance->create_renderstage (
-		mod_instance,
-		{},//context_bases
-		StringReference("vert_quad_shader"),
-		StringReference("frag_quad_shader"),
-		StringReference(nullptr),
-		StringReference(nullptr),
-		StringReference(nullptr),
-		{ {ImageType::eColor, ImageUsage::eWrite}, {ImageType::eDepth, ImageUsage::eReadWrite} }
-	);
+	/*const RenderStage* renderstage = newinstance->create_renderstage (
+	                                     mod_instance,
+	                                     {},//context_bases
+	                                     StringReference ( "vert_quad_shader" ),
+	                                     StringReference ( "frag_quad_shader" ),
+	                                     StringReference ( nullptr ),
+	                                     StringReference ( nullptr ),
+	                                     StringReference ( nullptr ),
+										{ {ImageType::eColor, ImageUsage::eWrite}, {ImageType::eDepth, ImageUsage::eReadWrite} }
+	                                 );*/
 	instancegroup->clear();
+
+
 
 	//upload pattern:
 	//	register/allocate
@@ -231,15 +233,15 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image();
 
-	RenderBundle* bundle;
-	{
-		Array<const RenderStage*> stages({renderstage});
+	RenderBundle* bundle = newinstance->create_main_bundle(instancegroup, contextgroup);
+	/*{
+		Array<const RenderStage*> stages ( {renderstage} );
 		Array<ImageType> imagetypes = {ImageType::eColor, ImageType::eDepth};
-		Array<ImageDependency> dependencies = {};
+		Array<ImageDependency> dependencies = { {0, {0, 0}, {renderstage->id, 0}}, {0, {0, 1}, {renderstage->id, 1}} };
 		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, stages, imagetypes, dependencies );
-		bundle->set_rendertarget(0, windowimage);
-		bundle->set_rendertarget(1, newinstance->resource_manager()->create_dependant_image(windowimage, ImageFormat::eD24Unorm_St8U, 1.0f) );
-	}
+	}*/
+	bundle->set_rendertarget ( 0, windowimage );
+	bundle->set_rendertarget ( 1, newinstance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
 
 	printf ( "Starting Main Loop\n" );
 	do {
@@ -250,7 +252,7 @@ int main ( int argc, char **argv ) {
 		newinstance->process_events();
 		newinstance->prepare_render();
 		instancegroup->clear();
-		
+
 		u64 offset = instancegroup->register_instances ( mod_instance, 2 );
 		void* data = instancegroup->finish_register();
 

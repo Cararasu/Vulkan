@@ -19,6 +19,10 @@
   <VirtualDirectory Name="src">
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <VirtualDirectory Name="Specialization">
+        <File Name="Vulkan/Specialization/VMainBundle.h"/>
+        <File Name="Vulkan/Specialization/VMainBundle.cpp"/>
+      </VirtualDirectory>
       <File Name="Vulkan/VShader.cpp"/>
       <File Name="Vulkan/VShader.h"/>
       <File Name="Vulkan/VResourceManager.cpp"/>

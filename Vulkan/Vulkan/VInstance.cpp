@@ -6,6 +6,8 @@
 #include "VModel.h"
 #include "VRenderBundle.h"
 #include "VResourceManager.h"
+#include "Specialization/VMainBundle.h"
+#include "VRenderer.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -654,16 +656,27 @@ void VInstance::prepare_render ( Array<Window*> windows ) {
 }
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {
-		VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b );
-		
-		for(const VRenderStage* stage : bundle->rstages) {
-			
+		if(VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b )) {
+			if ( bundle ) {
+				for(const VRenderStage* stage : bundle->rstages) {
+					
+				}
+				bundle->v_dispatch();
+			}
+			if ( bundle ) bundle->v_dispatch();
+		}
+		if(VMainBundle* bundle = dynamic_cast<VMainBundle*> ( b )) {
+			if ( bundle ) {
+				printf("MainBundle\n");
+				bundle->v_dispatch();
+			}
 		}
 		
-		if ( bundle ) bundle->v_dispatch();
 	}
 }
-
+RenderBundle* VInstance::create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) {
+	return new VMainBundle(this, igroup, cgroup);
+}
 
 const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );

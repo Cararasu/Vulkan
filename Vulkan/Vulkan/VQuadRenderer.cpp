@@ -4,7 +4,7 @@
 #include "VResourceManager.h"
 
 
-VQuadRenderer::VQuadRenderer ( VInstance* instance ) : VRenderer ( instance, nullptr, {} ) {
+VQuadRenderer::VQuadRenderer ( VInstance* instance ) : v_instance ( instance ) {
 
 }
 VQuadRenderer::~VQuadRenderer() {
@@ -226,7 +226,7 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 	    vk::PipelineColorBlendStateCreateFlags(),
 	    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
 	    1, colorBlendAttachments, // attachments
-	{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 	);
 
 	vk::PipelineShaderStageCreateInfo shaderStages[2] = {
@@ -396,10 +396,6 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 	*final_sem_index = wait_sem_index;
 	return RendResult::eSuccess;
 }
-void VQuadRenderer::inherit ( VRenderer* old_renderer ) {
-	v_inherit(dynamic_cast<VQuadRenderer*>(old_renderer));
-}
-
 void VQuadRenderer::v_inherit ( VQuadRenderer* old_quad_renderer ) {
 
 	pipeline = vk::Pipeline();
