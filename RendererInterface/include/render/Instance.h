@@ -14,7 +14,7 @@ struct Device {
 	virtual ~Device() {}
 };
 
-struct InstanceOptions{
+struct InstanceOptions {
 	u64 max_number_of_window_frames_in_pipeline = 3;
 };
 
@@ -23,7 +23,7 @@ struct Instance {
 	Array<Monitor*> monitors;
 	Array<Device*> devices;
 	Array<Window*> windows;
-	
+
 	virtual ~Instance() {}
 
 	virtual bool initialize ( InstanceOptions options, Device* device = nullptr ) = 0;
@@ -37,68 +37,70 @@ struct Instance {
 	virtual bool is_window_open() = 0;
 
 	virtual void prepare_render () = 0;
-	virtual void prepare_render (Array<Window*> windows) = 0;
-	
-	virtual void render_bundles(Array<RenderBundle*> bundles) = 0;
-	
+	virtual void prepare_render ( Array<Window*> windows ) = 0;
+
+	virtual void render_bundles ( Array<RenderBundle*> bundles ) = 0;
+
 	virtual Monitor* get_primary_monitor() = 0;
 
 	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
 
-	IdPtrArray<DataGroupDef> datagroup_store;
-	IdPtrArray<DataGroupDef, RID_STATIC_IDS> static_datagroup_store;
-	const DataGroupDef* register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
-		return datagroup_store.insert ( new DataGroupDef ( valuedefs, size, arraycount ) );
+	IdArray<DataGroupDef> datagroup_store;
+	IdArray<DataGroupDef, RID_STATIC_IDS> static_datagroup_store;
+	const DataGroupDefId register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
+		DataGroupDef datagroupdef ( valuedefs, size, arraycount );
+		return datagroup_store.insert ( datagroupdef );
 	}
-	const DataGroupDef* datagroupdef ( RId id ) {
-		if(id >= RID_STATIC_IDS)
-			return static_datagroup_store[id];
-		return datagroup_store[id];
+	const DataGroupDef* datagroupdef ( DataGroupDefId id ) {
+		if ( id >= RID_STATIC_IDS )
+			return static_datagroup_store.get ( id );
+		return datagroup_store.get ( id );
 	}
 
-	IdPtrArray<ContextBase> contextbase_store;
-	IdPtrArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
-	const ContextBase* register_contextbase ( RId datagroup_id ) {
-		return register_contextbase ( datagroup_store[datagroup_id] );
+	IdArray<ContextBase> contextbase_store;
+	IdArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
+	const ContextBaseId register_contextbase ( DataGroupDef* datagroup ) {
+		ContextBase contextbase ( datagroup );
+		return contextbase_store.insert ( contextbase );
 	}
-	const ContextBase* register_contextbase ( const DataGroupDef* datagroup ) {
-		return contextbase_store.insert ( new ContextBase ( datagroup ) );
+	const ContextBaseId register_contextbase ( DataGroupDefId datagroup_id ) {
+		return register_contextbase ( &datagroup_store[datagroup_id] );
 	}
-	const ContextBase* contextbase ( RId id ) {
-		if(id >= RID_STATIC_IDS)
-			return static_contextbase_store[id];
+	const ContextBase* contextbase ( ContextBaseId id ) {
+		if ( id >= RID_STATIC_IDS )
+			return static_contextbase_store.get ( id );
 		return contextbase_store.get ( id );
 	}
 
-	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) = 0;
+	virtual const ModelBase* register_modelbase ( DataGroupDefId vertexdatagroup ) = 0;
 	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) = 0;
 	virtual const ModelBase* modelbase ( RId handle ) = 0;
-	
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) = 0;
+
+	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, DataGroupDefId datagroup = 0 ) = 0;
 	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
 	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
 
-	virtual const RenderStage* create_renderstage ( 
+	virtual const RenderStage* create_renderstage (
 	    const ModelInstanceBase* model_instance_base,
 	    const Array<const ContextBase*> context_bases,
-		StringReference vertex_shader,
-		StringReference fragment_shader,
-		StringReference geometry_shader,
-		StringReference tess_cntrl_shader,
-		StringReference tess_eval_shader,
-		Array<RenderImageDef> input_image_defs ) = 0;
+	    StringReference vertex_shader,
+	    StringReference fragment_shader,
+	    StringReference geometry_shader,
+	    StringReference tess_cntrl_shader,
+	    StringReference tess_eval_shader,
+	    Array<RenderImageDef> input_image_defs ) = 0;
 	//virtual const RenderStage* create_present_renderstage ( Window* window ) = 0;
 	virtual const RenderStage* renderstage ( RId handle ) = 0;
-	
+
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
-	virtual RenderBundle* create_renderbundle(InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies) = 0;
-	
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) = 0;
+
 //---------- Specialized Functions
 
-	virtual RenderBundle* create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) = 0;
+	virtual RenderBundle* create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) = 0;
 };
 
 Instance* create_instance ( String name );

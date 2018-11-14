@@ -27,14 +27,6 @@ void VQuadRenderer::destroy () {
 		v_instance->vk_device ().destroyRenderPass ( renderpass );
 		renderpass = vk::RenderPass();
 	}
-	if ( vertex_shader ) {
-		v_instance->vk_device ().destroyShaderModule ( vertex_shader );
-		vertex_shader = vk::ShaderModule();
-	}
-	if ( fragment_shader ) {
-		v_instance->vk_device ().destroyShaderModule ( fragment_shader );
-		fragment_shader = vk::ShaderModule();
-	}
 	if ( pipeline_layout ) {
 		v_instance->vk_device ().destroyPipelineLayout ( pipeline_layout );
 		pipeline_layout = vk::PipelineLayout();

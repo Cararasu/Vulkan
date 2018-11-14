@@ -3,11 +3,12 @@
 #include "VImage.h"
 #include <fstream>
 
-VResourceManager::VResourceManager ( VInstance* instance ) : instance ( instance ) {
+VResourceManager::VResourceManager ( VInstance* instance ) : v_instance ( instance ) {
 }
 
 VResourceManager::~VResourceManager() {
-	for(VShaderModule* shadermodule : shader_array) {
+	for ( VShaderModule* shadermodule : shader_array ) {
+		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
 		delete shadermodule;
 	}
 }
@@ -44,7 +45,7 @@ u64 VResourceManager::load_shader ( ShaderType type, String name, String filenam
 	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
 
 	vk::ShaderModule shadermodule;
-	V_CHECKCALL ( instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
+	V_CHECKCALL ( v_instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
 	module = new VShaderModule ( type, name, shadermodule );
 	shader_array.insert ( module );
 	shader_string_id_map.insert ( std::make_pair ( name, module->id ) );
@@ -59,10 +60,11 @@ VShaderModule* VResourceManager::v_get_shader ( StringReference ref ) {
 	if ( it != shader_string_id_map.end() ) {
 		return shader_array.get ( it->second );
 	}
-	for(auto& it : shader_string_id_map){
+	for ( auto& it : shader_string_id_map ) {
 		//TODO HACK
-		if(it.first == ref.name)
-			return shader_array.get(it.second);
+		if ( it.first == ref.name ) {
+			return shader_array.get ( it.second );
+		}
 	}
 	return nullptr;
 }
@@ -108,8 +110,8 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	//TODO make eSampled and eInputAttachment dynamically
 	VImageWrapper* v_wrapper = new VImageWrapper ( base_image->v_instance,
 	        base_image->width,
-			base_image->height,
-			base_image->depth,
+	        base_image->height,
+	        base_image->depth,
 	        1,
 	        base_image->mipmap_layers,
 	        format,
@@ -127,13 +129,13 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	v_wrapper->fraction = scaling;
 	return v_wrapper;
 }
-void VResourceManager::v_delete_dependant_images(VBaseImage* image) {
-	auto it = dependency_map.find(image);
-	if(it != dependency_map.end()) {
-		for(VImageWrapper* image : it->second) {
+void VResourceManager::v_delete_dependant_images ( VBaseImage* image ) {
+	auto it = dependency_map.find ( image );
+	if ( it != dependency_map.end() ) {
+		for ( VImageWrapper* image : it->second ) {
 			delete image;
 		}
-		dependency_map.erase(it);
+		dependency_map.erase ( it );
 	}
 }
 void VResourceManager::delete_image ( Image* image ) {

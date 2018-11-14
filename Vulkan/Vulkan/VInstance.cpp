@@ -334,12 +334,7 @@ VInstance::~VInstance() {
 	for ( auto entry : window_map ) {
 		destroy_window ( entry.second );
 	}
-	for ( auto ele : datagroup_store ) {
-		delete ele;
-	}
-	for ( auto ele : contextbase_store ) {
-		delete ele;
-	}
+	delete m_resource_manager;
 	for ( auto ele : instancegroup_store ) {
 		delete ele;
 	}
@@ -584,7 +579,7 @@ bool VInstance::destroy_window ( Window* window ) {
 }
 
 const ModelBase* VInstance::register_modelbase ( RId vertexdatagroup ) {
-	return register_modelbase ( datagroup_store[vertexdatagroup] );
+	return register_modelbase ( &datagroup_store[vertexdatagroup] );
 }
 const ModelBase* VInstance::register_modelbase ( const DataGroupDef* vertexdatagroup ) {
 	return modelbase_store.insert ( new VModelBase ( vertexdatagroup ) );
@@ -594,7 +589,7 @@ const ModelBase* VInstance::modelbase ( RId id ) {
 }
 
 const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
-	return register_modelinstancebase ( model, datagroup_store[datagroup_id] );
+	return register_modelinstancebase ( model, &datagroup_store[datagroup_id] );
 }
 const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, const DataGroupDef* datagroup ) {
 	return modelinstancebase_store.insert ( new VModelInstanceBase ( this, datagroup, model ) );

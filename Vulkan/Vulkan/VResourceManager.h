@@ -8,7 +8,7 @@ struct VImageWrapper;
 struct VBaseImage;
 
 struct VResourceManager : public ResourceManager{
-	VInstance* instance;
+	VInstance* v_instance;
 	Map<String, u64> shader_string_id_map;
 	IdPtrArray<VShaderModule> shader_array;
 	

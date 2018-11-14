@@ -27,6 +27,9 @@ typedef int64_t s64;
 
 typedef uint32_t RId;
 
+typedef RId DataGroupDefId;
+typedef RId ContextBaseId;
+
 typedef float f32;
 typedef double f64;
 
@@ -63,7 +66,7 @@ u32 valuetype_sizes[] = {
 };*/
 
 enum class ValueType {
-	eUndefinded = 0,
+	eUndefined = 0,
 	eU8, eU16, eU32, eU64,
 	eS8, eS16, eS32, eS64,
 	           eF32, eF64,
@@ -94,6 +97,8 @@ enum class ValueType {
 };
 inline const char* to_string(ValueType type){
 	switch(type) {
+	case ValueType::eUndefined: return "undefined";
+	
 	case ValueType::eU8: return "u8";
 	case ValueType::eU16: return "u16";
 	case ValueType::eU32: return "u32";

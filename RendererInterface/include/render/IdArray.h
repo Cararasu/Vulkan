@@ -15,7 +15,7 @@ public:
 };
 
 //maybe move to 2 arrays where the 1 references the second and we can implement a freelist in the mapping array
-template<typename T>
+template<typename T, u32 OFFSET = 0>
 struct IdArray {
 	DynArray<T> list;
 	typedef typename DynArray<T>::iterator iterator;
@@ -23,28 +23,30 @@ struct IdArray {
 	IdArray() {}
 	IdArray ( std::initializer_list<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
+			list[i].id = OFFSET + i + 1;
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 	IdArray ( DynArray<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = i + 1;
+			list[i].id = OFFSET + i + 1;
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 
 	RId insert ( T& ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			if ( !list[i].id ) {
-				ele.id = i + 1;
-				list[i] = ele;
-				return i + 1;
+				u32 id = OFFSET + i + 1;
+				list[i] = std::move(ele);
+				list[i].id = id;
+				return id;
 			}
 		}
-		ele.id = list.size() + 1;
-		list.push_back ( ele );
-		return ele.id;
+		u32 id = OFFSET + list.size() + 1;
+		list.push_back ( std::move ( ele ) );
+		list.back().id = id;
+		return id;
 	}
 	/*template< class... Args >
 	RId emplace_back ( Args&&... args ) {
@@ -72,7 +74,7 @@ struct IdArray {
 		get ( id )->id = 0;
 	}
 	T* get ( RId id ) {
-		return id && id <= list.size() ? &list[id - 1] : nullptr;
+		return id > OFFSET && id <= OFFSET + list.size() ? &list[id - 1 - OFFSET] : nullptr;
 	}
 	T& operator[] ( RId id ) {
 		return *get ( id );
@@ -141,10 +143,10 @@ struct UIdArray {
 	}
 	void remove ( IdHandle handle ) {
 		T* ptr = get ( handle );
-		if(ptr->uid == handle.uid) ptr->id = 0;
+		if ( ptr->uid == handle.uid ) ptr->id = 0;
 	}
 	T* get ( IdHandle handle ) {
-		return handle.id && handle.id <= list.size() ? (list[handle.id - 1].uid == handle.uid ? &list[handle.id - 1] : nullptr) : nullptr;
+		return handle.id && handle.id <= list.size() ? ( list[handle.id - 1].uid == handle.uid ? &list[handle.id - 1] : nullptr ) : nullptr;
 	}
 	T& operator[] ( RId id ) {
 		return *get ( id );
@@ -154,7 +156,7 @@ struct UIdArray {
 	}
 };
 
-template<typename T, u32 STRIDE = 0>
+template<typename T, u32 OFFSET = 0>
 struct IdPtrArray {
 	DynArray<T*> list;
 
@@ -163,29 +165,29 @@ struct IdPtrArray {
 	IdPtrArray() {}
 	IdPtrArray ( std::initializer_list<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = STRIDE + i + 1;
+			list[i].id = OFFSET + i + 1;
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 	IdPtrArray ( DynArray<T> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
-			list[i].id = STRIDE + i + 1;
+			list[i].id = OFFSET + i + 1;
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 	~IdPtrArray () {
-		
+
 	}
 
 	T* insert ( T* ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			if ( !list[i] ) {
-				ele->id = STRIDE + i + 1;
+				ele->id = OFFSET + i + 1;
 				list[i] = ele;
 				return list[i];
 			}
 		}
-		ele->id = STRIDE + list.size() + 1;
+		ele->id = OFFSET + list.size() + 1;
 		list.push_back ( ele );
 		return list.back();
 	}
@@ -217,7 +219,7 @@ struct IdPtrArray {
 		return ptr;
 	}
 	T* get ( RId id ) {
-		return id > STRIDE && id <= STRIDE + list.size() ? list[id - 1 - STRIDE] : nullptr;
+		return id > OFFSET && id <= OFFSET + list.size() ? list[id - 1 - OFFSET] : nullptr;
 	}
 	T* operator[] ( RId id ) {
 		return get ( id );
@@ -239,14 +241,14 @@ struct UIdPtrArray {
 			list[i]->id = i + 1;
 			list[i]->uid = gen.next();
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 	UIdPtrArray ( DynArray<T*> list ) : list ( list ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			list[i]->id = i + 1;
 			list[i]->uid = gen.next();
 		}
-		this->list.insert(list.begin(), list.end(), this->list.begin());
+		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 	~UIdPtrArray () {
 	}
@@ -289,10 +291,10 @@ struct UIdPtrArray {
 	}
 	void remove ( IdHandle handle ) {
 		T* ptr = get ( handle );
-		if(ptr->uid == handle.uid) ptr->id = 0;
+		if ( ptr->uid == handle.uid ) ptr->id = 0;
 	}
 	T* get ( IdHandle handle ) {
-		return handle.id && handle.id <= list.size() ? (list[handle.id - 1]->uid == handle.uid ? list[handle.id - 1] : nullptr) : nullptr;
+		return handle.id && handle.id <= list.size() ? ( list[handle.id - 1]->uid == handle.uid ? list[handle.id - 1] : nullptr ) : nullptr;
 	}
 	T* operator[] ( RId id ) {
 		return get ( id );
@@ -370,7 +372,7 @@ struct SparseStore {
 
 	SparseStore ( u32 initial_capacity = 0 ) : size ( 0 ) {
 		capacity = 8;
-		while(capacity < initial_capacity){
+		while ( capacity < initial_capacity ) {
 			capacity *= 2;
 		}
 		data = new T[capacity];
@@ -393,8 +395,8 @@ struct SparseStore {
 		T* newdata = new T[nextblockcount];
 		u32 nextbitblockcount = nextblockcount / 8;
 		u8* newbits = new u8[nextbitblockcount];
-		
-		memcpy ( newdata, data, std::min ( nextblockcount, capacity ) * sizeof(T) );
+
+		memcpy ( newdata, data, std::min ( nextblockcount, capacity ) * sizeof ( T ) );
 		memcpy ( newbits, filled_bits, std::min ( nextbitblockcount, capacity / 8 ) * sizeof ( u8 ) );
 
 		delete[] data;
@@ -407,8 +409,8 @@ struct SparseStore {
 
 	u32 create_chunk () {
 		for ( u32 i = 0; i < size; i++ ) {
-			if ( !is_filled(i) ) {
-				set_filled(i);
+			if ( !is_filled ( i ) ) {
+				set_filled ( i );
 				return i;
 			}
 		}
@@ -426,8 +428,8 @@ struct SparseStore {
 	void delete_chunk ( u32 index ) {
 		set_free ( index );
 		u32 last_free_index = size;
-		for(; last_free_index > 0; last_free_index--){
-			if(is_filled(last_free_index - 1))
+		for ( ; last_free_index > 0; last_free_index-- ) {
+			if ( is_filled ( last_free_index - 1 ) )
 				break;
 		}
 		if ( last_free_index <= capacity / 4 && capacity / 2 >= 8 ) {
@@ -447,14 +449,14 @@ struct SparseStore<void> {
 
 	SparseStore<void> ( u32 genericdatasize, u32 initial_capacity = 0 ) : genericdatasize ( genericdatasize ), size ( 0 ) {
 		capacity = 8;
-		while(capacity < initial_capacity){
+		while ( capacity < initial_capacity ) {
 			capacity *= 2;
 		}
-		data = malloc(capacity * genericdatasize);
+		data = malloc ( capacity * genericdatasize );
 		filled_bits = new u8[capacity / 8];
 	}
 	~SparseStore<void> () {
-		if ( data ) free(data);
+		if ( data ) free ( data );
 		if ( filled_bits ) delete[] filled_bits;
 	}
 	void set_filled ( u32 index ) {
@@ -474,7 +476,7 @@ struct SparseStore<void> {
 		memcpy ( newdata, data, std::min ( nextblockcount, capacity ) * genericdatasize );
 		memcpy ( newbits, filled_bits, std::min ( nextbitblockcount, capacity / 8 ) * sizeof ( u8 ) );
 
-		free(data);
+		free ( data );
 		delete[] filled_bits;
 
 		data = newdata;
@@ -494,8 +496,8 @@ struct SparseStore<void> {
 
 	u32 create_chunk () {
 		for ( u32 i = 0; i < size; i++ ) {
-			if ( !is_filled(i) ) {
-				set_filled(i);
+			if ( !is_filled ( i ) ) {
+				set_filled ( i );
 				return i;
 			}
 		}
@@ -505,15 +507,15 @@ struct SparseStore<void> {
 		return new_index;
 	}
 	u8* operator[] ( u32 index ) {
-		return &((u8*)data)[index * genericdatasize];
+		return & ( ( u8* ) data ) [index * genericdatasize];
 	}
 	void delete_chunk ( u32 index ) {
 		set_free ( index );
 		u32 last_free_index = size;
-		for(; last_free_index > 0; last_free_index--){
-			if(is_filled(last_free_index - 1))
+		for ( ; last_free_index > 0; last_free_index-- ) {
+			if ( is_filled ( last_free_index - 1 ) )
 				break;
 		}
-		resize(last_free_index);
+		resize ( last_free_index );
 	}
 };
