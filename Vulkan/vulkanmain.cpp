@@ -207,23 +207,6 @@ int main ( int argc, char **argv ) {
 	                                 );*/
 	instancegroup->clear();
 
-
-
-	//upload pattern:
-	//	register/allocate
-	//	-----finish register/allocate
-	//	set data
-	//	upload
-
-	//cleanup the cache, wait for old rendering processes to finish, resize if needed, get new window images
-	//can stall cpu
-	//newinstance->prepare_frame();
-
-	//loop
-	//	update contexts and instances
-	//	transfer-break
-	//	let it render
-
 	Window* window = newinstance->create_window();
 
 	Extent2D<s32> window_size ( 1000, 600 );
@@ -268,6 +251,7 @@ int main ( int argc, char **argv ) {
 	} while ( newinstance->is_window_open() );
 	window->destroy();
 
+	delete bundle;
 	destroy_instance ( newinstance );
 	return 0;
 

@@ -1,4 +1,4 @@
-#version 450
+	#version 450
 #extension GL_ARB_separate_shader_objects : enable
 
 //per-vertex
@@ -7,7 +7,7 @@ layout(location = 1) in vec3 uv;
 layout(location = 2) in vec3 normal;
 
 //per-instance
-layout(location = 4) in mat4 m2wMatrix;
+layout(location = 3) in mat4 m2wMatrix;
 
 //global-info
 layout (set=0, binding = 0) uniform cameraUniformBuffer {

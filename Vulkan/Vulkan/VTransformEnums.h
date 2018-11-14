@@ -5,6 +5,7 @@
 
 struct VFormatData {
 	vk::Format format;
+	u32 bytesize;
 	u32 count;
 };
 

@@ -87,7 +87,7 @@ void VMainBundle::v_rebuild_pipelines() {
 		};
 
 		v_descriptor_set_layouts = {
-			//v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 1, bindings1 ), nullptr ),
+			v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 1, bindings1 ), nullptr ),
 			//v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 2, bindings2 ), nullptr )
 		};
 
@@ -171,15 +171,39 @@ void VMainBundle::v_rebuild_pipelines() {
 			valuecount += to_v_format(valuedef.type).count * valuedef.arraycount;
 			printf("Value: %s %d[%d]\n", to_string(valuedef.type), valuedef.offset, valuedef.arraycount);
 		}
+		for(DataValueDef& valuedef : instance_datagroup->valuedefs) {
+			valuecount += to_v_format(valuedef.type).count * valuedef.arraycount;
+			printf("Value: %s %d[%d]\n", to_string(valuedef.type), valuedef.offset, valuedef.arraycount);
+		}
+		printf("%d\n", valuecount);
 		vertexInputAttributes.resize(valuecount);
-		u32 offset = 0;
-		for(DataValueDef& valuedef : vertex_datagroup->valuedefs) {
-			VFormatData formatdata = to_v_format(valuedef.type);
-			u32 count = formatdata.count * valuedef.arraycount;
-			for(int i = 0; i < count; i++) {
-				vertexInputAttributes[offset + i] = vk::VertexInputAttributeDescription ( offset + i, 0, formatdata.format, valuedef.offset/* + value*/ );
+		{
+			u32 index = 0;
+			u32 bindingindex = 0;
+			for(DataValueDef& valuedef : vertex_datagroup->valuedefs) {
+				VFormatData formatdata = to_v_format(valuedef.type);
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for(int i = 0; i < count; i++) {
+					printf("Value: %s %d, %d, %d\n", to_string(valuedef.type), bindingindex, 0, offset);
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ((formatdata.bytesize - 1) / 16) + 1;
+					index++;
+				}
 			}
-			offset += count;
+			for(DataValueDef& valuedef : instance_datagroup->valuedefs) {
+				VFormatData formatdata = to_v_format(valuedef.type);
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for(int i = 0; i < count; i++) {
+					printf("Value: %s %d, %d, %d\n", to_string(valuedef.type), bindingindex, 1, offset);
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ((formatdata.bytesize - 1) / 16) + 1;
+					index++;
+				}
+			}
 		}
 
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),

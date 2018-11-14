@@ -7,6 +7,9 @@ VResourceManager::VResourceManager ( VInstance* instance ) : instance ( instance
 }
 
 VResourceManager::~VResourceManager() {
+	for(VShaderModule* shadermodule : shader_array) {
+		delete shadermodule;
+	}
 }
 
 static std::vector<char> readFile ( String filename ) {
