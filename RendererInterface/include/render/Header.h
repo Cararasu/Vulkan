@@ -30,6 +30,20 @@ struct Array {
 		if(!size) return;
 		data = new T[size];
 	}
+	Array(u64 size, const T&& ele) : size ( size ) {
+		if(!size) return;
+		data = new T[size];
+		for ( u64 i = 0; i < size; i++){
+			data[i++] = ele;
+		}
+	}
+	Array(u64 size, const T& ele) : size ( size ) {
+		if(!size) return;
+		data = new T[size];
+		for ( u64 i = 0; i < size; i++){
+			data[i++] = ele;
+		}
+	}
 
 	Array ( const Array<T>& array ) : size ( array.size ), data ( nullptr ) {
 		if(!size) return;
@@ -65,6 +79,24 @@ struct Array {
 		for ( const T& ele : init_list){
 			data[i++] = std::move ( ele );
 		}
+		return *this;
+	}
+	Array<T>& operator= ( const Array<T>& array ) {
+		if(data) delete[] data;
+		data = nullptr;
+		size = array.size;
+		if(!size) return *this;
+		data = new T[size];
+		u64 i = 0;
+		for ( const T& ele : array){
+			data[i++] = std::move ( ele );
+		}
+		return *this;
+	}
+	Array<T>& operator= ( const Array<T>&& array ) {
+		if(data) delete[] data;
+		data = array.data;
+		size = array.size;
 		return *this;
 	}
 	~Array() {

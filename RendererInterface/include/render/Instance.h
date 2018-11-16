@@ -48,9 +48,11 @@ struct Instance {
 
 	IdArray<DataGroupDef> datagroup_store;
 	IdArray<DataGroupDef, RID_STATIC_IDS> static_datagroup_store;
-	const DataGroupDefId register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
+	DataGroupDefId register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
 		DataGroupDef datagroupdef ( valuedefs, size, arraycount );
-		return datagroup_store.insert ( datagroupdef );
+		DataGroupDefId id = datagroup_store.insert ( datagroupdef );
+		datagroupdef_registered ( id );
+		return id;
 	}
 	const DataGroupDef* datagroupdef ( DataGroupDefId id ) {
 		if ( id >= RID_STATIC_IDS )
@@ -60,12 +62,14 @@ struct Instance {
 
 	IdArray<ContextBase> contextbase_store;
 	IdArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
-	const ContextBaseId register_contextbase ( DataGroupDef* datagroup ) {
-		ContextBase contextbase ( datagroup );
-		return contextbase_store.insert ( contextbase );
+	ContextBaseId register_contextbase ( DataGroupDefId datagroup_id ) {
+		ContextBase contextbase ( datagroup_id );
+		ContextBaseId id = contextbase_store.insert ( contextbase );
+		contextbase_registered ( id );
+		return id;
 	}
-	const ContextBaseId register_contextbase ( DataGroupDefId datagroup_id ) {
-		return register_contextbase ( &datagroup_store[datagroup_id] );
+	ContextBaseId register_contextbase ( const DataGroupDef* datagroup ) {
+		return register_contextbase ( datagroup->id );
 	}
 	const ContextBase* contextbase ( ContextBaseId id ) {
 		if ( id >= RID_STATIC_IDS )
@@ -73,25 +77,44 @@ struct Instance {
 		return contextbase_store.get ( id );
 	}
 
-	virtual const ModelBase* register_modelbase ( DataGroupDefId vertexdatagroup ) = 0;
-	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) = 0;
-	virtual const ModelBase* modelbase ( RId handle ) = 0;
+	IdArray<ModelBase> modelbase_store;
+	IdArray<ModelBase, RID_STATIC_IDS> static_modelbase_store;
+	ModelBaseId register_modelbase ( DataGroupDefId datagroup_id ) {
+		ModelBase modelbase ( datagroup_id );
+		ModelBaseId id = modelbase_store.insert ( modelbase );
+		modelbase_registered ( id );
+		return id;
+	}
+	ModelBaseId register_modelbase ( const DataGroupDef* datagroup ) {
+		return register_modelbase ( datagroup->id );
+	}
+	const ModelBase* modelbase ( ModelBaseId id ) {
+		if ( id >= RID_STATIC_IDS )
+			return static_modelbase_store.get ( id );
+		return modelbase_store.get ( id );
+	}
 
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, DataGroupDefId datagroup = 0 ) = 0;
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) = 0;
-	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) = 0;
+	IdArray<ModelInstanceBase> modelinstancebase_store;
+	IdArray<ModelInstanceBase, RID_STATIC_IDS> static_modelinstancebase_store;
+	ModelInstanceBaseId register_modelinstancebase ( DataGroupDefId datagroup_id, ModelBaseId modelbase_id ) {
+		ModelInstanceBase modelinstancebase ( datagroup_id, modelbase_id );
+		ModelInstanceBaseId id = modelinstancebase_store.insert ( modelinstancebase );
+		modelinstancebase_registered ( id );
+		return id;
+	}
+	ModelInstanceBaseId register_modelinstancebase ( const DataGroupDef* datagroup, const ModelBase* modelbase ) {
+		return register_modelinstancebase ( datagroup->id, modelbase->id );
+	}
+	const ModelInstanceBase* modelinstancebase ( ModelInstanceBaseId id ) {
+		if ( id >= RID_STATIC_IDS )
+			return static_modelinstancebase_store.get ( id );
+		return modelinstancebase_store.get ( id );
+	}
 
-	virtual const RenderStage* create_renderstage (
-	    const ModelInstanceBase* model_instance_base,
-	    const Array<const ContextBase*> context_bases,
-	    StringReference vertex_shader,
-	    StringReference fragment_shader,
-	    StringReference geometry_shader,
-	    StringReference tess_cntrl_shader,
-	    StringReference tess_eval_shader,
-	    Array<RenderImageDef> input_image_defs ) = 0;
-	//virtual const RenderStage* create_present_renderstage ( Window* window ) = 0;
-	virtual const RenderStage* renderstage ( RId handle ) = 0;
+	virtual void datagroupdef_registered ( DataGroupDefId id ) = 0;
+	virtual void contextbase_registered ( ContextBaseId id ) = 0;
+	virtual void modelbase_registered ( ModelBaseId id ) = 0;
+	virtual void modelinstancebase_registered ( ModelInstanceBaseId id ) = 0;
 
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

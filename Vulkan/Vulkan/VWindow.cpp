@@ -234,7 +234,6 @@ void VWindow::initialize() {
 }
 
 void VWindow::prepare_frame() {
-	printf("Prepare_Window\n");
 	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 	
@@ -358,27 +357,28 @@ void VWindow::render_frame() {
 			data->present_command_buffer = buffers[1];
 		}
 		data->clear_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
-		depth_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
+		present_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
+		depth_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
 		data->clear_command_buffer.clearColorImage (
-		    present_image->image,
+		    present_image->instance_image(),
 		    vk::ImageLayout::eTransferDstOptimal,
-		vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
-		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
+			vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
+			{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
 		);
 		data->clear_command_buffer.clearDepthStencilImage (
-		    depth_image->image,
+		    depth_image->instance_image(),
 		    vk::ImageLayout::eTransferDstOptimal,
 		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
 		{vk::ImageSubresourceRange ( depth_image->aspect, 0, 1, 0, 1 ) }
 		);
-		present_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, data->clear_command_buffer );
-		depth_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, data->clear_command_buffer );
+		present_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal, data->clear_command_buffer );
+		depth_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eDepthStencilAttachmentOptimal, data->clear_command_buffer );
 
 		data->clear_command_buffer.end();
 
 		data->present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_layout ( vk::ImageLayout::ePresentSrcKHR, data->present_command_buffer );
+		present_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, data->present_command_buffer );
+		depth_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eGeneral, data->present_command_buffer );
 		data->present_command_buffer.end();
 	}
 
@@ -521,19 +521,15 @@ void VWindow::create_swapchain() {
 		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
 		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
-	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
 	if ( present_image ) {
-		present_image->new_window_images(images, {swap_chain_extend.x, swap_chain_extend.y, 0}, present_swap_format.format);
+		present_image->fetch_new_window_images();
 	} else {
-		present_image = new VWindowImage ( v_instance, images, swap_chain_extend.x, swap_chain_extend.y, 0, 1, present_swap_format.format );
+		present_image = new VBaseImage ( v_instance, this );
 		
 		depth_image = v_instance->m_resource_manager->v_create_dependant_image(present_image, ImageFormat::eD24Unorm_St8U, 1.0f);
-		//depth_image = new VImageWrapper ( v_instance, {swap_chain_extend.x, swap_chain_extend.y, 0}, 1, 1, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst ),
-		//								vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, vk::MemoryPropertyFlags ( vk::MemoryPropertyFlagBits::eDeviceLocal ) );
-
 	}
 	
-	create_frame_local_data ( images.size() );
+	create_frame_local_data ( present_image->per_image_data.size() );
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	printf ( "Size of Framebuffer %dx%d\n", extent.x, extent.y );

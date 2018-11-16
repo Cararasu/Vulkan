@@ -77,7 +77,7 @@ Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type
 	if ( !base_image ) return nullptr;
 	return v_create_dependant_image ( base_image, type, scaling );
 }
-VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, float scaling ) {
+VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, float scaling ) {
 	vk::Format format = transform_image_format ( type );
 
 	vk::ImageUsageFlags usages;
@@ -108,7 +108,7 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	break;
 	}
 	//TODO make eSampled and eInputAttachment dynamically
-	VImageWrapper* v_wrapper = new VImageWrapper ( base_image->v_instance,
+	VBaseImage* v_wrapper = new VBaseImage ( base_image->v_instance,
 	        base_image->width,
 	        base_image->height,
 	        base_image->depth,
@@ -122,7 +122,7 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {
-		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VImageWrapper*>() ) );
+		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VBaseImage*>() ) );
 	}
 	it->second.push_back ( v_wrapper );
 	v_wrapper->dependent = true;
@@ -132,7 +132,7 @@ VImageWrapper* VResourceManager::v_create_dependant_image ( VBaseImage* base_ima
 void VResourceManager::v_delete_dependant_images ( VBaseImage* image ) {
 	auto it = dependency_map.find ( image );
 	if ( it != dependency_map.end() ) {
-		for ( VImageWrapper* image : it->second ) {
+		for ( VBaseImage* image : it->second ) {
 			delete image;
 		}
 		dependency_map.erase ( it );

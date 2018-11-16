@@ -136,7 +136,7 @@ int main ( int argc, char **argv ) {
 	//preload-shaders
 	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv" );
 	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_quad_shader", "shader/quad.frag.sprv" );
-	
+
 	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shader", "shader/tri.vert.sprv" );
 	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shader", "shader/tri.frag.sprv" );
 
@@ -153,19 +153,6 @@ int main ( int argc, char **argv ) {
 	for ( Device* device : newinstance->devices ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
-
-	const DataGroupDef* vertex_def = newinstance->static_datagroup_store.insert ( new DataGroupDef ( { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 ) );
-	const DataGroupDef* matrix_def = newinstance->static_datagroup_store.insert ( new DataGroupDef ( { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 ) );
-	
-	vertex_datagroup_def = vertex_def->id;
-	matrix_datagroup_def = matrix_def->id;
-	
-	//create contextbase from datagroups
-	const ContextBase* w2smatrix_base = newinstance->register_contextbase ( matrix_def );
-	const ContextBase* m2wmatrix_base = newinstance->register_contextbase ( matrix_def );
-
-	//create modelbase from datagroup and contextbases
-	const ModelBase* simplemodel_base = newinstance->register_modelbase ( vertex_def );
 
 	//create model from modelbase
 	Array<glm::vec3> data_to_load = {
@@ -189,22 +176,6 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
 
-	/*
-	struct ImageDef {
-		u32 width, height, depth;
-		u32 count;
-	};
-	*/
-	/*const RenderStage* renderstage = newinstance->create_renderstage (
-	                                     mod_instance,
-	                                     {},//context_bases
-	                                     StringReference ( "vert_quad_shader" ),
-	                                     StringReference ( "frag_quad_shader" ),
-	                                     StringReference ( nullptr ),
-	                                     StringReference ( nullptr ),
-	                                     StringReference ( nullptr ),
-										{ {ImageType::eColor, ImageUsage::eWrite}, {ImageType::eDepth, ImageUsage::eReadWrite} }
-	                                 );*/
 	instancegroup->clear();
 
 	Window* window = newinstance->create_window();

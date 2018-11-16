@@ -8,8 +8,6 @@
 
 #include <functional>
 
-#define MAX_PRESENTIMAGE_COUNT (3)
-
 struct VWindowImage;
 
 struct FrameLocalData {
@@ -46,7 +44,7 @@ struct VWindow : public Window {
 	GLFWwindow* window = nullptr;
 
 	VQuadRenderer* quad_renderer;
-	VWindowImage* present_image = nullptr;
+	VBaseImage* present_image = nullptr;
 	VBaseImage* depth_image = nullptr;
 	
 	VRenderTarget v_render_target_wrapper;

@@ -16,6 +16,10 @@ struct VBundleImageState{
 	vk::Format current_format = vk::Format::eUndefined;
 	VBaseImage* actual_image = nullptr;
 };
+struct PerFrameMainBundleRenderObj {
+	vk::Framebuffer framebuffer;
+	ResettableCommandBuffer command;
+};
 
 struct VMainBundle : public RenderBundle {
 	VInstance* v_instance;
@@ -28,6 +32,8 @@ struct VMainBundle : public RenderBundle {
 	vk::PipelineLayout v_object_pipeline_layout;
 	vk::Pipeline v_object_pipeline;
 	
+	vk::CommandPool commandpool;
+	Array<PerFrameMainBundleRenderObj> v_per_frame_data;
 	Array<vk::DescriptorSetLayout> v_descriptor_set_layouts;
 	vk::RenderPass v_renderpass;
 
@@ -42,9 +48,11 @@ struct VMainBundle : public RenderBundle {
 	void v_destroy_pipeline_layouts();
 	void v_destroy_pipelines();
 	void v_destroy_renderpasses();
+	void v_destroy_framebuffers();
 	
-	void v_check_rebuild_pipelines();
+	void v_check_rebuild();
 	void v_rebuild_pipelines();
+	void v_rebuild_commandbuffers();
 	void v_dispatch();
 };
 

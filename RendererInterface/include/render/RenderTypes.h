@@ -29,6 +29,8 @@ typedef uint32_t RId;
 
 typedef RId DataGroupDefId;
 typedef RId ContextBaseId;
+typedef RId ModelBaseId;
+typedef RId ModelInstanceBaseId;
 
 typedef float f32;
 typedef double f64;
@@ -95,7 +97,7 @@ enum class ValueType {
 	eS8Mat4, eS16Mat4, eS32Mat4, eS64Mat4,
 	                   eF32Mat4, eF64Mat4,
 };
-inline const char* to_string(ValueType type){
+inline const char* to_cstring(ValueType type){
 	switch(type) {
 	case ValueType::eUndefined: return "undefined";
 	

@@ -6,7 +6,16 @@
 #include <render/Logger.h>
 #include <functional>
 #include <render/Header.h>
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+// turn off the specific warning. Can also use "-Wall"
+#pragma GCC diagnostic ignored "-Wall"
 #include <vulkan/vulkan.hpp>
+// turn the warnings back on
+#pragma GCC diagnostic pop
+
+#define MAX_PRESENTIMAGE_COUNT (3)
 
 void printError(VkResult res);
 

@@ -8,6 +8,7 @@
 #include "VResourceManager.h"
 #include "Specialization/VMainBundle.h"
 #include "VRenderer.h"
+#include "Specialization\VSpecializations.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -344,9 +345,6 @@ VInstance::~VInstance() {
 	for ( auto ele : model_store ) {
 		delete ele;
 	}
-	for ( auto ele : modelbase_store ) {
-		delete ele;
-	}
 	m_device.destroy ( nullptr );
 
 }
@@ -520,6 +518,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	queues.combined_graphics_present_queue = ( pId == gId );
 	queues.combined_graphics_compute_queue = ( gId == cId );
 
+	register_specializations(this);
 	return true;
 }
 
@@ -577,40 +576,18 @@ bool VInstance::destroy_window ( Window* window ) {
 	}
 	return false;
 }
-
-const ModelBase* VInstance::register_modelbase ( RId vertexdatagroup ) {
-	return register_modelbase ( &datagroup_store[vertexdatagroup] );
+void VInstance::datagroupdef_registered(DataGroupDefId id) {
+	//welp
+	v_logger.log<LogLevel::eInfo>("Registered DataGroup Definition 0x%" PRIx32, id);
 }
-const ModelBase* VInstance::register_modelbase ( const DataGroupDef* vertexdatagroup ) {
-	return modelbase_store.insert ( new VModelBase ( vertexdatagroup ) );
+void VInstance::contextbase_registered(ContextBaseId id) {
+	v_logger.log<LogLevel::eInfo>("Registered Context Base 0x%" PRIx32, id);
 }
-const ModelBase* VInstance::modelbase ( RId id ) {
-	return modelbase_store[id];
+void VInstance::modelbase_registered(ModelBaseId id) {
+	v_logger.log<LogLevel::eInfo>("Registered Model Base 0x%" PRIx32, id);
 }
-
-const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, RId datagroup_id ) {
-	return register_modelinstancebase ( model, &datagroup_store[datagroup_id] );
-}
-const ModelInstanceBase* VInstance::register_modelinstancebase ( Model model, const DataGroupDef* datagroup ) {
-	return modelinstancebase_store.insert ( new VModelInstanceBase ( this, datagroup, model ) );
-}
-const ModelInstanceBase* VInstance::modelinstancebase ( RId handle ) {
-	return modelinstancebase_store[handle];
-}
-const RenderStage* VInstance::create_renderstage ( 
-	const ModelInstanceBase* model_instance_base,
-	const Array<const ContextBase*> context_bases,
-	StringReference vertex_shader,
-	StringReference fragment_shader,
-	StringReference geometry_shader,
-	StringReference tess_cntrl_shader,
-	StringReference tess_eval_shader,
-	Array<RenderImageDef> input_image_defs ) {
-	return new VRenderStage(input_image_defs);
-}
-
-const RenderStage* VInstance::renderstage ( RId handle ) {
-	return renderstage_store[handle];
+void VInstance::modelinstancebase_registered(ModelInstanceBaseId id) {
+	v_logger.log<LogLevel::eInfo>("Registered ModelInstance Base 0x%" PRIx32, id);
 }
 
 

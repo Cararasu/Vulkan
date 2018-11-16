@@ -55,7 +55,7 @@ struct ImageTypeGroup {
 struct Image : public Resource {
 	ImageFormat format;
 	u32 width, height, depth;
-	u32 layers;//arra-layers
+	u32 layers;//array-layers
 	u32 mipmap_layers;
 
 	const bool window_target;

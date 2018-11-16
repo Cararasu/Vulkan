@@ -15,7 +15,7 @@ struct VModelBase;
 struct VContextBase : public ContextBase {
 	VTransientBufferStorage bufferstorage;
 
-	VContextBase ( VInstance* instance, const DataGroupDef* datagroup ) : ContextBase ( datagroup ),
+	VContextBase ( VInstance* instance, const DataGroupDefId datagroup_id ) : ContextBase ( datagroup_id ),
 		bufferstorage ( instance, vk::BufferUsageFlagBits::eUniformBuffer ) {
 
 	}
@@ -23,15 +23,15 @@ struct VContextBase : public ContextBase {
 
 struct VContextGroup : public ContextGroup {
 	VInstance* instance;
-	HashMap<IdHandle, Context*> context_map;
+	HashMap<ContextBaseId, Context*> context_map;
 
 	VContextGroup ( VInstance* instance ) : instance ( instance ) { }
 
 	virtual void set_context ( Context* context ) override {
-		context_map.insert ( std::make_pair ( ( IdHandle ) *context->contextbase, context ) );
+		context_map.insert ( std::make_pair ( context->contextbase_id, context ) );
 	}
-	virtual void remove_context ( const ContextBase* base ) override {
-		context_map.erase ( *base );
+	virtual void remove_context ( ContextBaseId base_id ) override {
+		context_map.erase ( base_id );
 	}
 	virtual void clear() override {
 		context_map.clear();

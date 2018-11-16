@@ -82,6 +82,7 @@ struct VInstance : public Instance {
 
 	bool initialized = false;
 	u64 frame_index = 1;
+	u64 last_completed_frame_index = 0;
 
 	VInstance();
 	virtual ~VInstance();
@@ -107,30 +108,14 @@ struct VInstance : public Instance {
 	
 //------------ Resources
 
-	IdPtrArray<VModelBase> modelbase_store;
+	virtual void datagroupdef_registered(DataGroupDefId id) override;
+	virtual void contextbase_registered(ContextBaseId id) override;
+	virtual void modelbase_registered(ModelBaseId id) override;
+	virtual void modelinstancebase_registered(ModelInstanceBaseId id) override;
+	
 	UIdPtrArray<VModel> model_store;
-	IdPtrArray<VModelInstanceBase> modelinstancebase_store;
 	IdPtrArray<VRenderStage> renderstage_store;
 	DynArray<VInstanceGroup*> instancegroup_store;
-	
-	virtual const ModelBase* register_modelbase ( RId vertexdatagroup ) override;
-	virtual const ModelBase* register_modelbase ( const DataGroupDef* vertexdatagroup ) override;
-	virtual const ModelBase* modelbase ( RId handle ) override;
-
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, RId datagroup = 0 ) override;
-	virtual const ModelInstanceBase* register_modelinstancebase ( Model model, const DataGroupDef* datagroup = nullptr ) override;
-	virtual const ModelInstanceBase* modelinstancebase ( RId handle ) override;
-
-	virtual const RenderStage* create_renderstage ( 
-	    const ModelInstanceBase* model_instance_base,
-	    const Array<const ContextBase*> context_bases,
-		StringReference vertex_shader,
-		StringReference fragment_shader,
-		StringReference geometry_shader,
-		StringReference tess_cntrl_shader,
-		StringReference tess_eval_shader,
-		Array<RenderImageDef> input_image_defs ) override;
-	virtual const RenderStage* renderstage ( RId handle ) override;
 
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
@@ -141,7 +126,6 @@ struct VInstance : public Instance {
 	virtual void prepare_render (Array<Window*> windows);
 	
 	virtual void render_bundles ( Array<RenderBundle*> bundles );
-
 
 //------------ Specialized Functions
 	virtual RenderBundle* create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) override;

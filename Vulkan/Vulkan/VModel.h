@@ -12,14 +12,13 @@ struct DataGroupDef;
 struct VModel;
 struct VModelBase;
 
-struct VModelInstanceBase : public ModelInstanceBase {
+
+struct VModelInstanceBase {
+	const ModelInstanceBase* modelinstancebase;
 	VTransientBufferStorage bufferstorage;
 	
-	VModelInstanceBase(VInstance* instance, const ModelInstanceBase* modelinstancebase) : ModelInstanceBase(modelinstancebase->datagroup, modelinstancebase->model),
-		bufferstorage(instance, vk::BufferUsageFlagBits::eVertexBuffer){
-	}
-	VModelInstanceBase(VInstance* instance, const DataGroupDef* datagroup, Model model) : ModelInstanceBase(datagroup, model),
-		bufferstorage(instance, vk::BufferUsageFlagBits::eVertexBuffer){
+	VModelInstanceBase(VInstance* instance, const ModelInstanceBase* modelinstancebase) : modelinstancebase(modelinstancebase),
+		bufferstorage(instance, vk::BufferUsageFlagBits::eVertexBuffer) {
 	}
 };
 struct VModel : public Model {
@@ -29,7 +28,7 @@ struct VModel : public Model {
 	VBuffer vertexbuffer;
 	VBuffer indexbuffer;
 	
-	VModel(VInstance* v_instance, VModelBase* modelbase);
+	VModel(VInstance* v_instance, ModelBaseId modelbase_id);
 };
 struct VModelBase : public ModelBase {
 
@@ -37,7 +36,7 @@ struct VModelBase : public ModelBase {
 	VBuffer* indexbuffer2 = nullptr;//16-bit indices
 	VBuffer* indexbuffer4 = nullptr;//32-bit indices
 	
-	VModelBase(const DataGroupDef* datagroup);
+	VModelBase(const DataGroupDefId datagroup_id);
 };
 struct VInstanceGroup : public InstanceGroup {
 	VInstance* instance;

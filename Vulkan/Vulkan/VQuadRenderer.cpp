@@ -146,7 +146,6 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		v_instance->vk_device ().destroyPipeline ( pipeline );
 	}
 
-
 	std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
 		vk::VertexInputBindingDescription ( 0, sizeof ( QuadVertex ), vk::VertexInputRate::eVertex ),
 		vk::VertexInputBindingDescription ( 1, sizeof ( QuadInstance ), vk::VertexInputRate::eInstance )
@@ -300,7 +299,7 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
 
 	if(!per_frame.framebuffer){
-		vk::ImageView attachments[2] = {render_target->images[0]->imageview, render_target->depth_image->imageview};
+		vk::ImageView attachments[2] = {render_target->images[0]->instance_imageview(), render_target->depth_image->instance_imageview()};
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), renderpass,
 			2, attachments,
@@ -373,7 +372,6 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 
 		per_frame.command.buffer.endRenderPass();
 		per_frame.command.buffer.end();
-
 	}
 
 	SubmitInfo submitinfo = {
