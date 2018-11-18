@@ -10,7 +10,7 @@ struct VInstance;
 struct VTransientBufferStorage {
 
 	VBuffer buffer;
-	VBuffer* staging_buffer;
+	VBuffer* staging_buffer = nullptr;
 	
 	u64 max_offset;
 	u64 needed_size;
@@ -22,12 +22,10 @@ struct VTransientBufferStorage {
 	~VTransientBufferStorage ( );
 
 	u64 allocate_chunk ( u64 size );
-	
-	//will allocate a transfer buffer
-	void* allocate_transferbuffer();
+	void* allocate_transfer_buffer( );
 	
 	//updates the data to the buffer
-	void transfer_data();
+	vk::Semaphore transfer_data(vk::CommandBuffer buffer);
 	
 	void clear_transfer();
 };
@@ -45,9 +43,6 @@ struct VUpdateableBufferStorage {
 	
 	u64 allocate_chunk ( u64 size );
 	void free_chunk ( u64 size );
-	
-	//will allocate a transfer buffer
-	void* allocate_transferbuffer();
 	
 	//updates the data to the buffer
 	void transfer_data();

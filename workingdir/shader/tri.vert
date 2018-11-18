@@ -22,6 +22,6 @@ out gl_PerVertex {
 };
 
 void main() {
-    gl_Position = w2sMatrix * m2wMatrix * vec4(pos, 1.0f);
+    gl_Position = /*w2sMatrix */ m2wMatrix * vec4(pos, 1.0f);
 	texCoord = uv;
 }

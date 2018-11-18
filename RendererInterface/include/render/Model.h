@@ -10,83 +10,48 @@ struct DataValueDef {
 	u32 arraycount;
 	u32 offset;
 };
-struct DataGroupDef : public IdHandle {
+struct DataGroupDef {
 	Array<DataValueDef> valuedefs;
 	u32 size;
 	u32 arraycount;
-
-	DataGroupDef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) :
-		IdHandle(), valuedefs ( valuedefs ), size ( size ), arraycount ( arraycount ) {
-
-	}
 };
 
-struct ContextBase : public IdHandle {
-	DataGroupDefId datagroup_id;
-	//TODO something something images and samplers
-
-	ContextBase ( const ContextBase&& contextbase ) : IdHandle ( contextbase ), datagroup_id ( contextbase.datagroup_id ) { }
-	ContextBase ( const ContextBase& contextbase ) : IdHandle ( contextbase ), datagroup_id ( contextbase.datagroup_id ) { }
-	ContextBase& operator= ( const ContextBase&& contextbase ) {
-		this->hash = contextbase.hash;
-		this->datagroup_id = contextbase.datagroup_id;
-		return *this;
-	}
-	ContextBase& operator= ( const ContextBase& contextbase ) {
-		this->hash = contextbase.hash;
-		this->datagroup_id = contextbase.datagroup_id;
-		return *this;
-	}
-	ContextBase ( const DataGroupDefId datagroup_id ) : IdHandle(), datagroup_id ( datagroup_id ) { }
-	ContextBase ( IdHandle idhandle, const DataGroupDefId datagroup_id ) : IdHandle ( idhandle ), datagroup_id ( datagroup_id ) { }
+struct ContextBase {
+	ContextBaseId id;
+	DataGroupDef datagroup;
 };
-struct Context : public IdHandle {
+struct Context {
+	ContextId id;
 	ContextBaseId contextbase_id;
-
-	Context ( Context&& context ) : IdHandle ( context ), contextbase_id ( context.contextbase_id ) { }
-	Context ( const Context& context ) : IdHandle ( context ), contextbase_id ( context.contextbase_id ) { }
-	Context ( const ContextBaseId contextbase_id ) : IdHandle(), contextbase_id ( contextbase_id ) { }
-	Context ( IdHandle idhandle, const ContextBaseId contextbase_id ) : IdHandle ( idhandle ), contextbase_id ( contextbase_id ) { }
 };
 
-struct ModelBase : public IdHandle {
-	DataGroupDefId datagroup_id;
-
-	ModelBase ( const DataGroupDefId datagroup_id ) : IdHandle(), datagroup_id ( datagroup_id ) { }
-	ModelBase ( IdHandle idhandle, const DataGroupDefId datagroup_id ) : IdHandle ( idhandle ), datagroup_id ( datagroup_id ) { }
+struct ModelBase {
+	ModelBaseId id;
+	DataGroupDef datagroup;
+	Array<ContextBaseId> contextbase_ids;
 };
-struct Model : public IdHandle {
+struct Model {
+	ModelId id;
 	ModelBaseId modelbase_id;
-
-	Model ( Model&& model ) : IdHandle ( model ), modelbase_id ( model.modelbase_id ) { }
-	Model ( const Model& model ) : IdHandle ( model ), modelbase_id ( model.modelbase_id ) { }
-	Model ( const ModelBaseId modelbase_id ) : IdHandle(), modelbase_id ( modelbase_id ) { }
-	Model ( IdHandle idhandle, const ModelBaseId modelbase_id ) : IdHandle ( idhandle ), modelbase_id ( modelbase_id ) { }
+	Array<Context> contexts;
 };
 
-struct ModelInstanceBase : public IdHandle {
-	DataGroupDefId instance_datagroup_id;
-	ModelBaseId modelbase_id;
-
-	ModelInstanceBase ( const DataGroupDefId instance_datagroup_id, const ModelBaseId modelbase_id ) :
-		IdHandle(), instance_datagroup_id ( instance_datagroup_id ), modelbase_id ( modelbase_id ) { }
-	ModelInstanceBase ( IdHandle idhandle, const DataGroupDefId instance_datagroup_id, const ModelBaseId modelbase_id ) : 
-		IdHandle ( idhandle ), instance_datagroup_id ( instance_datagroup_id ), modelbase_id ( modelbase_id ) { }
+struct InstanceBase {
+	InstanceBaseId id;
+	DataGroupDef instance_datagroup;
 };
 
 struct InstanceGroup {
 	InstanceGroup() {};
 	virtual ~InstanceGroup() {};
 	//returns offset
-	virtual u64 register_instances ( const ModelInstanceBase* base, u32 count ) = 0;
-	//get base offset
-	virtual void* finish_register () = 0;
+	virtual void register_instances ( InstanceBaseId instancebase_id, Model& model, void* data, u32 count ) = 0;
 	virtual void clear() = 0;
 };
 struct ContextGroup {
 	ContextGroup() {};
 	virtual ~ContextGroup() {};
-	virtual void set_context ( Context* context ) = 0;
+	virtual void set_context ( Context& context ) = 0;
 	virtual void remove_context ( ContextBaseId base_id ) = 0;
 	virtual void clear() = 0;
 };

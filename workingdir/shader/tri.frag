@@ -20,5 +20,6 @@ layout(location = 0) in vec3 texCoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-	outColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);//textureLod(sampler2DArray(diffuseTexture, sampler), vec3(texCoord.x, -1.0f * texCoord.y, float(diffuseTexId)), 0.0f);
+	outColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	//outColor = textureLod(sampler2DArray(diffuseTexture, sampler), vec3(texCoord.x, -1.0f * texCoord.y, float(diffuseTexId)), 0.0f);
 }

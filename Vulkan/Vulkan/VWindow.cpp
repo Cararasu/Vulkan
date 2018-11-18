@@ -126,7 +126,7 @@ void VWindow::initialize() {
 				printf ( "Unknown Action " );
 				break;
 			}
-			printf ( "%d ", key );
+			printf ( "Key %d ", key );
 			if ( mods & GLFW_MOD_SHIFT )   printf ( "Shift " );
 			if ( mods & GLFW_MOD_CONTROL ) printf ( "Cntrl " );
 			if ( mods & GLFW_MOD_ALT )     printf ( "Alt " );
@@ -234,8 +234,9 @@ void VWindow::initialize() {
 }
 
 void VWindow::prepare_frame() {
-	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
+	
+	present_image->set_current_image ( present_image_index );
 	
 	FrameLocalData* data = current_framelocal_data();
 	v_instance->wait_for_frame(data->frame_index);
@@ -336,8 +337,6 @@ void VWindow::render_frame() {
 
 	QueueWrapper* queue_wrapper = &v_instance->queues;
 
-	present_image->set_current_image ( present_image_index );
-
 	if ( data->clear_command_buffer ) {
 		data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
 	}
@@ -362,7 +361,7 @@ void VWindow::render_frame() {
 		data->clear_command_buffer.clearColorImage (
 		    present_image->instance_image(),
 		    vk::ImageLayout::eTransferDstOptimal,
-			vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ),
+			vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ),
 			{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
 		);
 		data->clear_command_buffer.clearDepthStencilImage (

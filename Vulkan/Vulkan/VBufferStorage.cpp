@@ -3,20 +3,19 @@
 
 VTransientBufferStorage::VTransientBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
 	buffer ( instance ),
-	staging_buffer ( nullptr ),
 	needed_size ( 0 ),
 	changed(true) {
 	buffer.usage = usageflags;
 }
 VTransientBufferStorage::~VTransientBufferStorage () {
-	if ( staging_buffer ) buffer.v_instance->free_staging_buffer ( staging_buffer );
+	if(staging_buffer) buffer.v_instance->free_staging_buffer ( staging_buffer );
 }
 u64 VTransientBufferStorage::allocate_chunk ( u64 size ) {
 	u64 t = max_offset;
 	max_offset += size;
 	return t;
 }
-void* VTransientBufferStorage::allocate_transferbuffer () {
+void* VTransientBufferStorage::allocate_transfer_buffer ( ) {
 	needed_size = max_offset > 1024 ? max_offset : 1024;
 
 	//buffer is not yet initialized
@@ -38,21 +37,21 @@ void* VTransientBufferStorage::allocate_transferbuffer () {
 	staging_buffer->map_mem();
 	return staging_buffer->mapped_ptr;
 }
-void VTransientBufferStorage::transfer_data () {
-	Array<VSimpleTransferJob> jobs = {{staging_buffer, &buffer, vk::BufferCopy ( 0, 0, buffer.size ) }};
-	transfer_sem = buffer.v_instance->schedule_transfer_data( jobs );
+vk::Semaphore VTransientBufferStorage::transfer_data(vk::CommandBuffer commandbuffer) {
+	
+	vk::BufferCopy buffercopy( 0, 0, buffer.size );
+	commandbuffer.copyBuffer(staging_buffer->buffer, buffer.buffer, 1, &buffercopy);
 	buffer.v_instance->free_staging_buffer ( staging_buffer );
+	staging_buffer = nullptr;
 	changed = false;
 }
 
 void VTransientBufferStorage::clear_transfer() {
-	if ( staging_buffer ) buffer.v_instance->free_staging_buffer ( staging_buffer );
 	max_offset = 0;
 	changed = true;
 }
 VUpdateableBufferStorage::VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
 	buffer ( instance ),
-	staging_buffer ( nullptr ),
 	needed_size ( 0 ) {
 	buffer.usage = usageflags;
 

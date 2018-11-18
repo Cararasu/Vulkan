@@ -153,28 +153,37 @@ int main ( int argc, char **argv ) {
 	for ( Device* device : newinstance->devices ) {
 		printf ( "\t%s %" PRId32 "\n", device->name, device->rating );
 	}
-
+	
+	struct SimpleVertex {
+		glm::vec3 pos;
+		glm::vec3 uv;
+		glm::vec3 normal;
+	};
 	//create model from modelbase
-	Array<glm::vec3> data_to_load = {
-		glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( -0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( 0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( -0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( 0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( -0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3(),
-		glm::vec3 ( - 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3(),
+	Array<SimpleVertex> data_to_load = {
+		{glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( -0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( 0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( -0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( 0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( -0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( - 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3()},
 	};
 
-	Array<u16> indices = {0, 1, 2};
-
-	//const Model model = newinstance->load_generic_model ( simplemodel_base, data_to_load.data, 24, indices.data, 3 );
+	Array<u16> indices = {0, 1, 2, 2, 1, 3};
+	
+	Model model = newinstance->create_model ( simplemodel_base_id );
+	newinstance->load_generic_model ( model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 
 	//create instance from model
 	//const ModelInstanceBase* mod_instance = newinstance->register_modelinstancebase ( model, matrix_def );
 
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
+
+	Context camera_matrix = newinstance->create_context(w2smatrix_base_id);
+	contextgroup->set_context(camera_matrix);
 
 	instancegroup->clear();
 
@@ -204,22 +213,27 @@ int main ( int argc, char **argv ) {
 	bundle->set_rendertarget ( 0, windowimage );
 	bundle->set_rendertarget ( 1, newinstance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
 
+	glm::mat4 w2s_matrix ( 1.0f );
+
 	printf ( "Starting Main Loop\n" );
-	do {
+	while ( newinstance->is_window_open() ) {
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for ( 20ms );
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
-		newinstance->prepare_render();
 		instancegroup->clear();
 
-		//u64 offset = instancegroup->register_instances ( mod_instance, 2 );
-		//void* data = instancegroup->finish_register();
+		glm::mat4 matrixes[2] = {
+			glm::mat4 ( 1.0f ),
+			glm::mat4 ( 1.0f )
+		};
+
+		instancegroup->register_instances ( simplemodel_instance_base_id, model, matrixes, 2 );
 
 		newinstance->render_bundles ( {bundle} );
-		newinstance->present_windows();
-	} while ( newinstance->is_window_open() );
+		//newinstance->present_windows();
+	}
 	window->destroy();
 
 	delete bundle;

@@ -366,19 +366,24 @@ void VBaseImage::fetch_new_window_images ( ) {
 	assert ( window_target );
 	
 	destroy();
-	printf ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32 "\n",
-	         this->width, this->height, this->depth, window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
+	bool changed = width != window->swap_chain_extend.width || this->height != window->swap_chain_extend.height || this->depth != 0;
+	if(changed) {
+		printf ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32 "\n",
+				 this->width, this->height, this->depth, window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
+	}
 
 	v_set_extent ( window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
 	v_set_format ( window->present_swap_format.format );
 	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( window->swap_chain );
 	init ( images );
-
-	auto it = v_instance->m_resource_manager->dependency_map.find ( this );
-	if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
-		printf ( "Found %d dependant Image(s)\n", it->second.size() );
-		for ( VBaseImage* image : it->second ) {
-			image->rebuild_image ( width, height, depth );
+	
+	if(changed) {
+		auto it = v_instance->m_resource_manager->dependency_map.find ( this );
+		if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
+			printf ( "Found %d dependant Image(s)\n", it->second.size() );
+			for ( VBaseImage* image : it->second ) {
+				image->rebuild_image ( width, height, depth );
+			}
 		}
 	}
 }
@@ -398,7 +403,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 	this->height = height;
 	this->depth = depth;
 }
-vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
+vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, u32 instance_index, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 
@@ -517,12 +522,12 @@ vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldL
 	           srcAccessMask, dstAccessMask,
 	           oldLayout, newLayout,
 	           0, 0,
-	           instance_image(),
+	           instance_image(instance_index),
 	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
 }
 
-void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
+void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
 
 	if ( oldLayout == newLayout )
 		return;
@@ -533,7 +538,7 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 		array_range.max = layers;
 
 	vk::PipelineStageFlags sourceStage, destinationStage;
-	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, &sourceStage, &destinationStage );
+	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
 
 	barrier.srcQueueFamilyIndex = 0;
 	barrier.dstQueueFamilyIndex = 0;
@@ -545,7 +550,7 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 1, &barrier ) //imageBarriers
 	);
 }
-void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
+void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
 	assert ( false );
 	/*
 	PerImageData& data = per_image_data[current_index];

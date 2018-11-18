@@ -27,7 +27,7 @@ struct VRenderer {
 	vk::RenderPass renderpass;
 	vk::Pipeline pipeline;
 
-	VRenderer ( VInstance* instance, const ModelInstanceBase* model_instance_base, const Array<const ContextBase*> contexts ) : v_instance ( instance ) {}
+	VRenderer ( VInstance* instance, InstanceBaseId instance_base_id, const Array<const ContextBase*> contexts ) : v_instance ( instance ) {}
 	~VRenderer() {}
 
 	void v_update_image(u32 index, VBaseImage* image);

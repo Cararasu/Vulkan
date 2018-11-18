@@ -46,30 +46,13 @@ struct Instance {
 	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
 
-	IdArray<DataGroupDef> datagroup_store;
-	IdArray<DataGroupDef, RID_STATIC_IDS> static_datagroup_store;
-	DataGroupDefId register_datagroupdef ( Array<DataValueDef> valuedefs, u32 size, u32 arraycount ) {
-		DataGroupDef datagroupdef ( valuedefs, size, arraycount );
-		DataGroupDefId id = datagroup_store.insert ( datagroupdef );
-		datagroupdef_registered ( id );
-		return id;
-	}
-	const DataGroupDef* datagroupdef ( DataGroupDefId id ) {
-		if ( id >= RID_STATIC_IDS )
-			return static_datagroup_store.get ( id );
-		return datagroup_store.get ( id );
-	}
-
 	IdArray<ContextBase> contextbase_store;
 	IdArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
-	ContextBaseId register_contextbase ( DataGroupDefId datagroup_id ) {
-		ContextBase contextbase ( datagroup_id );
+	ContextBaseId register_contextbase ( DataGroupDef* datagroup ) {
+		ContextBase contextbase = { 0, *datagroup };
 		ContextBaseId id = contextbase_store.insert ( contextbase );
 		contextbase_registered ( id );
 		return id;
-	}
-	ContextBaseId register_contextbase ( const DataGroupDef* datagroup ) {
-		return register_contextbase ( datagroup->id );
 	}
 	const ContextBase* contextbase ( ContextBaseId id ) {
 		if ( id >= RID_STATIC_IDS )
@@ -79,42 +62,44 @@ struct Instance {
 
 	IdArray<ModelBase> modelbase_store;
 	IdArray<ModelBase, RID_STATIC_IDS> static_modelbase_store;
-	ModelBaseId register_modelbase ( DataGroupDefId datagroup_id ) {
-		ModelBase modelbase ( datagroup_id );
+	ModelBaseId register_modelbase ( DataGroupDef* datagroup, Array<ContextBaseId>& contextbase_ids ) {
+		ModelBase modelbase = { 0, *datagroup, contextbase_ids };
 		ModelBaseId id = modelbase_store.insert ( modelbase );
 		modelbase_registered ( id );
 		return id;
-	}
-	ModelBaseId register_modelbase ( const DataGroupDef* datagroup ) {
-		return register_modelbase ( datagroup->id );
 	}
 	const ModelBase* modelbase ( ModelBaseId id ) {
 		if ( id >= RID_STATIC_IDS )
 			return static_modelbase_store.get ( id );
 		return modelbase_store.get ( id );
 	}
-
-	IdArray<ModelInstanceBase> modelinstancebase_store;
-	IdArray<ModelInstanceBase, RID_STATIC_IDS> static_modelinstancebase_store;
-	ModelInstanceBaseId register_modelinstancebase ( DataGroupDefId datagroup_id, ModelBaseId modelbase_id ) {
-		ModelInstanceBase modelinstancebase ( datagroup_id, modelbase_id );
-		ModelInstanceBaseId id = modelinstancebase_store.insert ( modelinstancebase );
-		modelinstancebase_registered ( id );
+	
+	IdArray<InstanceBase> instancebase_store;
+	IdArray<InstanceBase, RID_STATIC_IDS> static_instancebase_store;
+	InstanceBaseId register_instancebase ( DataGroupDef* datagroup ) {
+		InstanceBase instancebase = { 0, *datagroup };
+		InstanceBaseId id = instancebase_store.insert ( instancebase );
+		instancebase_registered ( id );
 		return id;
 	}
-	ModelInstanceBaseId register_modelinstancebase ( const DataGroupDef* datagroup, const ModelBase* modelbase ) {
-		return register_modelinstancebase ( datagroup->id, modelbase->id );
-	}
-	const ModelInstanceBase* modelinstancebase ( ModelInstanceBaseId id ) {
+	const InstanceBase* instancebase ( InstanceBaseId id ) {
 		if ( id >= RID_STATIC_IDS )
-			return static_modelinstancebase_store.get ( id );
-		return modelinstancebase_store.get ( id );
+			return static_instancebase_store.get ( id );
+		return instancebase_store.get ( id );
 	}
-
-	virtual void datagroupdef_registered ( DataGroupDefId id ) = 0;
+	
+	virtual Context create_context ( ContextBaseId id ) = 0;
+	virtual Model create_model ( ModelBaseId id ) = 0;
+	
 	virtual void contextbase_registered ( ContextBaseId id ) = 0;
 	virtual void modelbase_registered ( ModelBaseId id ) = 0;
-	virtual void modelinstancebase_registered ( ModelInstanceBaseId id ) = 0;
+	virtual void instancebase_registered ( InstanceBaseId id ) = 0;
+	
+	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) = 0;
+	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) = 0;
+	
+	virtual void unload_model ( ModelId model_id ) = 0;
+
 
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

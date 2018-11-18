@@ -9,6 +9,7 @@ VBuffer::VBuffer ( VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlag
 	init ( size, usage, needed, recommended );
 }
 RendResult VBuffer::init ( vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) {
+	if(buffer) destroy();
 	this->memory = GPUMemory(size, needed, recommended);
 	this->buffer = vk::Buffer(),
 	this->size = size;
@@ -29,6 +30,7 @@ RendResult VBuffer::init() {
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
 	v_instance->allocate_gpu_memory ( mem_req, &memory );
 	device.bindBufferMemory ( buffer, memory.memory, 0 );
+	last_build_frame_index = v_instance->frame_index;
 	if(memory.memory) {
 		return RendResult::eFail;
 	}
@@ -41,9 +43,10 @@ RendResult VBuffer::map_mem() {
 	if ( ! ( memory.property_flags & vk::MemoryPropertyFlagBits::eHostVisible ) ) {
 		return RendResult::eUninitialized;
 	}
-	if ( mapped_ptr )
+	if ( mapped_ptr ) {
 		return RendResult::eSuccess;
-	v_instance->vk_device ().mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
+	}
+	vk::Result res = v_instance->vk_device ().mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
 	return mapped_ptr ? RendResult::eSuccess : RendResult::eFail;
 }
 RendResult VBuffer::unmap_mem() {

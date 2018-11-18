@@ -2,11 +2,14 @@
 
 #include "VModel.h"
 #include "VContext.h"
+#include <render/RenderPass.h>
 
 struct VRenderStage;
 struct RenderStage;
 struct Image;
 struct VBaseImage;
+struct InstanceGroup;
+struct ContextGroup;
 
 struct VRenderImageWrapper {
 	bool external = false;

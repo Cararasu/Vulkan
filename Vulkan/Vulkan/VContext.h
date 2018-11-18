@@ -10,30 +10,38 @@
 struct VBuffer;
 struct VInstance;
 struct VModel;
-struct VModelBase;
 
-struct VContextBase : public ContextBase {
-	VTransientBufferStorage bufferstorage;
+struct VContextBuffer {
+	//DynArray<>
 
-	VContextBase ( VInstance* instance, const DataGroupDefId datagroup_id ) : ContextBase ( datagroup_id ),
-		bufferstorage ( instance, vk::BufferUsageFlagBits::eUniformBuffer ) {
+};
+struct VContextBase {
+	vk::DescriptorSetLayout descriptorset_layout;
+};
 
+struct VContext {
+	ContextId id;
+	ContextBaseId contextbase_id;
+	VInstance* v_instance;
+	VBuffer v_buffer;
+	vk::DescriptorPool descriptor_pool;
+	vk::DescriptorSet uniform_descriptor_set;
+	
+	VContext ( VInstance* instance, ContextBaseId contextbase_id );
+	~VContext();
+
+	Context context() {
+		return {id, contextbase_id};
 	}
 };
 
 struct VContextGroup : public ContextGroup {
-	VInstance* instance;
-	HashMap<ContextBaseId, Context*> context_map;
+	VInstance* v_instance;
+	HashMap<ContextBaseId, VContext*> context_map;
 
-	VContextGroup ( VInstance* instance ) : instance ( instance ) { }
+	VContextGroup ( VInstance* instance ) : v_instance ( instance ) { }
 
-	virtual void set_context ( Context* context ) override {
-		context_map.insert ( std::make_pair ( context->contextbase_id, context ) );
-	}
-	virtual void remove_context ( ContextBaseId base_id ) override {
-		context_map.erase ( base_id );
-	}
-	virtual void clear() override {
-		context_map.clear();
-	}
+	virtual void set_context ( Context& context ) override;
+	virtual void remove_context ( ContextBaseId base_id ) override;
+	virtual void clear() override;
 };

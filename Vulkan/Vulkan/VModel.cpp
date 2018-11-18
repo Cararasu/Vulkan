@@ -1,22 +1,16 @@
 #include "VModel.h"
+#include "VInstance.h"
 
-VModel::VModel(VInstance* v_instance, ModelBaseId modelbase_id) : 
-	Model(modelbase_id), vertexbuffer(v_instance), indexbuffer(v_instance){
-	
-}
-VModelBase::VModelBase(const DataGroupDefId datagroup_id) : ModelBase(datagroup_id) {
-	
-}
+VModel::VModel ( VInstance* instance, ModelBaseId modelbase_id, Array<VContext*>& contexts ) :
+	id(0), modelbase_id(modelbase_id), v_contexts(contexts), v_instance ( instance ), vertexbuffer ( instance ), indexbuffer ( instance ) {
 
-u64 VInstanceGroup::register_instances(const ModelInstanceBase* base, u32 count) {
-	RId id = buffer_storeage.allocate_chunk(instance->datagroupdef(base->instance_datagroup_id)->size * count);
-	base_to_id_map.insert(std::make_pair(base, id));
-	return id;
 }
-void* VInstanceGroup::finish_register() {
-	return buffer_storeage.allocate_transferbuffer();
+void VInstanceGroup::register_instances ( InstanceBaseId instancebase_id, Model& model, void* data, u32 count ) {
+	const InstanceBase* instancebaseptr = v_instance->instancebase ( instancebase_id );
+	u64 offset = buffer_storeage.allocate_chunk ( instancebaseptr->instance_datagroup.size * count );
+	instance_to_data_map[instancebase_id].push_back ( {instancebase_id, model.id, model.modelbase_id, offset, data, count} );
 }
 void VInstanceGroup::clear() {
 	buffer_storeage.clear_transfer();
-	base_to_id_map.clear();
+	instance_to_data_map.clear();
 }

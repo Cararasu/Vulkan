@@ -15,7 +15,7 @@
 // turn the warnings back on
 #pragma GCC diagnostic pop
 
-#define MAX_PRESENTIMAGE_COUNT (3)
+constexpr u32 MAX_PRESENTIMAGE_COUNT = 3;
 
 void printError(VkResult res);
 
@@ -29,7 +29,7 @@ void printError(VkResult res);
 #define V_CHECKCALL(call, errorcode) {\
 	vk::Result res = call;\
 	if(res != vk::Result::eSuccess){\
-		printf("Error %s\n", vk::to_string(res).c_str());\
+		printf("Error %s in call %s\n", vk::to_string(res).c_str(), #call);\
 		errorcode;\
 	}\
 }
@@ -37,7 +37,7 @@ void printError(VkResult res);
 #define V_CHECKCALL_MAYBE(call, errorcode) {\
 	vk::Result res = call;\
 	if(res != vk::Result::eSuccess){\
-		printf("Error %s\n", vk::to_string(res).c_str());\
+		printf("Error %s in call %s\n", vk::to_string(res).c_str(), #call);\
 		errorcode;\
 	}\
 }

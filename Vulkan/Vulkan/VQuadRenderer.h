@@ -1,5 +1,6 @@
 #pragma once
 #include "VBuffer.h"
+#include <render/Dimensions.h>
 
 
 //full image

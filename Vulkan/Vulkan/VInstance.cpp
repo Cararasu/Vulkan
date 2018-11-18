@@ -328,7 +328,18 @@ VInstance::VInstance() {
 }
 
 VInstance::~VInstance() {
+	wait_for_frame ( frame_index );
 
+	for ( auto& ele : v_model_map ) {
+		for ( VModel* model : ele.second ) {
+			if ( model ) delete model;
+		}
+	}
+	for ( auto& ele : v_context_map ) {
+		for ( VContext* context : ele.second ) {
+			if ( context ) delete context;
+		}
+	}
 	for ( auto entry : monitor_map ) {
 		delete entry.second;
 	}
@@ -342,9 +353,15 @@ VInstance::~VInstance() {
 	for ( auto ele : renderstage_store ) {
 		delete ele;
 	}
-	for ( auto ele : model_store ) {
-		delete ele;
+	for ( std::pair<ContextBaseId, VContextBase> ele : contextbase_map ) {
+		if ( ele.second.descriptorset_layout ) vk_device().destroyDescriptorSetLayout ( ele.second.descriptorset_layout );
 	}
+	for ( vk::Fence fence : free_fences ) {
+		vk_device().destroyFence ( fence );
+	}
+	vk_device().destroyCommandPool ( transfer_commandpool );
+
+
 	m_device.destroy ( nullptr );
 
 }
@@ -518,7 +535,11 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	queues.combined_graphics_present_queue = ( pId == gId );
 	queues.combined_graphics_compute_queue = ( gId == cId );
 
-	register_specializations(this);
+	transfer_commandpool = vk_device().createCommandPool (
+	                           vk::CommandPoolCreateInfo ( vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_wrapper()->transfer_queue_id )
+	                       );
+
+	register_specializations ( this );
 	return true;
 }
 
@@ -556,8 +577,8 @@ Monitor* VInstance::get_primary_monitor() {
 	return get_primary_monitor_vulkan();
 }
 ResourceManager* VInstance::resource_manager() {
-	if(m_resource_manager) return m_resource_manager;
-	m_resource_manager = new VResourceManager(this);
+	if ( m_resource_manager ) return m_resource_manager;
+	m_resource_manager = new VResourceManager ( this );
 	return m_resource_manager;
 }
 Window* VInstance::create_window() {
@@ -576,18 +597,41 @@ bool VInstance::destroy_window ( Window* window ) {
 	}
 	return false;
 }
-void VInstance::datagroupdef_registered(DataGroupDefId id) {
-	//welp
-	v_logger.log<LogLevel::eInfo>("Registered DataGroup Definition 0x%" PRIx32, id);
+void VInstance::contextbase_registered ( ContextBaseId id ) {
+	v_logger.log<LogLevel::eInfo> ( "Registered Context Base 0x%" PRIx32, id );
+	const ContextBase* contextbase_ptr = contextbase ( id );
+	u32 ds_size = 0;
+	if ( contextbase_ptr->datagroup.size )
+		ds_size++;
+
+	Array<vk::DescriptorSetLayoutBinding> dslbs ( ds_size );
+	if ( contextbase_ptr->datagroup.size )
+		dslbs[0] = vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll, nullptr );
+
+	VContextBase v_contextbase;
+	if ( ds_size ) v_contextbase.descriptorset_layout = vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), dslbs.size, dslbs.data ), nullptr ),
+		                             contextbase_map[id] = v_contextbase;
 }
-void VInstance::contextbase_registered(ContextBaseId id) {
-	v_logger.log<LogLevel::eInfo>("Registered Context Base 0x%" PRIx32, id);
+void VInstance::modelbase_registered ( ModelBaseId id ) {
+	v_logger.log<LogLevel::eInfo> ( "Registered Model Base 0x%" PRIx32, id );
 }
-void VInstance::modelbase_registered(ModelBaseId id) {
-	v_logger.log<LogLevel::eInfo>("Registered Model Base 0x%" PRIx32, id);
+void VInstance::instancebase_registered ( InstanceBaseId id ) {
+	v_logger.log<LogLevel::eInfo> ( "Registered ModelInstance Base 0x%" PRIx32, id );
 }
-void VInstance::modelinstancebase_registered(ModelInstanceBaseId id) {
-	v_logger.log<LogLevel::eInfo>("Registered ModelInstance Base 0x%" PRIx32, id);
+Context VInstance::create_context ( ContextBaseId contextbase_id ) {
+	v_logger.log<LogLevel::eInfo> ( "Create Context 0x%" PRIx32, contextbase_id );
+
+	VContext* created_context = v_context_map[contextbase_id].insert ( new VContext ( this, contextbase_id ) );
+	return created_context->context();
+}
+Model VInstance::create_model ( ModelBaseId modelbase_id ) {
+	v_logger.log<LogLevel::eInfo> ( "Create Model 0x%" PRIx32, modelbase_id );
+	VModel* created_model;
+	{
+		Array<VContext*> contexts;
+		created_model = v_model_map[modelbase_id].insert ( new VModel ( this, modelbase_id, contexts ) );
+	}
+	return created_model->model();
 }
 
 
@@ -600,10 +644,10 @@ ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
 RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) {
-	return new VRenderBundle(igroup, cgroup, rstages, image_types, dependencies);
+	return new VRenderBundle ( igroup, cgroup, rstages, image_types, dependencies );
 }
 void VInstance::prepare_render () {
-	for(VWindow* window : windows) {
+	for ( VWindow* window : windows ) {
 		window->prepare_frame();
 	}
 }
@@ -612,39 +656,34 @@ void VInstance::prepare_render ( Array<Window*> windows ) {
 }
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {
-		if(VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b )) {
+		if ( VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b ) ) {
 			if ( bundle ) {
-				for(const VRenderStage* stage : bundle->rstages) {
-					
+				for ( const VRenderStage* stage : bundle->rstages ) {
+
 				}
 				bundle->v_dispatch();
 			}
 			if ( bundle ) bundle->v_dispatch();
 		}
-		if(VMainBundle* bundle = dynamic_cast<VMainBundle*> ( b )) {
+		if ( VMainBundle* bundle = dynamic_cast<VMainBundle*> ( b ) ) {
 			if ( bundle ) {
-				printf("MainBundle\n");
+				printf ( "MainBundle\n" );
 				bundle->v_dispatch();
 			}
 		}
-		
 	}
 }
-RenderBundle* VInstance::create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) {
-	return new VMainBundle(this, igroup, cgroup);
+RenderBundle* VInstance::create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) {
+	return new VMainBundle ( this, igroup, cgroup );
 }
-/*
-const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
-	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
-}
-const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
-	VModelBase* v_modelbase = modelbase_store[modelbase->id];
-	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
 
-	u64 vertexbuffersize = vertexcount * datagroupdef->size;
+void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
+	const ModelBase* modelbase_ptr = modelbase ( model.modelbase_id );
+
+	u64 vertexbuffersize = vertexcount * modelbase_ptr->datagroup.size;
 	u64 indexbuffersize = indexcount * sizeof ( u16 );
 
-	VModel* newmodel = new VModel ( this, v_modelbase );
+	VModel* newmodel = v_model_map[model.modelbase_id][model.id];
 	newmodel->index_is_2byte = true;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
@@ -659,33 +698,28 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 
 
 	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
-
+	
 	staging_buffer->map_mem();
 
 	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
 	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
-
+	
 	Array<VSimpleTransferJob> jobs = {
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
-		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
+		{staging_buffer, &newmodel->indexbuffer, {vertexbuffersize, 0, indexbuffersize}}
 	};
 	//TODO make asynch
 	transfer_data ( jobs );
 	free_staging_buffer ( staging_buffer );
-	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
-const Model VInstance::load_generic_model ( RId modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
-	return load_generic_model ( modelbase_store[modelbase], vertices, vertexcount, indices, indexcount );
-}
-const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
-	VModelBase* v_modelbase = modelbase_store[modelbase->id];
-	const DataGroupDef* datagroupdef = v_modelbase->datagroup;
+void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
+	const ModelBase* modelbase_ptr = modelbase ( model.modelbase_id );
 	bool fitsin2bytes = vertexcount < 0x10000;
 
-	u64 vertexbuffersize = vertexcount * datagroupdef->size;
+	u64 vertexbuffersize = vertexcount * modelbase_ptr->datagroup.size;
 	u64 indexbuffersize = indexcount * sizeof ( u32 );
-	VModel* newmodel = new VModel ( this, v_modelbase );
-	newmodel->modelbase = v_modelbase;
+
+	VModel* newmodel = v_model_map[model.modelbase_id][model.id];
 	newmodel->index_is_2byte = false;
 	newmodel->vertexoffset = 0;
 	newmodel->vertexcount = vertexcount;
@@ -705,17 +739,20 @@ const Model VInstance::load_generic_model ( const ModelBase* modelbase, void* ve
 	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
 	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
 
+	staging_buffer->unmap_mem();
 	Array<VSimpleTransferJob> jobs = {
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
-		{staging_buffer, &newmodel->indexbuffer, {indexbuffersize, 0, indexbuffersize}}
+		{staging_buffer, &newmodel->indexbuffer, {vertexbuffersize, 0, indexbuffersize}}
 	};
 	//TODO make asynch
 	transfer_data ( jobs );
 
 	free_staging_buffer ( staging_buffer );
-	return Model ( model_store.insert ( newmodel )->handle(), modelbase );
 }
-*/
+void VInstance::unload_model ( ModelId modelbase_id ) {
+
+}
+
 
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {
@@ -728,9 +765,9 @@ void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory*
 	}
 	if ( memory->heap_index != std::numeric_limits<u32>::max() ) {
 		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory->heap_index );
-		printf ( "Allocate %" PRIu64 " Bytes\n", mem_req.size );
-
 		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory->memory ), printf ( "Failed To Create Image Memory\n" ) );
+
+		printf ( "Allocated %" PRIu64 " Bytes 0x%" PRIx64 "\n", mem_req.size, memory->memory );
 
 		memory->size = mem_req.size;
 	} else {
@@ -788,9 +825,8 @@ void VInstance::destroyCommandPool ( vk::CommandPool commandPool ) {
 }
 vk::CommandBuffer VInstance::createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel ) {
 	vk::CommandBufferAllocateInfo allocateInfo ( commandPool, bufferLevel, 1 );
-
 	vk::CommandBuffer commandBuffer;
-	m_device.allocateCommandBuffers ( &allocateInfo, &commandBuffer );
+	vk_device().allocateCommandBuffers ( &allocateInfo, &commandBuffer );
 	return commandBuffer;
 }
 void VInstance::delete_command_buffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer ) {

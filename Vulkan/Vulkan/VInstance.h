@@ -4,6 +4,8 @@
 #include "render/Window.h"
 #include "VHeader.h"
 #include <render/IdArray.h>
+#include "VContext.h"
+#include <queue>
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -21,7 +23,7 @@ struct VExtLayerStruct {
 
 struct VDevice : public Device {
 	vk::PhysicalDevice physical_device;
-	
+
 	VExtLayerStruct extLayers;
 	std::vector<vk::QueueFamilyProperties> queueFamilyProps;
 	vk::PhysicalDeviceProperties vkPhysDevProps;
@@ -50,10 +52,8 @@ struct VMonitor : public Monitor {
 
 
 struct VWindow;
-struct VContextBase;
-struct VModelBase;
 struct VModel;
-struct VModelInstanceBase;
+struct VContext;
 struct VRenderStage;
 struct VBuffer;
 struct VInstanceGroup;
@@ -67,7 +67,7 @@ struct VSimpleTransferJob {
 
 struct VInstance : public Instance {
 	InstanceOptions options;
-	
+
 	VExtLayerStruct extLayers;
 	Map<GLFWmonitor*, VMonitor*> monitor_map;
 	Map<GLFWwindow*, VWindow*> window_map;
@@ -102,18 +102,28 @@ struct VInstance : public Instance {
 	virtual Monitor* get_primary_monitor();
 
 	VMonitor* get_primary_monitor_vulkan();
-	
+
 	VResourceManager* m_resource_manager = nullptr;
 	virtual ResourceManager* resource_manager() override;
-	
+
 //------------ Resources
 
-	virtual void datagroupdef_registered(DataGroupDefId id) override;
-	virtual void contextbase_registered(ContextBaseId id) override;
-	virtual void modelbase_registered(ModelBaseId id) override;
-	virtual void modelinstancebase_registered(ModelInstanceBaseId id) override;
-	
-	UIdPtrArray<VModel> model_store;
+	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
+	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
+
+	virtual void unload_model ( ModelId modelbase_id ) override;
+
+	Map<ContextBaseId, VContextBase> contextbase_map;
+	virtual void contextbase_registered ( ContextBaseId id ) override;
+	virtual void modelbase_registered ( ModelBaseId id ) override;
+	virtual void instancebase_registered ( InstanceBaseId id ) override;
+
+	Map<ModelBaseId, IdPtrArray<VContext>> v_context_map;
+	virtual Context create_context ( ContextBaseId id ) override;
+
+	Map<ModelBaseId, IdPtrArray<VModel>> v_model_map;
+	virtual Model create_model ( ModelBaseId id ) override;
+
 	IdPtrArray<VRenderStage> renderstage_store;
 	DynArray<VInstanceGroup*> instancegroup_store;
 
@@ -123,18 +133,32 @@ struct VInstance : public Instance {
 	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies );
 
 	virtual void prepare_render ();
-	virtual void prepare_render (Array<Window*> windows);
-	
+	virtual void prepare_render ( Array<Window*> windows );
+
 	virtual void render_bundles ( Array<RenderBundle*> bundles );
 
 //------------ Specialized Functions
-	virtual RenderBundle* create_main_bundle(InstanceGroup* igroup, ContextGroup* cgroup) override;
-
+	virtual RenderBundle* create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) override;
 
 //------------ Transfer Data
+//TODO move to seperate Transfer-Object which wraps all this in one logical unit
+	std::queue<std::pair<u64, VBuffer*>> free_staging_buffer_queue;
 
+	void free_staging_buffer ( VBuffer* buffer );
 	VBuffer* request_staging_buffer ( u64 size );
-	void free_staging_buffer(VBuffer* buffer);
+
+	DynArray<vk::Fence> free_fences;
+	std::queue<std::pair<u64, vk::Fence>> free_fence_queue;
+
+	vk::Fence request_fence();
+	void free_fence ( vk::Fence fence );
+
+	vk::CommandPool transfer_commandpool;
+	DynArray<vk::CommandBuffer> free_command_buffers;
+	std::queue<std::pair<u64, vk::CommandBuffer>> free_command_buffer_queue;
+
+	vk::CommandBuffer request_transfer_command_buffer();
+	void free_transfer_command_buffer ( vk::CommandBuffer buffer );
 
 	//immediate transfer
 	void transfer_data ( Array<VSimpleTransferJob>& jobs );
@@ -152,7 +176,7 @@ struct VInstance : public Instance {
 
 	void schedule_on_frame_finish ( FrameFinishCallback callback );
 	void schedule_on_current_frame_finish ( FrameFinishCallback callback );
-	
+
 
 //------------ Memory allocation
 
@@ -183,7 +207,7 @@ struct VInstance : public Instance {
 	inline vk::PhysicalDevice vk_physical_device () {
 		return v_device->physical_device;
 	}
-	
+
 //------------ Vulkan Resources
 
 //------------------------ ResourceCaching
@@ -198,16 +222,16 @@ struct VInstance : public Instance {
 		m_device.destroySemaphore ( sem, nullptr );
 		return RendResult::eSuccess;
 	}
-	
+
 //------------------------ CommandPools/CommandBuffers
 
 	vk::CommandPool createTransferCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
 	vk::CommandPool createGraphicsCommandPool ( vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlags() );
 	void destroyCommandPool ( vk::CommandPool commandPool );
-	
+
 	vk::CommandBuffer createCommandBuffer ( vk::CommandPool commandPool, vk::CommandBufferLevel bufferLevel );
 	void delete_command_buffer ( vk::CommandPool commandPool, vk::CommandBuffer commandBuffer );
-	
+
 };
 
 

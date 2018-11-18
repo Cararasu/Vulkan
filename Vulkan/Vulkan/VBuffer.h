@@ -1,9 +1,9 @@
 #pragma once
 
 #include "VHeader.h"
-#include "VInstance.h"
 
 struct VInstance;
+struct VSimpleTransferJob;
 
 struct VBuffer {
 	VInstance* v_instance;
@@ -15,6 +15,7 @@ struct VBuffer {
 	vk::MemoryPropertyFlags recommended;
 	
 	void* mapped_ptr = nullptr;
+	u64 last_build_frame_index = 0;
 
 	VBuffer ( VInstance* instance );
 	VBuffer ( VInstance* instance, vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );

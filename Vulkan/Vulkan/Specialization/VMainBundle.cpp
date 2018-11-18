@@ -8,6 +8,65 @@
 #include "../VShader.h"
 #include "../VResourceManager.h"
 #include "../VTransformEnums.h"
+#include "../VWindow.h"
+
+/*
+VPipelineObject::VPipelineObject ( InstanceBaseId mib_id, Array<ContextBaseId>& contextbase_list ) :
+	mib_id(mib_id), contextbase_list(contextbase_list) {
+
+}
+VPipelineObject::~VPipelineObject ( ) {
+	destroy_all();
+}
+
+void VPipelineObject::destroy_pipeline_layouts() {
+	destroy_commandbuffers();
+	destroy_pipelines();
+
+	if ( v_pipeline_layout ) {
+		v_instance->vk_device ().destroyPipelineLayout ( v_pipeline_layout );
+		v_pipeline_layout = vk::PipelineLayout();
+	}
+}
+void VPipelineObject::destroy_pipelines() {
+	destroy_commandbuffers();
+	if ( v_pipeline ) {
+		v_instance->vk_device ().destroyPipeline ( v_pipeline );
+		v_pipeline = vk::Pipeline();
+	}
+}
+void VPipelineObject::destroy_commandbuffers() {
+
+}
+void VPipelineObject::destroy_all() {
+	destroy_commandbuffers();
+	destroy_pipelines();
+	destroy_pipeline_layouts();
+}
+void VPipelineObject::rebuild ( vk::RenderPass renderpass, Array<vk::Framebuffer>& framebuffers, Viewport<f32> viewport ) {
+	if(current_renderpass != renderpass || current_viewport != viewport){
+		destroy_pipelines();
+	}
+	bool framebuffer_changed = false;
+	if(framebuffers.size == per_instance_data.size) {
+		for(u32 i = 0; i < framebuffers.size; i++) {
+			if(per_instance_data[i].framebuffer != framebuffers[i]){
+				framebuffer_changed = true;
+				break;
+			}
+		}
+		if(framebuffer_changed) destroy_commandbuffers();
+	} else {
+		destroy_commandbuffers();
+	}
+}
+vk::CommandBuffer VPipelineObject::get_command_buffer ( u32 index ) {
+	return commandbuffers[index];
+}*/
+
+
+
+
 
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
 	v_instance ( instance ),
@@ -45,11 +104,8 @@ void VMainBundle::v_destroy_pipelines() {
 		v_instance->vk_device ().destroyPipeline ( v_object_pipeline );
 		v_object_pipeline = vk::Pipeline();
 	}
-	for ( u32 i = 0; i < v_descriptor_set_layouts.size; i++ ) {
-		if ( v_descriptor_set_layouts[i] ) {
-			v_instance->vk_device().destroyDescriptorSetLayout ( v_descriptor_set_layouts[i] );
-			v_descriptor_set_layouts[i] = vk::DescriptorSetLayout();
-		}
+	for ( PerFrameMainBundleRenderObj& data : v_per_frame_data ) {
+		data.command.should_reset = true;
 	}
 }
 void VMainBundle::v_destroy_renderpasses() {
@@ -106,18 +162,14 @@ void VMainBundle::v_check_rebuild() {
 void VMainBundle::v_rebuild_pipelines() {
 	if ( !v_object_pipeline_layout ) {
 		printf ( "Rebuild Pipeline Layouts\n" );
-		vk::DescriptorSetLayoutBinding bindings1[] = {
-			vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex, nullptr ),
-		};
-		vk::DescriptorSetLayoutBinding bindings2[] = {
-			vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eSampler, 1, vk::ShaderStageFlagBits::eFragment, nullptr ),
-			vk::DescriptorSetLayoutBinding ( 1, vk::DescriptorType::eSampledImage, 3, vk::ShaderStageFlagBits::eFragment, nullptr )
-		};
 
-		v_descriptor_set_layouts = {
-			v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 1, bindings1 ), nullptr ),
-			//v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 2, bindings2 ), nullptr )
-		};
+		VContextBase& v_contextbase = v_instance->contextbase_map[w2smatrix_base_id];
+		Array<vk::DescriptorSetLayout> v_descriptor_set_layouts;
+		if ( v_contextbase.descriptorset_layout ) {
+			v_descriptor_set_layouts = { v_contextbase.descriptorset_layout };
+		} else {
+			v_descriptor_set_layouts = { };
+		}
 
 		std::array<vk::PushConstantRange, 0> pushConstRanges = {};//{vk::PushConstantRange ( vk::ShaderStageFlagBits::eFragment, 0, sizeof ( ObjectPartData ) ) };
 
@@ -141,7 +193,7 @@ void VMainBundle::v_rebuild_pipelines() {
 		vk::AttachmentDescription attachments[2] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            v_bundleStates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eLoad,//loadOp
+			                            vk::AttachmentLoadOp::eClear,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
@@ -150,7 +202,7 @@ void VMainBundle::v_rebuild_pipelines() {
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            v_bundleStates[1].current_format, vk::SampleCountFlagBits::e1,//format, samples
-			                            vk::AttachmentLoadOp::eLoad,//loadOp
+			                            vk::AttachmentLoadOp::eClear,//loadOp
 			                            vk::AttachmentStoreOp::eDontCare,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
@@ -158,7 +210,6 @@ void VMainBundle::v_rebuild_pipelines() {
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal//finalLayout
 			                          )
 		};
-		MAX_PRESENTIMAGE_COUNT;
 
 		vk::AttachmentReference colorAttachmentRefs[] = {
 			vk::AttachmentReference ( 0, vk::ImageLayout::eColorAttachmentOptimal )
@@ -183,31 +234,27 @@ void VMainBundle::v_rebuild_pipelines() {
 	if ( !v_object_pipeline ) {
 		printf ( "Rebuild Pipelines\n" );
 
-		const ModelInstanceBase* modelinstancebase = v_instance->modelinstancebase ( simplemodel_base_id );
-
-		const ModelBase* modelbase = v_instance->modelbase ( modelinstancebase->modelbase_id );
-
-		const DataGroupDef* vertex_datagroup = v_instance->datagroupdef ( modelbase->datagroup_id );
-		const DataGroupDef* instance_datagroup = v_instance->datagroupdef ( modelinstancebase->instance_datagroup_id );
+		const InstanceBase* instancebase = v_instance->instancebase ( simplemodel_instance_base_id );
+		const ModelBase* modelbase = v_instance->modelbase ( simplemodel_base_id );
 
 		std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
-			vk::VertexInputBindingDescription ( 0, vertex_datagroup->size, vk::VertexInputRate::eVertex ),
-			vk::VertexInputBindingDescription ( 1, instance_datagroup->size, vk::VertexInputRate::eInstance )
+			vk::VertexInputBindingDescription ( 0, modelbase->datagroup.size, vk::VertexInputRate::eVertex ),
+			vk::VertexInputBindingDescription ( 1, instancebase->instance_datagroup.size, vk::VertexInputRate::eInstance )
 		};
 
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
-		for ( DataValueDef& valuedef : vertex_datagroup->valuedefs ) {
+		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
 			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
-		for ( DataValueDef& valuedef : instance_datagroup->valuedefs ) {
+		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
 			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
-			for ( DataValueDef& valuedef : vertex_datagroup->valuedefs ) {
+			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
 				VFormatData formatdata = to_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
@@ -219,7 +266,7 @@ void VMainBundle::v_rebuild_pipelines() {
 					index++;
 				}
 			}
-			for ( DataValueDef& valuedef : instance_datagroup->valuedefs ) {
+			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
 				VFormatData formatdata = to_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
@@ -271,7 +318,7 @@ void VMainBundle::v_rebuild_pipelines() {
 		    VK_TRUE, VK_TRUE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
 		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
-		    {}, {}, //fron, back
+		    {}, {}, //front, back
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
@@ -324,34 +371,53 @@ void VMainBundle::v_rebuild_pipelines() {
 
 	}
 	last_frame_index_pipeline_built = v_instance->frame_index;
-	v_rebuild_commandbuffers();
 }
-void VMainBundle::v_rebuild_commandbuffers() {
-	for ( u32 i = 0; i < v_per_frame_data.size; i++ ) {
-		PerFrameMainBundleRenderObj& data = v_per_frame_data[i];
-		if ( !data.framebuffer ) {
-			vk::ImageView attachments[2] = {v_bundleStates[0].actual_image->instance_imageview(i), v_bundleStates[1].actual_image->instance_imageview(i)};
-			vk::FramebufferCreateInfo frameBufferCreateInfo = {
-				vk::FramebufferCreateFlags(), v_renderpass,
-				2, attachments,
-				( u32 ) viewport.extend.width, ( u32 ) viewport.extend.height, 1
-			};
-			data.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
-		}
-		if ( data.command.should_reset ) {
-			if ( data.command.buffer ) {
-				data.command.buffer.reset ( vk::CommandBufferResetFlags() );
-			} else {
-				data.command.buffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
-			}
+void VMainBundle::v_rebuild_commandbuffers ( u32 index ) {
+	PerFrameMainBundleRenderObj& data = v_per_frame_data[index];
+	if ( !data.framebuffer ) {
+		vk::ImageView attachments[2] = {v_bundleStates[0].actual_image->instance_imageview ( index ), v_bundleStates[1].actual_image->instance_imageview ( index ) };
+		vk::FramebufferCreateInfo frameBufferCreateInfo = {
+			vk::FramebufferCreateFlags(), v_renderpass,
+			2, attachments,
+			( u32 ) viewport.extend.width, ( u32 ) viewport.extend.height, 1
+		};
+		data.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
+	}
+	if ( data.command.should_reset ) {
+		if ( data.command.buffer ) {
+			data.command.buffer.reset ( vk::CommandBufferResetFlags() );
+		} else {
+			data.command.buffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
 		}
 		vk::CommandBufferBeginInfo begininfo = {
-			vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+			vk::CommandBufferUsageFlags(), nullptr
 		};
 		data.command.buffer.begin ( begininfo );
 
+		DynArray<InstanceBlock>& instanceblocks = v_igroup->instance_to_data_map[simplemodel_instance_base_id];
+		IdPtrArray<VModel>& models = v_instance->v_model_map[simplemodel_instance_base_id];
+		
+		{
+			void* instance_data = v_igroup->buffer_storeage.allocate_transfer_buffer();
+			for(auto it = v_igroup->instance_to_data_map.begin(); it != v_igroup->instance_to_data_map.end(); it++) {
+				const InstanceBase* instancebase = v_instance->instancebase(it->first);
+				for(InstanceBlock& block : it->second) {
+					if(block.data) memcpy(instance_data + block.offset, block.data, instancebase->instance_datagroup.size * block.count);
+				}
+			}
+			v_igroup->buffer_storeage.transfer_data ( data.command.buffer );
+			vk::MemoryBarrier memoryBarrier ( vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead );
+			data.command.buffer.pipelineBarrier (
+				vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput,
+				vk::DependencyFlagBits::eByRegion,
+				1, &memoryBarrier,//memoryBarrier
+				0, nullptr,//bufferMemoryBarrier
+				0, nullptr//imageMemoryBarrier
+			);
+		}
+
 		vk::ClearValue clearColors[2] = {
-			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 0.0f, 0.0f, 0.0f} ) ) ),
+			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ) ),
 			vk::ClearValue ( vk::ClearDepthStencilValue ( 1.0f, 0 ) )
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
@@ -359,99 +425,83 @@ void VMainBundle::v_rebuild_commandbuffers() {
 			vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
 			2, clearColors
 		};
-		v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, data.command.buffer );
-		v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, data.command.buffer );
-		
+		v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, data.command.buffer, index );
+		v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, data.command.buffer, index );
+
 		data.command.buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
-		data.command.buffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, this->v_object_pipeline );
-		//data.command.buffer.bindVertexBuffers ( 0, {vertex_buffer->buffer, vertex_buffer->buffer}, {0, sizeof ( QuadVertex ) * 6} );
-		//data.command.buffer.draw ( 6, 2, 0, 0 );
+		data.command.buffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, v_object_pipeline );
 
+		VContext* context_ptr = v_cgroup->context_map[w2smatrix_base_id];
+		assert ( context_ptr );
+
+
+		data.command.buffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, v_object_pipeline_layout, 0, 1, &context_ptr->uniform_descriptor_set, 0, nullptr );
+
+		for ( InstanceBlock& instanceblock : instanceblocks ) {
+			printf ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d\n", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
+			VModel* v_model = models[instanceblock.model_id];
+
+			printf ( "Vertices: %d\n", v_model->indexcount );
+			data.command.buffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );
+			data.command.buffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, v_igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
+			data.command.buffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
+		}
 		/*VkViewport viewport = vks::initializers::view^port((float)width, (float)height, 0.0f, 1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
 		VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
 		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);*/
 
-		//1. simple textured quads
-		//2. simple filled quads
-		//3. fonts
-		
 		data.command.buffer.endRenderPass();
-		if(v_bundleStates[0].actual_image->window_target){
-			v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, data.command.buffer );
-			v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eGeneral, data.command.buffer );
+		if ( v_bundleStates[0].actual_image->window_target ) {
+			v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, data.command.buffer, index );
+			v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eGeneral, data.command.buffer, index );
 		}
 		data.command.buffer.end();
+		//data.command.should_reset = false;
 	}
 }
 void VMainBundle::v_dispatch() {
 	v_check_rebuild();
 	v_rebuild_pipelines();
 
+	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
+	VWindow* window = v_bundleStates[0].actual_image->window;
+	window->prepare_frame();
+	window->current_framelocal_data()->frame_index = v_instance->frame_index;
+
 	QueueWrapper* queue_wrapper = &v_instance->queues;
-	
-/*
+
 	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eBottomOfPipe );
 
-	SubmitStore submit_store;
+	FrameLocalData* data = window->current_framelocal_data();
 
-	SubmitInfo si;
-	si.wait_dst_stage_mask = vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer );
-	si.need_sem_index = submit_store.semaphores.size();
-	si.need_sem_count = 1;
-	submit_store.semaphores.push_back ( image_available_guard_sem );
-	si.comm_buff_index = submit_store.commandbuffers.size();
-	si.comm_buff_count = 1;
-	submit_store.commandbuffers.push_back ( data->clear_command_buffer );
-	si.sig_sem_index = submit_store.semaphores.size();
-	si.sig_sem_count = 1;
-	submit_store.semaphores.push_back ( data->render_ready_sem );
-	submit_store.submitinfos.push_back ( si );
+	v_rebuild_commandbuffers ( v_bundleStates[0].actual_image->current_index );
 
-	u32 sem_index = 1;
-	quad_renderer->render ( present_image_index, &submit_store, 1, &sem_index );
+	vk::SubmitInfo submitinfos[1] = { vk::SubmitInfo (
+	                                      1, &window->image_available_guard_sem, //waitSem
+	                                      &waitDstStageMask,
+	                                      1, &v_per_frame_data[v_bundleStates[0].actual_image->current_index].command.buffer,//commandbuffers
+	                                      1, &data->present_ready_sem//signalSem
+	                                  )
+	                                };
 
-	si.wait_dst_stage_mask = vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eColorAttachmentOutput );
-	si.need_sem_index = sem_index;
-	si.need_sem_count = 1;
-	si.comm_buff_index = submit_store.commandbuffers.size();
-	si.comm_buff_count = 1;
-	submit_store.commandbuffers.push_back ( data->present_command_buffer );
-	si.sig_sem_index = submit_store.semaphores.size();
-	si.sig_sem_count = 1;
-	submit_store.semaphores.push_back ( data->present_ready_sem );
-	submit_store.submitinfos.push_back ( si );
-
-	submit_store.signal_fence = data->image_presented_fence;
-
-	DynArray<vk::SubmitInfo> submitinfos;
-	for ( SubmitInfo& submit_info : submit_store.submitinfos ) {
-		submitinfos.push_back (
-		    vk::SubmitInfo (
-		        submit_info.need_sem_count, submit_store.semaphores.data() + submit_info.need_sem_index, //waitSem
-		        &submit_info.wait_dst_stage_mask,
-		        submit_info.comm_buff_count, submit_store.commandbuffers.data() + submit_info.comm_buff_index,//commandbuffers
-		        submit_info.sig_sem_count, submit_store.semaphores.data() + submit_info.sig_sem_index//signalSem
-		    )
-		);
-	}
-	queue_wrapper->graphics_queue.submit ( submitinfos, submit_store.signal_fence );
+	queue_wrapper->graphics_queue.submit ( 1, submitinfos, data->image_presented_fence );
 
 	if ( !queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
-		assert(false);
+		assert ( false );
 	}
 	//present image
 	vk::Result results;
 	vk::PresentInfoKHR presentInfo (
 	    1, &data->present_ready_sem,
 	    //active_sems.size(), active_sems.data(),
-	    1, swapChains,
-	    &present_image_index, &results );
+	    1, &window->swap_chain,
+	    &v_bundleStates[0].actual_image->current_index, &results );
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
-	active_sems.clear();
-*/
 	last_used = v_instance->frame_index;
+
+	v_instance->frame_index++;
 }

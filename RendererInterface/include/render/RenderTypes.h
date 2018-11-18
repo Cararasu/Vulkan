@@ -7,7 +7,7 @@
 	#define vassert(COND)  ((void)0)
 	#define vassert_exec(COND, CODE) ((void)0)
 #else
-	#define vassert(COND) if(!(COND)) {fprintf(stderr, "Triggered assert " #COND " in file " __FILE__ " on line %d\n", __LINE__);*((u8*)0) = 12;}
+	#define vassert(COND) if(!(COND)) {fprintf(stderr, "Triggered assert vassert(" #COND ") in file " __FILE__ " on line %d\n", __LINE__);*((u8*)0) = 12;}
 	#define vassert_exec(COND, CODE) if(!(COND)) {[](const char* condition, const char* file, int line) { CODE } (#COND, __FILE__, __LINE__);*((u8*)0) = 12;}
 #endif
 
@@ -25,12 +25,14 @@ typedef int64_t s64;
 
 #define RID_STATIC_IDS (0x80000000)
 
-typedef uint32_t RId;
+typedef u32 RId;
 
-typedef RId DataGroupDefId;
 typedef RId ContextBaseId;
 typedef RId ModelBaseId;
-typedef RId ModelInstanceBaseId;
+typedef RId InstanceBaseId;
+
+typedef RId ContextId;
+typedef RId ModelId;
 
 typedef float f32;
 typedef double f64;

@@ -20,7 +20,7 @@ void VRenderBundle::set_rendertarget ( u32 index, Image* image ) {
 
 void VRenderBundle::v_dispatch() {
 	printf ( "Dispatch\n" );
-	printf ( "%" PRId64 " instancetypes\n", igroup->base_to_id_map.size() );
+	printf ( "%" PRId64 " instancetypes\n", igroup->instance_to_data_map.size() );
 	printf ( "%" PRId64 " contexts\n", cgroup->context_map.size() );
 	printf ( "%" PRId64 " stages\n", rstages.size );
 }

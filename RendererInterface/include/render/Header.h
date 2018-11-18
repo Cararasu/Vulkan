@@ -26,25 +26,24 @@ struct Array {
 
 	Array() : size ( 0 ), data ( nullptr ) {}
 
-	Array(u64 size) : size ( size ) {
+	Array(u64 size) : size ( size ), data ( nullptr ) {
 		if(!size) return;
 		data = new T[size];
 	}
-	Array(u64 size, const T&& ele) : size ( size ) {
-		if(!size) return;
-		data = new T[size];
-		for ( u64 i = 0; i < size; i++){
-			data[i++] = ele;
-		}
-	}
-	Array(u64 size, const T& ele) : size ( size ) {
+	Array(u64 size, const T&& ele) : size ( size ), data ( nullptr ) {
 		if(!size) return;
 		data = new T[size];
 		for ( u64 i = 0; i < size; i++){
 			data[i++] = ele;
 		}
 	}
-
+	Array(u64 size, const T& ele) : size ( size ), data ( nullptr ) {
+		if(!size) return;
+		data = new T[size];
+		for ( u64 i = 0; i < size; i++){
+			data[i++] = ele;
+		}
+	}
 	Array ( const Array<T>& array ) : size ( array.size ), data ( nullptr ) {
 		if(!size) return;
 		data = new T[size];
@@ -53,13 +52,9 @@ struct Array {
 			data[i++] = ele;
 		}
 	}
-	Array ( const Array<T>&& array ) : size ( array.size ), data ( nullptr ) {
-		if(!size) return;
-		data = new T[size];
-		u64 i = 0;
-		for ( const T& ele : array){
-			data[i++] = std::move ( ele );
-		}
+	Array ( const Array<T>&& array ) : size ( array.size ), data ( array.data ) {
+		array.size = 0;
+		array.data = nullptr;
 	}
 	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( nullptr ) {
 		if(!size) return;

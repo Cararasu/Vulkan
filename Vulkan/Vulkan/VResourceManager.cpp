@@ -8,7 +8,7 @@ VResourceManager::VResourceManager ( VInstance* instance ) : v_instance ( instan
 
 VResourceManager::~VResourceManager() {
 	for ( VShaderModule* shadermodule : shader_array ) {
-		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
+		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule);
 		delete shadermodule;
 	}
 }
