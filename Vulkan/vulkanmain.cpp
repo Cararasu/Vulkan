@@ -131,6 +131,9 @@ struct Camera {
 	void move(float x, float y, float z) {
 		look_at += glm::vec3(x, y, z);
 	}
+	void zoom(float zoom) {
+		view_vector *= std::pow(1.1f, zoom);
+	}
 	glm::mat4 v2s_mat() {
 		return glm::perspective(fov, aspect, near, far);
 	}
@@ -251,13 +254,15 @@ int main ( int argc, char **argv ) {
 
 	Window* window = newinstance->create_window();
 	
-	window->on_resize([](Window* window, float x, float y) {
+	window->on_resize = [](Window* window, float x, float y) {
 		camera.aspect = y / x; 
-	});
-	
-	window->on_mouse_moved([](Window* window, double x, double y, double delta_x, double delta_y) {
+	};
+	window->on_mouse_moved = [](Window* window, double x, double y, double delta_x, double delta_y) {
 		camera.turn(delta_y / 1000.0, delta_x / 1000.0);
-	});
+	};
+	window->on_scroll = [](Window* window, double delta_x, double delta_y) {
+		camera.zoom( delta_y );
+	};
 
 	Extent2D<s32> window_size ( 1000, 600 );
 	*window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
@@ -289,7 +294,6 @@ int main ( int argc, char **argv ) {
 	printf ( "Starting Main Loop\n" );
 	while ( newinstance->is_window_open() ) {
 		using namespace std::chrono_literals;
-		std::this_thread::sleep_for ( 20ms );
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();

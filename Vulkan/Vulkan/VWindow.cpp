@@ -62,8 +62,8 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			printf ( "Size of Window %dx%d\n", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
-			if(vulkan_window->m_on_resize) {
-				vulkan_window->m_on_resize(vulkan_window, x, y);
+			if ( vulkan_window->on_resize ) {
+				vulkan_window->on_resize ( vulkan_window, x, y );
 			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
@@ -108,6 +108,14 @@ void VWindow::initialize() {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			vulkan_window->framebuffer_size_changed ( {x, y} );
+		} else {
+			printf ( "No Window Registered For GLFW-Window\n" );
+		}
+	} );
+	glfwSetScrollCallback ( window, [] ( GLFWwindow * window, double xoffset, double yoffset ) {
+		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
+		if ( vulkan_window ) {
+			if ( vulkan_window->on_scroll ) vulkan_window->on_scroll ( vulkan_window, xoffset, yoffset );
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -160,12 +168,12 @@ void VWindow::initialize() {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//printf ( "Mouse Position %f, %f\n", xpos,  ypos);
-			if(vulkan_window->m_on_mouse_moved) {
+			if ( vulkan_window->on_mouse_moved ) {
 				double delta_x = vulkan_window->mouse_x < 0.0 ? 0.0 : xpos - vulkan_window->mouse_x;
 				double delta_y = vulkan_window->mouse_y < 0.0 ? 0.0 : ypos - vulkan_window->mouse_y;
 				vulkan_window->mouse_x = xpos;
 				vulkan_window->mouse_y = ypos;
-				vulkan_window->m_on_mouse_moved(vulkan_window, xpos, ypos, delta_x, delta_y);
+				vulkan_window->on_mouse_moved ( vulkan_window, xpos, ypos, delta_x, delta_y );
 			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
@@ -178,7 +186,7 @@ void VWindow::initialize() {
 				printf ( "Mouse Entered\n" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
-			} else{
+			} else {
 				printf ( "Mouse Left\n" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
@@ -250,11 +258,11 @@ void VWindow::initialize() {
 
 void VWindow::prepare_frame() {
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
-	
+
 	present_image->set_current_image ( present_image_index );
-	
+
 	FrameLocalData* data = current_framelocal_data();
-	v_instance->wait_for_frame(data->frame_index);
+	v_instance->wait_for_frame ( data->frame_index );
 	//reset for frame
 	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
@@ -376,8 +384,8 @@ void VWindow::render_frame() {
 		data->clear_command_buffer.clearColorImage (
 		    present_image->instance_image(),
 		    vk::ImageLayout::eTransferDstOptimal,
-			vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ),
-			{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
+		vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ),
+		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
 		);
 		data->clear_command_buffer.clearDepthStencilImage (
 		    depth_image->instance_image(),
@@ -448,7 +456,7 @@ void VWindow::render_frame() {
 
 	if ( !queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
-		assert(false);
+		assert ( false );
 	}
 	//present image
 	vk::Result results;
@@ -459,7 +467,7 @@ void VWindow::render_frame() {
 	    &present_image_index, &results );
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	active_sems.clear();
-	
+
 	v_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
 }
 
@@ -470,7 +478,7 @@ void VWindow::create_swapchain() {
 	destroy_frame_local_data();
 
 	capabilities = v_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
-	
+
 	{
 		Extent2D<s32> actualExtent = m_size.value;
 		if ( capabilities.currentExtent.width != std::numeric_limits<u32>::max() ) {
@@ -539,10 +547,10 @@ void VWindow::create_swapchain() {
 		present_image->fetch_new_window_images();
 	} else {
 		present_image = new VBaseImage ( v_instance, this );
-		
-		depth_image = v_instance->m_resource_manager->v_create_dependant_image(present_image, ImageFormat::eD24Unorm_St8U, 1.0f);
+
+		depth_image = v_instance->m_resource_manager->v_create_dependant_image ( present_image, ImageFormat::eD24Unorm_St8U, 1.0f );
 	}
-	
+
 	create_frame_local_data ( present_image->per_image_data.size() );
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
@@ -589,8 +597,8 @@ void VWindow::destroy_frame_local_data() {
 			//v_instance->vk_device().waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
 			v_instance->vk_device().destroyFence ( data.image_presented_fence );
 		}
-		v_instance->destroy_semaphore(data.present_ready_sem);
-		v_instance->destroy_semaphore(data.render_ready_sem);
+		v_instance->destroy_semaphore ( data.present_ready_sem );
+		v_instance->destroy_semaphore ( data.render_ready_sem );
 		index++;
 	}
 	//@Debugging clear so we assert in case we access it in a state, that we should not
@@ -599,7 +607,7 @@ void VWindow::destroy_frame_local_data() {
 RendResult VWindow::destroy() {
 	printf ( "Destroy Semaphores\n" );
 	if ( image_available_guard_sem )
-		v_instance->destroy_semaphore(image_available_guard_sem);
+		v_instance->destroy_semaphore ( image_available_guard_sem );
 	printf ( "Destroy Local Data\n" );
 	destroy_frame_local_data();
 	printf ( "Destroy Swap Chain\n" );

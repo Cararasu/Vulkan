@@ -69,6 +69,10 @@ protected:
 	float mouse_x = -1.0f, mouse_y = -1.0f;
 	
 public:
+	std::function<void(Window*, float, float)> on_resize;
+	std::function<void(Window*, double, double, double, double)> on_mouse_moved;
+	std::function<void(Window*, double, double)> on_scroll;
+	
 	virtual ~Window() {}
 
 	const ChangeableValue<Offset2D<s32>>* position() {
@@ -111,10 +115,6 @@ public:
 	virtual Image* backed_image () = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
-
-	virtual void on_resize (std::function<void(Window*, float, float)>) = 0;
-	virtual void on_mouse_moved (std::function<void(Window*, double, double, double, double)>) = 0;
-	//virtual void on_button_clicked (std::function<void(Window*, float, float)>) = 0;
 
 	//u32 max_buffer_images() = 0;
 	//ChangeableValue<u32> buffered_image_count;
