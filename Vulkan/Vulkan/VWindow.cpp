@@ -62,6 +62,9 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			printf ( "Size of Window %dx%d\n", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
+			if(vulkan_window->m_on_resize) {
+				vulkan_window->m_on_resize(vulkan_window, x, y);
+			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -157,6 +160,13 @@ void VWindow::initialize() {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//printf ( "Mouse Position %f, %f\n", xpos,  ypos);
+			if(vulkan_window->m_on_mouse_moved) {
+				double delta_x = vulkan_window->mouse_x < 0.0 ? 0.0 : xpos - vulkan_window->mouse_x;
+				double delta_y = vulkan_window->mouse_y < 0.0 ? 0.0 : ypos - vulkan_window->mouse_y;
+				vulkan_window->mouse_x = xpos;
+				vulkan_window->mouse_y = ypos;
+				vulkan_window->m_on_mouse_moved(vulkan_window, xpos, ypos, delta_x, delta_y);
+			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}
@@ -164,10 +174,15 @@ void VWindow::initialize() {
 	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			if ( entered )
+			if ( entered ) {
 				printf ( "Mouse Entered\n" );
-			else
+				vulkan_window->mouse_x = -1.0;
+				vulkan_window->mouse_y = -1.0;
+			} else{
 				printf ( "Mouse Left\n" );
+				vulkan_window->mouse_x = -1.0;
+				vulkan_window->mouse_y = -1.0;
+			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}

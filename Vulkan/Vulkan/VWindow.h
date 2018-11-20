@@ -72,6 +72,15 @@ struct VWindow : public Window {
 	RendResult v_update();
 	virtual RendResult destroy();
 
+	std::function<void(Window*, float, float)> m_on_resize;
+	virtual void on_resize (std::function<void(Window*, float, float)> func) {
+		m_on_resize = func;
+	}
+	std::function<void(Window*, double, double, double, double)> m_on_mouse_moved;
+	virtual void on_mouse_moved (std::function<void(Window*, double, double, double, double)> func) {
+		m_on_mouse_moved = func;
+	}
+	
 	void framebuffer_size_changed ( Extent2D<s32> extend );
 
 	vk::CommandPool graphics_command_pool();

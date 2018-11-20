@@ -118,6 +118,28 @@ void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrap
 	stbi_image_free ( pixels );
 clTabCtrl}*/
 
+struct Camera {
+	glm::vec3 look_at;
+	glm::vec3 view_vector;
+	glm::vec3 up_vector;
+	float fov, aspect, near, far;
+	
+	void turn(float pitch, float yaw, float roll = 0.0f) {
+		view_vector = glm::rotate(glm::rotate(glm::mat4(1.0f), yaw, up_vector), pitch, glm::cross(up_vector, view_vector)) * glm::vec4(view_vector, 0.0f);
+		up_vector = glm::rotate(glm::mat4(1.0f), roll, view_vector) * glm::vec4(up_vector, 0.0f);
+	}
+	void move(float x, float y, float z) {
+		look_at += glm::vec3(x, y, z);
+	}
+	glm::mat4 v2s_mat() {
+		return glm::perspective(fov, aspect, near, far);
+	}
+	glm::mat4 w2v_mat() {
+		return glm::lookAt(look_at - view_vector, look_at, up_vector);
+	}
+};
+
+Camera camera;
 
 #include <render/Logger.h>
 #include <render/Instance.h>
@@ -218,7 +240,24 @@ int main ( int argc, char **argv ) {
 
 	instancegroup->clear();
 
+	camera.look_at = glm::vec3(0.0f, 0.0f, 0.0f);
+	camera.view_vector = glm::vec3(0.0f, 5.0f, 5.0f);
+	camera.up_vector = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera.fov = 100.0f;
+	camera.aspect = 1.0f;
+	camera.near = 0.1f;
+	camera.far = 1000.0f;
+
+
 	Window* window = newinstance->create_window();
+	
+	window->on_resize([](Window* window, float x, float y) {
+		camera.aspect = y / x; 
+	});
+	
+	window->on_mouse_moved([](Window* window, double x, double y, double delta_x, double delta_y) {
+		camera.turn(delta_y / 1000.0, delta_x / 1000.0);
+	});
 
 	Extent2D<s32> window_size ( 1000, 600 );
 	*window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
@@ -245,6 +284,7 @@ int main ( int argc, char **argv ) {
 	bundle->set_rendertarget ( 1, newinstance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
 
 	glm::mat4 w2s_matrix ( 1.0f );
+	
 
 	printf ( "Starting Main Loop\n" );
 	while ( newinstance->is_window_open() ) {
@@ -257,9 +297,9 @@ int main ( int argc, char **argv ) {
 		
 		//eye, center, up
 		glm::mat4 camera_matrixes[1] = {
-			glm::perspective(100.0f, 1.0f, 0.1f, 20.0f)
+			camera.v2s_mat()
 		};
-		glm::mat4 w2v_matrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 w2v_matrix = camera.w2v_mat();
 		//camera_matrixes[2] = glm::transpose(glm::inverse(camera_matrixes[0] * camera_matrixes[1]));
 		glm::vec4 lightvector = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 		
