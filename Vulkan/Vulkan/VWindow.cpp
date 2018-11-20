@@ -123,6 +123,9 @@ void VWindow::initialize() {
 	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			if(vulkan_window->on_button_press) {
+				vulkan_window->on_button_press(vulkan_window, key, scancode, action == GLFW_PRESS ? PressAction::ePress : (action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat), mods);
+			}
 			switch ( action ) {
 			case GLFW_PRESS:
 				printf ( "Press " );
@@ -198,7 +201,9 @@ void VWindow::initialize() {
 	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-
+			if(vulkan_window->on_mouse_press) {
+				vulkan_window->on_mouse_press(vulkan_window, button, action == GLFW_PRESS ? PressAction::ePress : PressAction::eRelease, mods);
+			}
 		} else {
 			printf ( "No Window Registered For GLFW-Window\n" );
 		}

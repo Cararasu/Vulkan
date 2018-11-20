@@ -128,8 +128,14 @@ struct Camera {
 		view_vector = glm::rotate(glm::rotate(glm::mat4(1.0f), yaw, up_vector), pitch, glm::cross(up_vector, view_vector)) * glm::vec4(view_vector, 0.0f);
 		up_vector = glm::rotate(glm::mat4(1.0f), roll, view_vector) * glm::vec4(up_vector, 0.0f);
 	}
-	void move(float x, float y, float z) {
-		look_at += glm::vec3(x, y, z);
+	void move(float forward, float sidewards) {
+		glm::vec3 sideward_vec = glm::cross(view_vector, up_vector);
+		glm::vec3 forward_vec = glm::cross(up_vector, sideward_vec);
+		glm::vec3 change_vec = glm::normalize(forward_vec) * forward + glm::normalize(sideward_vec) * sidewards;
+		look_at += change_vec;
+	}
+	void move_forward(float forward, float sidewards, float upwards) {
+		look_at += view_vector * forward;
 	}
 	void zoom(float zoom) {
 		view_vector *= std::pow(1.1f, zoom);
@@ -142,7 +148,19 @@ struct Camera {
 	}
 };
 
-Camera camera;
+struct ButtonState {
+	
+};
+
+
+struct GameState {
+	bool m1_pressed = false;
+	bool m2_pressed = false;
+	bool m3_pressed = false;
+	
+	Camera camera;
+} g_state;
+
 
 #include <render/Logger.h>
 #include <render/Instance.h>
@@ -243,25 +261,52 @@ int main ( int argc, char **argv ) {
 
 	instancegroup->clear();
 
-	camera.look_at = glm::vec3(0.0f, 0.0f, 0.0f);
-	camera.view_vector = glm::vec3(0.0f, 5.0f, 5.0f);
-	camera.up_vector = glm::vec3(0.0f, 0.0f, 1.0f);
-	camera.fov = 100.0f;
-	camera.aspect = 1.0f;
-	camera.near = 0.1f;
-	camera.far = 1000.0f;
+	g_state.camera.look_at = glm::vec3(0.0f, 0.0f, 0.0f);
+	g_state.camera.view_vector = glm::vec3(0.0f, 5.0f, 5.0f);
+	g_state.camera.up_vector = glm::vec3(0.0f, 0.0f, 1.0f);
+	g_state.camera.fov = 100.0f;
+	g_state.camera.aspect = 1.0f;
+	g_state.camera.near = 0.1f;
+	g_state.camera.far = 1000.0f;
 
 
 	Window* window = newinstance->create_window();
 	
+	bool m_pressed = false;
+	
 	window->on_resize = [](Window* window, float x, float y) {
-		camera.aspect = y / x; 
+		g_state.camera.aspect = y / x; 
 	};
-	window->on_mouse_moved = [](Window* window, double x, double y, double delta_x, double delta_y) {
-		camera.turn(delta_y / 1000.0, delta_x / 1000.0);
+	window->on_mouse_moved = [&m_pressed](Window* window, double x, double y, double delta_x, double delta_y) {
+		if(g_state.m1_pressed) {
+			g_state.camera.turn(delta_y / 1000.0, delta_x / 1000.0);
+		}
 	};
 	window->on_scroll = [](Window* window, double delta_x, double delta_y) {
-		camera.zoom( delta_y );
+		g_state.camera.zoom( delta_y );
+	};
+	window->on_mouse_press = [&m_pressed](Window* window, u32 button, PressAction pressed, u32 mods) {
+		if(button == 0) {
+			g_state.m1_pressed = pressed == PressAction::ePress;
+		}
+	};
+	window->on_button_press = [&m_pressed](Window* window, u32 button, u32 keycode, PressAction pressed, u32 mods) {
+		if(pressed != PressAction::eRelease) {
+			switch(button) {
+			case 65://A
+				g_state.camera.move(0.0f, 0.1f);
+				break;
+			case 68://D
+				g_state.camera.move(0.0f, -0.1f);
+			break;
+			case 83://S
+				g_state.camera.move(-0.1f, 0.0f);
+			break;
+			case 87://W
+				g_state.camera.move(0.1f, 0.0f);
+			break;
+			}
+		}
 	};
 
 	Extent2D<s32> window_size ( 1000, 600 );
@@ -301,9 +346,9 @@ int main ( int argc, char **argv ) {
 		
 		//eye, center, up
 		glm::mat4 camera_matrixes[1] = {
-			camera.v2s_mat()
+			g_state.camera.v2s_mat()
 		};
-		glm::mat4 w2v_matrix = camera.w2v_mat();
+		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		//camera_matrixes[2] = glm::transpose(glm::inverse(camera_matrixes[0] * camera_matrixes[1]));
 		glm::vec4 lightvector = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 		

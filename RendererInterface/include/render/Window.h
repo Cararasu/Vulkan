@@ -51,6 +51,12 @@ enum class WindowAlphaBlend {
 	eBlend
 };
 
+enum class PressAction {
+	ePress,
+	eRelease,
+	eRepeat
+};
+
 class Window {
 protected:
 	ChangeableValue<Offset2D<s32>> m_position = Offset2D<s32> ( 100, 100 );
@@ -72,6 +78,8 @@ public:
 	std::function<void(Window*, float, float)> on_resize;
 	std::function<void(Window*, double, double, double, double)> on_mouse_moved;
 	std::function<void(Window*, double, double)> on_scroll;
+	std::function<void(Window*, u32, PressAction, u32 modifiers)> on_mouse_press;
+	std::function<void(Window*, u32, u32, PressAction, u32 modifiers)> on_button_press;
 	
 	virtual ~Window() {}
 
