@@ -4,7 +4,7 @@
 #include "VBufferStorage.h"
 
 
-VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), v_buffer ( instance ) {
+VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), v_buffer ( instance ), data(nullptr) {
 	
 	vk::DescriptorPoolSize poolsizes[] = {
 		vk::DescriptorPoolSize ( vk::DescriptorType::eUniformBuffer, 1 )
@@ -25,7 +25,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	v_instance->vk_device().allocateDescriptorSets ( &allocInfo, &uniform_descriptor_set );
 	
 	//bind descriptorset to buffer
-	vk::DescriptorBufferInfo bufferwrite ( v_buffer.buffer, 0, contextbase->datagroup.size );
+	vk::DescriptorBufferInfo bufferwrite ( v_buffer.buffer, 0, VK_WHOLE_SIZE );
 	vk::WriteDescriptorSet writeDescriptorSets[] = {
 		vk::WriteDescriptorSet ( uniform_descriptor_set, 0, 0, 1,
 		                         vk::DescriptorType::eUniformBuffer, nullptr, &bufferwrite, nullptr )

@@ -100,6 +100,7 @@ struct Instance {
 	
 	virtual void unload_model ( ModelId model_id ) = 0;
 
+	virtual void update_context_data(Context& context, void* data) = 0;
 
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

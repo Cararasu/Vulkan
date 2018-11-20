@@ -752,6 +752,10 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 void VInstance::unload_model ( ModelId modelbase_id ) {
 
 }
+void VInstance::update_context_data(Context& context, void* data) {
+	VContext* v_context = v_context_map[context.contextbase_id][context.id];
+	v_context->data = data;
+}
 
 
 

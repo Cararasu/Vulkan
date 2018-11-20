@@ -1,7 +1,10 @@
 
 #include "RenderTypes.h"
 
-extern ContextBaseId w2smatrix_base_id;
+extern ContextBaseId camera_context_base_id;
+
+extern ContextBaseId lightvector_base_id;
+
 extern ContextBaseId m2wmatrix_base_id;
 extern ContextBaseId simplemodel_base_id;
 

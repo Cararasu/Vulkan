@@ -78,6 +78,8 @@ struct VMainBundle : public RenderBundle {
 	VContextGroup* v_cgroup;
 	Array<VBundleImageState> v_bundleStates;
 
+	Array<ContextBaseId> contextBaseId;
+	
 	Viewport<f32> viewport;
 
 	vk::PipelineLayout v_object_pipeline_layout;
@@ -102,7 +104,7 @@ struct VMainBundle : public RenderBundle {
 
 	void v_check_rebuild();
 	void v_rebuild_pipelines();
-	void v_rebuild_commandbuffers(u32 index);
+	void v_rebuild_commandbuffer(u32 index);
 	void v_dispatch();
 };
 

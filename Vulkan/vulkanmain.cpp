@@ -161,17 +161,45 @@ int main ( int argc, char **argv ) {
 	};
 	//create model from modelbase
 	Array<SimpleVertex> data_to_load = {
-		{glm::vec3 ( 0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( -0.5f, 0.5f, 0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( 0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( -0.5f, -0.5f, 0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( 0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( -0.5f, 0.5f, -0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3()},
-		{glm::vec3 ( - 0.5f, -0.5f, -0.5f ), glm::vec3(), glm::vec3()},
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
+		
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
+		
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
+		
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
+		
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
+		
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
 	};
 
-	Array<u16> indices = {0, 1, 2, 2, 1, 3};
+	Array<u16> indices = {
+		0, 1, 2, 2, 1, 3,
+		4, 5, 6, 6, 5, 7,
+		8, 9, 10, 10, 9, 11,
+		12, 13, 14, 14, 13, 15,
+		16, 17, 18, 18, 17, 19,
+		20, 21, 22, 22, 21, 23,
+	};
 	
 	Model model = newinstance->create_model ( simplemodel_base_id );
 	newinstance->load_generic_model ( model, data_to_load.data, data_to_load.size, indices.data, indices.size );
@@ -182,7 +210,10 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
 
-	Context camera_matrix = newinstance->create_context(w2smatrix_base_id);
+	Context light_vector = newinstance->create_context(lightvector_base_id);
+	contextgroup->set_context(light_vector);
+
+	Context camera_matrix = newinstance->create_context(camera_context_base_id);
 	contextgroup->set_context(camera_matrix);
 
 	instancegroup->clear();
@@ -223,11 +254,26 @@ int main ( int argc, char **argv ) {
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
 		instancegroup->clear();
-
-		glm::mat4 matrixes[2] = {
-			glm::mat4 ( 1.0f ),
-			glm::mat4 ( 1.0f )
+		
+		//eye, center, up
+		glm::mat4 camera_matrixes[1] = {
+			glm::perspective(100.0f, 1.0f, 0.1f, 20.0f)
 		};
+		glm::mat4 w2v_matrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//camera_matrixes[2] = glm::transpose(glm::inverse(camera_matrixes[0] * camera_matrixes[1]));
+		glm::vec4 lightvector = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+		
+		newinstance->update_context_data(camera_matrix, camera_matrixes);
+		newinstance->update_context_data(light_vector, &lightvector);
+		
+		glm::mat4 matrixes[4] = {
+			glm::scale(glm::translate(w2v_matrix, glm::vec3(0.0f, 0.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f)),
+			glm::mat4(),
+			glm::scale(glm::translate(w2v_matrix, glm::vec3(0.0f, 3.0f, 0.0f)), glm::vec3(1.0f, 1.0f, 1.0f)),
+			glm::mat4()
+		};
+		matrixes[1] = glm::transpose(glm::inverse(matrixes[0]));
+		matrixes[3] = glm::transpose(glm::inverse(matrixes[2]));
 
 		instancegroup->register_instances ( simplemodel_instance_base_id, model, matrixes, 2 );
 

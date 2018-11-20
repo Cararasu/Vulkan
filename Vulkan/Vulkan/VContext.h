@@ -24,6 +24,8 @@ struct VContext {
 	ContextBaseId contextbase_id;
 	VInstance* v_instance;
 	VBuffer v_buffer;
+	
+	void* data;
 	vk::DescriptorPool descriptor_pool;
 	vk::DescriptorSet uniform_descriptor_set;
 	
