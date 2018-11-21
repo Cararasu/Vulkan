@@ -67,7 +67,7 @@ struct Image : public Resource {
 	}
 	virtual ~Image() {}
 };
-struct Buffer : public Resource {
+struct Buffer {
 
 };
 

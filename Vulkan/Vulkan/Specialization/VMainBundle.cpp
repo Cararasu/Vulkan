@@ -73,8 +73,11 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGr
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
 	v_bundleStates ( 2 ),
-	contextBaseId ( {camera_context_base_id, lightvector_base_id} ),
-	v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ) {
+	contextBaseId ( {
+	camera_context_base_id, lightvector_base_id
+} ),
+model_contextBaseId ( {simplemodel_context_base_id} ),
+v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ) {
 
 	if ( !commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
@@ -165,9 +168,13 @@ void VMainBundle::v_rebuild_pipelines() {
 		printf ( "Rebuild Pipeline Layouts\n" );
 
 		DynArray<vk::DescriptorSetLayout> v_descriptor_set_layouts;
-		for(ContextBaseId id : contextBaseId) {
+		for ( ContextBaseId id : contextBaseId ) {
 			VContextBase& v_contextbase = v_instance->contextbase_map[id];
-			v_descriptor_set_layouts.push_back(v_contextbase.descriptorset_layout);
+			v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );
+		}
+		for ( ContextBaseId id : model_contextBaseId ) {
+			VContextBase& v_contextbase = v_instance->contextbase_map[id];
+			v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );
 		}
 
 		std::array<vk::PushConstantRange, 0> pushConstRanges = {};//{vk::PushConstantRange ( vk::ShaderStageFlagBits::eFragment, 0, sizeof ( ObjectPartData ) ) };
@@ -405,24 +412,47 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 				}
 			}
 			v_igroup->buffer_storeage.transfer_data ( data.command.buffer );
-			
-			for(auto it = v_cgroup->context_map.begin(); it != v_cgroup->context_map.end(); it++) {
+
+			for ( auto it = v_cgroup->context_map.begin(); it != v_cgroup->context_map.end(); it++ ) {
 				VContext* context = it->second;
-				if(!context->data) continue;
-				u64 size = context->v_buffer.size;
-				VBuffer* staging_buffer = v_instance->request_staging_buffer(size);
-				staging_buffer->map_mem();
-				memcpy(staging_buffer->mapped_ptr, context->data, size);
-				vk::BufferCopy buffercopy( 0, 0, size );
-				data.command.buffer.copyBuffer(staging_buffer->buffer, context->v_buffer.buffer, 1, &buffercopy);
-				v_instance->free_staging_buffer ( staging_buffer );
-				context->data = nullptr;
+				for(VBaseImage* v_image : context->images) {
+					if(v_image) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
+				}
+				if ( context->data ) {
+					u64 size = context->v_buffer.size;
+					VBuffer* staging_buffer = v_instance->request_staging_buffer ( size );
+					staging_buffer->map_mem();
+					memcpy ( staging_buffer->mapped_ptr, context->data, size );
+					vk::BufferCopy buffercopy ( 0, 0, size );
+					data.command.buffer.copyBuffer ( staging_buffer->buffer, context->v_buffer.buffer, 1, &buffercopy );
+					v_instance->free_staging_buffer ( staging_buffer );
+					context->data = nullptr;
+				}
 			}
-			
-			vk::BufferMemoryBarrier bufferMemoryBarrier[] = { 
-				vk::BufferMemoryBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-			        v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->graphics_queue_id, 
-					v_igroup->buffer_storeage.buffer.buffer, 0, v_igroup->buffer_storeage.buffer.size)
+			for ( InstanceBlock& instanceblock : instanceblocks ) {
+				VModel* v_model = models[instanceblock.model_id];
+				for(VContext* context : v_model->v_contexts) {
+					if(!context) continue;
+					for(VBaseImage* v_image : context->images) {
+						if(v_image) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
+					}
+					if ( context->data ) {
+						u64 size = context->v_buffer.size;
+						VBuffer* staging_buffer = v_instance->request_staging_buffer ( size );
+						staging_buffer->map_mem();
+						memcpy ( staging_buffer->mapped_ptr, context->data, size );
+						vk::BufferCopy buffercopy ( 0, 0, size );
+						data.command.buffer.copyBuffer ( staging_buffer->buffer, context->v_buffer.buffer, 1, &buffercopy );
+						v_instance->free_staging_buffer ( staging_buffer );
+						context->data = nullptr;
+					}
+				}
+			}
+
+			vk::BufferMemoryBarrier bufferMemoryBarrier[] = {
+				vk::BufferMemoryBarrier ( vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+				                          v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->graphics_queue_id,
+				                          v_igroup->buffer_storeage.buffer.buffer, 0, v_igroup->buffer_storeage.buffer.size )
 			};
 			data.command.buffer.pipelineBarrier (
 			    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput,
@@ -451,17 +481,35 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 
 
 		DynArray<vk::DescriptorSet> descriptorSets;
-		for(ContextBaseId id : contextBaseId) {
+		for ( ContextBaseId id : contextBaseId ) {
 			VContext* context_ptr = v_cgroup->context_map[id];
 			assert ( context_ptr );
-			descriptorSets.push_back(context_ptr->uniform_descriptor_set);
+			descriptorSets.push_back ( context_ptr->descriptor_set );
 		}
 
-		data.command.buffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, v_object_pipeline_layout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr );
+		u32 offset = 0;
+		data.command.buffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, v_object_pipeline_layout, offset, descriptorSets.size(), descriptorSets.data(), 0, nullptr );
+		offset += descriptorSets.size();
 
 		for ( InstanceBlock& instanceblock : instanceblocks ) {
 			printf ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d\n", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
 			VModel* v_model = models[instanceblock.model_id];
+			const ModelBase* modelbase_ptr = v_instance->modelbase ( v_model->modelbase_id );
+
+			DynArray<vk::DescriptorSet> model_descriptorSets;
+			for ( ContextBaseId id : model_contextBaseId ) {
+				VContext* context_ptr = nullptr;
+				for ( u32 i = 0; i < modelbase_ptr->contextbase_ids.size; i++ ) {
+					if ( modelbase_ptr->contextbase_ids[i] == id ) {
+						assert ( v_model->v_contexts[i] );
+						context_ptr = v_model->v_contexts[i];
+						break;
+					}
+				}
+				assert ( context_ptr );
+				model_descriptorSets.push_back ( context_ptr->descriptor_set );
+			}
+			data.command.buffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, v_object_pipeline_layout, offset, model_descriptorSets.size(), model_descriptorSets.data(), 0, nullptr );
 
 			printf ( "Vertices: %d\n", v_model->indexcount );
 			data.command.buffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );

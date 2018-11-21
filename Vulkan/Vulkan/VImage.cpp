@@ -308,7 +308,8 @@ void VBaseImage::init() {
 	per_image_data.resize ( 1 );
 
 	for ( PerImageData& data : per_image_data ) {
-		vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, v_format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::eUndefined );
+		u32 queueindices[2] = {v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->transfer_queue_id};
+		vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, v_format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eConcurrent, 2, queueindices, vk::ImageLayout::eUndefined );
 
 		V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &data.image ), printf ( "Failed To Create Image\n" ) );
 
@@ -540,8 +541,8 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
 
-	barrier.srcQueueFamilyIndex = 0;
-	barrier.dstQueueFamilyIndex = 0;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),

@@ -10,8 +10,8 @@ layout (set=1, binding = 0) uniform lightVectorBuffer {
 	vec3 lightvector;
 };
 //texture-aggregates
-//layout (set=1, binding=0) sampler sampler;
-//layout (set=1, binding=1) texture2DArray diffuseTexture;
+layout (set=2, binding=0) uniform texture2D diffuseTexture;
+layout (set=2, binding=1) uniform sampler textureSampler;
 
 //per-material
 //layout(push_constant) uniform Data {
@@ -38,5 +38,5 @@ void main() {
    
 	float angle = max(dot(halfway_direction, normal_direction), 0.0);
 	outColor = vec4(1.0, 0.0, 0.0, 1.0) * pow(angle, 16.0 * 4.0);
-	//outColor = textureLod(sampler2DArray(diffuseTexture, sampler), vec3(v_texCoord.x, -1.0f * v_texCoord.y, float(diffuseTexId)), 0.0f);
+	outColor = texture(sampler2D(diffuseTexture, textureSampler), vec2(v_texCoord.x, -1.0f * v_texCoord.y));
 }

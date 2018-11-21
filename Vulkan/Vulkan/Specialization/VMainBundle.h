@@ -79,6 +79,7 @@ struct VMainBundle : public RenderBundle {
 	Array<VBundleImageState> v_bundleStates;
 
 	Array<ContextBaseId> contextBaseId;
+	Array<ContextBaseId> model_contextBaseId;
 	
 	Viewport<f32> viewport;
 

@@ -112,6 +112,28 @@ struct Array {
 		data = tmp_data;
 		this->size = size;
 	}
+	void resize ( u64 size, const T& ele ) {
+		T* tmp_data = nullptr;
+		if(size != 0){
+			tmp_data = new T[size];
+			for ( u64 i = 0; i < size; i++ ) tmp_data[i] = ele;
+		}
+		
+		delete[] data;
+		data = tmp_data;
+		this->size = size;
+	}
+	void resize ( u64 size, T&& ele ) {
+		T* tmp_data = nullptr;
+		if(size != 0){
+			tmp_data = new T[size];
+			for ( u64 i = 0; i < size; i++ ) tmp_data[i] = ele;
+		}
+		
+		delete[] data;
+		data = tmp_data;
+		this->size = size;
+	}
 
 	T& operator[] ( u64 i ) {
 		return data[i];

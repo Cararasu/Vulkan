@@ -3,9 +3,7 @@
 #include "../VInstance.h"
 
 ContextBaseId camera_context_base_id;
-
 ContextBaseId lightvector_base_id;
-
 ContextBaseId m2wmatrix_base_id;
 ContextBaseId simplemodel_context_base_id;
 
@@ -38,7 +36,7 @@ void register_specializations ( VInstance* instance ) {
 	m2wmatrix_base_id = instance->static_contextbase_store.insert ( m2wmatrix_base );
 	instance->contextbase_registered ( m2wmatrix_base_id );
 
-	ContextBase simplemodel_context_base = { 0, simplemodel_datagroup };
+	ContextBase simplemodel_context_base = { 0, simplemodel_datagroup, 1, 1 };
 	simplemodel_context_base_id = instance->static_contextbase_store.insert ( simplemodel_context_base );
 	instance->contextbase_registered ( simplemodel_context_base_id );
 

@@ -46,6 +46,12 @@ struct Instance {
 	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
 
+	virtual Image* create_texture (u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers) = 0;
+	virtual Image* load_image_to_texture(std::string file, Image* image, u32 array_layer, u32 mipmap_layer) = 0;
+	virtual Image* load_image_to_texture(std::string file, u32 mipmap_layers) = 0;
+
+	virtual void set_context (Model& model, Context& context) = 0;
+
 	IdArray<ContextBase> contextbase_store;
 	IdArray<ContextBase, RID_STATIC_IDS> static_contextbase_store;
 	ContextBaseId register_contextbase ( DataGroupDef* datagroup ) {
@@ -101,6 +107,7 @@ struct Instance {
 	virtual void unload_model ( ModelId model_id ) = 0;
 
 	virtual void update_context_data(Context& context, void* data) = 0;
+	virtual void update_context_image ( Context& context, u32 index, Image* image ) = 0;
 
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

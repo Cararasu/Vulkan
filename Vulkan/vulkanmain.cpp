@@ -9,10 +9,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-
 #include <fstream>
 
 #include <render/Window.h>
@@ -100,23 +96,7 @@ LoadedObjectData<Vertex, u32> loadDataFile ( std::string file, ObjectVertexData<
 
 	input.read ( reinterpret_cast<char*> ( &vertex_data.indices[objData.index_offset] ), sizeof ( u32 ) *indexCount );
 	return objData;
-}
-
-
-void loadImage ( VInstance* instance, std::string file, ImageWrapper * imageWrapper, u32 index, vk::CommandPool commandPool, vk::Queue queue ) {
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-	if ( !pixels ) {
-		throw std::runtime_error ( "failed to load texture image!" );
-	}
-	vk::Extent3D imageExtent = vk::Extent3D ( texWidth, texHeight, 1 );
-	instance->transferData ( pixels, imageWrapper->image, vk::Offset3D ( 0, 0, 0 ), imageExtent, index, imageSize,
-	                         vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostWrite, commandPool, queue );
-
-	stbi_image_free ( pixels );
-clTabCtrl}*/
+}*/
 
 struct Camera {
 	glm::vec3 look_at;
@@ -147,11 +127,6 @@ struct Camera {
 		return glm::lookAt(look_at - view_vector, look_at, up_vector);
 	}
 };
-
-struct ButtonState {
-	
-};
-
 
 struct GameState {
 	bool m1_pressed = false;
@@ -204,35 +179,35 @@ int main ( int argc, char **argv ) {
 	};
 	//create model from modelbase
 	Array<SimpleVertex> data_to_load = {
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
 		
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
 		
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
 		
-		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
 		
-		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
 		
-		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
 	};
 
 	Array<u16> indices = {
@@ -258,11 +233,19 @@ int main ( int argc, char **argv ) {
 
 	Context camera_matrix = newinstance->create_context(camera_context_base_id);
 	contextgroup->set_context(camera_matrix);
-
+	
+	Context simplemodel_context = newinstance->create_context(simplemodel_context_base_id);
+	Image* teximage = newinstance->load_image_to_texture("assets/X/XWing_Diffuse_01_1k.png", 4);
+	newinstance->update_context_image(simplemodel_context, 0, teximage);
+	
+	newinstance->set_context(model, simplemodel_context);
+	
+	
+	
 	instancegroup->clear();
 
 	g_state.camera.look_at = glm::vec3(0.0f, 0.0f, 0.0f);
-	g_state.camera.view_vector = glm::vec3(0.0f, 5.0f, 5.0f);
+	g_state.camera.view_vector = glm::vec3(0.0f, -20.0f, -20.0f);
 	g_state.camera.up_vector = glm::vec3(0.0f, 0.0f, 1.0f);
 	g_state.camera.fov = 100.0f;
 	g_state.camera.aspect = 1.0f;
@@ -283,7 +266,7 @@ int main ( int argc, char **argv ) {
 		}
 	};
 	window->on_scroll = [](Window* window, double delta_x, double delta_y) {
-		g_state.camera.zoom( delta_y );
+		g_state.camera.zoom( -delta_y );
 	};
 	window->on_mouse_press = [&m_pressed](Window* window, u32 button, PressAction pressed, u32 mods) {
 		if(button == 0) {
@@ -324,19 +307,11 @@ int main ( int argc, char **argv ) {
 	Image* windowimage = window->backed_image();
 
 	RenderBundle* bundle = newinstance->create_main_bundle ( instancegroup, contextgroup );
-	/*{
-		Array<const RenderStage*> stages ( {renderstage} );
-		Array<ImageType> imagetypes = {ImageType::eColor, ImageType::eDepth};
-		Array<ImageDependency> dependencies = { {0, {0, 0}, {renderstage->id, 0}}, {0, {0, 1}, {renderstage->id, 1}} };
-		bundle = newinstance->create_renderbundle ( instancegroup, contextgroup, stages, imagetypes, dependencies );
-	}*/
+
 	bundle->set_rendertarget ( 0, windowimage );
 	bundle->set_rendertarget ( 1, newinstance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
 
-	glm::mat4 w2s_matrix ( 1.0f );
-	
-
-	printf ( "Starting Main Loop\n" );
+	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop\n" );
 	while ( newinstance->is_window_open() ) {
 		using namespace std::chrono_literals;
 		//this should happen internally in a seperate thread
@@ -349,7 +324,6 @@ int main ( int argc, char **argv ) {
 			g_state.camera.v2s_mat()
 		};
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
-		//camera_matrixes[2] = glm::transpose(glm::inverse(camera_matrixes[0] * camera_matrixes[1]));
 		glm::vec4 lightvector = glm::normalize(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 		
 		newinstance->update_context_data(camera_matrix, camera_matrixes);

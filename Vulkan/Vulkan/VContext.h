@@ -19,6 +19,8 @@ struct VContextBase {
 	vk::DescriptorSetLayout descriptorset_layout;
 };
 
+struct VBaseImage;
+
 struct VContext {
 	ContextId id;
 	ContextBaseId contextbase_id;
@@ -26,8 +28,11 @@ struct VContext {
 	VBuffer v_buffer;
 	
 	void* data;
+	Array<VBaseImage*> images;
+	
+	vk::Sampler temp_sampler;
 	vk::DescriptorPool descriptor_pool;
-	vk::DescriptorSet uniform_descriptor_set;
+	vk::DescriptorSet descriptor_set;
 	
 	VContext ( VInstance* instance, ContextBaseId contextbase_id );
 	~VContext();

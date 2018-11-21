@@ -19,6 +19,8 @@ struct DataGroupDef {
 struct ContextBase {
 	ContextBaseId id;
 	DataGroupDef datagroup;
+	u32 image_count = 0;
+	u32 sampler_count = 0;
 };
 struct Context {
 	ContextId id;

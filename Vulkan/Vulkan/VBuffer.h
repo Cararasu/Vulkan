@@ -1,11 +1,12 @@
 #pragma once
 
 #include "VHeader.h"
+#include <render/Resources.h>
 
 struct VInstance;
 struct VSimpleTransferJob;
 
-struct VBuffer {
+struct VBuffer : public Buffer {
 	VInstance* v_instance;
 	GPUMemory memory;
 	vk::Buffer buffer;

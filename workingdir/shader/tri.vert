@@ -27,6 +27,7 @@ out gl_PerVertex {
 void main() {
 	vec4 t_position = m2vMatrix * vec4(pos, 1.0f);
     gl_Position = v2sMatrix * t_position;
+	gl_Position.y *= 1.0;
 	v_position = t_position.xyz / t_position.z;
 	v_texCoord = uv;
 	v_normal = vec3(normalMatrix * vec4(normal, 0.0));

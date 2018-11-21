@@ -601,16 +601,28 @@ void VInstance::contextbase_registered ( ContextBaseId id ) {
 	v_logger.log<LogLevel::eInfo> ( "Registered Context Base 0x%" PRIx32, id );
 	const ContextBase* contextbase_ptr = contextbase ( id );
 	u32 ds_size = 0;
-	if ( contextbase_ptr->datagroup.size )
-		ds_size++;
+	if ( contextbase_ptr->datagroup.size ) ds_size++;
+	if ( contextbase_ptr->image_count ) ds_size++;
+	if ( contextbase_ptr->image_count ) ds_size++;
 
 	Array<vk::DescriptorSetLayoutBinding> dslbs ( ds_size );
-	if ( contextbase_ptr->datagroup.size )
-		dslbs[0] = vk::DescriptorSetLayoutBinding ( 0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll, nullptr );
+	u32 index = 0;
+	if ( contextbase_ptr->datagroup.size ) {
+		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll, nullptr );
+		index++;
+	}
+	if(contextbase_ptr->image_count) {
+		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eSampledImage, contextbase_ptr->image_count, vk::ShaderStageFlagBits::eAll, nullptr );
+		index++;
+	}
+	if(contextbase_ptr->sampler_count) {
+		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eSampler, contextbase_ptr->sampler_count, vk::ShaderStageFlagBits::eAll, nullptr );
+		index++;
+	}
 
 	VContextBase v_contextbase;
 	if ( ds_size ) v_contextbase.descriptorset_layout = vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), dslbs.size, dslbs.data ), nullptr ),
-		                             contextbase_map[id] = v_contextbase;
+	contextbase_map[id] = v_contextbase;
 }
 void VInstance::modelbase_registered ( ModelBaseId id ) {
 	v_logger.log<LogLevel::eInfo> ( "Registered Model Base 0x%" PRIx32, id );
@@ -626,11 +638,7 @@ Context VInstance::create_context ( ContextBaseId contextbase_id ) {
 }
 Model VInstance::create_model ( ModelBaseId modelbase_id ) {
 	v_logger.log<LogLevel::eInfo> ( "Create Model 0x%" PRIx32, modelbase_id );
-	VModel* created_model;
-	{
-		Array<VContext*> contexts;
-		created_model = v_model_map[modelbase_id].insert ( new VModel ( this, modelbase_id, contexts ) );
-	}
+	VModel* created_model = v_model_map[modelbase_id].insert ( new VModel ( this, modelbase_id ) );
 	return created_model->model();
 }
 
@@ -676,6 +684,93 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 RenderBundle* VInstance::create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) {
 	return new VMainBundle ( this, igroup, cgroup );
 }
+Image* VInstance::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) {
+	return new VBaseImage ( this, width, height, depth, array_layers, mipmap_layers, vk::Format::eB8G8R8A8Srgb, vk::ImageTiling::eOptimal,
+	                        vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
+	                        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
+	                      );
+}
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+Image* VInstance::load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) {
+	VBaseImage* v_image = static_cast<VBaseImage*> ( image );
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+	if ( !pixels ) {
+		throw std::runtime_error ( "failed to load texture image!" );
+	}
+	VBuffer* buffer = request_staging_buffer ( imageSize );
+	free_staging_buffer ( buffer );
+	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
+	free_transfer_command_buffer ( cmdbuffer );
+	vk::CommandBufferBeginInfo begininfo = {
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+	};
+
+	cmdbuffer.begin ( begininfo );
+	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
+	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
+	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	
+	cmdbuffer.end();
+
+	vk::SubmitInfo submitinfos[1] = {
+		vk::SubmitInfo (
+		    0, nullptr, //waitSem
+		    nullptr,
+		    1, &cmdbuffer,//commandbuffers
+		    0, nullptr//signalSem
+		)
+	};
+	queue_wrapper()->graphics_queue.submit ( 1, submitinfos, vk::Fence() );
+
+	stbi_image_free ( pixels );
+	return image;
+}
+Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) {
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+	
+	if ( !pixels ) {
+		throw std::runtime_error ( "failed to load texture image!" );
+	}
+	VBaseImage* v_image = new VBaseImage ( this, texWidth, texHeight, 0, 1, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
+	                                       vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
+	                                       vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
+	                                     );
+	VBuffer* buffer = request_staging_buffer ( imageSize );
+	free_staging_buffer ( buffer );
+	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
+	free_transfer_command_buffer ( cmdbuffer );
+	
+	buffer->map_mem();
+	memcpy(buffer->mapped_ptr, pixels, imageSize);
+	vk::CommandBufferBeginInfo begininfo = {
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+	};
+
+	cmdbuffer.begin ( begininfo );
+	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
+	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
+	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	cmdbuffer.end();
+
+	vk::SubmitInfo submitinfos[1] = {
+		vk::SubmitInfo (
+		    0, nullptr, //waitSem
+		    nullptr,
+		    1, &cmdbuffer,//commandbuffers
+		    0, nullptr//signalSem
+		)
+	};
+	queue_wrapper()->graphics_queue.submit ( 1, submitinfos, vk::Fence() );
+
+	stbi_image_free ( pixels );
+	return v_image;
+}
 
 void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {
 	const ModelBase* modelbase_ptr = modelbase ( model.modelbase_id );
@@ -698,12 +793,12 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 
 
 	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
-	
+
 	staging_buffer->map_mem();
 
 	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
 	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
-	
+
 	Array<VSimpleTransferJob> jobs = {
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
 		{staging_buffer, &newmodel->indexbuffer, {vertexbuffersize, 0, indexbuffersize}}
@@ -752,11 +847,36 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 void VInstance::unload_model ( ModelId modelbase_id ) {
 
 }
-void VInstance::update_context_data(Context& context, void* data) {
+void VInstance::set_context (Model& model, Context& context) {
+	VModel* v_model = v_model_map[model.modelbase_id][model.id];
+	const ModelBase* modelbase_ptr = modelbase(model.modelbase_id);
+	for(u32 i = 0; i < modelbase_ptr->contextbase_ids.size; i++) {
+		if(modelbase_ptr->contextbase_ids[i] == context.contextbase_id) {
+			v_model->v_contexts[i] = v_context_map[context.contextbase_id][context.id];
+		}
+	}
+}
+void VInstance::update_context_data ( Context& context, void* data ) {
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	v_context->data = data;
 }
-
+void VInstance::update_context_image ( Context& context, u32 index, Image* image ) {
+	VContext* v_context = v_context_map[context.contextbase_id][context.id];
+	const ContextBase* contextbase_ptr = contextbase(context.contextbase_id);
+	VBaseImage* v_image = static_cast<VBaseImage*>(image);
+	
+	v_context->images[index] = v_image;
+	
+	u32 writecount = 0;
+	if ( contextbase_ptr->datagroup.size ) writecount++;
+	if ( contextbase_ptr->image_count ) {
+		//bind descriptorset to image
+		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo( vk::Sampler(), v_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
+		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(v_context->descriptor_set, writecount, index, 1, vk::DescriptorType::eSampledImage, &imagewrite, nullptr, nullptr );
+		vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
+		writecount++;
+	}
+}
 
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {

@@ -14,9 +14,10 @@ struct VModel;
 struct VContext;
 
 
-struct VModel : public Model {
+struct VModel {
 	ModelId id;
 	ModelBaseId modelbase_id;
+	Array<ContextBaseId> contexts;
 	Array<VContext*> v_contexts;
 	VInstance* v_instance;
 
@@ -26,12 +27,16 @@ struct VModel : public Model {
 	VBuffer vertexbuffer;
 	VBuffer indexbuffer;
 
-	VModel ( VInstance* instance, ModelBaseId modelbase_id, Array<VContext*>& contexts );
+	VModel ( VInstance* instance, ModelBaseId modelbase_id );
 
 	Model model() {
 		Array<Context> contexts ( v_contexts.size );
 		for ( u32 i = 0; i < v_contexts.size; i++ ) {
-			contexts[i] = v_contexts[i]->context();
+			if(v_contexts[i]) contexts[i] = v_contexts[i]->context();
+			else {
+				contexts[i].id = 0;
+				contexts[i].contextbase_id = this->contexts[i];
+			}
 		}
 		return {id, modelbase_id, contexts};
 	}
