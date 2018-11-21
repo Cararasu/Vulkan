@@ -314,6 +314,7 @@ int main ( int argc, char **argv ) {
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop\n" );
 	while ( newinstance->is_window_open() ) {
 		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(10ms);
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();

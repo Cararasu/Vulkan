@@ -77,7 +77,11 @@ vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs )
 	    0, nullptr//signalSem
 	);
 	vk::Fence fence = request_fence();
-	queue_wrapper_ptr->transfer_queue.submit(1, &submitinfo, fence);
+	if(queue_wrapper_ptr->dedicated_transfer_queue){
+		queue_wrapper_ptr->transfer_queue.submit(1, &submitinfo, fence);
+	}else{
+		queue_wrapper_ptr->graphics_queue.submit(1, &submitinfo, fence);
+	}
 	return fence;
 }
 

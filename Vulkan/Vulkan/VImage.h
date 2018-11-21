@@ -80,11 +80,11 @@ struct VBaseImage : public Image {
 		transition_layout ( oldLayout, newLayout, {0, mipmap_layers}, {0, layers}, commandBuffer, instance_index );
 	}
 
-	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer );
-	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, u32 baseLevel, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-		generate_mipmaps ( oldLayout, newLayout, {baseLevel, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
+	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
+	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, u32 baseLevel, vk::CommandBuffer commandBuffer ) {
+		generate_mipmaps ( oldLayout, newLayout, {baseLevel, mipmap_layers}, {0, layers}, commandBuffer );
 	}
-	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
-		generate_mipmaps ( oldLayout, newLayout, {0, mipmap_layers}, {0, layers}, targetLayout, commandBuffer );
+	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer ) {
+		generate_mipmaps ( oldLayout, newLayout, {0, mipmap_layers}, {0, layers}, commandBuffer );
 	}
 };

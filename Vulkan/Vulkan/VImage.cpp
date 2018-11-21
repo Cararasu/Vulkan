@@ -552,6 +552,45 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	);
 }
 void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
+	u32 miplayers = mip_range.max - mip_range.min;
+	
+	u32 needed_barrier_count = 0;
+	bool skipped_last = true;
+	vk::ImageLayout lastOldLayout, lastNewLayout;
+	for(u32 i = 0; i < miplayers; i++) {
+		if(oldLayout[i] != newLayout[i] && (skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout)) {
+			needed_barrier_count++;
+			skipped_last = false;
+			lastOldLayout = oldLayout[i];
+			lastNewLayout = newLayout[i];
+		}
+		if(oldLayout[i] == newLayout[i]) skipped_last = true;
+	}
+	
+	Array<vk::ImageMemoryBarrier> barriers(needed_barrier_count);
+	
+	
+	
+	if ( oldLayout == newLayout )
+		return;
+	PerImageData& data = per_image_data[current_index];
+	if ( mip_range.max == 0 )
+		mip_range.max = mipmap_layers;
+	if ( array_range.max == 0 )
+		array_range.max = layers;
+
+	vk::PipelineStageFlags sourceStage, destinationStage;
+	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
+
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	commandBuffer.pipelineBarrier (
+	    sourceStage, destinationStage,
+	    vk::DependencyFlags(),
+	    {},//memoryBarriers
+	    {},//bufferBarriers
+	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 1, &barrier ) //imageBarriers
+	);
 	assert ( false );
 	/*
 	PerImageData& data = per_image_data[current_index];
@@ -602,7 +641,7 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 	}*/
 }
 
-void VBaseImage::generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::ImageLayout targetLayout, vk::CommandBuffer commandBuffer ) {
+void VBaseImage::generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 
 	if ( mip_range.max == 0 )
 		mip_range.max = mipmap_layers;

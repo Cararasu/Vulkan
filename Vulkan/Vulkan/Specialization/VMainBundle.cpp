@@ -304,7 +304,7 @@ void VMainBundle::v_rebuild_pipelines() {
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp

@@ -8,7 +8,8 @@
 #include "VResourceManager.h"
 #include "Specialization/VMainBundle.h"
 #include "VRenderer.h"
-#include "Specialization\VSpecializations.h"
+
+#include "Specialization/VSpecializations.h"
 
 bool operator== ( vk::LayerProperties& lhs, vk::LayerProperties& rhs ) {
 	return !strcmp ( lhs.layerName, rhs.layerName );
@@ -451,6 +452,9 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	} else {
 		queueFamilyCount += 3;
 	}
+	if(queues.transfer_queue_id == -1) {
+		queues.transfer_queue_id = gId;
+	}
 
 	vk::DeviceQueueCreateInfo deviceQueueCreateInfos[queueFamilyCount];
 	size_t currentIndex = 0;
@@ -756,6 +760,7 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
 	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
 	cmdbuffer.end();
 
 	vk::SubmitInfo submitinfos[1] = {
