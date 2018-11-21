@@ -71,8 +71,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 			vk::BorderColor::eFloatTransparentBlack, //borderColor
 			VK_FALSE //unnormalizedCoordinates
 		);
-		
-		temp_sampler = v_instance->vk_device().createSampler(samplerInfo);
+		if(!temp_sampler) temp_sampler = v_instance->vk_device().createSampler(samplerInfo);
 		
 		//bind descriptorset to image
 		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo( temp_sampler, vk::ImageView(), vk::ImageLayout::eUndefined );
@@ -83,6 +82,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 }
 VContext::~VContext() {
 	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool );
+	v_instance->vk_device().destroySampler(temp_sampler);
 }
 
 void VContextGroup::set_context ( Context& context ) {

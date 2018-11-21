@@ -519,10 +519,11 @@ vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldL
 	default:
 		assert ( false );
 	}
+	printf("Transition Image 0x%x from %s to %s mip-min %d mip-max %d\n", instance_image(instance_index), to_string(oldLayout).c_str(), to_string(newLayout).c_str(), miprange.min, miprange.max);
 	return vk::ImageMemoryBarrier (
 	           srcAccessMask, dstAccessMask,
 	           oldLayout, newLayout,
-	           0, 0,
+	           VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
 	           instance_image(instance_index),
 	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
@@ -541,8 +542,6 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
 
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
@@ -567,78 +566,39 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 		if(oldLayout[i] == newLayout[i]) skipped_last = true;
 	}
 	
+	if(!needed_barrier_count) return;
+	
 	Array<vk::ImageMemoryBarrier> barriers(needed_barrier_count);
-	
-	
-	
-	if ( oldLayout == newLayout )
-		return;
-	PerImageData& data = per_image_data[current_index];
-	if ( mip_range.max == 0 )
-		mip_range.max = mipmap_layers;
-	if ( array_range.max == 0 )
-		array_range.max = layers;
-
+	needed_barrier_count = 0;
+	skipped_last = true;
 	vk::PipelineStageFlags sourceStage, destinationStage;
-	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
-
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	for(u32 i = 0; i < miplayers; i++) {
+		if(oldLayout[i] != newLayout[i]) {
+			if (skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout) {
+				skipped_last = false;
+				lastOldLayout = oldLayout[i];
+				lastNewLayout = newLayout[i];
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, 1}, array_range, instance_index, &sourceStage, &destinationStage );
+				needed_barrier_count++;
+			} else {
+				barriers[needed_barrier_count - 1].subresourceRange.layerCount++;
+			}
+		}
+		else {
+			if(!skipped_last)
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, 1}, array_range, instance_index, &sourceStage, &destinationStage );
+			skipped_last = true;
+		}
+	}
+	//barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	//barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
 	    {},//memoryBarriers
 	    {},//bufferBarriers
-	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 1, &barrier ) //imageBarriers
+	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( barriers.size, barriers.data ) //imageBarriers
 	);
-	assert ( false );
-	/*
-	PerImageData& data = per_image_data[current_index];
-	if ( mip_range.max == 0 )
-		mip_range.max = mipmap_layers;
-	if ( array_range.max == 0 )
-		array_range.max = layers;
-
-	vk::PipelineStageFlags sourceStage, destinationStage;
-	u32 different_layout_count = data.layouts[array_range.min] == newLayout ? 0 : 1;
-	for ( u32 i = array_range.min + 1; i < array_range.max; ++i ) {
-		if ( data.layouts[array_range.min + i] != data.layouts[array_range.min + i - 1] && data.layouts[array_range.min + i] != newLayout ) {
-			++different_layout_count;
-		}
-	}
-	vk::ImageMemoryBarrier barriers[different_layout_count];
-	{
-		u32 different_layout_index = 0;
-		u32 startid = array_range.min;
-		vk::ImageLayout last_layout = data.layouts[0];
-		for ( u32 i = array_range.min + 1; i < array_range.max; ++i ) {
-			if ( data.layouts[array_range.min + i] != last_layout ) {
-				if ( last_layout != newLayout )
-					barriers[different_layout_index++] = transition_layout_impl ( last_layout, newLayout, mip_range, {startid, i - startid}, &sourceStage, &destinationStage );
-				startid = i;
-				last_layout = data.layouts[array_range.min + i];
-			}
-		}
-		if ( last_layout != newLayout )
-			barriers[different_layout_index] = transition_layout_impl ( last_layout, newLayout, mip_range, {startid, array_range.max - startid}, &sourceStage, &destinationStage );
-	}
-
-	for ( u32 i = 0; i < different_layout_count; ++i ) {
-		barriers[i].srcQueueFamilyIndex = 0;
-		barriers[i].dstQueueFamilyIndex = 0;
-	}
-	if(different_layout_count > 0) {
-		commandBuffer.pipelineBarrier (
-			sourceStage, destinationStage,
-			vk::DependencyFlags(),
-			{},//memoryBarriers
-			{},//bufferBarriers
-			vk::ArrayProxy<const vk::ImageMemoryBarrier> ( different_layout_count, barriers ) //imageBarriers
-		);
-		for ( size_t i = array_range.min; i < array_range.max; ++i ) {
-			data.layouts[i] = newLayout;
-		}
-	}*/
 }
 
 void VBaseImage::generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
@@ -657,8 +617,8 @@ void VBaseImage::generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout n
 
 	for ( u32 index = mip_range.min + 1; index < mip_range.max; index++ ) {
 		// Set up a blit from previous mip-level to the next.
-		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspect, index - 1, array_range.min, array_range.max - array_range.min ), {
-			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> ( index - 1 ) ), 1 ), std::max ( int ( extent.height >> ( index - 1 ) ), 1 ), std::max ( int ( extent.depth >> ( index - 1 ) ), 1 ) )
+		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspect, mip_range.min, array_range.min, array_range.max - array_range.min ), {
+			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> ( mip_range.min ) ), 1 ), std::max ( int ( extent.height >> ( mip_range.min ) ), 1 ), std::max ( int ( extent.depth >> ( mip_range.min ) ), 1 ) )
 		}, vk::ImageSubresourceLayers ( aspect, index, array_range.min, array_range.max - array_range.min ), {
 			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> index ), 1 ), std::max ( int ( extent.height >> index ), 1 ), std::max ( int ( extent.depth >> index ), 1 ) )
 		} );

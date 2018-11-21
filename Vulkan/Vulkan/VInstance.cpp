@@ -742,7 +742,7 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 		throw std::runtime_error ( "failed to load texture image!" );
 	}
 	VBaseImage* v_image = new VBaseImage ( this, texWidth, texHeight, 0, 1, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
-	                                       vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
+	                                       vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageAspectFlagBits::eColor,
 	                                       vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
 	                                     );
 	VBuffer* buffer = request_staging_buffer ( imageSize );
@@ -760,7 +760,7 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
 	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
-	v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
+	//v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
 	cmdbuffer.end();
 
 	vk::SubmitInfo submitinfos[1] = {
@@ -771,7 +771,7 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 		    0, nullptr//signalSem
 		)
 	};
-	queue_wrapper()->graphics_queue.submit ( 1, submitinfos, vk::Fence() );
+	queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
 
 	stbi_image_free ( pixels );
 	return v_image;
