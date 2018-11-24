@@ -35,6 +35,7 @@ void gen_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
+void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct );
 void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
@@ -50,6 +51,7 @@ struct VMainBundle : public RenderBundle {
 	PipelineStruct skybox_pipeline;
 	PipelineStruct tex_pipeline;
 	PipelineStruct flat_pipeline;
+	PipelineStruct shot_pipeline;
 
 	Viewport<f32> viewport;
 

@@ -460,6 +460,151 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
+void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
+	if ( !p_struct->pipeline ) {
+		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+
+		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
+		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
+
+		std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
+			vk::VertexInputBindingDescription ( 0, modelbase->datagroup.size, vk::VertexInputRate::eVertex ),
+			vk::VertexInputBindingDescription ( 1, instancebase->instance_datagroup.size, vk::VertexInputRate::eInstance )
+		};
+
+		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
+		u32 valuecount = 0;
+		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
+			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+		}
+		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
+			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+		}
+		vertexInputAttributes.resize ( valuecount );
+		{
+			u32 index = 0;
+			u32 bindingindex = 0;
+			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
+				VFormatData formatdata = to_v_format ( valuedef.type );
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for ( u32 i = 0; i < count; i++ ) {
+					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
+					index++;
+				}
+			}
+			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
+				VFormatData formatdata = to_v_format ( valuedef.type );
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for ( u32 i = 0; i < count; i++ ) {
+					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
+					index++;
+				}
+			}
+		}
+
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
+		        vertexInputBindings.size(), vertexInputBindings.data(),
+		        vertexInputAttributes.size, vertexInputAttributes.data );
+
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::ePointList, VK_FALSE );
+
+		vk::Viewport viewports[] = {
+			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
+		};
+
+		vk::Rect2D scissors[] = {
+			vk::Rect2D ( vk::Offset2D ( 0, 0 ), vk::Extent2D ( viewport.extend.width, viewport.extend.height ) ),
+		};
+
+		vk::PipelineViewportStateCreateInfo viewportState ( vk::PipelineViewportStateCreateFlags(), 1, viewports, 1, scissors );
+
+		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
+		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise,
+		        VK_FALSE, //depthBiasEnable
+		        0.0f, //depthBiasConstantFactor
+		        0.0f, //depthBiasClamp
+		        0.0f, //depthBiasSlopeFactor
+		        1.0f ); //lineWidth
+
+		vk::PipelineMultisampleStateCreateInfo multisampling (
+		    vk::PipelineMultisampleStateCreateFlags(),
+		    vk::SampleCountFlagBits::e1,
+		    VK_FALSE,//sampleShadingEnable
+		    1.0f, nullptr, //minSampleShading, pSampleMask
+		    VK_FALSE, VK_FALSE //alphaToCoverageEnable, alphaToOneEnable
+		);
+
+		vk::PipelineDepthStencilStateCreateInfo depthStencil (
+		    vk::PipelineDepthStencilStateCreateFlags(),
+		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
+		    vk::CompareOp::eLess, //depthCompareOp
+		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
+		    {}, {}, //front, back
+		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
+		);
+
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			)
+		};
+
+		vk::PipelineColorBlendStateCreateInfo colorBlending (
+		    vk::PipelineColorBlendStateCreateFlags(),
+		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
+		    1, colorBlendAttachments, // attachments
+		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+		);
+
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_shot_shader" ) );
+		VShaderModule* gmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "geom_shot_shader" ) );
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_shot_shader" ) );
+
+		vk::PipelineShaderStageCreateInfo shaderStages[3] = {
+			vk::PipelineShaderStageCreateInfo (
+			    vk::PipelineShaderStageCreateFlags(),
+			    vk::ShaderStageFlagBits::eVertex, vmod->shadermodule,
+			    "main", nullptr//name, specialization
+			),
+			vk::PipelineShaderStageCreateInfo (
+			    vk::PipelineShaderStageCreateFlags(),
+			    vk::ShaderStageFlagBits::eGeometry, gmod->shadermodule,
+			    "main", nullptr//name, specialization
+			),
+			vk::PipelineShaderStageCreateInfo (
+			    vk::PipelineShaderStageCreateFlags(),
+			    vk::ShaderStageFlagBits::eFragment, fmod->shadermodule,
+			    "main", nullptr//name, specialization
+			),
+		};
+		vk::GraphicsPipelineCreateInfo pipelineInfo (
+		    vk::PipelineCreateFlags(),
+		    3, shaderStages,
+		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
+		    nullptr,
+		    p_struct->pipeline_layout,
+		    renderpass,
+		    0,
+		    vk::Pipeline(),
+		    -1
+		);
+		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+	}
+}
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct ) {
 	if ( p_struct->pipeline ) {
@@ -492,9 +637,11 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 	for ( InstanceBlock& instanceblock : instanceblocks ) {
 		if ( instanceblock.modelbase_id != p_struct->modelbase_id ) continue;
 
-		v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
 		VModel* v_model = models[instanceblock.model_id];
 
+		v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
+		v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
+		
 		DynArray<vk::DescriptorSet> model_descriptorSets;
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			bool found = false;
@@ -510,7 +657,6 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		}
 		if ( model_descriptorSets.size() ) cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, offset, model_descriptorSets.size(), model_descriptorSets.data(), 0, nullptr );
 
-		v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
 		cmdbuffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );
 		cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
@@ -522,10 +668,11 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGr
 	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
 	v_bundleStates ( 2 ),
 	tex_pipeline ( {
-	simplemodel_base_id, textured_instance_base_id, { camera_context_base_id, lightvector_base_id }, {tex_simplemodel_context_base_id}
+	simple_modelbase_id, textured_instance_base_id, { camera_context_base_id, lightvector_base_id }, {tex_simplemodel_context_base_id}
 } ),
-flat_pipeline ( {simplemodel_base_id, flat_instance_base_id, { camera_context_base_id, lightvector_base_id }, {flat_simplemodel_context_base_id}} ),
-skybox_pipeline ( {simplemodel_base_id, skybox_instance_base_id, { }, {skybox_context_base_id}} ),
+flat_pipeline ( {simple_modelbase_id, flat_instance_base_id, { camera_context_base_id, lightvector_base_id }, {flat_simplemodel_context_base_id}} ),
+skybox_pipeline ( {simple_modelbase_id, skybox_instance_base_id, { }, {skybox_context_base_id}} ),
+shot_pipeline ( {shot_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {}} ),
 v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ) {
 
 	if ( !commandpool ) {
@@ -548,12 +695,14 @@ void VMainBundle::v_destroy_pipeline_layouts() {
 	destroy_pipeline_layout ( v_instance, &tex_pipeline );
 	destroy_pipeline_layout ( v_instance, &flat_pipeline );
 	destroy_pipeline_layout ( v_instance, &skybox_pipeline );
+	destroy_pipeline_layout ( v_instance, &shot_pipeline );
 }
 void VMainBundle::v_destroy_pipelines() {
 	v_destroy_framebuffers();
 	destroy_pipeline ( v_instance, &tex_pipeline );
 	destroy_pipeline ( v_instance, &flat_pipeline );
 	destroy_pipeline ( v_instance, &skybox_pipeline );
+	destroy_pipeline ( v_instance, &shot_pipeline );
 	for ( PerFrameMainBundleRenderObj& data : v_per_frame_data ) {
 		data.command.should_reset = true;
 	}
@@ -613,6 +762,7 @@ void VMainBundle::v_rebuild_pipelines() {
 	gen_pipeline_layout ( v_instance, &tex_pipeline );
 	gen_pipeline_layout ( v_instance, &flat_pipeline );
 	gen_pipeline_layout ( v_instance, &skybox_pipeline );
+	gen_pipeline_layout ( v_instance, &shot_pipeline );
 	if ( !v_renderpass ) {
 		v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
 		vk::AttachmentDescription attachments[2] = {
@@ -659,6 +809,7 @@ void VMainBundle::v_rebuild_pipelines() {
 	gen_tex_pipeline ( v_instance, &tex_pipeline, viewport, v_renderpass );
 	gen_flat_pipeline ( v_instance, &flat_pipeline, viewport, v_renderpass );
 	gen_skybox_pipeline ( v_instance, &skybox_pipeline, viewport, v_renderpass );
+	gen_shot_pipeline ( v_instance, &shot_pipeline, viewport, v_renderpass );
 	last_frame_index_pipeline_built = v_instance->frame_index;
 }
 void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
@@ -773,6 +924,7 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 		render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, data.command.buffer );
 		render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, data.command.buffer );
 		render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, data.command.buffer );
+		render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, data.command.buffer );
 
 		data.command.buffer.endRenderPass();
 		if ( v_bundleStates[0].actual_image->window_target ) {

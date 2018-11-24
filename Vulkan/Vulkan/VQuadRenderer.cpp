@@ -215,9 +215,9 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 
 	vk::PipelineColorBlendStateCreateInfo colorBlending (
 	    vk::PipelineColorBlendStateCreateFlags(),
-	    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
+	    VK_TRUE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
 	    1, colorBlendAttachments, // attachments
-	{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 	);
 
 	vk::PipelineShaderStageCreateInfo shaderStages[2] = {

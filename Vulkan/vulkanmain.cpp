@@ -10,9 +10,6 @@
 #include <chrono>
 #include <thread>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include <render/Window.h>
 #include <render/Logger.h>
 #include <render/Instance.h>
@@ -51,8 +48,8 @@ u32 loadDataFile ( std::string file, std::vector<SimpleVertex>& vertices, std::v
 	input.read ( reinterpret_cast<char*> ( indices.data() + std::get<1> ( index_data ) ), sizeof ( u32 ) * std::get<0> ( index_data ) );
 
 	input.close();
-	
-	if(g_logger.level <= LogLevel::eDebug) {
+
+	if ( g_logger.level <= LogLevel::eDebug ) {
 		g_logger.log<LogLevel::eDebug> ( "Model %s", str.c_str() );
 		g_logger.log<LogLevel::eDebug> ( "\tVertices %u", std::get<0> ( vertex_data ) );
 		g_logger.log<LogLevel::eDebug> ( "\tInstances %u", std::get<0> ( index_data ) );
@@ -71,10 +68,10 @@ struct Camera {
 		view_vector = glm::rotate ( glm::rotate ( glm::mat4 ( 1.0f ), yaw, up_vector ), pitch, glm::cross ( up_vector, view_vector ) ) * glm::vec4 ( view_vector, 0.0f );
 		up_vector = glm::rotate ( glm::mat4 ( 1.0f ), roll, view_vector ) * glm::vec4 ( up_vector, 0.0f );
 	}
-	void move ( float forward, float sidewards ) {
+	void move ( float forward, float sidewards, float upwards = 0.0f ) {
 		glm::vec3 sideward_vec = glm::cross ( view_vector, up_vector );
 		glm::vec3 forward_vec = glm::cross ( up_vector, sideward_vec );
-		glm::vec3 change_vec = glm::normalize ( forward_vec ) * forward + glm::normalize ( sideward_vec ) * sidewards;
+		glm::vec3 change_vec = glm::normalize ( forward_vec ) * forward + glm::normalize ( sideward_vec ) * sidewards + glm::normalize ( up_vector ) * upwards;
 		look_at += change_vec;
 	}
 	void move_forward ( float forward, float sidewards, float upwards ) {
@@ -121,9 +118,13 @@ int main ( int argc, char **argv ) {
 	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_skybox_shader", "shader/skybox.vert.sprv" );
 	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_skybox_shader", "shader/skybox.frag.sprv" );
 
+	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shot_shader", "shader/shot.vert.sprv" );
+	newinstance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
+	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
+
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
-	if(g_logger.level <= LogLevel::eDebug) {
+	if ( g_logger.level <= LogLevel::eDebug ) {
 		g_logger.log<LogLevel::eDebug> ( "Monitors" );
 		for ( Monitor* monitor : newinstance->monitors ) {
 			if ( monitor == primMonitor )
@@ -137,27 +138,35 @@ int main ( int argc, char **argv ) {
 		}
 	}
 
-	//create model from modelbase
-	Array<SimpleVertex> data_to_load = {
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) }, {glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) }, {glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },  {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
-		{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
-		{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 1.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) },
-		{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) },
-		{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
-	};
+	Model shot = newinstance->create_model ( shot_modelbase_id );
+	{
+		Array<glm::vec3> data_to_load = {
+			glm::vec3 ( 0.0f, 0.0f, 0.0f )
+		};
+		Array<u16> indices = { 0 };
+		newinstance->load_generic_model ( shot, data_to_load.data, data_to_load.size, indices.data, indices.size );
+	}
 
-	Array<u16> indices = {
-		0, 1, 2, 2, 1, 3,
-		4, 5, 6, 6, 5, 7,
-		8, 9, 10, 10, 9, 11,
-		12, 13, 14, 14, 13, 15,
-		16, 17, 18, 18, 17, 19,
-		20, 21, 22, 22, 21, 23,
-	};
-
-	Model cube = newinstance->create_model ( simplemodel_base_id );
-	newinstance->load_generic_model ( cube, data_to_load.data, data_to_load.size, indices.data, indices.size );
+	Model cube = newinstance->create_model ( simple_modelbase_id );
+	{
+		Array<SimpleVertex> data_to_load = {
+			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) }, {glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) }, {glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },  {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 1.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) },
+			{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) },
+			{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) }, {glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
+		};
+		Array<u16> indices = {
+			0, 1, 2, 2, 1, 3,
+			4, 5, 6, 6, 5, 7,
+			8, 9, 10, 10, 9, 11,
+			12, 13, 14, 14, 13, 15,
+			16, 17, 18, 18, 17, 19,
+			20, 21, 22, 22, 21, 23,
+		};
+		newinstance->load_generic_model ( cube, data_to_load.data, data_to_load.size, indices.data, indices.size );
+	}
 
 
 	Image* skybox_teximage = newinstance->create_texture ( 4096, 4096, 0, 6, 1 );
@@ -175,37 +184,37 @@ int main ( int argc, char **argv ) {
 
 	Array<Model> x_models ( 6 );
 
-	x_models[0] = newinstance->create_model ( simplemodel_base_id );
+	x_models[0] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Body.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[1] = newinstance->create_model ( simplemodel_base_id );
+	x_models[1] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Windows.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[2] = newinstance->create_model ( simplemodel_base_id );
+	x_models[2] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_LB.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[3] = newinstance->create_model ( simplemodel_base_id );
+	x_models[3] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_LT.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[4] = newinstance->create_model ( simplemodel_base_id );
+	x_models[4] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_RB.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[5] = newinstance->create_model ( simplemodel_base_id );
+	x_models[5] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_RT.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( x_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
@@ -213,37 +222,37 @@ int main ( int argc, char **argv ) {
 
 	Array<Model> tie_models ( 6 );
 
-	tie_models[0] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[0] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Body.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[1] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[1] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Windows.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[2] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[2] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Arm_L.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[3] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[3] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Arm_R.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[4] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[4] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Wing_L.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[5] = newinstance->create_model ( simplemodel_base_id );
+	tie_models[5] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Wing_R.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( tie_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
@@ -251,57 +260,57 @@ int main ( int argc, char **argv ) {
 
 	Array<Model> gallofree_models ( 11 );
 
-	gallofree_models[0] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[0] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/BottomEngine2.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[1] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[1] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/BottomEngines1.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[2] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[2] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/Cargo.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[3] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[3] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/CockPit_Cockpit.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[4] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[4] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/Greebles.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[5] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[5] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/HullPlatesBottom.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[6] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[6] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/HullPlatesTop.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[6], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[7] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[7] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionBottom.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[7], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[8] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[8] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionTop.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[8], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[9] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[9] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionTopInterior.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[9], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[10] = newinstance->create_model ( simplemodel_base_id );
+	gallofree_models[10] = newinstance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/TopEngines.data", vvv, iiii, vertex_data, index_data );
 	newinstance->load_generic_model ( gallofree_models[10], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
@@ -426,6 +435,12 @@ int main ( int argc, char **argv ) {
 			case 87://W
 				g_state.camera.move ( 0.1f, 0.0f );
 				break;
+			case 32://Space
+				g_state.camera.move ( 0.0f, 0.0f, 0.1f );
+				break;
+			case 341://left control
+				g_state.camera.move ( 0.0f, 0.0f, -0.1f );
+				break;
 			}
 		}
 	};
@@ -462,7 +477,11 @@ int main ( int argc, char **argv ) {
 	std::chrono::time_point<std::chrono::high_resolution_clock> last = current;
 
 	while ( newinstance->is_window_open() ) {
-
+		
+		using namespace std::chrono_literals;
+		
+		std::this_thread::sleep_for(10ms);
+		
 		last = current;
 		current = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
@@ -474,15 +493,20 @@ int main ( int argc, char **argv ) {
 		instancegroup->clear();
 
 		//eye, center, up
-		glm::mat4 camera_matrixes[1] = {
-			g_state.camera.v2s_mat()
-		};
+		struct CameraStruct {
+			glm::mat4 camera_matrixes;
+			glm::vec3 camera_pos;
+		} camera;
+		camera.camera_matrixes = g_state.camera.v2s_mat();
+		camera.camera_pos = g_state.camera.view_vector * 1.0f;
+		
+		newinstance->update_context_data ( camera_matrix, &camera );
+		
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		global_light.direction_amb = glm::normalize ( w2v_matrix * glm::vec4 ( 1.0f, -1.0f, 0.0f, 0.0f ) );
 		global_light.direction_amb.w = 0.4f;
 		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.5f );
 
-		newinstance->update_context_data ( camera_matrix, camera_matrixes );
 		newinstance->update_context_data ( light_vector, &global_light );
 
 		glm::mat4 m2s_matrixes[1] = {
@@ -516,6 +540,13 @@ int main ( int argc, char **argv ) {
 		};
 		gallofree_matrixes2[0].normal_matrix = glm::transpose ( glm::inverse ( gallofree_matrixes2[0].mv2_matrix ) );
 		instancegroup->register_instances ( flat_instance_base_id, gallofree_models, gallofree_matrixes2, 1 );
+
+		glm::mat4 shot_matrixes[3] = { 
+			glm::translate ( w2v_matrix, glm::vec3 ( 4.0f, 5.0f, 0.0f ) ), 
+			glm::translate ( w2v_matrix, glm::vec3 ( 0.0f, 5.0f, 0.0f ) ), 
+			glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( -4.0f, 5.0f, 0.0f ) ), glm::vec3 ( 0.1f, 4.0f, 0.1f ) )
+		};
+		instancegroup->register_instances ( shot_instance_base_id, shot, shot_matrixes, 3 );
 
 		newinstance->render_bundles ( {bundle} );
 	}

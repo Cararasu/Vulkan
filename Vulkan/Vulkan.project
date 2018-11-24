@@ -264,12 +264,19 @@
       <PreBuild>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
+        <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.vert -o ../workingdir/shader/textured.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.frag -o ../workingdir/shader/textured.frag.sprv</Command>
+        <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.vert -o ../workingdir/shader/flat.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.frag -o ../workingdir/shader/flat.frag.sprv</Command>
+        <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.vert -o ../workingdir/shader/skybox.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.frag -o ../workingdir/shader/skybox.frag.sprv</Command>
+        <Command Enabled="yes"/>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.geom -o ../workingdir/shader/shot.geom.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
       </PreBuild>
       <PostBuild/>
       <CustomBuild Enabled="no">
