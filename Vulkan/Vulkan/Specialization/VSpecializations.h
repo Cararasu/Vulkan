@@ -4,4 +4,4 @@
 
 struct VInstance;
 
-void register_specializations(VInstance* instance);
+void register_specializations ( VInstance* instance );

@@ -24,7 +24,7 @@ struct VBaseImage : public Image {
 	vk::ImageUsageFlags usage;
 	vk::ImageAspectFlags aspect;
 	DynArray<PerImageData> per_image_data;
-	
+
 	//window-image
 	vk::Semaphore image_available_sem;
 	VWindow *window;

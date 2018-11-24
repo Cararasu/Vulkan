@@ -12,15 +12,15 @@ struct PerFrameQuadRenderObj {
 	ResettableCommandBuffer command;
 };
 
-enum class QuadType{
+enum class QuadType {
 	eInactive,
 	eFilled,
 	eTextured
 };
-struct QuadRef{
+struct QuadRef {
 	u32 quadid;
 };
-struct Quads{
+struct Quads {
 	QuadType type;
 };
 
@@ -46,7 +46,7 @@ struct VQuadRenderer {
 
 	VBuffer* vertex_buffer = nullptr;
 	VBuffer* staging_vertex_buffer = nullptr;
-	
+
 	VRenderTarget* render_target;
 
 	DynArray<PerFrameQuadRenderObj> per_target_data;
@@ -57,27 +57,27 @@ struct VQuadRenderer {
 	void init();
 	void v_inherit ( VQuadRenderer* oldquadrenderer );
 	void destroy_framebuffers();
-	
+
 	void destroy ();
-	
-	void use_commandpool ( vk::CommandPool commandpool ){}
+
+	void use_commandpool ( vk::CommandPool commandpool ) {}
 
 	RendResult update_extend ( Viewport<f32> viewport, VRenderTarget* target_wrapper );
 
 	RendResult render ( u32 frame_index, SubmitStore* state, u32 wait_sem_index, u32* final_sem_index );
-	
+
 };
 
 template<typename T>
-void shrink_array(Array<T>* array_to_shrink){
+void shrink_array ( Array<T>* array_to_shrink ) {
 	auto forward_it = array_to_shrink->begin();
 	auto backwards_it = array_to_shrink->rbegin();
-	while(forward_it <= backwards_it){
-		for(; forward_it != array_to_shrink->end() && !forward_it->is_active(); forward_it++);
-		for(; backwards_it != array_to_shrink->rend() && backwards_it->is_active(); backwards_it++);
-		if(forward_it <= backwards_it){
-			std::swap(*forward_it, *backwards_it);
-		}		
+	while ( forward_it <= backwards_it ) {
+		for ( ; forward_it != array_to_shrink->end() && !forward_it->is_active(); forward_it++ );
+		for ( ; backwards_it != array_to_shrink->rend() && backwards_it->is_active(); backwards_it++ );
+		if ( forward_it <= backwards_it ) {
+			std::swap ( *forward_it, *backwards_it );
+		}
 	}
-	
+
 }

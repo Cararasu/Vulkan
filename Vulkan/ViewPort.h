@@ -18,24 +18,24 @@ struct PerspectiveViewPort {
 	T m_near;
 	T m_far;
 
-	PerspectiveViewPort() : m_fov (glm::pi<T>() * 3 / 4), m_aspect (1.0), m_near (1.0), m_far (2.0) {}
+	PerspectiveViewPort() : m_fov ( glm::pi<T>() * 3 / 4 ), m_aspect ( 1.0 ), m_near ( 1.0 ), m_far ( 2.0 ) {}
 	~PerspectiveViewPort() {}
 
 	glm::tmat4x4<T> createWorldToScreenSpaceMatrix() {
-		
-		m_viewvector = glm::normalize(m_viewvector);
-		
-		glm::mat4 projectionMatrix = glm::perspective(m_fov, m_aspect, m_near, m_far);
-		
-		glm::mat4 viewMatrix = glm::lookAt(m_focalpoint + (m_viewvector * m_distance), m_focalpoint, m_upvector);
-		
+
+		m_viewvector = glm::normalize ( m_viewvector );
+
+		glm::mat4 projectionMatrix = glm::perspective ( m_fov, m_aspect, m_near, m_far );
+
+		glm::mat4 viewMatrix = glm::lookAt ( m_focalpoint + ( m_viewvector * m_distance ), m_focalpoint, m_upvector );
+
 		return projectionMatrix * viewMatrix;
 
 	}
-	
+
 	//https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
-	void lookAt (glm::tvec3<T> position, glm::tvec3<T> target, glm::tvec3<T> up) {
-		m_viewvector = glm::normalize(position - target);
+	void lookAt ( glm::tvec3<T> position, glm::tvec3<T> target, glm::tvec3<T> up ) {
+		m_viewvector = glm::normalize ( position - target );
 		m_focalpoint = target;
 		m_upvector = up;
 	}

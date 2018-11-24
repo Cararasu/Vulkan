@@ -8,7 +8,7 @@ VResourceManager::VResourceManager ( VInstance* instance ) : v_instance ( instan
 
 VResourceManager::~VResourceManager() {
 	for ( VShaderModule* shadermodule : shader_array ) {
-		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule);
+		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
 		delete shadermodule;
 	}
 }
@@ -17,7 +17,7 @@ static std::vector<char> readFile ( String filename ) {
 	std::ifstream file ( filename.cstr, std::ios::ate | std::ios::binary );
 
 	if ( !file.is_open() ) {
-		printf ( "Couldn't open File %s\n", filename.cstr );
+		v_logger.log<LogLevel::eError> ( "Couldn't open File %s", filename.cstr );
 		return std::vector<char>();
 	}
 	size_t fileSize = ( size_t ) file.tellg();
@@ -45,7 +45,7 @@ u64 VResourceManager::load_shader ( ShaderType type, String name, String filenam
 	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
 
 	vk::ShaderModule shadermodule;
-	V_CHECKCALL ( v_instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), printf ( "Creation of Shadermodule failed\n" ) );
+	V_CHECKCALL ( v_instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), v_logger.log<LogLevel::eError> ( "Creation of Shadermodule failed" ) );
 	module = new VShaderModule ( type, name, shadermodule );
 	shader_array.insert ( module );
 	shader_string_id_map.insert ( std::make_pair ( name, module->id ) );
@@ -108,17 +108,17 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	break;
 	}
 	//TODO make eSampled and eInputAttachment dynamically
-	VBaseImage* v_wrapper = new VBaseImage ( base_image->v_instance,
-	        base_image->width,
-	        base_image->height,
-	        base_image->depth,
-	        1,
-	        base_image->mipmap_layers,
-	        format,
-	        vk::ImageTiling::eOptimal,
-	        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
-	        aspectFlags,
-	        vk::MemoryPropertyFlagBits::eDeviceLocal );
+	VBaseImage* v_wrapper = v_instance->v_images.insert ( new VBaseImage ( base_image->v_instance,
+	                        base_image->width,
+	                        base_image->height,
+	                        base_image->depth,
+	                        1,
+	                        base_image->mipmap_layers,
+	                        format,
+	                        vk::ImageTiling::eOptimal,
+	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
+	                        aspectFlags,
+	                        vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {

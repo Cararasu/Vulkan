@@ -5,11 +5,11 @@
 #include "String.h"
 
 enum class LogLevel {
-	eTrace,
-	eDebug,
-	eInfo,
-	eWarn,
-	eError,
+	eTrace = 0x1,
+	eDebug = 0x2,
+	eInfo  = 0x3,
+	eWarn  = 0x4,
+	eError = 0x5,
 };
 
 struct Logger {
@@ -24,7 +24,7 @@ struct Logger {
 
 	}
 	~Logger() = default;
-
+	
 	template<LogLevel LL>
 	void log ( const char* fstring, ... ) const {
 		if ( LL >= level ) {
@@ -43,7 +43,6 @@ struct Logger {
 			va_start ( args, fstring );
 			vfprintf ( log_output, fstring, args );
 			va_end ( args );
-			puts ( "" );
 		}
 	}
 };

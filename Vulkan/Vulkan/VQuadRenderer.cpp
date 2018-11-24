@@ -93,11 +93,11 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 
 
 	if ( !vertex_shader ) {
-		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader(StringReference("vert_quad_shader"));
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_quad_shader" ) );
 		vertex_shader = vmod->shadermodule;
 	}
 	if ( !fragment_shader ) {
-		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader(StringReference("frag_quad_shader"));
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_quad_shader" ) );
 		fragment_shader = fmod->shadermodule;
 	}
 	if ( !renderpass ) {// Color and depth-stencil buffers
@@ -139,9 +139,9 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 		renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 	}
 	destroy_framebuffers();
-	if(per_target_data.size() < render_target->target_count )
+	if ( per_target_data.size() < render_target->target_count )
 		per_target_data.resize ( render_target->target_count );
-	
+
 	if ( pipeline ) {
 		v_instance->vk_device ().destroyPipeline ( pipeline );
 	}
@@ -217,7 +217,7 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 	    vk::PipelineColorBlendStateCreateFlags(),
 	    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
 	    1, colorBlendAttachments, // attachments
-		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+	{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 	);
 
 	vk::PipelineShaderStageCreateInfo shaderStages[2] = {
@@ -246,7 +246,8 @@ RendResult VQuadRenderer::update_extend ( Viewport<f32> viewport, VRenderTarget*
 
 	pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 
-	printf ( "Update Quad-Renderer\n" );
+	v_logger.log<LogLevel::eDebug> ( "Update Quad-Renderer" );
+	return RendResult::eSuccess;
 }
 
 void VQuadRenderer::init() {
@@ -273,7 +274,7 @@ void VQuadRenderer::init() {
 		vertex_ptr[4].pos = glm::vec2 ( 1.0f, 0.0f );
 		vertex_ptr[5].pos = glm::vec2 ( 1.0f, 1.0f );
 
-		QuadInstance* instance_ptr = ( QuadInstance* ) ( (u8*)staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
+		QuadInstance* instance_ptr = ( QuadInstance* ) ( ( u8* ) staging_vertex_buffer->mapped_ptr + sizeof ( QuadVertex ) * 6 );
 		instance_ptr[0].dim = glm::vec4 ( 0.1f, 0.1f, 0.3f, 0.3f );
 		instance_ptr[0].uvdim = glm::vec4 ( 0.1f, 0.1f, 0.5f, 0.5f );
 		instance_ptr[0].data = glm::vec4 ( 0.5f, 0.0f, 0.0f, 0.0f );
@@ -298,17 +299,17 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 	init();
 	PerFrameQuadRenderObj& per_frame = per_target_data[frame_index];
 
-	if(!per_frame.framebuffer){
-		vk::ImageView attachments[2] = {render_target->images[0]->instance_imageview(), render_target->depth_image->instance_imageview()};
+	if ( !per_frame.framebuffer ) {
+		vk::ImageView attachments[2] = {render_target->images[0]->instance_imageview(), render_target->depth_image->instance_imageview() };
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), renderpass,
 			2, attachments,
-			(u32)viewport.extend.width, (u32)viewport.extend.height, 1
+			( u32 ) viewport.extend.width, ( u32 ) viewport.extend.height, 1
 		};
 		per_frame.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 	}
-	
-	if(per_frame.command.should_reset){
+
+	if ( per_frame.command.should_reset ) {
 		if ( per_frame.command.buffer ) {
 			per_frame.command.buffer.reset ( vk::CommandBufferResetFlags() );
 		} else {
@@ -320,34 +321,34 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 		per_frame.command.buffer.begin ( begininfo );
 
 		per_frame.command.buffer.pipelineBarrier (
-			vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
-			vk::DependencyFlags(),
+		    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eHost ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ),
+		    vk::DependencyFlags(),
 		{}/*memoryBarrier*/, {
 			vk::BufferMemoryBarrier (
-				vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
-				v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
-				staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
+			    vk::AccessFlagBits::eHostWrite, vk::AccessFlagBits::eTransferRead,
+			    v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
+			    staging_vertex_buffer->buffer, 0, staging_vertex_buffer->size
 			)
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
 		{
 			VSimpleTransferJob transferjob = {staging_vertex_buffer, vertex_buffer, {0, 0, staging_vertex_buffer->size} };
-			transfer_buffer_data(transferjob, per_frame.command.buffer);
+			transfer_buffer_data ( transferjob, per_frame.command.buffer );
 		}
 
 		per_frame.command.buffer.pipelineBarrier (
-			vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
-			vk::DependencyFlags(),
+		    vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer ), vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eVertexInput ),
+		    vk::DependencyFlags(),
 		{}/*memoryBarrier*/, {
 			vk::BufferMemoryBarrier (
-				vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-				v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
-				vertex_buffer->buffer, 0, vertex_buffer->size
+			    vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+			    v_instance->queues.graphics_queue_id, v_instance->queues.graphics_queue_id,
+			    vertex_buffer->buffer, 0, vertex_buffer->size
 			)
 		}/*bufferBarrier*/, {}/*imageBarrier*/ );
 
 		vk::ClearValue clearColors[2] = {
-			vk::ClearValue (vk::ClearColorValue(std::array<float, 4>({1.0f, 1.0f, 1.0f, 1.0f}))),
-			vk::ClearValue (vk::ClearDepthStencilValue(0.0f, 0))
+			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {1.0f, 1.0f, 1.0f, 1.0f} ) ) ),
+			vk::ClearValue ( vk::ClearDepthStencilValue ( 0.0f, 0 ) )
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			renderpass, per_frame.framebuffer,
@@ -377,7 +378,7 @@ RendResult VQuadRenderer::render ( u32 frame_index, SubmitStore* state, u32 wait
 	SubmitInfo submitinfo = {
 		vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eHost | vk::PipelineStageFlagBits::eVertexInput,
 		wait_sem_index, 1,
-		(u32)state->commandbuffers.size(), 1,
+		( u32 ) state->commandbuffers.size(), 1,
 		wait_sem_index, 1
 	};
 	state->commandbuffers.push_back ( per_frame.command.buffer );

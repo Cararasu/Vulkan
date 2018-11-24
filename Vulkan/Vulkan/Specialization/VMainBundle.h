@@ -12,57 +12,6 @@ struct VContextGroup;
 struct VBaseImage;
 struct VInstance;
 
-/*struct PerRenderInstanceData {
-	vk::Framebuffer framebuffer;
-	ResettableCommandBuffer command;
-};
-struct VPipelineLayoutObject {
-	InstanceBaseId mib_id;
-	Array<ContextBaseId> contextbase_list;
-
-	vk::PipelineLayout v_pipeline_layout;
-
-	Array<vk::DescriptorSetLayout> v_descriptor_set_layouts;
-
-	VPipelineObject ( InstanceBaseId mib_id, Array<ContextBaseId>& contextbase_list );
-	~VPipelineObject ( );
-
-	void destroy_pipeline_layouts();
-	void destroy_pipelines();
-	void destroy_commandbuffers();
-	void destroy_all();
-
-	void rebuild ( vk::RenderPass renderpass, Array<vk::Framebuffer>& framebuffers, Viewport<f32> viewport );
-
-	vk::CommandBuffer get_command_buffer ( u32 index );
-}
-struct VPipelineObject {
-	InstanceBaseId mib_id;
-	Array<ContextBaseId> contextbase_list;
-
-	vk::PipelineLayout v_pipeline_layout;
-	vk::Pipeline v_pipeline;
-	vk::RenderPass current_renderpass;
-	Viewport<f32> current_viewport;
-	
-	vk::CommandPool commandpool;
-	Array<PerFrameMainBundleRenderObj> per_instance_data;
-
-	Array<vk::DescriptorSetLayout> v_descriptor_set_layouts;
-
-	VPipelineObject ( InstanceBaseId mib_id, Array<ContextBaseId>& contextbase_list );
-	~VPipelineObject ( );
-
-	void destroy_pipeline_layouts();
-	void destroy_pipelines();
-	void destroy_commandbuffers();
-	void destroy_all();
-
-	void rebuild ( vk::RenderPass renderpass, Array<vk::Framebuffer>& framebuffers, Viewport<f32> viewport );
-
-	vk::CommandBuffer get_command_buffer ( u32 index );
-}*/
-
 struct VBundleImageState {
 	vk::Format current_format = vk::Format::eUndefined;
 	VBaseImage* actual_image = nullptr;
@@ -72,19 +21,37 @@ struct PerFrameMainBundleRenderObj {
 	ResettableCommandBuffer command;
 };
 
+struct PipelineStruct {
+	ModelBaseId modelbase_id;
+	InstanceBaseId instancebase_id;
+	Array<ContextBaseId> contextBaseId;
+	Array<ContextBaseId> model_contextBaseId;
+	vk::PipelineLayout pipeline_layout;
+	vk::Pipeline pipeline;
+};
+
+void gen_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
+
+void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
+void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
+void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
+
+void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct );
+void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
+
+void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, vk::CommandBuffer cmdbuffer );
+
 struct VMainBundle : public RenderBundle {
 	VInstance* v_instance;
 	VInstanceGroup* v_igroup;
 	VContextGroup* v_cgroup;
 	Array<VBundleImageState> v_bundleStates;
 
-	Array<ContextBaseId> contextBaseId;
-	Array<ContextBaseId> model_contextBaseId;
-	
-	Viewport<f32> viewport;
+	PipelineStruct skybox_pipeline;
+	PipelineStruct tex_pipeline;
+	PipelineStruct flat_pipeline;
 
-	vk::PipelineLayout v_object_pipeline_layout;
-	vk::Pipeline v_object_pipeline;
+	Viewport<f32> viewport;
 
 	vk::CommandPool commandpool;
 	Array<PerFrameMainBundleRenderObj> v_per_frame_data;
@@ -105,7 +72,7 @@ struct VMainBundle : public RenderBundle {
 
 	void v_check_rebuild();
 	void v_rebuild_pipelines();
-	void v_rebuild_commandbuffer(u32 index);
+	void v_rebuild_commandbuffer ( u32 index );
 	void v_dispatch();
 };
 

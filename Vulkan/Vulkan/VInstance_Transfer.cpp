@@ -15,7 +15,7 @@ void VInstance::free_staging_buffer ( VBuffer* buffer ) {
 	v_logger.log<LogLevel::eDebug> ( "Freeing staging buffer 0x%" PRIx64, buffer->buffer );
 	free_staging_buffer_queue.push ( std::make_pair ( frame_index, buffer ) );
 }
-vk::Fence VInstance::request_fence ( ) {
+vk::Fence VInstance::request_fence () {
 	if ( free_fences.size() != 0 ) {
 		vk::Fence fence = free_fences.back();
 		free_fences.pop_back();
@@ -68,7 +68,7 @@ vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs )
 	}
 	cmdbuffer.end();
 	QueueWrapper* queue_wrapper_ptr = queue_wrapper();
-	
+
 	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eHost );
 	vk::SubmitInfo submitinfo (
 	    0, nullptr, //waitSem
@@ -77,10 +77,10 @@ vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs )
 	    0, nullptr//signalSem
 	);
 	vk::Fence fence = request_fence();
-	if(queue_wrapper_ptr->dedicated_transfer_queue){
-		queue_wrapper_ptr->transfer_queue.submit(1, &submitinfo, fence);
-	}else{
-		queue_wrapper_ptr->graphics_queue.submit(1, &submitinfo, fence);
+	if ( queue_wrapper_ptr->dedicated_transfer_queue ) {
+		queue_wrapper_ptr->transfer_queue.submit ( 1, &submitinfo, fence );
+	} else {
+		queue_wrapper_ptr->graphics_queue.submit ( 1, &submitinfo, fence );
 	}
 	return fence;
 }
@@ -90,7 +90,8 @@ void VInstance::transfer_data ( Array<VSimpleTransferJob>& jobs ) {
 	vk::Fence fence = do_transfer_data_asynch ( jobs );
 	if ( fence ) {
 		vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
-		free_fences.push_back(fence);
+		vk_device().resetFences ( {fence} );
+		free_fences.push_back ( fence );
 	}
 }
 

@@ -32,14 +32,14 @@ void VWindow::initialize() {
 		glfwWindowHint ( GLFW_REFRESH_RATE, m_refreshrate.wanted );
 
 		m_refreshrate.apply();
-		printf ( "Fullscreen Videomode %dx%d %dHz\n", wanted_mode.extend.width, wanted_mode.extend.height, wanted_mode.refresh_rate );
+		v_logger.log<LogLevel::eDebug> ( "Fullscreen Videomode %dx%d %dHz", wanted_mode.extend.width, wanted_mode.extend.height, wanted_mode.refresh_rate );
 	}
 
 	window = glfwCreateWindow ( m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr );
 
 	glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 
-	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), printf ( "Creation of Surface failed" ) );
+	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), v_logger.log<LogLevel::eError> ( "Creation of Surface failed" ) );
 
 	glfwSetWindowUserPointer ( window, this );
 
@@ -51,22 +51,22 @@ void VWindow::initialize() {
 	glfwSetWindowPosCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			printf ( "Position of Window %dx%d\n", x, y );
+			v_logger.log<LogLevel::eDebug> ( "Position of Window %dx%d", x, y );
 			vulkan_window->m_position.apply ( {x, y} );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			printf ( "Size of Window %dx%d\n", x, y );
+			v_logger.log<LogLevel::eDebug> ( "Size of Window %dx%d", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
 			if ( vulkan_window->on_resize ) {
 				vulkan_window->on_resize ( vulkan_window, x, y );
 			}
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowCloseCallback ( window, [] ( GLFWwindow * window ) {
@@ -75,17 +75,17 @@ void VWindow::initialize() {
 			glfwHideWindow ( window );
 			vulkan_window->m_visible.apply ( false );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowRefreshCallback ( window, [] ( GLFWwindow * window ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
-			printf ( "Refresh\n" );
+			v_logger.log<LogLevel::eDebug> ( "Refresh" );
 			//vulkan_window->v_instance->present_window ( vulkan_window );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowFocusCallback ( window, [] ( GLFWwindow * window, int focus ) {
@@ -93,7 +93,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowIconifyCallback ( window, [] ( GLFWwindow * window, int iconified ) {
@@ -101,7 +101,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			vulkan_window->m_minimized.apply ( iconified == GLFW_TRUE );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetFramebufferSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
@@ -109,7 +109,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			vulkan_window->framebuffer_size_changed ( {x, y} );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetScrollCallback ( window, [] ( GLFWwindow * window, double xoffset, double yoffset ) {
@@ -117,14 +117,14 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			if ( vulkan_window->on_scroll ) vulkan_window->on_scroll ( vulkan_window, xoffset, yoffset );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			if(vulkan_window->on_button_press) {
-				vulkan_window->on_button_press(vulkan_window, key, scancode, action == GLFW_PRESS ? PressAction::ePress : (action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat), mods);
+			if ( vulkan_window->on_button_press ) {
+				vulkan_window->on_button_press ( vulkan_window, key, scancode, action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat ), mods );
 			}
 			switch ( action ) {
 			case GLFW_PRESS:
@@ -147,7 +147,7 @@ void VWindow::initialize() {
 			if ( mods & GLFW_MOD_SUPER )   printf ( "Super " );
 			printf ( "\n" );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCharModsCallback ( window, [] ( GLFWwindow * window, unsigned int codepoint, int mods ) {
@@ -164,13 +164,13 @@ void VWindow::initialize() {
 				printf ( "Super " );
 			printf ( "\n" );
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCursorPosCallback ( window, [] ( GLFWwindow * window, double xpos, double ypos ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			//printf ( "Mouse Position %f, %f\n", xpos,  ypos);
+			//printf ( "Mouse Position %f, %f", xpos,  ypos);
 			if ( vulkan_window->on_mouse_moved ) {
 				double delta_x = vulkan_window->mouse_x < 0.0 ? 0.0 : xpos - vulkan_window->mouse_x;
 				double delta_y = vulkan_window->mouse_y < 0.0 ? 0.0 : ypos - vulkan_window->mouse_y;
@@ -179,33 +179,33 @@ void VWindow::initialize() {
 				vulkan_window->on_mouse_moved ( vulkan_window, xpos, ypos, delta_x, delta_y );
 			}
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			if ( entered ) {
-				printf ( "Mouse Entered\n" );
+				v_logger.log<LogLevel::eTrace> ( "Mouse Entered" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
 			} else {
-				printf ( "Mouse Left\n" );
+				v_logger.log<LogLevel::eTrace> ( "Mouse Left" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
 			}
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			if(vulkan_window->on_mouse_press) {
-				vulkan_window->on_mouse_press(vulkan_window, button, action == GLFW_PRESS ? PressAction::ePress : PressAction::eRelease, mods);
+			if ( vulkan_window->on_mouse_press ) {
+				vulkan_window->on_mouse_press ( vulkan_window, button, action == GLFW_PRESS ? PressAction::ePress : PressAction::eRelease, mods );
 			}
 		} else {
-			printf ( "No Window Registered For GLFW-Window\n" );
+			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	//initialize Vulkan stuff
@@ -230,8 +230,10 @@ void VWindow::initialize() {
 					break;
 				}
 			}
-			for ( size_t i = 0; i < formatCount; i++ ) {
-				printf ( "Present Format: %s Colorspace: %s\n", to_string ( formats[i].format ).c_str(), to_string ( formats[i].colorSpace ).c_str() );
+			if(v_logger.level <= LogLevel::eDebug) {
+				for ( size_t i = 0; i < formatCount; i++ ) {
+					v_logger.log<LogLevel::eDebug> ( "Present Format: %s Colorspace: %s", to_string ( formats[i].format ).c_str(), to_string ( formats[i].colorSpace ).c_str() );
+				}
 			}
 		}
 	}
@@ -279,10 +281,6 @@ RendResult VWindow::update() {
 	return v_update();
 }
 RendResult VWindow::v_update() {
-	static double oldTime = 0.0;
-	double newTime = glfwGetTime();
-	//printf("Time: %f\n", 1.0 / (newTime - oldTime));
-	oldTime = newTime;
 	if ( window ) {
 		while ( true ) { //just so we don't need a goto for this logic ;-)
 			//not visible
@@ -342,6 +340,7 @@ RendResult VWindow::v_update() {
 	} else {
 		initialize();
 	}
+	return RendResult::eSuccess;
 }
 void VWindow::create_command_buffers() {
 	if ( !window_graphics_command_pool ) {
@@ -473,7 +472,7 @@ void VWindow::render_frame() {
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	active_sems.clear();
 
-	v_logger.log<LogLevel::eDebug> ( "---------------   EndFrame    ---------------\n" );
+	v_logger.log<LogLevel::eInfo> ( "---------------   EndFrame    ---------------" );
 }
 
 
@@ -498,7 +497,7 @@ void VWindow::create_swapchain() {
 	u32 image_buffer_count = std::max<u32> ( capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT );
 	if ( capabilities.maxImageCount > 0 ) {
 		image_buffer_count = std::min<u32> ( capabilities.maxImageCount, MAX_PRESENTIMAGE_COUNT );
-		printf ( "Present Image Counts: %d\n", image_buffer_count );
+		v_logger.log<LogLevel::eDebug> ( "Present Image Counts: %d", image_buffer_count );
 	}
 
 	{
@@ -543,15 +542,15 @@ void VWindow::create_swapchain() {
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		printf ( "SUPPORTED %d\n", v_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
+		v_logger.log<LogLevel::eTrace> ( "SUPPORTED %d", v_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
 
-		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), printf ( "Creation of Swapchain failed\n" ) );
+		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), v_logger.log<LogLevel::eError> ( "Creation of Swapchain failed" ) );
 		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
 	if ( present_image ) {
 		present_image->fetch_new_window_images();
 	} else {
-		present_image = new VBaseImage ( v_instance, this );
+		present_image = v_instance->v_images.insert ( new VBaseImage ( v_instance, this ) );
 
 		depth_image = v_instance->m_resource_manager->v_create_dependant_image ( present_image, ImageFormat::eD24Unorm_St8U, 1.0f );
 	}
@@ -559,13 +558,13 @@ void VWindow::create_swapchain() {
 	create_frame_local_data ( present_image->per_image_data.size() );
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
-	printf ( "Size of Framebuffer %dx%d\n", extent.x, extent.y );
-	printf ( "Minimized %d\n", m_minimized.value );
-	printf ( "Visible %d\n", m_minimized.value );
+	v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", extent.x, extent.y );
+	v_logger.log<LogLevel::eTrace> ( "Minimized %d", m_minimized.value );
+	v_logger.log<LogLevel::eTrace> ( "Visible %d", m_minimized.value );
 
 	if ( extent.x > 0 && extent.y > 0 )
 		create_swapchain();
-	printf ( "Actual Extent %dx%d\n", swap_chain_extend.x, swap_chain_extend.y );
+	v_logger.log<LogLevel::eTrace> ( "Actual Extent %dx%d", swap_chain_extend.x, swap_chain_extend.y );
 
 	v_render_target_wrapper.images.resize ( 1 );
 	v_render_target_wrapper.images[0] = present_image;
@@ -593,7 +592,7 @@ void VWindow::create_frame_local_data ( u32 count ) {
 	create_command_buffers();
 }
 void VWindow::destroy_frame_local_data() {
-	printf ( "Wait For Queues to clear out\n" );
+	v_logger.log<LogLevel::eDebug> ( "Wait For Queues to clear out" );
 	v_instance->m_device.waitIdle();
 	u32 index = 0;
 	for ( FrameLocalData& data : frame_local_data ) {
@@ -610,18 +609,19 @@ void VWindow::destroy_frame_local_data() {
 	frame_local_data.clear();
 }
 RendResult VWindow::destroy() {
-	printf ( "Destroy Semaphores\n" );
+	v_logger.log<LogLevel::eDebug> ( "Destroy Semaphores" );
 	if ( image_available_guard_sem )
 		v_instance->destroy_semaphore ( image_available_guard_sem );
-	printf ( "Destroy Local Data\n" );
+	v_logger.log<LogLevel::eDebug> ( "Destroy Local Data" );
 	destroy_frame_local_data();
-	printf ( "Destroy Swap Chain\n" );
+	v_logger.log<LogLevel::eDebug> ( "Destroy Swap Chain" );
 	if ( swap_chain )
 		v_instance->vk_device().destroySwapchainKHR ( swap_chain );
-	printf ( "Destroy Command Pools\n" );
+	v_logger.log<LogLevel::eDebug> ( "Destroy Command Pools" );
 	if ( window_graphics_command_pool ) {
 		v_instance->vk_device().destroyCommandPool ( window_graphics_command_pool );
 		window_graphics_command_pool = vk::CommandPool();
 	}
-	printf ( "Destroyed Everything\n" );
+	v_logger.log<LogLevel::eDebug> ( "Destroyed Everything" );
+	return RendResult::eSuccess;
 }

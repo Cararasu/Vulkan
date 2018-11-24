@@ -9,4 +9,4 @@ struct VFormatData {
 	u32 count;
 };
 
-VFormatData to_v_format(ValueType type);
+VFormatData to_v_format ( ValueType type );

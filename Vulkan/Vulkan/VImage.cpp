@@ -291,14 +291,15 @@ VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, 
 VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :
 	Image ( transform_image_format ( window->present_swap_format.format ), window->swap_chain_extend.x, window->swap_chain_extend.y, 0, 1, 1, true ),
 	v_instance ( instance ), v_format ( window->present_swap_format.format ), tiling ( vk::ImageTiling::eOptimal ), usage ( vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ) ), aspect ( vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
-	window(window),
+	window ( window ),
 	memory(), current_index ( 0 ), per_image_data ( 0 ), dependent ( false ), fraction ( 0.0f ) {
-	
+
 	fetch_new_window_images();
 }
 VBaseImage::~VBaseImage() {
 	v_instance->m_resource_manager->v_delete_dependant_images ( this );
 	destroy();
+	v_instance->v_images.remove ( id );
 }
 void VBaseImage::v_set_format ( vk::Format format ) {
 	v_format = format;
@@ -311,9 +312,9 @@ void VBaseImage::init() {
 		u32 queueindices[2] = {v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->transfer_queue_id};
 		vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, v_format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eConcurrent, 2, queueindices, vk::ImageLayout::eUndefined );
 
-		V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &data.image ), printf ( "Failed To Create Image\n" ) );
+		V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &data.image ), v_logger.log<LogLevel::eError> ( "Failed To Create Image" ) );
 
-		printf ( "Create Image 0x%x of dimensions %dx%dx%d with usage %s\n", data.image, extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
+		v_logger.log<LogLevel::eDebug> ( "Create Image 0x%x of dimensions %dx%dx%d with usage %s", data.image, extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
 
 		vk::MemoryRequirements mem_req;
 		v_instance->m_device.getImageMemoryRequirements ( data.image, &mem_req );
@@ -325,7 +326,7 @@ void VBaseImage::init() {
 		} else if ( type == vk::ImageType::e2D ) {
 			data.imageview = v_instance->createImageView2DArray ( data.image, 0, mipmap_layers, 0, layers, v_format, aspect );
 		} else {
-			printf ( "Not implemented %s\n", to_string ( type ).c_str() );
+			v_logger.log<LogLevel::eDebug> ( "Not implemented %s", to_string ( type ).c_str() );
 			assert ( false );
 		}
 	}
@@ -365,23 +366,23 @@ void VBaseImage::set_current_image ( u32 index ) {
 
 void VBaseImage::fetch_new_window_images ( ) {
 	assert ( window_target );
-	
+
 	destroy();
 	bool changed = width != window->swap_chain_extend.width || this->height != window->swap_chain_extend.height || this->depth != 0;
-	if(changed) {
-		printf ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32 "\n",
-				 this->width, this->height, this->depth, window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
+	if ( changed ) {
+		v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
+		                                 this->width, this->height, this->depth, window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
 	}
 
 	v_set_extent ( window->swap_chain_extend.width, window->swap_chain_extend.height, 0 );
 	v_set_format ( window->present_swap_format.format );
 	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( window->swap_chain );
 	init ( images );
-	
-	if(changed) {
+
+	if ( changed ) {
 		auto it = v_instance->m_resource_manager->dependency_map.find ( this );
 		if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
-			printf ( "Found %d dependant Image(s)\n", it->second.size() );
+			v_logger.log<LogLevel::eInfo> ( "Found %d dependant Image(s)", it->second.size() );
 			for ( VBaseImage* image : it->second ) {
 				image->rebuild_image ( width, height, depth );
 			}
@@ -519,12 +520,12 @@ vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldL
 	default:
 		assert ( false );
 	}
-	printf("Transition Image 0x%x from %s to %s mip-min %d mip-max %d\n", instance_image(instance_index), to_string(oldLayout).c_str(), to_string(newLayout).c_str(), miprange.min, miprange.max);
+	v_logger.log<LogLevel::eDebug> ( "Transition Image 0x%x from %s to %s mip-min %d mip-max %d", instance_image ( instance_index ), to_string ( oldLayout ).c_str(), to_string ( newLayout ).c_str(), miprange.min, miprange.max );
 	return vk::ImageMemoryBarrier (
 	           srcAccessMask, dstAccessMask,
 	           oldLayout, newLayout,
 	           VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-	           instance_image(instance_index),
+	           instance_image ( instance_index ),
 	           vk::ImageSubresourceRange ( aspect, miprange.min, miprange.max - miprange.min, arrayrange.min, arrayrange.max - arrayrange.min )
 	       );
 }
@@ -552,29 +553,29 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 }
 void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
 	u32 miplayers = mip_range.max - mip_range.min;
-	
+
 	u32 needed_barrier_count = 0;
 	bool skipped_last = true;
 	vk::ImageLayout lastOldLayout, lastNewLayout;
-	for(u32 i = 0; i < miplayers; i++) {
-		if(oldLayout[i] != newLayout[i] && (skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout)) {
+	for ( u32 i = 0; i < miplayers; i++ ) {
+		if ( oldLayout[i] != newLayout[i] && ( skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout ) ) {
 			needed_barrier_count++;
 			skipped_last = false;
 			lastOldLayout = oldLayout[i];
 			lastNewLayout = newLayout[i];
 		}
-		if(oldLayout[i] == newLayout[i]) skipped_last = true;
+		if ( oldLayout[i] == newLayout[i] ) skipped_last = true;
 	}
-	
-	if(!needed_barrier_count) return;
-	
-	Array<vk::ImageMemoryBarrier> barriers(needed_barrier_count);
+
+	if ( !needed_barrier_count ) return;
+
+	Array<vk::ImageMemoryBarrier> barriers ( needed_barrier_count );
 	needed_barrier_count = 0;
 	skipped_last = true;
 	vk::PipelineStageFlags sourceStage, destinationStage;
-	for(u32 i = 0; i < miplayers; i++) {
-		if(oldLayout[i] != newLayout[i]) {
-			if (skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout) {
+	for ( u32 i = 0; i < miplayers; i++ ) {
+		if ( oldLayout[i] != newLayout[i] ) {
+			if ( skipped_last || oldLayout[i] != lastOldLayout || newLayout[i] != lastNewLayout ) {
 				skipped_last = false;
 				lastOldLayout = oldLayout[i];
 				lastNewLayout = newLayout[i];
@@ -583,9 +584,8 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 			} else {
 				barriers[needed_barrier_count - 1].subresourceRange.layerCount++;
 			}
-		}
-		else {
-			if(!skipped_last)
+		} else {
+			if ( !skipped_last )
 				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, 1}, array_range, instance_index, &sourceStage, &destinationStage );
 			skipped_last = true;
 		}

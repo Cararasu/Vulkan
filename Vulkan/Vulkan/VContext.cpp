@@ -9,7 +9,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
 	VContextBase& v_contextbase = v_instance->contextbase_map[contextbase_id];
 
-	images.resize(contextbase->image_count, nullptr);
+	images.resize ( contextbase->image_count, nullptr );
 
 	u32 dscount = 0;
 	if ( contextbase->datagroup.size ) dscount++;
@@ -58,31 +58,31 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	}
 	if ( contextbase->sampler_count ) {
 		vk::SamplerCreateInfo samplerInfo (
-			vk::SamplerCreateFlags(),
-			vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
-			vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat,
-			0.0f, //mipLodBias
-			VK_FALSE, //anisotropyEnable
-			0.0f, //maxAnisotropy
-			VK_FALSE, //compareEnable
-			vk::CompareOp::eNever,
-			0.0f, //minLod
-			0.0f, //maxLod
-			vk::BorderColor::eFloatTransparentBlack, //borderColor
-			VK_FALSE //unnormalizedCoordinates
+		    vk::SamplerCreateFlags(),
+		    vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+		    vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat,
+		    0.0f, //mipLodBias
+		    VK_FALSE, //anisotropyEnable
+		    0.0f, //maxAnisotropy
+		    VK_FALSE, //compareEnable
+		    vk::CompareOp::eNever,
+		    0.0f, //minLod
+		    0.0f, //maxLod
+		    vk::BorderColor::eFloatTransparentBlack, //borderColor
+		    VK_FALSE //unnormalizedCoordinates
 		);
-		if(!temp_sampler) temp_sampler = v_instance->vk_device().createSampler(samplerInfo);
-		
+		if ( !temp_sampler ) temp_sampler = v_instance->vk_device().createSampler ( samplerInfo );
+
 		//bind descriptorset to image
-		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo( temp_sampler, vk::ImageView(), vk::ImageLayout::eUndefined );
-		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet(descriptor_set, writecount, 0, 1, vk::DescriptorType::eSampler, &imagewrite, nullptr, nullptr );
+		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( temp_sampler, vk::ImageView(), vk::ImageLayout::eUndefined );
+		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( descriptor_set, writecount, 0, 1, vk::DescriptorType::eSampler, &imagewrite, nullptr, nullptr );
 		v_instance->vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
 		writecount++;
 	}
 }
 VContext::~VContext() {
 	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool );
-	v_instance->vk_device().destroySampler(temp_sampler);
+	v_instance->vk_device().destroySampler ( temp_sampler );
 }
 
 void VContextGroup::set_context ( Context& context ) {

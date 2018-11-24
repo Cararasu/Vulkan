@@ -46,9 +46,9 @@ struct VWindow : public Window {
 	VQuadRenderer* quad_renderer;
 	VBaseImage* present_image = nullptr;
 	VBaseImage* depth_image = nullptr;
-	
+
 	VRenderTarget v_render_target_wrapper;
-	
+
 	//vulkan
 	vk::SurfaceKHR surface;
 	vk::Semaphore image_available_guard_sem;
@@ -65,13 +65,13 @@ struct VWindow : public Window {
 
 	VWindow ( VInstance* instance );
 	virtual ~VWindow();
-	
+
 	virtual Image* backed_image ();
 
 	virtual RendResult update();
 	RendResult v_update();
 	virtual RendResult destroy();
-	
+
 	void framebuffer_size_changed ( Extent2D<s32> extend );
 
 	vk::CommandPool graphics_command_pool();
@@ -79,9 +79,9 @@ struct VWindow : public Window {
 	inline FrameLocalData* current_framelocal_data() {
 		return &frame_local_data[present_image_index];
 	}
-	
+
 	void prepare_frame();
-	
+
 	void initialize();
 	void render_frame();
 	void create_command_buffers();

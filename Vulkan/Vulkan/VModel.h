@@ -32,7 +32,7 @@ struct VModel {
 	Model model() {
 		Array<Context> contexts ( v_contexts.size );
 		for ( u32 i = 0; i < v_contexts.size; i++ ) {
-			if(v_contexts[i]) contexts[i] = v_contexts[i]->context();
+			if ( v_contexts[i] ) contexts[i] = v_contexts[i]->context();
 			else {
 				contexts[i].id = 0;
 				contexts[i].contextbase_id = this->contexts[i];
@@ -56,11 +56,13 @@ struct VInstanceGroup : public InstanceGroup {
 	bool finished = false;
 
 	VInstanceGroup ( VInstance* instance ) :
-		InstanceGroup(), v_instance ( instance ), 
+		InstanceGroup(), v_instance ( instance ),
 		buffer_storeage ( instance, vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst ) { }
 	virtual ~VInstanceGroup() {}
 
 	//returns offset
 	virtual void register_instances ( InstanceBaseId instancebase_id, Model& model, void* data, u32 count ) override;
+	virtual void register_instances ( InstanceBaseId instancebase_id, Model* model, u32 model_count, void* data, u32 count ) override;
+	virtual void register_instances ( InstanceBaseId instancebase_id, Array<Model>& models, void* data, u32 count ) override;
 	virtual void clear() override;
 };

@@ -26,14 +26,15 @@ struct VContext {
 	ContextBaseId contextbase_id;
 	VInstance* v_instance;
 	VBuffer v_buffer;
-	
+	u64 last_frame_index_updated = 0;
+
 	void* data;
 	Array<VBaseImage*> images;
-	
+
 	vk::Sampler temp_sampler;
 	vk::DescriptorPool descriptor_pool;
 	vk::DescriptorSet descriptor_set;
-	
+
 	VContext ( VInstance* instance, ContextBaseId contextbase_id );
 	~VContext();
 

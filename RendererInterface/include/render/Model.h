@@ -48,6 +48,8 @@ struct InstanceGroup {
 	virtual ~InstanceGroup() {};
 	//returns offset
 	virtual void register_instances ( InstanceBaseId instancebase_id, Model& model, void* data, u32 count ) = 0;
+	virtual void register_instances ( InstanceBaseId instancebase_id, Model* model, u32 model_count, void* data, u32 count ) = 0;
+	virtual void register_instances ( InstanceBaseId instancebase_id, Array<Model>& models, void* data, u32 count ) = 0;
 	virtual void clear() = 0;
 };
 struct ContextGroup {

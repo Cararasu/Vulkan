@@ -108,20 +108,22 @@ struct VInstance : public Instance {
 
 //------------ Resources
 
-	virtual Image* create_texture (u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers) override;
-	virtual Image* load_image_to_texture(std::string file, Image* image, u32 array_layer, u32 mipmap_layer) override;
-	virtual Image* load_image_to_texture(std::string file, u32 mipmap_layers) override;
+	IdPtrArray<VBaseImage> v_images;
 
-	virtual void set_context (Model& model, Context& context) override;
-	
+	virtual Image* create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) override;
+	virtual Image* load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) override;
+	virtual Image* load_image_to_texture ( std::string file, u32 mipmap_layers ) override;
+
+	virtual void set_context ( Model& model, Context& context ) override;
+
 	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) override;
 	virtual void load_generic_model ( Model& model, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) override;
 
 	virtual void unload_model ( ModelId modelbase_id ) override;
 
-	virtual void update_context_data(Context& context, void* data) override;
+	virtual void update_context_data ( Context& context, void* data ) override;
 	virtual void update_context_image ( Context& context, u32 index, Image* image ) override;
-	
+
 	Map<ContextBaseId, VContextBase> contextbase_map;
 	virtual void contextbase_registered ( ContextBaseId id ) override;
 	virtual void modelbase_registered ( ModelBaseId id ) override;

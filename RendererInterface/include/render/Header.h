@@ -31,13 +31,6 @@ struct Array {
 		if(!size) return;
 		data = new T[size];
 	}
-	Array(u64 size, const T&& ele) : size ( size ), data ( nullptr ) {
-		if(!size) return;
-		data = new T[size];
-		for ( u64 i = 0; i < size; i++){
-			data[i++] = ele;
-		}
-	}
 	Array(u64 size, const T& ele) : size ( size ), data ( nullptr ) {
 		if(!size) return;
 		data = new T[size];
@@ -54,8 +47,8 @@ struct Array {
 		}
 	}
 	Array ( const Array<T>&& array ) : size ( array.size ), data ( array.data ) {
-		array.size = 0;
 		array.data = nullptr;
+		array.size = 0;
 	}
 	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( nullptr ) {
 		if(!size) return;
@@ -89,10 +82,12 @@ struct Array {
 		}
 		return *this;
 	}
-	Array<T>& operator= ( const Array<T>&& array ) {
+	Array<T>& operator= ( Array<T>&& array ) {
 		if(data) delete[] data;
 		data = array.data;
+		array.data = nullptr;
 		size = array.size;
+		array.size = 0;
 		return *this;
 	}
 	~Array() {
