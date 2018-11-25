@@ -28,6 +28,7 @@ void register_specializations ( VInstance* instance ) {
 
 	DataGroupDef camera_datagroup = { { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64} }, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 ), 1 };
 	
+	DataGroupDef shot_datagroup = { { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 2, 64} }, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 )*2, 1 };
 	DataGroupDef matrix_datagroup = { { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 };
 	DataGroupDef matrix_2_datagroup = { { {ValueType::eF32Mat4, 2, 0} }, sizeof ( glm::mat4 ) * 2, 1 };
 
@@ -75,7 +76,7 @@ void register_specializations ( VInstance* instance ) {
 	skybox_instance_base_id = instance->static_instancebase_store.insert ( skyboxinstance );
 	instance->instancebase_registered ( skybox_instance_base_id );
 
-	InstanceBase shotinstance = { 0, matrix_datagroup };
+	InstanceBase shotinstance = { 0, shot_datagroup };
 	shot_instance_base_id = instance->static_instancebase_store.insert ( shotinstance );
 	instance->instancebase_registered ( shot_instance_base_id );
 

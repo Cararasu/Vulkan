@@ -1,6 +1,8 @@
 #pragma once
 
 #include <VHeader.h>
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE true
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/ext.hpp>

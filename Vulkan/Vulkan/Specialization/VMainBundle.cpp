@@ -528,7 +528,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -545,7 +545,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 
 		vk::PipelineDepthStencilStateCreateInfo depthStencil (
 		    vk::PipelineDepthStencilStateCreateFlags(),
-		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
+		    VK_TRUE, VK_FALSE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
 		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
 		    {}, {}, //front, back

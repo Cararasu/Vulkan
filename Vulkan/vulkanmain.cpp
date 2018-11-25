@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include <chrono>
 #include <thread>
 #include <algorithm>
@@ -74,6 +77,12 @@ struct Camera {
 		glm::vec3 change_vec = glm::normalize ( forward_vec ) * forward + glm::normalize ( sideward_vec ) * sidewards + glm::normalize ( up_vector ) * upwards;
 		look_at += change_vec;
 	}
+	void move ( glm::vec3 move_vec ) {
+		glm::vec3 sideward_vec = glm::cross ( view_vector, up_vector );
+		glm::vec3 forward_vec = glm::cross ( up_vector, sideward_vec );
+		glm::vec3 change_vec = glm::normalize ( forward_vec ) * move_vec.z + glm::normalize ( sideward_vec ) * move_vec.x + glm::normalize ( up_vector ) * move_vec.y;
+		look_at += change_vec;
+	}
 	void move_forward ( float forward, float sidewards, float upwards ) {
 		look_at += view_vector * forward;
 	}
@@ -81,7 +90,7 @@ struct Camera {
 		view_vector *= std::pow ( 1.1f, zoom );
 	}
 	glm::mat4 v2s_mat() {
-		return glm::perspective ( fov, aspect, near, far );
+		return glm::infinitePerspective ( fov, aspect, near );
 	}
 	glm::mat4 w2v_mat() {
 		return glm::lookAt ( look_at - view_vector, look_at, up_vector );
@@ -95,7 +104,17 @@ struct GameState {
 	bool m1_pressed = false;
 	bool m2_pressed = false;
 	bool m3_pressed = false;
-
+	
+	bool w_pressed = false;
+	bool a_pressed = false;
+	bool s_pressed = false;
+	bool d_pressed = false;
+	bool space_pressed = false;
+	bool l_cntrl_pressed = false;
+	
+	
+	bool slowmotion = false;
+	
 	Camera camera;
 } g_state;
 
@@ -320,8 +339,8 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
 
-	Context light_vector = newinstance->create_context ( lightvector_base_id );
-	contextgroup->set_context ( light_vector );
+	Context light_vector_context = newinstance->create_context ( lightvector_base_id );
+	contextgroup->set_context ( light_vector_context );
 
 	Context camera_matrix = newinstance->create_context ( camera_context_base_id );
 	contextgroup->set_context ( camera_matrix );
@@ -392,7 +411,7 @@ int main ( int argc, char **argv ) {
 	instancegroup->clear();
 
 	g_state.camera.look_at = glm::vec3 ( 0.0f, 0.0f, 0.0f );
-	g_state.camera.view_vector = glm::vec3 ( 0.0f, -20.0f, -20.0f );
+	g_state.camera.view_vector = glm::vec3 ( 0.0f, -40.0f, -40.0f );
 	g_state.camera.up_vector = glm::vec3 ( 0.0f, 1.0f, 0.0f );
 	g_state.camera.fov = 120.0f;
 	g_state.camera.aspect = 1.0f;
@@ -402,12 +421,10 @@ int main ( int argc, char **argv ) {
 
 	Window* window = newinstance->create_window();
 
-	bool m_pressed = false;
-
 	window->on_resize = [] ( Window * window, float x, float y ) {
 		g_state.camera.aspect = x / y;
 	};
-	window->on_mouse_moved = [&m_pressed] ( Window * window, double x, double y, double delta_x, double delta_y ) {
+	window->on_mouse_moved = [] ( Window * window, double x, double y, double delta_x, double delta_y ) {
 		if ( g_state.m1_pressed ) {
 			g_state.camera.turn ( delta_y / 1000.0, delta_x / 1000.0 );
 		}
@@ -415,33 +432,31 @@ int main ( int argc, char **argv ) {
 	window->on_scroll = [] ( Window * window, double delta_x, double delta_y ) {
 		g_state.camera.zoom ( -delta_y );
 	};
-	window->on_mouse_press = [&m_pressed] ( Window * window, u32 button, PressAction pressed, u32 mods ) {
+	window->on_mouse_press = [] ( Window * window, u32 button, PressAction pressed, u32 mods ) {
 		if ( button == 0 ) {
 			g_state.m1_pressed = pressed == PressAction::ePress;
 		}
 	};
-	window->on_button_press = [&m_pressed] ( Window * window, u32 button, u32 keycode, PressAction pressed, u32 mods ) {
-		if ( pressed != PressAction::eRelease ) {
-			switch ( button ) {
-			case 65://A
-				g_state.camera.move ( 0.0f, -0.1f );
-				break;
-			case 68://D
-				g_state.camera.move ( 0.0f, 0.1f );
-				break;
-			case 83://S
-				g_state.camera.move ( -0.1f, 0.0f );
-				break;
-			case 87://W
-				g_state.camera.move ( 0.1f, 0.0f );
-				break;
-			case 32://Space
-				g_state.camera.move ( 0.0f, 0.0f, 0.1f );
-				break;
-			case 341://left control
-				g_state.camera.move ( 0.0f, 0.0f, -0.1f );
-				break;
-			}
+	window->on_button_press = [] ( Window * window, u32 button, u32 keycode, PressAction pressed, u32 mods ) {
+		switch ( button ) {
+		case 65://A
+			g_state.a_pressed = pressed != PressAction::eRelease;
+			break;
+		case 68://D
+			g_state.d_pressed = pressed != PressAction::eRelease;
+			break;
+		case 83://S
+			g_state.s_pressed = pressed != PressAction::eRelease;
+			break;
+		case 87://W
+			g_state.w_pressed = pressed != PressAction::eRelease;
+			break;
+		case 32://Space
+			g_state.space_pressed = pressed != PressAction::eRelease;
+			break;
+		case 341://left control
+			g_state.l_cntrl_pressed = pressed != PressAction::eRelease;
+			break;
 		}
 	};
 
@@ -466,16 +481,66 @@ int main ( int argc, char **argv ) {
 		glm::vec4 direction_amb;
 		glm::vec4 color;
 	} global_light;
-	struct AnInstance {
-		glm::mat4 mv2_matrix;
-		glm::mat4 normal_matrix;
-	};
 
+	//setup objects
+	
+	constexpr float fPIE = M_PI;
+	
+	glm::vec4 light_vector(-0.254, -0.817, -0.51f, 0.0f);
+	
+	DynArray<AModel> xwings(2);
+	xwings[0].init(glm::vec3 ( 5.0f, -5.0f, -10.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.3f, -1.0f, 0.0f))), 6.25f, 20.0f);
+	xwings[1].init(glm::vec3 ( 20.0f, -0.0f, -5.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.25f, -1.0f, 0.0f))), 6.25f, 20.0f);
+	
+	DynArray<AModel> ties(2);
+	ties[0].init(glm::vec3 ( -75.0f, -30.0f, -7.5f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.27f, -1.0f, 0.0f))), 4.5f, 20.0f);
+	ties[1].init(glm::vec3 ( 0.0f, 100.0f, 0.0f ), glm::angleAxis(fPIE * 0.70f, glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f))), 4.5f, 20.0f);
+	
+	DynArray<AModel> gallofrees(1);
+	gallofrees[0].init(glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis(fPIE * 0.5f, glm::vec3(0.0f, -1.0f, 0.0f)), 45.0f, 5.0f);
+	
+	
+	
+	DynArray<AModel> red_shots(2);
+	{
+		glm::vec3 shot1_translation(4.6f, 0.25f, 7.0f);
+		glm::vec3 shot2_translation(-4.6f, -0.4f, 7.0f);
+		shot1_translation = glm::rotate(xwings[0].rotation, shot1_translation);
+		shot2_translation = glm::rotate(xwings[0].rotation, shot2_translation);
+		red_shots[0].init(xwings[0].position + shot1_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+		red_shots[1].init(xwings[0].position + shot2_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+	}
+	DynArray<AModel> green_shots(2);
+	{
+		glm::vec3 shot1_translation(0.3f, -0.7f, 40.0f);
+		glm::vec3 shot2_translation(-0.3f, -0.7f, 40.0f);
+		shot1_translation = glm::rotate(ties[1].rotation, shot1_translation);
+		shot2_translation = glm::rotate(ties[1].rotation, shot2_translation);
+		green_shots[0].init(ties[1].position + shot1_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+	}
+	
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> current = std::chrono::high_resolution_clock::now();
 	std::chrono::time_point<std::chrono::high_resolution_clock> last = current;
 
+	struct AnInstance {
+		glm::mat4 mv2_matrix;
+		glm::mat4 normal_matrix;
+	};
+	struct ShotInstance {
+		glm::mat4 mv2_matrix;
+		glm::vec4 umbracolor;
+		glm::vec4 spikecolor;
+	};
+	
+	DynArray<AnInstance> x_instances(xwings.size());
+	DynArray<AnInstance> tie_instances(ties.size());
+	DynArray<AnInstance> gallofree_instances(gallofrees.size());
+	DynArray<ShotInstance> shot_instances(red_shots.size() + green_shots.size());
+	
+	g_state.slowmotion = true;
 	while ( newinstance->is_window_open() ) {
 		
 		using namespace std::chrono_literals;
@@ -486,7 +551,41 @@ int main ( int argc, char **argv ) {
 		current = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
 		g_logger.log<LogLevel::eInfo> ( "%dns elapsed", ns );
-
+		
+		double delta = ns.count();
+		delta /= 1000000000.0;
+		
+		double adjusted_delta = g_state.slowmotion ? delta / 1000.0 : delta;
+		
+		for(AModel& xwing : xwings){
+			xwing.move(adjusted_delta);
+		}
+		for(AModel& tie : ties){
+			tie.move(adjusted_delta);
+		}
+		for(AModel& gallofree : gallofrees){
+			gallofree.move(adjusted_delta);
+		}
+		for(AModel& shot : red_shots){
+			shot.move(adjusted_delta);
+		}
+		for(AModel& shot : green_shots){
+			shot.move(adjusted_delta);
+		}
+		float camera_move_factor = glm::length(g_state.camera.view_vector) * delta * 0.25f;
+		
+		glm::vec3 move_vec(0.0f, 0.0f, 0.0f);
+		
+		if(g_state.a_pressed) move_vec.x -= camera_move_factor;
+		if(g_state.d_pressed) move_vec.x += camera_move_factor;
+		if(g_state.s_pressed) move_vec.z -= camera_move_factor;
+		if(g_state.w_pressed) move_vec.z += camera_move_factor;
+		
+		if(g_state.space_pressed) move_vec.y += camera_move_factor;
+		if(g_state.l_cntrl_pressed) move_vec.y -= camera_move_factor;
+		
+		g_state.camera.move ( move_vec );
+		
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		newinstance->process_events();
@@ -503,50 +602,64 @@ int main ( int argc, char **argv ) {
 		newinstance->update_context_data ( camera_matrix, &camera );
 		
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
-		global_light.direction_amb = glm::normalize ( w2v_matrix * glm::vec4 ( 1.0f, -1.0f, 0.0f, 0.0f ) );
+		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
 		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.5f );
-
-		newinstance->update_context_data ( light_vector, &global_light );
+		
+		newinstance->update_context_data ( light_vector_context, &global_light );
 
 		glm::mat4 m2s_matrixes[1] = {
 			g_state.camera.v2s_mat() * g_state.camera.w2v_rot_mat()
 		};
 		newinstance->update_context_data ( skybox_context, m2s_matrixes );
 		instancegroup->register_instances ( skybox_instance_base_id, cube, nullptr, 1 );
+		
+		x_instances.resize(xwings.size());
+		
+		for(u32 i = 0; i < xwings.size(); i++) {
+			x_instances[i].mv2_matrix = w2v_matrix * xwings[i].m2w_mat();
+			x_instances[i].normal_matrix = glm::transpose ( glm::inverse ( x_instances[i].mv2_matrix ) );
+		}
+		instancegroup->register_instances ( textured_instance_base_id, x_models, x_instances.data(), x_instances.size() );
 
-		AnInstance x_instances[2] = {
-			{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( 0.0f, 0.0f, 0.0f ) ), glm::vec3 ( 1.0f, 1.0f, 1.0f ) ), glm::mat4() },
-			{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( 0.0f, 3.0f, 0.0f ) ), glm::vec3 ( 1.0f, 1.0f, 1.0f ) ), glm::mat4() }
-		};
-		x_instances[0].normal_matrix = glm::transpose ( glm::inverse ( x_instances[0].mv2_matrix ) );
-		x_instances[1].normal_matrix = glm::transpose ( glm::inverse ( x_instances[1].mv2_matrix ) );
-		instancegroup->register_instances ( textured_instance_base_id, x_models, x_instances, 2 );
+		tie_instances.resize(ties.size());
+		for(u32 i = 0; i < ties.size(); i++) {
+			tie_instances[i].mv2_matrix = w2v_matrix * ties[i].m2w_mat();
+			tie_instances[i].normal_matrix = glm::transpose ( glm::inverse ( tie_instances[i].mv2_matrix ) );
+		}
+		instancegroup->register_instances ( textured_instance_base_id, tie_models, tie_instances.data(), tie_instances.size() );
 
-		AnInstance tie_matrixes[1] = {
-			{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( 0.0f, -3.0f, 0.0f ) ), glm::vec3 ( 1.0f, 1.0f, 1.0f ) ), glm::mat4() }
-		};
-		tie_matrixes[0].normal_matrix = glm::transpose ( glm::inverse ( tie_matrixes[0].mv2_matrix ) );
-		instancegroup->register_instances ( textured_instance_base_id, tie_models, tie_matrixes, 1 );
+		//AnInstance gallofree_matrixes1[1] = {
+		//	{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( -4.0f, 0.0f, 0.0f ) ), glm::vec3 ( 10.0f, 10.0f, 10.0f ) ), glm::mat4() }
+		//};
+		//gallofree_matrixes1[0].normal_matrix = glm::transpose ( glm::inverse ( gallofree_matrixes1[0].mv2_matrix ) );
+		//instancegroup->register_instances ( textured_instance_base_id, gallofree_models, gallofree_matrixes1, 1 );
 
-		AnInstance gallofree_matrixes1[1] = {
-			{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( -4.0f, 0.0f, 0.0f ) ), glm::vec3 ( 10.0f, 10.0f, 10.0f ) ), glm::mat4() }
-		};
-		gallofree_matrixes1[0].normal_matrix = glm::transpose ( glm::inverse ( gallofree_matrixes1[0].mv2_matrix ) );
-		instancegroup->register_instances ( textured_instance_base_id, gallofree_models, gallofree_matrixes1, 1 );
+		gallofree_instances.resize(gallofrees.size());
+		for(u32 i = 0; i < gallofrees.size(); i++) {
+			gallofree_instances[i].mv2_matrix = w2v_matrix * gallofrees[i].m2w_mat();
+			gallofree_instances[i].normal_matrix = glm::transpose ( glm::inverse ( gallofree_instances[i].mv2_matrix ) );
+		}
+		instancegroup->register_instances ( flat_instance_base_id, gallofree_models, gallofree_instances.data(), gallofree_instances.size() );
 
-		AnInstance gallofree_matrixes2[1] = {
-			{ glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( 4.0f, 0.0f, 0.0f ) ), glm::vec3 ( 10.0f, 10.0f, 10.0f ) ), glm::mat4() }
-		};
-		gallofree_matrixes2[0].normal_matrix = glm::transpose ( glm::inverse ( gallofree_matrixes2[0].mv2_matrix ) );
-		instancegroup->register_instances ( flat_instance_base_id, gallofree_models, gallofree_matrixes2, 1 );
 
-		glm::mat4 shot_matrixes[3] = { 
-			glm::translate ( w2v_matrix, glm::vec3 ( 4.0f, 5.0f, 0.0f ) ), 
-			glm::translate ( w2v_matrix, glm::vec3 ( 0.0f, 5.0f, 0.0f ) ), 
-			glm::scale ( glm::translate ( w2v_matrix, glm::vec3 ( -4.0f, 5.0f, 0.0f ) ), glm::vec3 ( 0.1f, 4.0f, 0.1f ) )
-		};
-		instancegroup->register_instances ( shot_instance_base_id, shot, shot_matrixes, 3 );
+		
+		shot_instances.resize(red_shots.size() + green_shots.size());
+		{
+			u32 i = 0;
+			for(; i < red_shots.size(); i++) {
+				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
+				shot_instances[i].umbracolor = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				shot_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
+			}
+			u32 j = 0;
+			for(; j < green_shots.size(); j++) {
+				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
+				shot_instances[i + j].umbracolor = glm::vec4(0.0, 1.0, 0.0, 0.0);
+				shot_instances[i + j].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
+			}
+		}
+		instancegroup->register_instances ( shot_instance_base_id, shot, shot_instances.data(), shot_instances.size() );
 
 		newinstance->render_bundles ( {bundle} );
 	}
