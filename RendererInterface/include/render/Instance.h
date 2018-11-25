@@ -32,12 +32,7 @@ struct Instance {
 	virtual bool destroy_window ( Window* window ) = 0;
 
 	virtual void process_events() = 0;
-	virtual void present_window ( Window* window ) = 0;
-	virtual void present_windows() = 0;
 	virtual bool is_window_open() = 0;
-
-	virtual void prepare_render () = 0;
-	virtual void prepare_render ( Array<Window*> windows ) = 0;
 
 	virtual void render_bundles ( Array<RenderBundle*> bundles ) = 0;
 

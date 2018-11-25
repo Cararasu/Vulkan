@@ -558,22 +558,6 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 void VInstance::process_events() {
 	glfwPollEvents();
 }
-void VInstance::present_window ( Window* window ) {
-	v_present_window ( dynamic_cast<VWindow*> ( window ) );
-}
-void VInstance::v_present_window ( VWindow* window ) {
-	if ( !window )
-		return;
-	window->v_update();
-	window->render_frame();
-	frame_index++;
-}
-void VInstance::present_windows() {
-	for ( VWindow* window : windows ) {
-		window->render_frame();
-	}
-	frame_index++;
-}
 bool VInstance::is_window_open() {
 	for ( Window* window : windows ) {
 		if ( window->visible()->value )
@@ -666,14 +650,6 @@ ContextGroup* VInstance::create_contextgroup() {
 RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) {
 	return new VRenderBundle ( igroup, cgroup, rstages, image_types, dependencies );
 }
-void VInstance::prepare_render () {
-	for ( VWindow* window : windows ) {
-		window->prepare_frame();
-	}
-}
-void VInstance::prepare_render ( Array<Window*> windows ) {
-	prepare_render();
-}
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {
 		if ( VRenderBundle* bundle = dynamic_cast<VRenderBundle*> ( b ) ) {
@@ -693,7 +669,7 @@ RenderBundle* VInstance::create_main_bundle ( InstanceGroup* igroup, ContextGrou
 	return new VMainBundle ( this, igroup, cgroup );
 }
 Image* VInstance::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) {
-	return v_images.insert ( new VBaseImage ( this, width, height, depth, array_layers, mipmap_layers, vk::Format::eB8G8R8A8Srgb, vk::ImageTiling::eOptimal,
+	return v_images.insert ( new VBaseImage ( this, width, height, depth, array_layers, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
 	                         vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
 	                         vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal) );
 }

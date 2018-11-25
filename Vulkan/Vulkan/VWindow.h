@@ -14,28 +14,13 @@ struct FrameLocalData {
 	bool initialized = false;
 	u64 frame_index;
 	vk::Fence image_presented_fence;
-	vk::Semaphore render_ready_sem;
 	vk::Semaphore present_ready_sem;
-
-	//recreate for every resize
-	bool createcommandbuffer;
-	vk::CommandBuffer clear_command_buffer;
-	vk::CommandBuffer present_command_buffer;
-
 	//needs to be destroyed before the frame is started and is created when needed
 	vk::CommandPool graphics_command_pool;
 };
 
-struct VQuadRenderer;
 struct VInstance;
 struct VBaseImage;
-
-struct VRenderTarget : public RenderTarget {
-	Array<VBaseImage*> images;
-	VBaseImage* depth_image;
-	u32 target_count;
-};
-
 
 struct VWindow : public Window {
 	VInstance* v_instance = nullptr;
@@ -43,11 +28,8 @@ struct VWindow : public Window {
 	//glfw
 	GLFWwindow* window = nullptr;
 
-	VQuadRenderer* quad_renderer;
 	VBaseImage* present_image = nullptr;
 	VBaseImage* depth_image = nullptr;
-
-	VRenderTarget v_render_target_wrapper;
 
 	//vulkan
 	vk::SurfaceKHR surface;
@@ -83,9 +65,6 @@ struct VWindow : public Window {
 	void prepare_frame();
 
 	void initialize();
-	void render_frame();
-	void create_command_buffers();
-	void create_command_buffer ( u32 index );
 
 	void create_swapchain();
 	void create_empty_pipeline();

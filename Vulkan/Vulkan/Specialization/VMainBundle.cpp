@@ -837,7 +837,7 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 		DynArray<InstanceBlock>& instanceblocks = v_igroup->instance_to_data_map[textured_instance_base_id];
 
 		{
-			//update the incstancedata
+			//update the instancedata
 			void* instance_data = v_igroup->buffer_storeage.allocate_transfer_buffer();
 			for ( auto it = v_igroup->instance_to_data_map.begin(); it != v_igroup->instance_to_data_map.end(); it++ ) {
 				const InstanceBase* instancebase = v_instance->instancebase ( it->first );

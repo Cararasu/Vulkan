@@ -6,39 +6,6 @@
 #include "Resources.h"
 #include <functional>
 
-struct UINode;
-
-struct RenderTarget {
-	const Extent2D<u32> extent;
-
-	virtual void dummy() {}
-};
-
-struct WindowSection {
-	Viewport<f32> viewport;
-	void* ptr = nullptr;
-	
-	WindowSection () {}
-	virtual ~WindowSection() {}
-
-	virtual void create() = 0;
-
-	virtual void update_viewport ( Viewport<f32> viewport, RenderTarget* targetWrapper ) = 0;
-
-	virtual void render_frame ( u32 index ) = 0;
-};
-struct StackWindowSection : public WindowSection {
-	
-};
-struct BorderWindowSection : public WindowSection {
-	
-};
-struct LayeredWindowSection : public WindowSection {
-	
-};
-struct WorldWindowSection : public WindowSection {
-	
-};
 
 enum class CursorMode {
 	eNormal,

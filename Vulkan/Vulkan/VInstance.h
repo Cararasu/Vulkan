@@ -87,19 +87,15 @@ struct VInstance : public Instance {
 	VInstance();
 	virtual ~VInstance();
 
-	virtual bool initialize ( InstanceOptions options, Device* device = nullptr );
+	virtual bool initialize ( InstanceOptions options, Device* device = nullptr ) override;
 
-	virtual void process_events();
-	virtual bool is_window_open();
+	virtual void process_events() override;
+	virtual bool is_window_open() override;
 
-	virtual void present_window ( Window* window );
-	virtual void v_present_window ( VWindow* window );
-	virtual void present_windows();
+	virtual Window* create_window() override;
+	virtual bool destroy_window ( Window* window ) override;
 
-	virtual Window* create_window();
-	virtual bool destroy_window ( Window* window );
-
-	virtual Monitor* get_primary_monitor();
+	virtual Monitor* get_primary_monitor() override;
 
 	VMonitor* get_primary_monitor_vulkan();
 
@@ -141,12 +137,9 @@ struct VInstance : public Instance {
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
-	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies );
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) override;
 
-	virtual void prepare_render ();
-	virtual void prepare_render ( Array<Window*> windows );
-
-	virtual void render_bundles ( Array<RenderBundle*> bundles );
+	virtual void render_bundles ( Array<RenderBundle*> bundles ) override;
 
 //------------ Specialized Functions
 	virtual RenderBundle* create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) override;

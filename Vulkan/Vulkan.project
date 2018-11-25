@@ -42,8 +42,6 @@
       <File Name="Vulkan/VWindow.h"/>
       <File Name="Vulkan/VWindow.cpp"/>
       <File Name="Vulkan/VRenderer.cpp"/>
-      <File Name="Vulkan/VQuadRenderer.h"/>
-      <File Name="Vulkan/VQuadRenderer.cpp"/>
       <File Name="Vulkan/VModel.h"/>
       <File Name="Vulkan/VModel.cpp"/>
       <File Name="Vulkan/VInstance.cpp"/>
@@ -233,7 +231,7 @@
       </Completion>
     </Configuration>
     <Configuration Name="Release Windows" CompilerType="MinGW ( mingw64 )" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-g;-O3" C_Options="-g;-O3" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+      <Compiler Options="-O3" C_Options="-O3" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="../libs/glfw-3.2.1/include"/>
         <IncludePath Value="../libs/glm"/>
         <IncludePath Value="../libs/stb"/>
@@ -241,7 +239,7 @@
         <IncludePath Value="$(VULKAN_PATH)/Include"/>
         <Preprocessor Value="NDEBUG"/>
       </Compiler>
-      <Linker Options="-static-libgcc" Required="yes">
+      <Linker Options="" Required="yes">
         <LibraryPath Value="../libs/glfw-3.2.1/lib-mingw-w64"/>
         <LibraryPath Value="$(VULKAN_PATH)/Lib"/>
         <Library Value="glfw3"/>

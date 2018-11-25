@@ -1,18 +1,16 @@
 #include "VWindow.h"
 #include "VInstance.h"
-#include "VQuadRenderer.h"
 #include "VResourceManager.h"
 
 
 
-VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ), quad_renderer ( new VQuadRenderer ( instance ) ), depth_image ( nullptr ) {
+VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ), depth_image ( nullptr ) {
 
 }
 VWindow::~VWindow() {
 	v_instance->destroy_window ( this );
 	if ( present_image )
 		delete present_image;
-	delete quad_renderer;
 }
 
 void VWindow::initialize() {
@@ -342,140 +340,6 @@ RendResult VWindow::v_update() {
 	}
 	return RendResult::eSuccess;
 }
-void VWindow::create_command_buffers() {
-	if ( !window_graphics_command_pool ) {
-		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
-		v_instance->vk_device().createCommandPool ( &createInfo, nullptr, &window_graphics_command_pool );
-	}
-
-}
-
-void VWindow::create_command_buffer ( u32 index ) {
-
-}
-
-void VWindow::render_frame() {
-	if ( m_minimized.value )
-		return;
-
-	FrameLocalData* data = current_framelocal_data();
-
-	data->frame_index = v_instance->frame_index;
-
-	QueueWrapper* queue_wrapper = &v_instance->queues;
-
-	if ( data->clear_command_buffer ) {
-		data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
-	}
-	if ( data->present_command_buffer ) {
-		data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
-	}
-	{
-		vk::CommandBufferAllocateInfo allocateInfo ( window_graphics_command_pool, vk::CommandBufferLevel::ePrimary, 2 );
-		// create Command Buffers
-		vk::CommandBuffer buffers[2];
-		if ( data->clear_command_buffer && data->present_command_buffer ) {
-			data->clear_command_buffer.reset ( vk::CommandBufferResetFlags() );
-			data->present_command_buffer.reset ( vk::CommandBufferResetFlags() );
-		} else {
-			v_instance->vk_device().allocateCommandBuffers ( &allocateInfo, buffers );
-			data->clear_command_buffer = buffers[0];
-			data->present_command_buffer = buffers[1];
-		}
-		data->clear_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
-		depth_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, data->clear_command_buffer );
-		data->clear_command_buffer.clearColorImage (
-		    present_image->instance_image(),
-		    vk::ImageLayout::eTransferDstOptimal,
-		vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ),
-		{vk::ImageSubresourceRange ( present_image->aspect, 0, 1, 0, 1 ) }
-		);
-		data->clear_command_buffer.clearDepthStencilImage (
-		    depth_image->instance_image(),
-		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ClearDepthStencilValue ( 1.0f, 0 ),
-		{vk::ImageSubresourceRange ( depth_image->aspect, 0, 1, 0, 1 ) }
-		);
-		present_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal, data->clear_command_buffer );
-		depth_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eDepthStencilAttachmentOptimal, data->clear_command_buffer );
-
-		data->clear_command_buffer.end();
-
-		data->present_command_buffer.begin ( vk::CommandBufferBeginInfo() );
-		present_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, data->present_command_buffer );
-		depth_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eGeneral, data->present_command_buffer );
-		data->present_command_buffer.end();
-	}
-
-	data->initialized = true;
-
-	vk::SwapchainKHR swapChains[] = {swap_chain};
-
-	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eBottomOfPipe );
-
-	SubmitStore submit_store;
-
-	SubmitInfo si;
-	si.wait_dst_stage_mask = vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eTransfer );
-	si.need_sem_index = submit_store.semaphores.size();
-	si.need_sem_count = 1;
-	submit_store.semaphores.push_back ( image_available_guard_sem );
-	si.comm_buff_index = submit_store.commandbuffers.size();
-	si.comm_buff_count = 1;
-	submit_store.commandbuffers.push_back ( data->clear_command_buffer );
-	si.sig_sem_index = submit_store.semaphores.size();
-	si.sig_sem_count = 1;
-	submit_store.semaphores.push_back ( data->render_ready_sem );
-	submit_store.submitinfos.push_back ( si );
-
-	u32 sem_index = 1;
-	quad_renderer->render ( present_image_index, &submit_store, 1, &sem_index );
-
-	si.wait_dst_stage_mask = vk::PipelineStageFlags ( vk::PipelineStageFlagBits::eColorAttachmentOutput );
-	si.need_sem_index = sem_index;
-	si.need_sem_count = 1;
-	si.comm_buff_index = submit_store.commandbuffers.size();
-	si.comm_buff_count = 1;
-	submit_store.commandbuffers.push_back ( data->present_command_buffer );
-	si.sig_sem_index = submit_store.semaphores.size();
-	si.sig_sem_count = 1;
-	submit_store.semaphores.push_back ( data->present_ready_sem );
-	submit_store.submitinfos.push_back ( si );
-
-	submit_store.signal_fence = data->image_presented_fence;
-
-	DynArray<vk::SubmitInfo> submitinfos;
-	for ( SubmitInfo& submit_info : submit_store.submitinfos ) {
-		submitinfos.push_back (
-		    vk::SubmitInfo (
-		        submit_info.need_sem_count, submit_store.semaphores.data() + submit_info.need_sem_index, //waitSem
-		        &submit_info.wait_dst_stage_mask,
-		        submit_info.comm_buff_count, submit_store.commandbuffers.data() + submit_info.comm_buff_index,//commandbuffers
-		        submit_info.sig_sem_count, submit_store.semaphores.data() + submit_info.sig_sem_index//signalSem
-		    )
-		);
-	}
-	queue_wrapper->graphics_queue.submit ( submitinfos, submit_store.signal_fence );
-
-	if ( !queue_wrapper->combined_graphics_present_queue ) {
-		//@TODO synchronize
-		assert ( false );
-	}
-	//present image
-	vk::Result results;
-	vk::PresentInfoKHR presentInfo (
-	    1, &data->present_ready_sem,
-	    //active_sems.size(), active_sems.data(),
-	    1, swapChains,
-	    &present_image_index, &results );
-	queue_wrapper->present_queue.presentKHR ( &presentInfo );
-	active_sems.clear();
-
-	v_logger.log<LogLevel::eInfo> ( "---------------   EndFrame    ---------------" );
-}
-
-
 void VWindow::create_swapchain() {
 
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
@@ -565,14 +429,6 @@ void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	if ( extent.x > 0 && extent.y > 0 )
 		create_swapchain();
 	v_logger.log<LogLevel::eTrace> ( "Actual Extent %dx%d", swap_chain_extend.x, swap_chain_extend.y );
-
-	v_render_target_wrapper.images.resize ( 1 );
-	v_render_target_wrapper.images[0] = present_image;
-	v_render_target_wrapper.depth_image = depth_image;
-	v_render_target_wrapper.target_count = present_image->per_image_data.size();
-
-	quad_renderer->update_extend ( Viewport<f32> ( 0.0f, 0.0f, swap_chain_extend.x, swap_chain_extend.y, 0.0f, 1.0f ), &v_render_target_wrapper );
-
 }
 
 vk::CommandPool VWindow::graphics_command_pool() {
@@ -587,9 +443,7 @@ void VWindow::create_frame_local_data ( u32 count ) {
 
 		frame_local_data[i].image_presented_fence = v_instance->vk_device().createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
 		frame_local_data[i].present_ready_sem = v_instance->create_semaphore();
-		frame_local_data[i].render_ready_sem = v_instance->create_semaphore();
 	}
-	create_command_buffers();
 }
 void VWindow::destroy_frame_local_data() {
 	v_logger.log<LogLevel::eDebug> ( "Wait For Queues to clear out" );
@@ -602,7 +456,6 @@ void VWindow::destroy_frame_local_data() {
 			v_instance->vk_device().destroyFence ( data.image_presented_fence );
 		}
 		v_instance->destroy_semaphore ( data.present_ready_sem );
-		v_instance->destroy_semaphore ( data.render_ready_sem );
 		index++;
 	}
 	//@Debugging clear so we assert in case we access it in a state, that we should not
