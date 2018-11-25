@@ -4,7 +4,7 @@
 
 
 
-VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ), depth_image ( nullptr ) {
+VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ) {
 
 }
 VWindow::~VWindow() {
@@ -415,8 +415,6 @@ void VWindow::create_swapchain() {
 		present_image->fetch_new_window_images();
 	} else {
 		present_image = v_instance->v_images.insert ( new VBaseImage ( v_instance, this ) );
-
-		depth_image = v_instance->m_resource_manager->v_create_dependant_image ( present_image, ImageFormat::eD24Unorm_St8U, 1.0f );
 	}
 
 	create_frame_local_data ( present_image->per_image_data.size() );

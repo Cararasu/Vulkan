@@ -14,16 +14,13 @@ layout (set=0, binding = 0) uniform cameraUniformBuffer {
 	layout(offset = 64) vec3 eyepos;
 };
 
-
-vec3 spikecolor = vec3(1.0, 1.0, 1.0);
-vec3 umbracolor = vec3(1.0, 0.0, 0.0);
-
 void main() {
-	vec3 n_eyepos = normalize(g_eyepos.yxz - g_uvs);
+	vec3 n_eyepos = normalize(g_eyepos.xyz - g_uvs);
 	vec3 n_uv = normalize(g_uvs);
 	float l1 = length(g_uvs) * dot(n_eyepos, n_uv);
 	
 	float distance = 1.0 - clamp(length(g_uvs - (n_eyepos * l1)), 0.0, 1.0);
 	
-	outColor = vec4(g_spikeColor * pow(distance, 2) + g_umbraColor * pow(distance, 0.25), pow(distance, 2));
+	float spike_factor = pow(distance, 2);
+	outColor = vec4(g_spikeColor * spike_factor + g_umbraColor * pow(distance, 0.25), spike_factor);
 }

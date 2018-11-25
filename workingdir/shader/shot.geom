@@ -38,8 +38,7 @@ void main() {
 		int b = 1 << i;
 		vec3 factor = vec3((0x287a & b) != 0, (0x02af & b) != 0, (0x31e3 & b) != 0);
 		factor = (factor * 2.0) - 1.0;
-		//I have no idea why "up" needs to be multiplied by the x-factor and "right" with the y-factor but it works that way ^^
-		vec4 changevec = (up * factor.x) + (right * factor.y) + (forward * factor.z);
+		vec4 changevec = (right * factor.x) + (up * factor.y) + (forward * factor.z);
 		vec4 va = screen_pos + changevec;
 		gl_Position = v2sMatrix * va;
 		

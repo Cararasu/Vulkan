@@ -29,7 +29,6 @@ struct VWindow : public Window {
 	GLFWwindow* window = nullptr;
 
 	VBaseImage* present_image = nullptr;
-	VBaseImage* depth_image = nullptr;
 
 	//vulkan
 	vk::SurfaceKHR surface;
