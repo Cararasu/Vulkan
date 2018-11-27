@@ -30,22 +30,25 @@ struct VTransientBufferStorage {
 	void clear_transfer();
 };
 
+constexpr u64 UNIFORM_BUFFER_SIZE = 1024 * 16;
+
+struct Chunk {
+	u64 index, offset, size;
+};
+
 struct VUpdateableBufferStorage {
-	VBuffer buffer;
-	VBuffer* staging_buffer;
-
-	u64 max_offset;
-	u64 needed_size;
-
+	VInstance* v_instance;
+	vk::BufferUsageFlags usageflags;
+	DynArray<std::pair<VBuffer*, VBuffer*>> buffers;
+	DynArray<Chunk> freelist;
 
 	VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags );
 	~VUpdateableBufferStorage ( );
 
-	u64 allocate_chunk ( u64 size );
-	void free_chunk ( u64 size );
-
-	//updates the data to the buffer
-	void transfer_data();
-
-	void clear_transfer();
+	Chunk allocate_chunk ( u64 size );
+	VBuffer* get_buffer ( u64 index );
+	void fetch_transferbuffers();
+	std::pair<VBuffer*, VBuffer*> get_buffer_pair ( u64 index );
+	void free_transferbuffers(u64 frame_index);
+	void free_chunk ( Chunk chunk );
 };

@@ -4,7 +4,7 @@
 #include "VBufferStorage.h"
 
 
-VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), v_buffer ( instance ), data ( nullptr ) {
+VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), buffer_chunk ( {0, 0, 0} ), data ( nullptr ) {
 
 	const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
 	VContextBase& v_contextbase = v_instance->contextbase_map[contextbase_id];
@@ -35,10 +35,9 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 
 	u32 writecount = 0;
 
-	if ( contextbase->datagroup.size ) {
-		//update buffer
-		v_buffer.init ( contextbase->datagroup.size, vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
-		                vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
+	if ( contextbase->datagroup.size && contextbase->datagroup.arraycount ) {
+		
+		buffer_chunk = v_instance->context_bufferstorage->allocate_chunk(contextbase->datagroup.size * contextbase->datagroup.arraycount);
 		writecount++;
 	}
 	//setup descriptorset
@@ -48,7 +47,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	writecount = 0;
 	if ( contextbase->datagroup.size ) {
 		//bind descriptorset to buffer
-		vk::DescriptorBufferInfo bufferwrite = vk::DescriptorBufferInfo ( v_buffer.buffer, 0, VK_WHOLE_SIZE );
+		vk::DescriptorBufferInfo bufferwrite = vk::DescriptorBufferInfo ( v_instance->context_bufferstorage->get_buffer(buffer_chunk.index)->buffer, buffer_chunk.offset, buffer_chunk.size );
 		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( descriptor_set, writecount, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr, &bufferwrite, nullptr );
 		v_instance->vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
 		writecount++;

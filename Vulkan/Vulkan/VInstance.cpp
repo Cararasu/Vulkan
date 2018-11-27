@@ -165,7 +165,7 @@ VkBool32 VKAPI_PTR debugLogger (
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
     u64 object, size_t location, int32_t messageCode,
     const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
-	v_logger.log<LogLevel::eDebug> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+	v_logger.log<LogLevel::eInfo> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
 	return VK_TRUE;
 }
 #ifndef NDEBUG
@@ -220,13 +220,6 @@ VInstance::VInstance() {
 		v_logger.log<LogLevel::eWarn> ( "Layer VK_LAYER_LUNARG_standard_validation not available" );
 	}
 #endif
-	if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_swapchain" ) ) {
-		v_logger.log<LogLevel::eWarn> ( "Layer VK_LAYER_LUNARG_swapchain not available" );
-	}
-	/*if ( !extLayers.activateLayer ( "VK_LAYER_RENDERDOC_Capture" ) ) {
-		v_logger.log<LogLevel::eWarn> ( "Layer VK_LAYER_RENDERDOC_Capture not available" );
-	}*/
-
 
 	vk::ApplicationInfo appInfo ( "Vulcan Instance", VK_MAKE_VERSION ( 1, 0, 0 ), "Wupl-Engine", VK_MAKE_VERSION ( 1, 0, 0 ), VK_MAKE_VERSION ( 1, 0, 61 ) );
 
@@ -364,6 +357,7 @@ VInstance::~VInstance() {
 	for ( vk::Fence fence : free_fences ) {
 		vk_device().destroyFence ( fence );
 	}
+	delete context_bufferstorage;
 	vk_device().destroyCommandPool ( transfer_commandpool );
 
 	for ( VBaseImage* image : v_images ) {
@@ -502,8 +496,8 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
+	physicalDeviceFeatures.geometryShader = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
-
 
 	{
 		//Array<const char*> neededLayers(extLayers.neededLayers.size());
@@ -551,6 +545,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	                           vk::CommandPoolCreateInfo ( vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_wrapper()->transfer_queue_id )
 	                       );
 
+	context_bufferstorage = new VUpdateableBufferStorage(this, vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst);
 	register_specializations ( this );
 	return true;
 }
@@ -628,7 +623,7 @@ void VInstance::instancebase_registered ( InstanceBaseId id ) {
 }
 Context VInstance::create_context ( ContextBaseId contextbase_id ) {
 	v_logger.log<LogLevel::eDebug> ( "Create Context 0x%" PRIx32, contextbase_id );
-
+	
 	VContext* created_context = v_context_map[contextbase_id].insert ( new VContext ( this, contextbase_id ) );
 	return created_context->context();
 }

@@ -5,11 +5,13 @@
 
 VBuffer* VInstance::request_staging_buffer ( u64 size ) {
 	//TODO cache staging buffers
-	return new VBuffer (
+	VBuffer* buff = new VBuffer (
 	           this,
 	           size,
 	           vk::BufferUsageFlagBits::eTransferSrc,
 	           vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+	buff->map_mem();
+	return buff;
 }
 void VInstance::free_staging_buffer ( VBuffer* buffer ) {
 	v_logger.log<LogLevel::eDebug> ( "Freeing staging buffer 0x%" PRIx64, buffer->buffer );

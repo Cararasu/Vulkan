@@ -25,7 +25,7 @@ struct VContext {
 	ContextId id;
 	ContextBaseId contextbase_id;
 	VInstance* v_instance;
-	VBuffer v_buffer;
+	Chunk buffer_chunk;
 	u64 last_frame_index_updated = 0;
 
 	void* data;

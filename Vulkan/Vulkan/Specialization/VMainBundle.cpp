@@ -641,7 +641,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 
 		v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
 		v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
-		
+
 		DynArray<vk::DescriptorSet> model_descriptorSets;
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			bool found = false;
@@ -848,50 +848,25 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 			v_igroup->buffer_storeage.transfer_data ( data.command.buffer );
 
 			//for each context in the contextgroup update them
-			for ( auto it = v_cgroup->context_map.begin(); it != v_cgroup->context_map.end(); it++ ) {
-				VContext* context = it->second;
-				if ( context->last_frame_index_updated == v_instance->frame_index ) continue;
-				for ( VBaseImage* v_image : context->images ) {
-					if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
-				}
-				if ( context->data ) {
-					u64 size = context->v_buffer.size;
-					VBuffer* staging_buffer = v_instance->request_staging_buffer ( size );
-					staging_buffer->map_mem();
-					memcpy ( staging_buffer->mapped_ptr, context->data, size );
-					vk::BufferCopy buffercopy ( 0, 0, size );
-					data.command.buffer.copyBuffer ( staging_buffer->buffer, context->v_buffer.buffer, 1, &buffercopy );
-					v_instance->free_staging_buffer ( staging_buffer );
-					context->data = nullptr;
-				}
-				context->last_frame_index_updated = v_instance->frame_index;
-			}
-			//for every modelbaseid
-			for ( auto it = v_instance->v_model_map.begin(); it != v_instance->v_model_map.end(); it++ ) {
-				//for each model
-				for ( VModel* v_model : it->second ) {
-					if ( !v_model ) continue;
-					//update each context
-					for ( VContext* context : v_model->v_contexts ) {
-						if ( !context ) continue;
-						if ( context->last_frame_index_updated == v_instance->frame_index ) continue;
-						for ( VBaseImage* v_image : context->images ) {
-							if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
-						}
-						if ( context->data ) {
-							u64 size = context->v_buffer.size;
-							VBuffer* staging_buffer = v_instance->request_staging_buffer ( size );
-							staging_buffer->map_mem();
-							memcpy ( staging_buffer->mapped_ptr, context->data, size );
-							vk::BufferCopy buffercopy ( 0, 0, size );
-							data.command.buffer.copyBuffer ( staging_buffer->buffer, context->v_buffer.buffer, 1, &buffercopy );
-							v_instance->free_staging_buffer ( staging_buffer );
-							context->data = nullptr;
-						}
-						context->last_frame_index_updated = v_instance->frame_index;
+			VUpdateableBufferStorage* bufferstorage = v_instance->context_bufferstorage;
+			bufferstorage->fetch_transferbuffers();
+			for( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++) {
+				for(VContext* v_context : it->second){
+					for ( VBaseImage* v_image : v_context->images ) {
+						if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
+					}
+					if(v_context->data) {
+						VBuffer* staging = bufferstorage->get_buffer_pair(v_context->buffer_chunk.index).second;
+						memcpy ( staging->mapped_ptr + v_context->buffer_chunk.offset, v_context->data, v_context->buffer_chunk.size );
 					}
 				}
 			}
+			for(std::pair<VBuffer*, VBuffer*> p : bufferstorage->buffers) {
+				vk::BufferCopy buffercopy ( 0, 0, p.first->size );
+				data.command.buffer.copyBuffer ( p.second->buffer, p.first->buffer, 1, &buffercopy );
+			}
+			bufferstorage->free_transferbuffers ( v_instance->frame_index );
+			
 			//barrier for access
 			vk::BufferMemoryBarrier bufferMemoryBarrier[] = {
 				vk::BufferMemoryBarrier ( vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,

@@ -21,14 +21,14 @@
       <Project Name="RendererInterface" ConfigName="Release"/>
       <Project Name="MetaBuilder" ConfigName="Release"/>
     </WorkspaceConfiguration>
-    <WorkspaceConfiguration Name="Debug Windows" Selected="no">
+    <WorkspaceConfiguration Name="Debug Windows" Selected="yes">
       <Environment/>
       <Project Name="Main" ConfigName="DebugWindows"/>
       <Project Name="MetaBuilder" ConfigName="Debug"/>
       <Project Name="RendererInterface" ConfigName="DebugWindows"/>
       <Project Name="Vulkan" ConfigName="Debug Windows"/>
     </WorkspaceConfiguration>
-    <WorkspaceConfiguration Name="Release Windows" Selected="yes">
+    <WorkspaceConfiguration Name="Release Windows" Selected="no">
       <Environment/>
       <Project Name="Main" ConfigName="DebugWindows"/>
       <Project Name="MetaBuilder" ConfigName="Debug"/>

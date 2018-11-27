@@ -125,6 +125,7 @@ struct VInstance : public Instance {
 	virtual void modelbase_registered ( ModelBaseId id ) override;
 	virtual void instancebase_registered ( InstanceBaseId id ) override;
 
+	VUpdateableBufferStorage* context_bufferstorage = nullptr;
 	Map<ContextBaseId, IdPtrArray<VContext>> v_context_map;
 	virtual Context create_context ( ContextBaseId id ) override;
 

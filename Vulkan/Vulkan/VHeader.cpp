@@ -3,7 +3,7 @@
 #include "VInstance.h"
 
 
-const Logger v_logger ( "vulkan" );
+const Logger v_logger ( "vulkan", LogLevel::eInfo );
 
 void printError ( VkResult res ) {
 	switch ( res ) {

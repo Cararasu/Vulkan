@@ -51,12 +51,85 @@ void VTransientBufferStorage::clear_transfer() {
 	max_offset = 0;
 	changed = true;
 }
+DynArray<VBuffer*> buffers;
+DynArray<Chunk> freelist;
 VUpdateableBufferStorage::VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
-	buffer ( instance ),
-	needed_size ( 0 ) {
-	buffer.usage = usageflags;
+	v_instance ( instance ), usageflags ( usageflags ),
+	buffers ( { std::make_pair(new VBuffer ( instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) } ),
+	freelist ( {{ 0, 0, UNIFORM_BUFFER_SIZE}} ) {
 
 }
 VUpdateableBufferStorage::~VUpdateableBufferStorage ( ) {
+	for ( std::pair<VBuffer*, VBuffer*> p : buffers ) {
+		delete p.first;
+	}
+}
 
+Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
+	u64 alignment = v_instance->v_device->vkPhysDevProps.limits.minUniformBufferOffsetAlignment;
+	if (size % alignment != 0){
+		size += alignment - (size % alignment);
+	}
+	for ( auto it = freelist.begin(); it != freelist.end(); it++ ) {//first check exact matches
+		if ( it->size == size ) {
+			Chunk c = *it;
+			freelist.erase ( it );
+			v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			return c;
+		}
+	}
+	for ( auto it = freelist.begin(); it != freelist.end(); it++ ) {//then bigger chunks
+		if ( it->size > size ) {
+			Chunk c = *it;
+			c.size = size;
+			it->offset += size;
+			v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			return c;
+		}
+	}
+	if ( size >= UNIFORM_BUFFER_SIZE ) {
+		buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) );
+		v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+		return {buffers.size() - 1, 0, size};
+	}
+	buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) );
+	freelist.push_back ( {buffers.size() - 1, size, UNIFORM_BUFFER_SIZE - size} );
+	v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+	return {buffers.size() - 1, 0, size};
+}
+VBuffer* VUpdateableBufferStorage::get_buffer ( u64 index ) {
+	return buffers[index].first;
+}
+void VUpdateableBufferStorage::fetch_transferbuffers() {
+	for(std::pair<VBuffer*, VBuffer*>& p : buffers) {
+		p.second = v_instance->request_staging_buffer(p.first->size);
+	}
+}
+void VUpdateableBufferStorage::free_transferbuffers(u64 frame_index) {
+	for(std::pair<VBuffer*, VBuffer*>& p : buffers) {
+		v_instance->free_staging_buffer(p.second);
+		p.second = nullptr;
+	}
+}
+std::pair<VBuffer*, VBuffer*> VUpdateableBufferStorage::get_buffer_pair ( u64 index ) {
+	return buffers[index];
+}
+void VUpdateableBufferStorage::free_chunk ( Chunk chunk ) {
+	for ( auto it = freelist.begin(); it != freelist.end(); ) {
+		if ( it->index == chunk.index ) {
+			if ( it->offset + it->size == chunk.offset ) {
+				chunk.offset -= it->offset;
+				chunk.size += it->size;
+				it = freelist.erase ( it );
+				continue;
+			}
+			if ( chunk.offset + chunk.size == it->offset ) {
+				chunk.size += it->size;
+				it = freelist.erase ( it );
+				continue;
+			}
+		}
+		it++;
+	}
+	freelist.push_back ( chunk );
 }
