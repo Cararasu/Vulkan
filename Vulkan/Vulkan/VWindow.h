@@ -19,6 +19,9 @@ struct FrameLocalData {
 	vk::CommandPool graphics_command_pool;
 };
 
+KeyCode glfw_button_transform (int);
+KeyCode glfw_mouse_transform (int);
+
 struct VInstance;
 struct VBaseImage;
 

@@ -11,6 +11,7 @@ VResourceManager::~VResourceManager() {
 		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
 		delete shadermodule;
 	}
+	v_delete_all_image();
 }
 
 static std::vector<char> readFile ( String filename ) {
@@ -72,6 +73,90 @@ ShaderModule* VResourceManager::get_shader ( StringReference ref ) {
 	return v_get_shader ( ref );
 }
 
+Image* VResourceManager::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) {
+	return v_images.insert ( new VBaseImage ( v_instance, width, height, depth, array_layers, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
+	                         vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
+	                         vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+}
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+Image* VResourceManager::load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) {
+	VBaseImage* v_image = static_cast<VBaseImage*> ( image );
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+	if ( !pixels ) {
+		throw std::runtime_error ( "failed to load texture image!" );
+	}
+	VThinBuffer buffer = v_instance->request_staging_buffer ( imageSize );
+	memcpy ( buffer.mapped_ptr, pixels, imageSize );
+	vk::CommandBuffer cmdbuffer = v_instance->request_transfer_command_buffer();
+	v_instance->free_transfer_command_buffer ( cmdbuffer );
+	vk::CommandBufferBeginInfo begininfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
+
+	cmdbuffer.begin ( begininfo );
+	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
+	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+
+	cmdbuffer.end();
+
+	vk::SubmitInfo submitinfos[1] = {
+		vk::SubmitInfo (
+		    0, nullptr, //waitSem
+		    nullptr,
+		    1, &cmdbuffer,//commandbuffers
+		    0, nullptr//signalSem
+		)
+	};
+	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
+
+	stbi_image_free ( pixels );
+	return image;
+}
+Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_layers ) {
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+	if ( !pixels ) {
+		throw std::runtime_error ( "failed to load texture image!" );
+	}
+	VBaseImage* v_image = v_images.insert ( new VBaseImage ( v_instance, texWidth, texHeight, 0, 1, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
+	                                        vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageAspectFlagBits::eColor,
+	                                        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
+	                                                       ) );
+
+	VThinBuffer buffer = v_instance->request_staging_buffer ( imageSize );
+	vk::CommandBuffer cmdbuffer = v_instance->request_transfer_command_buffer();
+	v_instance->free_transfer_command_buffer ( cmdbuffer );
+
+	memcpy ( buffer.mapped_ptr, pixels, imageSize );
+	vk::CommandBufferBeginInfo begininfo = {
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
+	};
+
+	cmdbuffer.begin ( begininfo );
+	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
+	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	//v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
+	cmdbuffer.end();
+
+	vk::SubmitInfo submitinfos[1] = {
+		vk::SubmitInfo (
+		    0, nullptr, //waitSem
+		    nullptr,
+		    1, &cmdbuffer,//commandbuffers
+		    0, nullptr//signalSem
+		)
+	};
+	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
+
+	stbi_image_free ( pixels );
+	return v_image;
+}
 Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type, float scaling ) {
 	VBaseImage* base_image = dynamic_cast<VBaseImage*> ( image );
 	if ( !base_image ) return nullptr;
@@ -108,7 +193,7 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	break;
 	}
 	//TODO make eSampled and eInputAttachment dynamically
-	VBaseImage* v_wrapper = v_instance->v_images.insert ( new VBaseImage ( base_image->v_instance,
+	VBaseImage* v_wrapper = v_images.insert ( new VBaseImage ( base_image->v_instance,
 	                        base_image->width,
 	                        base_image->height,
 	                        base_image->depth,
@@ -133,11 +218,23 @@ void VResourceManager::v_delete_dependant_images ( VBaseImage* image ) {
 	auto it = dependency_map.find ( image );
 	if ( it != dependency_map.end() ) {
 		for ( VBaseImage* image : it->second ) {
-			delete image;
+			v_delete_dependant_images(image);
+			delete v_images.remove ( image->id );
 		}
 		dependency_map.erase ( it );
 	}
 }
 void VResourceManager::delete_image ( Image* image ) {
-
+	v_delete_image ( static_cast<VBaseImage*> ( image ) );
+}
+void VResourceManager::v_delete_image ( VBaseImage* image ) {
+	v_delete_dependant_images(image);
+	delete v_images.remove ( image->id );
+}
+void VResourceManager::v_delete_all_image ( ) {
+	dependency_map.clear();
+	for ( VBaseImage* image : v_images ) {
+		if ( image ) delete image;
+	}
+	v_images.clear();
 }

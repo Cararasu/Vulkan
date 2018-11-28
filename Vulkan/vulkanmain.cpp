@@ -18,6 +18,7 @@
 #include <render/Instance.h>
 #include <render/Specialization.h>
 
+#include "utf.h"
 
 Logger g_logger ( "main" );
 
@@ -88,6 +89,7 @@ struct Camera {
 	}
 	void zoom ( float zoom ) {
 		view_vector *= std::pow ( 1.1f, zoom );
+		if(glm::length(view_vector) < 1.0f) view_vector = glm::normalize(view_vector);
 	}
 	glm::mat4 v2s_mat() {
 		return glm::infinitePerspective ( fov, aspect, near );
@@ -100,23 +102,24 @@ struct Camera {
 	}
 };
 
+struct KeyState {
+	bool pressed = false;
+	u64 time_pressed = 0;
+};
+
 struct GameState {
-	bool m1_pressed = false;
-	bool m2_pressed = false;
-	bool m3_pressed = false;
+	KeyState basic_keystates[(u32)KeyCode::eMax];
+	Map<u32, KeyState> utf32_keystates;
+	Map<u32, KeyState> keystates;
 	
-	bool w_pressed = false;
-	bool a_pressed = false;
-	bool s_pressed = false;
-	bool d_pressed = false;
-	bool space_pressed = false;
-	bool l_cntrl_pressed = false;
-	
+	u64 current_timestamp = 0;
+	u64 delta_time = 0;
 	
 	bool slowmotion = false;
 	
 	Camera camera;
-} g_state;
+};
+GameState g_state;
 
 int main ( int argc, char **argv ) {
 
@@ -210,14 +213,14 @@ int main ( int argc, char **argv ) {
 		newinstance->load_generic_model ( cube, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 
-
-	Image* skybox_teximage = newinstance->create_texture ( 4096, 4096, 0, 6, 1 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeZ.png", skybox_teximage, 3, 0 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeY.png", skybox_teximage, 4, 0 );
-	newinstance->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeX.png", skybox_teximage, 5, 0 );
+	ResourceManager* resource_manager = newinstance->resource_manager();
+	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeZ.png", skybox_teximage, 3, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeY.png", skybox_teximage, 4, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeX.png", skybox_teximage, 5, 0 );
 
 	std::vector<SimpleVertex> vvv;
 	std::vector<u32> iiii;
@@ -369,7 +372,7 @@ int main ( int argc, char **argv ) {
 	contextgroup->set_context ( camera_matrix );
 
 	Context x_context = newinstance->create_context ( tex_simplemodel_context_base_id );
-	Image* x_teximage = newinstance->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
+	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
 	newinstance->update_context_image ( x_context, 0, x_teximage );
 	newinstance->set_context ( x_models[0], x_context );
 	newinstance->set_context ( x_models[1], x_context );
@@ -385,9 +388,9 @@ int main ( int argc, char **argv ) {
 	Context tie_body_context = newinstance->create_context ( tex_simplemodel_context_base_id );
 	Context tie_arm_context = newinstance->create_context ( tex_simplemodel_context_base_id );
 	Context tie_wing_context = newinstance->create_context ( tex_simplemodel_context_base_id );
-	Image* tie_body_teximage = newinstance->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_1k.png", 4 );
-	Image* tie_arm_teximage = newinstance->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
-	Image* tie_wing_teximage = newinstance->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
+	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_1k.png", 4 );
+	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
+	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
 	newinstance->update_context_image ( tie_body_context, 0, tie_body_teximage );
 	newinstance->update_context_image ( tie_arm_context, 0, tie_arm_teximage );
 	newinstance->update_context_image ( tie_wing_context, 0, tie_wing_teximage );
@@ -400,7 +403,7 @@ int main ( int argc, char **argv ) {
 
 	Context gallofree_context = newinstance->create_context ( tex_simplemodel_context_base_id );
 	Context flat_gallofree_context = newinstance->create_context ( flat_simplemodel_context_base_id );
-	Image* gallofree_teximage = newinstance->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
+	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
 	newinstance->update_context_image ( gallofree_context, 0, gallofree_teximage );
 
@@ -448,50 +451,52 @@ int main ( int argc, char **argv ) {
 		g_state.camera.aspect = x / y;
 	};
 	window->on_mouse_moved = [] ( Window * window, double x, double y, double delta_x, double delta_y ) {
-		if ( g_state.m1_pressed ) {
+		if ( g_state.basic_keystates[(u32)KeyCode::eMouseLeft].pressed ) {
 			g_state.camera.turn ( delta_y / 1000.0, delta_x / 1000.0 );
 		}
 	};
 	window->on_scroll = [] ( Window * window, double delta_x, double delta_y ) {
 		g_state.camera.zoom ( -delta_y );
 	};
-	window->on_mouse_press = [] ( Window * window, u32 button, PressAction pressed, u32 mods ) {
-		if ( button == 0 ) {
-			g_state.m1_pressed = pressed == PressAction::ePress;
+	window->on_mouse_press = [] ( Window * window, KeyCode button, PressAction pressed, u32 mods ) {
+		bool ispressed = pressed != PressAction::eRelease;
+		if(button != KeyCode::eUnknown) {
+			KeyState& keystate = g_state.basic_keystates[(u32)button];
+			keystate.pressed = ispressed;
+			keystate.time_pressed = g_state.current_timestamp;
 		}
 	};
-	window->on_button_press = [] ( Window * window, u32 button, u32 keycode, PressAction pressed, u32 mods ) {
-		switch ( button ) {
-		case 65://A
-			g_state.a_pressed = pressed != PressAction::eRelease;
-			break;
-		case 68://D
-			g_state.d_pressed = pressed != PressAction::eRelease;
-			break;
-		case 83://S
-			g_state.s_pressed = pressed != PressAction::eRelease;
-			break;
-		case 87://W
-			g_state.w_pressed = pressed != PressAction::eRelease;
-			break;
-		case 32://Space
-			g_state.space_pressed = pressed != PressAction::eRelease;
-			break;
-		case 341://left control
-			g_state.l_cntrl_pressed = pressed != PressAction::eRelease;
-			break;
+	window->on_button_press = [] ( Window * window, KeyCode button, u32 scancode, const char* text, PressAction pressed, u32 mods ) {
+		bool ispressed = pressed != PressAction::eRelease;
+		if(button == KeyCode::eF10 && pressed == PressAction::ePress) {
+			window->maximized() = !window->maximized();
+			window->update();
 		}
+		if(button != KeyCode::eUnknown) {
+			KeyState& keystate = g_state.basic_keystates[(u32)button];
+			keystate.pressed = ispressed;
+			keystate.time_pressed = g_state.current_timestamp;
+		}
+		if(text) {
+			KeyState& keystate = g_state.utf32_keystates[(u32)button];
+			keystate.pressed = ispressed;
+			keystate.time_pressed = g_state.current_timestamp;
+		}
+		KeyState& keystate = g_state.keystates[(u32)button];
+		keystate.pressed = ispressed;
+		keystate.time_pressed = g_state.current_timestamp;
+		
 	};
 
 	Extent2D<s32> window_size ( 1000, 600 );
-	*window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
-	*window->size() = window_size;
-	*window->visible() = true;
+	window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
+	window->size() = window_size;
+	window->visible() = true;
 
 	window->update();
 	//*window->position() = {100, 100};
 	//*window->size() = {800, 800};
-	*window->cursor_mode() = CursorMode::eInvisible;
+	window->cursor_mode() = CursorMode::eInvisible;
 
 	Image* windowimage = window->backed_image();
 
@@ -573,7 +578,9 @@ int main ( int argc, char **argv ) {
 		last = current;
 		current = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
-		g_logger.log<LogLevel::eInfo> ( "%dns elapsed", ns );
+		g_state.current_timestamp = current.time_since_epoch().count();
+		g_state.delta_time = ns.count();
+		g_logger.log<LogLevel::eInfo> ( "Time %" PRId64 " %" PRId64 "ns elapsed", current.time_since_epoch().count(), ns.count() );
 		
 		double delta = ns.count();
 		delta /= 1000000000.0;
@@ -599,13 +606,13 @@ int main ( int argc, char **argv ) {
 		
 		glm::vec3 move_vec(0.0f, 0.0f, 0.0f);
 		
-		if(g_state.a_pressed) move_vec.x -= camera_move_factor;
-		if(g_state.d_pressed) move_vec.x += camera_move_factor;
-		if(g_state.s_pressed) move_vec.z -= camera_move_factor;
-		if(g_state.w_pressed) move_vec.z += camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eA].pressed) move_vec.x -= camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eD].pressed) move_vec.x += camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eS].pressed) move_vec.z -= camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eW].pressed) move_vec.z += camera_move_factor;
 		
-		if(g_state.space_pressed) move_vec.y += camera_move_factor;
-		if(g_state.l_cntrl_pressed) move_vec.y -= camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eSpace].pressed) move_vec.y += camera_move_factor;
+		if(g_state.basic_keystates[(u32)KeyCode::eLCntrl].pressed) move_vec.y -= camera_move_factor;
 		
 		g_state.camera.move ( move_vec );
 		

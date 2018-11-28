@@ -41,10 +41,6 @@ struct Instance {
 	virtual ResourceManager* resource_manager() = 0;
 //------------ Resources
 
-	virtual Image* create_texture (u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers) = 0;
-	virtual Image* load_image_to_texture(std::string file, Image* image, u32 array_layer, u32 mipmap_layer) = 0;
-	virtual Image* load_image_to_texture(std::string file, u32 mipmap_layers) = 0;
-
 	virtual void set_context (Model& model, Context& context) = 0;
 
 	IdArray<ContextBase> contextbase_store;

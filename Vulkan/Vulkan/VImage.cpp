@@ -299,7 +299,6 @@ VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :
 VBaseImage::~VBaseImage() {
 	v_instance->m_resource_manager->v_delete_dependant_images ( this );
 	destroy();
-	v_instance->v_images.remove ( id );
 }
 void VBaseImage::v_set_format ( vk::Format format ) {
 	v_format = format;

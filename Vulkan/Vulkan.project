@@ -17,6 +17,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="utf.cpp"/>
+    <File Name="utf.h"/>
     <File Name="AModel.cpp"/>
     <File Name="AModel.h"/>
     <File Name="Quads.h"/>

@@ -370,6 +370,14 @@ VInstance::VInstance() {
 
 VInstance::~VInstance() {
 	wait_for_frame ( frame_index );
+	while (!ready_staging_buffer_queue.empty()) {
+		delete ready_staging_buffer_queue.front();
+		ready_staging_buffer_queue.pop();
+	}
+	while (!free_staging_buffer_queue.empty()) {
+		delete free_staging_buffer_queue.front().second;
+		free_staging_buffer_queue.pop();
+	}
 	for ( auto& ele : v_model_map ) {
 		for ( VModel* model : ele.second ) {
 			if ( model ) delete model;
@@ -402,9 +410,6 @@ VInstance::~VInstance() {
 	delete context_bufferstorage;
 	vk_device().destroyCommandPool ( transfer_commandpool );
 
-	for ( VBaseImage* image : v_images ) {
-		if ( image && !image->dependent ) delete image;
-	}
 
 	m_device.destroy ( nullptr );
 
@@ -597,7 +602,7 @@ void VInstance::process_events() {
 }
 bool VInstance::is_window_open() {
 	for ( Window* window : windows ) {
-		if ( window->visible()->value )
+		if ( (bool) window->visible() )
 			return true;
 	}
 	return false;
@@ -704,90 +709,6 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 }
 RenderBundle* VInstance::create_main_bundle ( InstanceGroup* igroup, ContextGroup* cgroup ) {
 	return new VMainBundle ( this, igroup, cgroup );
-}
-Image* VInstance::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) {
-	return v_images.insert ( new VBaseImage ( this, width, height, depth, array_layers, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
-	                         vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
-	                         vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal) );
-}
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-Image* VInstance::load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) {
-	VBaseImage* v_image = static_cast<VBaseImage*> ( image );
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-	if ( !pixels ) {
-		throw std::runtime_error ( "failed to load texture image!" );
-	}
-	VThinBuffer buffer = request_staging_buffer ( imageSize );
-	memcpy ( buffer.mapped_ptr, pixels, imageSize );
-	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
-	free_transfer_command_buffer ( cmdbuffer );
-	vk::CommandBufferBeginInfo begininfo (vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-	
-	cmdbuffer.begin ( begininfo );
-	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
-	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
-
-	cmdbuffer.end();
-
-	vk::SubmitInfo submitinfos[1] = {
-		vk::SubmitInfo (
-		    0, nullptr, //waitSem
-		    nullptr,
-		    1, &cmdbuffer,//commandbuffers
-		    0, nullptr//signalSem
-		)
-	};
-	queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
-
-	stbi_image_free ( pixels );
-	return image;
-}
-Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) {
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-	if ( !pixels ) {
-		throw std::runtime_error ( "failed to load texture image!" );
-	}
-	VBaseImage* v_image = v_images.insert ( new VBaseImage ( this, texWidth, texHeight, 0, 1, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
-	                                        vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, vk::ImageAspectFlagBits::eColor,
-	                                        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
-	                                                       ) );
-
-	VThinBuffer buffer = request_staging_buffer ( imageSize );
-	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
-	free_transfer_command_buffer ( cmdbuffer );
-
-	memcpy ( buffer.mapped_ptr, pixels, imageSize );
-	vk::CommandBufferBeginInfo begininfo = {
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
-	};
-
-	cmdbuffer.begin ( begininfo );
-	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
-	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
-	//v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
-	cmdbuffer.end();
-
-	vk::SubmitInfo submitinfos[1] = {
-		vk::SubmitInfo (
-		    0, nullptr, //waitSem
-		    nullptr,
-		    1, &cmdbuffer,//commandbuffers
-		    0, nullptr//signalSem
-		)
-	};
-	queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
-
-	stbi_image_free ( pixels );
-	return v_image;
 }
 
 void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {

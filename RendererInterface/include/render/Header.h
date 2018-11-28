@@ -193,7 +193,7 @@ struct ChangeableValue {
 		return this->wanted;
 	}
 
-	explicit operator T() const {
+	operator T() const {
 		return value;
 	}
 	inline bool changed() const {
