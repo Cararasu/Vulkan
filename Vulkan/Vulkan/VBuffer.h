@@ -6,7 +6,7 @@
 struct VInstance;
 struct VSimpleTransferJob;
 
-struct VBuffer : public Buffer {
+struct VBuffer {
 	VInstance* v_instance;
 	GPUMemory memory;
 	vk::Buffer buffer;
@@ -30,5 +30,36 @@ struct VBuffer : public Buffer {
 
 	void destroy();
 };
+struct VThinBuffer {
+	VInstance* v_instance = nullptr;
+	vk::Buffer buffer;
+	vk::DeviceSize size = 0;
 
-void transfer_buffer_data ( VSimpleTransferJob& job, vk::CommandBuffer commandBuffer );
+	void* mapped_ptr = nullptr;
+
+	VThinBuffer ( ) {}
+	VThinBuffer ( VInstance* instance, vk::Buffer buffer, vk::DeviceSize size, void* mapped_ptr);
+	~VThinBuffer();
+};
+struct VDividableMemory {
+	GPUMemory memory;
+	u64 offset;
+	void* mapped_ptr = nullptr;
+};
+constexpr u64 MAX_MEMORY_CUNK_SIZE = 128 * 1024;
+struct VDividableBufferStore {
+	VInstance* v_instance;
+	DynArray<VDividableMemory> memory_chunks;
+	DynArray<vk::Buffer> buffers;
+	vk::BufferUsageFlags usage;
+	vk::MemoryPropertyFlags needed;
+	vk::MemoryPropertyFlags recommended;
+
+	VDividableBufferStore ( VInstance* v_instance, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
+	~VDividableBufferStore();
+
+	VThinBuffer acquire_buffer(u64 size);
+	void free_buffers();
+
+	void destroy();
+};

@@ -268,9 +268,12 @@ void VWindow::prepare_frame() {
 
 	FrameLocalData* data = current_framelocal_data();
 	v_instance->wait_for_frame ( data->frame_index );
+	
 	//reset for frame
 	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
+
+	//TODO reset all needed command_buffers
 }
 Image* VWindow::backed_image () {
 	return present_image;

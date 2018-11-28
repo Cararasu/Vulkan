@@ -10,7 +10,7 @@ struct VInstance;
 struct VTransientBufferStorage {
 
 	VBuffer buffer;
-	VBuffer* staging_buffer = nullptr;
+	VThinBuffer staging_buffer;
 
 	u64 max_offset;
 	u64 needed_size;
@@ -39,7 +39,7 @@ struct Chunk {
 struct VUpdateableBufferStorage {
 	VInstance* v_instance;
 	vk::BufferUsageFlags usageflags;
-	DynArray<std::pair<VBuffer*, VBuffer*>> buffers;
+	DynArray<std::pair<VBuffer*, VThinBuffer>> buffers;
 	DynArray<Chunk> freelist;
 
 	VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags );
@@ -48,7 +48,7 @@ struct VUpdateableBufferStorage {
 	Chunk allocate_chunk ( u64 size );
 	VBuffer* get_buffer ( u64 index );
 	void fetch_transferbuffers();
-	std::pair<VBuffer*, VBuffer*> get_buffer_pair ( u64 index );
+	std::pair<VBuffer*, VThinBuffer> get_buffer_pair ( u64 index );
 	void free_transferbuffers(u64 frame_index);
 	void free_chunk ( Chunk chunk );
 };

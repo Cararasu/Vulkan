@@ -67,9 +67,6 @@ struct Image : public Resource {
 	}
 	virtual ~Image() {}
 };
-struct Buffer {
-
-};
 
 enum class ShaderType {
 	eVertex,

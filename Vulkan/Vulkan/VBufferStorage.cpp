@@ -3,12 +3,13 @@
 
 VTransientBufferStorage::VTransientBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
 	buffer ( instance ),
+	staging_buffer(),
 	needed_size ( 0 ),
 	changed ( true ) {
 	buffer.usage = usageflags;
 }
 VTransientBufferStorage::~VTransientBufferStorage () {
-	if ( staging_buffer ) buffer.v_instance->free_staging_buffer ( staging_buffer );
+	
 }
 u64 VTransientBufferStorage::allocate_chunk ( u64 size ) {
 	u64 t = max_offset;
@@ -35,14 +36,11 @@ void* VTransientBufferStorage::allocate_transfer_buffer ( ) {
 	}
 
 	staging_buffer = buffer.v_instance->request_staging_buffer ( needed_size );
-	staging_buffer->map_mem();
-	return staging_buffer->mapped_ptr;
+	return staging_buffer.mapped_ptr;
 }
 vk::Semaphore VTransientBufferStorage::transfer_data ( vk::CommandBuffer commandbuffer ) {
 	vk::BufferCopy buffercopy ( 0, 0, buffer.size );
-	commandbuffer.copyBuffer ( staging_buffer->buffer, buffer.buffer, 1, &buffercopy );
-	buffer.v_instance->free_staging_buffer ( staging_buffer );
-	staging_buffer = nullptr;
+	commandbuffer.copyBuffer ( staging_buffer.buffer, buffer.buffer, 1, &buffercopy );
 	changed = false;
 	return vk::Semaphore();
 }
@@ -55,21 +53,19 @@ DynArray<VBuffer*> buffers;
 DynArray<Chunk> freelist;
 VUpdateableBufferStorage::VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
 	v_instance ( instance ), usageflags ( usageflags ),
-	buffers ( { std::make_pair(new VBuffer ( instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) } ),
+	buffers ( { std::make_pair(new VBuffer ( instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer())} ),
 	freelist ( {{ 0, 0, UNIFORM_BUFFER_SIZE}} ) {
 
 }
 VUpdateableBufferStorage::~VUpdateableBufferStorage ( ) {
-	for ( std::pair<VBuffer*, VBuffer*> p : buffers ) {
+	for ( std::pair<VBuffer*, VThinBuffer> p : buffers ) {
 		delete p.first;
 	}
 }
 
 Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 	u64 alignment = v_instance->v_device->vkPhysDevProps.limits.minUniformBufferOffsetAlignment;
-	if (size % alignment != 0){
-		size += alignment - (size % alignment);
-	}
+	size = (((size - 1) / alignment) + 1) * alignment;
 	for ( auto it = freelist.begin(); it != freelist.end(); it++ ) {//first check exact matches
 		if ( it->size == size ) {
 			Chunk c = *it;
@@ -88,11 +84,11 @@ Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 		}
 	}
 	if ( size >= UNIFORM_BUFFER_SIZE ) {
-		buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) );
+		buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
 		v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 		return {buffers.size() - 1, 0, size};
 	}
-	buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), nullptr) );
+	buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
 	freelist.push_back ( {buffers.size() - 1, size, UNIFORM_BUFFER_SIZE - size} );
 	v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 	return {buffers.size() - 1, 0, size};
@@ -101,17 +97,16 @@ VBuffer* VUpdateableBufferStorage::get_buffer ( u64 index ) {
 	return buffers[index].first;
 }
 void VUpdateableBufferStorage::fetch_transferbuffers() {
-	for(std::pair<VBuffer*, VBuffer*>& p : buffers) {
+	for(std::pair<VBuffer*, VThinBuffer>& p : buffers) {
 		p.second = v_instance->request_staging_buffer(p.first->size);
 	}
 }
 void VUpdateableBufferStorage::free_transferbuffers(u64 frame_index) {
-	for(std::pair<VBuffer*, VBuffer*>& p : buffers) {
-		v_instance->free_staging_buffer(p.second);
-		p.second = nullptr;
+	for(std::pair<VBuffer*, VThinBuffer>& p : buffers) {
+		p.second = VThinBuffer();
 	}
 }
-std::pair<VBuffer*, VBuffer*> VUpdateableBufferStorage::get_buffer_pair ( u64 index ) {
+std::pair<VBuffer*, VThinBuffer> VUpdateableBufferStorage::get_buffer_pair ( u64 index ) {
 	return buffers[index];
 }
 void VUpdateableBufferStorage::free_chunk ( Chunk chunk ) {

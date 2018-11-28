@@ -60,7 +60,8 @@ struct VInstanceGroup;
 struct VResourceManager;
 
 struct VSimpleTransferJob {
-	VBuffer* source_buffer, *target_buffer;
+	VThinBuffer source_buffer;
+	VBuffer *target_buffer;
 	vk::BufferCopy sections;
 };
 
@@ -147,10 +148,11 @@ struct VInstance : public Instance {
 
 //------------ Transfer Data
 //TODO move to seperate Transfer-Object which wraps all this in one logical unit
-	std::queue<std::pair<u64, VBuffer*>> free_staging_buffer_queue;
+	std::queue<std::pair<u64, VDividableBufferStore*>> free_staging_buffer_queue;
+	std::queue<VDividableBufferStore*> ready_staging_buffer_queue;
+	VDividableBufferStore* current_staging_buffer_store = nullptr;
 
-	void free_staging_buffer ( VBuffer* buffer );
-	VBuffer* request_staging_buffer ( u64 size );
+	VThinBuffer request_staging_buffer ( u64 size );
 
 	DynArray<vk::Fence> free_fences;
 	std::queue<std::pair<u64, vk::Fence>> free_fence_queue;

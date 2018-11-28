@@ -679,10 +679,8 @@ Image* VInstance::load_image_to_texture ( std::string file, Image* image, u32 ar
 	if ( !pixels ) {
 		throw std::runtime_error ( "failed to load texture image!" );
 	}
-	VBuffer* buffer = request_staging_buffer ( imageSize );
-	buffer->map_mem();
-	memcpy ( buffer->mapped_ptr, pixels, imageSize );
-	free_staging_buffer ( buffer );
+	VThinBuffer buffer = request_staging_buffer ( imageSize );
+	memcpy ( buffer.mapped_ptr, pixels, imageSize );
 	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
 	free_transfer_command_buffer ( cmdbuffer );
 	vk::CommandBufferBeginInfo begininfo = {
@@ -692,7 +690,7 @@ Image* VInstance::load_image_to_texture ( std::string file, Image* image, u32 ar
 	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
 
 	cmdbuffer.end();
 
@@ -722,13 +720,11 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 	                                        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal
 	                                                       ) );
 
-	VBuffer* buffer = request_staging_buffer ( imageSize );
-	free_staging_buffer ( buffer );
+	VThinBuffer buffer = request_staging_buffer ( imageSize );
 	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
 	free_transfer_command_buffer ( cmdbuffer );
 
-	buffer->map_mem();
-	memcpy ( buffer->mapped_ptr, pixels, imageSize );
+	memcpy ( buffer.mapped_ptr, pixels, imageSize );
 	vk::CommandBufferBeginInfo begininfo = {
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
 	};
@@ -736,7 +732,7 @@ Image* VInstance::load_image_to_texture ( std::string file, u32 mipmap_layers ) 
 	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer->buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
 	//v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
 	cmdbuffer.end();
 
@@ -774,12 +770,10 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
 
-	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
+	VThinBuffer staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
 
-	staging_buffer->map_mem();
-
-	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
-	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
+	memcpy ( staging_buffer.mapped_ptr, vertices, vertexbuffersize );
+	memcpy ( staging_buffer.mapped_ptr + vertexbuffersize, indices, indexbuffersize );
 
 	Array<VSimpleTransferJob> jobs = {
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
@@ -787,7 +781,6 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 	};
 	//TODO make asynch
 	transfer_data ( jobs );
-	free_staging_buffer ( staging_buffer );
 }
 void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u32* indices, u32 indexcount ) {
 	const ModelBase* modelbase_ptr = modelbase ( model.modelbase_id );
@@ -809,22 +802,17 @@ void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcou
 	                             vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
 	                             vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal );
 
-	VBuffer* staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
+	VThinBuffer staging_buffer = request_staging_buffer ( vertexbuffersize + indexbuffersize );
 
-	staging_buffer->map_mem();
+	memcpy ( staging_buffer.mapped_ptr, vertices, vertexbuffersize );
+	memcpy ( staging_buffer.mapped_ptr + vertexbuffersize, indices, indexbuffersize );
 
-	memcpy ( staging_buffer->mapped_ptr, vertices, vertexbuffersize );
-	memcpy ( staging_buffer->mapped_ptr + vertexbuffersize, indices, indexbuffersize );
-
-	staging_buffer->unmap_mem();
 	Array<VSimpleTransferJob> jobs = {
 		{staging_buffer, &newmodel->vertexbuffer, {0, 0, vertexbuffersize}},
 		{staging_buffer, &newmodel->indexbuffer, {vertexbuffersize, 0, indexbuffersize}}
 	};
 	//TODO make asynch
 	transfer_data ( jobs );
-
-	free_staging_buffer ( staging_buffer );
 }
 void VInstance::unload_model ( ModelId modelbase_id ) {
 
@@ -942,7 +930,6 @@ void VInstance::delete_command_buffer ( vk::CommandPool commandPool, vk::Command
 u32 VInstance::find_memory_type ( u32 typeFilter, vk::MemoryPropertyFlags properties ) {
 	vk::PhysicalDeviceMemoryProperties memProperties;
 	v_device->physical_device.getMemoryProperties ( &memProperties );
-
 	for ( u32 i = 0; i < memProperties.memoryTypeCount; i++ ) {
 		if ( ( typeFilter & ( 1 << i ) ) && ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties ) {
 			return i;

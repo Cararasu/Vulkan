@@ -3,19 +3,17 @@
 #include <limits>
 
 
-VBuffer* VInstance::request_staging_buffer ( u64 size ) {
-	//TODO cache staging buffers
-	VBuffer* buff = new VBuffer (
-	           this,
-	           size,
-	           vk::BufferUsageFlagBits::eTransferSrc,
-	           vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
-	buff->map_mem();
-	return buff;
-}
-void VInstance::free_staging_buffer ( VBuffer* buffer ) {
-	v_logger.log<LogLevel::eDebug> ( "Freeing staging buffer 0x%" PRIx64, buffer->buffer );
-	free_staging_buffer_queue.push ( std::make_pair ( frame_index, buffer ) );
+VThinBuffer VInstance::request_staging_buffer ( u64 size ) {
+	if ( !current_staging_buffer_store ) {
+		if ( ready_staging_buffer_queue.size() == 0 ) {
+			current_staging_buffer_store = new VDividableBufferStore ( this, vk::BufferUsageFlagBits::eTransferSrc,
+			        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
+		} else {
+			current_staging_buffer_store = ready_staging_buffer_queue.front();
+			ready_staging_buffer_queue.pop();
+		}
+	}
+	return current_staging_buffer_store->acquire_buffer ( size );
 }
 vk::Fence VInstance::request_fence () {
 	if ( free_fences.size() != 0 ) {
@@ -66,7 +64,7 @@ vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs )
 	cmdbuffer.begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlags() | vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
 
 	for ( VSimpleTransferJob& transfer_job : jobs ) {
-		cmdbuffer.copyBuffer ( transfer_job.source_buffer->buffer, transfer_job.target_buffer->buffer, 1, &transfer_job.sections );
+		cmdbuffer.copyBuffer ( transfer_job.source_buffer.buffer, transfer_job.target_buffer->buffer, 1, &transfer_job.sections );
 	}
 	cmdbuffer.end();
 	QueueWrapper* queue_wrapper_ptr = queue_wrapper();
@@ -100,8 +98,11 @@ void VInstance::transfer_data ( Array<VSimpleTransferJob>& jobs ) {
 void VInstance::wait_for_frame ( u64 frame_index ) {
 	v_logger.log<LogLevel::eInfo> ( "Waiting for Frame %" PRId64, frame_index );
 	//TODO "... < frame_index" -> "... <= frame_index"
+	free_staging_buffer_queue.push(std::make_pair(this->frame_index, current_staging_buffer_store));
+	current_staging_buffer_store = nullptr;
 	while ( !free_staging_buffer_queue.empty() && free_staging_buffer_queue.front().first < frame_index ) {
-		delete free_staging_buffer_queue.front().second;
+		free_staging_buffer_queue.front().second->free_buffers();
+		ready_staging_buffer_queue.push(free_staging_buffer_queue.front().second);
 		free_staging_buffer_queue.pop();
 	}
 	while ( !free_fence_queue.empty() && free_fence_queue.front().first < frame_index ) {

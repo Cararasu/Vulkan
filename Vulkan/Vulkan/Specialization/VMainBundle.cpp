@@ -856,14 +856,14 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 						if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
 					}
 					if(v_context->data) {
-						VBuffer* staging = bufferstorage->get_buffer_pair(v_context->buffer_chunk.index).second;
-						memcpy ( staging->mapped_ptr + v_context->buffer_chunk.offset, v_context->data, v_context->buffer_chunk.size );
+						VThinBuffer staging = bufferstorage->get_buffer_pair(v_context->buffer_chunk.index).second;
+						memcpy ( staging.mapped_ptr + v_context->buffer_chunk.offset, v_context->data, v_context->buffer_chunk.size );
 					}
 				}
 			}
-			for(std::pair<VBuffer*, VBuffer*> p : bufferstorage->buffers) {
+			for(std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers) {
 				vk::BufferCopy buffercopy ( 0, 0, p.first->size );
-				data.command.buffer.copyBuffer ( p.second->buffer, p.first->buffer, 1, &buffercopy );
+				data.command.buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
 			}
 			bufferstorage->free_transferbuffers ( v_instance->frame_index );
 			
