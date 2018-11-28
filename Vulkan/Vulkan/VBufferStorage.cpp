@@ -70,7 +70,7 @@ Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 		if ( it->size == size ) {
 			Chunk c = *it;
 			freelist.erase ( it );
-			v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
 			return c;
 		}
 	}
@@ -79,18 +79,18 @@ Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 			Chunk c = *it;
 			c.size = size;
 			it->offset += size;
-			v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
 			return c;
 		}
 	}
 	if ( size >= UNIFORM_BUFFER_SIZE ) {
 		buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
-		v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+		v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 		return {buffers.size() - 1, 0, size};
 	}
 	buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
 	freelist.push_back ( {buffers.size() - 1, size, UNIFORM_BUFFER_SIZE - size} );
-	v_logger.log<LogLevel::eInfo> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+	v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 	return {buffers.size() - 1, 0, size};
 }
 VBuffer* VUpdateableBufferStorage::get_buffer ( u64 index ) {

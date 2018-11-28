@@ -161,14 +161,39 @@ VMonitor::~VMonitor() {
 VideoMode VMonitor::current_mode() {
 	return glfw_to_videomode ( *glfwGetVideoMode ( this->monitor ) );
 }
-VkBool32 VKAPI_PTR debugLogger (
-    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-    u64 object, size_t location, int32_t messageCode,
-    const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
-	v_logger.log<LogLevel::eInfo> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
-	return VK_TRUE;
-}
 #ifndef NDEBUG
+	VkBool32 VKAPI_PTR debugLogger (
+		VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+		u64 object, size_t location, int32_t messageCode,
+		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
+		
+		v_logger.log<LogLevel::eTrace> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		return VK_TRUE;
+	}
+	VkBool32 VKAPI_PTR infoLogger (
+		VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+		u64 object, size_t location, int32_t messageCode,
+		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
+		
+		v_logger.log<LogLevel::eDebug> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		return VK_TRUE;
+	}
+	VkBool32 VKAPI_PTR errorLogger (
+		VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+		u64 object, size_t location, int32_t messageCode,
+		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
+		
+		v_logger.log<LogLevel::eError> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		return VK_TRUE;
+	}
+	VkBool32 VKAPI_PTR warnLogger (
+		VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
+		u64 object, size_t location, int32_t messageCode,
+		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
+		
+		v_logger.log<LogLevel::eWarn> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		return VK_TRUE;
+	}
 	PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
 	PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
 #endif
@@ -243,15 +268,30 @@ VInstance::VInstance() {
 #ifndef NDEBUG
 	pfn_vkCreateDebugReportCallbackEXT = ( PFN_vkCreateDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( v_instance, "vkCreateDebugReportCallbackEXT" );
 	pfn_vkDestroyDebugReportCallbackEXT = ( PFN_vkDestroyDebugReportCallbackEXT ) glfwGetInstanceProcAddress ( v_instance, "vkDestroyDebugReportCallbackEXT" );
-
+	
 	vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo (
 	    vk::DebugReportFlagsEXT (
-	        //vk::DebugReportFlagBitsEXT::eInformation |
-	        vk::DebugReportFlagBitsEXT::eWarning |
-	        vk::DebugReportFlagBitsEXT::ePerformanceWarning |
-	        vk::DebugReportFlagBitsEXT::eError |
-	        vk::DebugReportFlagBitsEXT::eDebug ),
+	        vk::DebugReportFlagBitsEXT::ePerformanceWarning | 
+			vk::DebugReportFlagBitsEXT::eDebug ),
 	    &debugLogger,
+	    nullptr
+	);
+	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
+	debugReportCallbackCreateInfo = vk::DebugReportCallbackCreateInfoEXT(
+	    vk::DebugReportFlagsEXT ( vk::DebugReportFlagBitsEXT::eInformation),
+	    &infoLogger,
+	    nullptr
+	);
+	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
+	debugReportCallbackCreateInfo = vk::DebugReportCallbackCreateInfoEXT(
+	    vk::DebugReportFlagsEXT ( vk::DebugReportFlagBitsEXT::eWarning ),
+	    &warnLogger,
+	    nullptr
+	);
+	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
+	debugReportCallbackCreateInfo = vk::DebugReportCallbackCreateInfoEXT(
+	    vk::DebugReportFlagsEXT ( vk::DebugReportFlagBitsEXT::eError ),
+	    &errorLogger,
 	    nullptr
 	);
 	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
@@ -278,13 +318,15 @@ VInstance::VInstance() {
 		vk::PhysicalDeviceMemoryProperties memProperties;
 		vulkan_device->physical_device.getMemoryProperties ( &memProperties );
 
-		for ( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ ) {
-			v_logger.log<LogLevel::eDebug>  ( "Memory %d", i );
-			v_logger.log<LogLevel::eDebug> ( "\tHeap Index %d %s", memProperties.memoryTypes[i].heapIndex, to_string ( memProperties.memoryTypes[i].propertyFlags ).c_str() );
-		}
-		for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
-			v_logger.log<LogLevel::eDebug> ( "Heap %d", i );
-			v_logger.log<LogLevel::eDebug> ( "\tSize %" PRIu64 " %s", memProperties.memoryHeaps[i].size, to_string ( memProperties.memoryHeaps[i].flags ).c_str() );
+		if(v_logger.level == LogLevel::eDebug) {
+			for ( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ ) {
+				v_logger.log<LogLevel::eDebug>  ( "Memory %d", i );
+				v_logger.log<LogLevel::eDebug> ( "\tHeap Index %d %s", memProperties.memoryTypes[i].heapIndex, to_string ( memProperties.memoryTypes[i].propertyFlags ).c_str() );
+			}
+			for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
+				v_logger.log<LogLevel::eDebug> ( "Heap %d", i );
+				v_logger.log<LogLevel::eDebug> ( "\tSize %" PRIu64 " %s", memProperties.memoryHeaps[i].size, to_string ( memProperties.memoryHeaps[i].flags ).c_str() );
+			}
 		}
 
 
@@ -683,10 +725,8 @@ Image* VInstance::load_image_to_texture ( std::string file, Image* image, u32 ar
 	memcpy ( buffer.mapped_ptr, pixels, imageSize );
 	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer();
 	free_transfer_command_buffer ( cmdbuffer );
-	vk::CommandBufferBeginInfo begininfo = {
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
-	};
-
+	vk::CommandBufferBeginInfo begininfo (vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	
 	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );

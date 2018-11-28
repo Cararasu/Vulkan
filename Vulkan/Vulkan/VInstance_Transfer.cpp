@@ -5,7 +5,7 @@
 
 VThinBuffer VInstance::request_staging_buffer ( u64 size ) {
 	if ( !current_staging_buffer_store ) {
-		if ( ready_staging_buffer_queue.size() == 0 ) {
+		if ( ready_staging_buffer_queue.empty() ) {
 			current_staging_buffer_store = new VDividableBufferStore ( this, vk::BufferUsageFlagBits::eTransferSrc,
 			        vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent );
 		} else {
@@ -102,7 +102,11 @@ void VInstance::wait_for_frame ( u64 frame_index ) {
 	current_staging_buffer_store = nullptr;
 	while ( !free_staging_buffer_queue.empty() && free_staging_buffer_queue.front().first < frame_index ) {
 		free_staging_buffer_queue.front().second->free_buffers();
-		ready_staging_buffer_queue.push(free_staging_buffer_queue.front().second);
+		if(current_staging_buffer_store) {
+			current_staging_buffer_store = free_staging_buffer_queue.front().second;
+		}else{
+			ready_staging_buffer_queue.push(free_staging_buffer_queue.front().second);
+		}
 		free_staging_buffer_queue.pop();
 	}
 	while ( !free_fence_queue.empty() && free_fence_queue.front().first < frame_index ) {

@@ -50,6 +50,7 @@ constexpr u64 MAX_MEMORY_CUNK_SIZE = 128 * 1024;
 struct VDividableBufferStore {
 	VInstance* v_instance;
 	DynArray<VDividableMemory> memory_chunks;
+	DynArray<VDividableMemory> special_memory_chunks;
 	DynArray<vk::Buffer> buffers;
 	vk::BufferUsageFlags usage;
 	vk::MemoryPropertyFlags needed;
