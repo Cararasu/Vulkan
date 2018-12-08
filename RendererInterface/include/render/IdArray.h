@@ -34,6 +34,20 @@ struct IdArray {
 		this->list.insert ( list.begin(), list.end(), this->list.begin() );
 	}
 
+	RId insert ( const T&& ele ) {
+		for ( size_t i = 0; i < list.size(); i++ ) {
+			if ( !list[i].id ) {
+				u32 id = OFFSET + i + 1;
+				list[i] = std::move(ele);
+				list[i].id = id;
+				return id;
+			}
+		}
+		u32 id = OFFSET + list.size() + 1;
+		list.push_back ( std::move(ele) );
+		list.back().id = id;
+		return id;
+	}
 	RId insert ( T& ele ) {
 		for ( size_t i = 0; i < list.size(); i++ ) {
 			if ( !list[i].id ) {

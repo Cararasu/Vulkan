@@ -9,12 +9,14 @@ ContextBaseId flat_simplemodel_context_base_id;
 ContextBaseId skybox_context_base_id;
 
 ModelBaseId simple_modelbase_id;
-ModelBaseId shot_modelbase_id;
+ModelBaseId dot_modelbase_id;
 
 InstanceBaseId textured_instance_base_id;
 InstanceBaseId flat_instance_base_id;
 InstanceBaseId skybox_instance_base_id;
 InstanceBaseId shot_instance_base_id;
+
+InstanceBaseId engine_instance_base_id;
 
 ModelBaseId simplequad_base_id;
 InstanceBaseId simplequad_instance_base_id;
@@ -61,8 +63,8 @@ void register_specializations ( VInstance* instance ) {
 	instance->modelbase_registered ( simple_modelbase_id );
 
 	ModelBase shot_simplemodel = { 0, vector1_datagroup, {} };
-	shot_modelbase_id = instance->static_modelbase_store.insert ( shot_simplemodel );
-	instance->modelbase_registered ( shot_modelbase_id );
+	dot_modelbase_id = instance->static_modelbase_store.insert ( shot_simplemodel );
+	instance->modelbase_registered ( dot_modelbase_id );
 
 	//create modelbase from datagroup and contextbases
 	InstanceBase texturedinstance = { 0, matrix_2_datagroup };
@@ -79,5 +81,11 @@ void register_specializations ( VInstance* instance ) {
 	InstanceBase shotinstance = { 0, shot_datagroup };
 	shot_instance_base_id = instance->static_instancebase_store.insert ( shotinstance );
 	instance->instancebase_registered ( shot_instance_base_id );
+
+	shot_instance_base_id = instance->static_instancebase_store.insert ( { 0, shot_datagroup } );
+	instance->instancebase_registered ( shot_instance_base_id );
+	
+	engine_instance_base_id = instance->static_instancebase_store.insert ( { 0, shot_datagroup } );
+	instance->instancebase_registered ( engine_instance_base_id );
 
 }

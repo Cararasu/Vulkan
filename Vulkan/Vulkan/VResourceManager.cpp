@@ -87,6 +87,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 	if ( !pixels ) {
+		v_logger.log<LogLevel::eWarn>("failed to load texture image from file %s", file.c_str());
 		throw std::runtime_error ( "failed to load texture image!" );
 	}
 	VThinBuffer buffer = v_instance->request_staging_buffer ( imageSize );

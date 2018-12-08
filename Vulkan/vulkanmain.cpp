@@ -20,7 +20,7 @@
 
 #include "utf.h"
 
-Logger g_logger ( "main" );
+Logger g_logger ( "main", LogLevel::eInfo );
 
 struct SimpleVertex {
 	glm::vec3 pos;
@@ -143,6 +143,8 @@ int main ( int argc, char **argv ) {
 	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shot_shader", "shader/shot.vert.sprv" );
 	newinstance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
 	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
+	
+	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_engine_shader", "shader/engine.frag.sprv" );
 
 	Monitor* primMonitor = newinstance->get_primary_monitor();
 
@@ -160,13 +162,13 @@ int main ( int argc, char **argv ) {
 		}
 	}
 
-	Model shot = newinstance->create_model ( shot_modelbase_id );
+	Model dot_model = newinstance->create_model ( dot_modelbase_id );
 	{
 		Array<glm::vec3> data_to_load = {
 			glm::vec3 ( 0.0f, 0.0f, 0.0f )
 		};
 		Array<u16> indices = { 0 };
-		newinstance->load_generic_model ( shot, data_to_load.data, data_to_load.size, indices.data, indices.size );
+		newinstance->load_generic_model ( dot_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 
 	Model cube = newinstance->create_model ( simple_modelbase_id );
@@ -548,6 +550,12 @@ int main ( int argc, char **argv ) {
 		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
 	}
 	
+	DynArray<AModel> engine(1);
+	{
+		glm::vec3 engine_translation(0.0f, 0.0f, 0.0f);
+		engine[0].init(engine_translation, glm::mat4(), glm::vec3(5.0f, 5.0f, 5.0f), 1.0f);
+	}
+	
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> current = std::chrono::high_resolution_clock::now();
@@ -567,6 +575,7 @@ int main ( int argc, char **argv ) {
 	DynArray<AnInstance> tie_instances(ties.size());
 	DynArray<AnInstance> gallofree_instances(gallofrees.size());
 	DynArray<ShotInstance> shot_instances(red_shots.size() + green_shots.size());
+	DynArray<ShotInstance> engine_instances(engine.size());
 	
 	g_state.slowmotion = true;
 	while ( newinstance->is_window_open() ) {
@@ -687,8 +696,18 @@ int main ( int argc, char **argv ) {
 				shot_instances[i + j].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 		}
-		instancegroup->register_instances ( shot_instance_base_id, shot, shot_instances.data(), shot_instances.size() );
+		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
 
+		engine_instances.resize(engine.size());
+		{
+			for(u32 i = 0; i < engine_instances.size(); i++) {
+				engine_instances[i].mv2_matrix = w2v_matrix * engine[i].m2w_mat();
+				engine_instances[i].umbracolor = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				engine_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
+			}
+		}
+		instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
+		
 		newinstance->render_bundles ( {bundle} );
 	}
 	window->destroy();
