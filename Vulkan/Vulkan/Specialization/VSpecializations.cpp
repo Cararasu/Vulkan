@@ -21,8 +21,9 @@ InstanceBaseId engine_instance_base_id;
 ModelBaseId simplequad_base_id;
 InstanceBaseId simplequad_instance_base_id;
 
-void register_specializations ( VInstance* instance ) {
 
+void register_specializations ( VInstance* instance ) {
+	
 	DataGroupDef vertex_datagroup = { { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 };
 
 	DataGroupDef vector1_datagroup = { { {ValueType::eF32Vec4, 1, 0}}, sizeof ( glm::vec4 ), 1 };

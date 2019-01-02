@@ -5,10 +5,6 @@
 #include "VContext.h"
 #include "VBufferStorage.h"
 
-struct VModelInstances {
-	SparseStore<void> store;
-};
-
 struct DataGroupDef;
 struct VModel;
 struct VContext;

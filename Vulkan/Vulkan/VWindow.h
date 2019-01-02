@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include <functional>
+#include <mutex>
 
 struct VWindowImage;
 
@@ -32,6 +33,7 @@ struct VWindow : public Window {
 	GLFWwindow* window = nullptr;
 
 	VBaseImage* present_image = nullptr;
+	std::mutex rendering_mutex;
 
 	//vulkan
 	vk::SurfaceKHR surface;

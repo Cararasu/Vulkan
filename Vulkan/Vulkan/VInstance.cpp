@@ -366,6 +366,7 @@ VInstance::VInstance() {
 
 
 	initialized = true;
+	
 }
 
 VInstance::~VInstance() {
@@ -409,7 +410,6 @@ VInstance::~VInstance() {
 	}
 	delete context_bufferstorage;
 	vk_device().destroyCommandPool ( transfer_commandpool );
-
 
 	m_device.destroy ( nullptr );
 
@@ -600,6 +600,9 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 void VInstance::process_events() {
 	glfwPollEvents();
 }
+void VInstance::process_events(double timeout) {
+	glfwWaitEventsTimeout(timeout);
+}
 bool VInstance::is_window_open() {
 	for ( Window* window : windows ) {
 		if ( (bool) window->visible() )
@@ -690,7 +693,8 @@ ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
 RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) {
-	return new VRenderBundle ( igroup, cgroup, rstages, image_types, dependencies );
+	//return new VRenderBundle ( igroup, cgroup, rstages, image_types, dependencies );
+	return nullptr;
 }
 void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 	for ( RenderBundle* b : bundles ) {

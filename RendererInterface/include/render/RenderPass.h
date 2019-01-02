@@ -32,25 +32,32 @@ struct ImageDependency {
 	StageImage target_image;
 };
 
+struct Window;
+
 enum class RenderStageType {
-	eRenderer,
-	ePresenter,
-	eComposer,
+	eRendering,
+	eBlitting,
 };
+struct RenderStage {
 
-struct RenderStage : public IdHandle {
-	RenderStageType type;
-	
-	virtual ~RenderStage() {}
-	//inputs
-	//outouts
-	//Dependencies		Renderer*/index -> Renderer*/index
-};
+	const RenderStageType type;
 
-struct RenderInformation{
-	
+	RenderStage ( RenderStageType type ) : type ( type ) {}
+	virtual ~RenderStage () {}
+
+	virtual void set_rendertarget ( u32 index, Image* image ) = 0;
 };
-//triangle/line/points mode
-//scissors?
-//viewports optimizations with geometry shader for multiple screens
-//sample-shading???
+struct RenderBundle {
+
+	virtual ~RenderBundle() {}
+	
+	virtual void add_dependency( u32 src_index, u32 dst_index ) = 0;
+	virtual void remove_dependency( u32 src_index, u32 dst_index ) = 0;
+
+	virtual void set_window_dependency( Window* window ) = 0;
+	virtual void clear_window_dependency( ) = 0;
+	
+	virtual void set_renderstage ( u32 index, RenderStage* renderstage ) = 0;
+	virtual RenderStage* get_renderstage ( u32 index ) = 0;
+	virtual RenderStage* remove_renderstage ( u32 index ) = 0;
+};

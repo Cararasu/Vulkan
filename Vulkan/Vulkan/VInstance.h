@@ -5,7 +5,6 @@
 #include "VHeader.h"
 #include <render/IdArray.h>
 #include "VContext.h"
-#include <queue>
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -80,7 +79,7 @@ struct VInstance : public Instance {
 	vk::DebugReportCallbackEXT debugReportCallbackEXT;
 
 	QueueWrapper queues;
-
+	
 	bool initialized = false;
 	u64 frame_index = 1;
 	u64 last_completed_frame_index = 0;
@@ -91,6 +90,7 @@ struct VInstance : public Instance {
 	virtual bool initialize ( InstanceOptions options, Device* device = nullptr ) override;
 
 	virtual void process_events() override;
+	virtual void process_events(double timeout) override;
 	virtual bool is_window_open() override;
 
 	virtual Window* create_window() override;

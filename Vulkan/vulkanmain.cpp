@@ -17,10 +17,10 @@
 #include <render/Logger.h>
 #include <render/Instance.h>
 #include <render/Specialization.h>
+#include <render/Timing.h>
+#include <render/UTF.h>
 
-#include "utf.h"
-
-Logger g_logger ( "main", LogLevel::eInfo );
+Logger g_logger ( "main" );
 
 struct SimpleVertex {
 	glm::vec3 pos;
@@ -102,11 +102,6 @@ struct Camera {
 	}
 };
 
-struct KeyState {
-	bool pressed = false;
-	u64 time_pressed = 0;
-};
-
 struct GameState {
 	KeyState basic_keystates[(u32)KeyCode::eMax];
 	Map<u32, KeyState> utf32_keystates;
@@ -115,63 +110,62 @@ struct GameState {
 	u64 current_timestamp = 0;
 	u64 delta_time = 0;
 	
-	bool slowmotion = false;
-	
 	Camera camera;
 };
 GameState g_state;
 
+#include <render/Queues.h>
+
 int main ( int argc, char **argv ) {
-
-	Instance* newinstance = create_instance ( "Vulkan" );
-
-	newinstance->initialize ( InstanceOptions() );
+	
+	Instance* instance = create_instance ( "Vulkan" );
+	instance->initialize ( InstanceOptions() );
 
 	//preload-shaders
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_quad_shader", "shader/quad.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_quad_shader", "shader/quad.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_quad_shader", "shader/quad.frag.sprv" );
 
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_textured_shader", "shader/textured.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_textured_shader", "shader/textured.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_textured_shader", "shader/textured.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_textured_shader", "shader/textured.frag.sprv" );
 
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_flat_shader", "shader/flat.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_flat_shader", "shader/flat.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_flat_shader", "shader/flat.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_flat_shader", "shader/flat.frag.sprv" );
 
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_skybox_shader", "shader/skybox.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_skybox_shader", "shader/skybox.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_skybox_shader", "shader/skybox.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_skybox_shader", "shader/skybox.frag.sprv" );
 
-	newinstance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shot_shader", "shader/shot.vert.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shot_shader", "shader/shot.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
 	
-	newinstance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_engine_shader", "shader/engine.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_engine_shader", "shader/engine.frag.sprv" );
 
-	Monitor* primMonitor = newinstance->get_primary_monitor();
+	Monitor* primMonitor = instance->get_primary_monitor();
 
 	if ( g_logger.level <= LogLevel::eDebug ) {
 		g_logger.log<LogLevel::eDebug> ( "Monitors" );
-		for ( Monitor* monitor : newinstance->monitors ) {
+		for ( Monitor* monitor : instance->monitors ) {
 			if ( monitor == primMonitor )
 				g_logger.log<LogLevel::eDebug> ( "\tPrimary Monitor | %s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
 			else
 				g_logger.log<LogLevel::eDebug> ( "\t%s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
 		}
 		g_logger.log<LogLevel::eDebug> ( "Devices" );
-		for ( Device* device : newinstance->devices ) {
+		for ( Device* device : instance->devices ) {
 			g_logger.log<LogLevel::eDebug> ( "\t%s %" PRId32, device->name, device->rating );
 		}
 	}
 
-	Model dot_model = newinstance->create_model ( dot_modelbase_id );
+	Model dot_model = instance->create_model ( dot_modelbase_id );
 	{
 		Array<glm::vec3> data_to_load = {
 			glm::vec3 ( 0.0f, 0.0f, 0.0f )
 		};
 		Array<u16> indices = { 0 };
-		newinstance->load_generic_model ( dot_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
+		instance->load_generic_model ( dot_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 
-	Model cube = newinstance->create_model ( simple_modelbase_id );
+	Model cube = instance->create_model ( simple_modelbase_id );
 	{
 		Array<SimpleVertex> data_to_load = {
 			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) }, 
@@ -212,10 +206,10 @@ int main ( int argc, char **argv ) {
 			16, 17, 18, 18, 17, 19,
 			20, 21, 22, 22, 21, 23,
 		};
-		newinstance->load_generic_model ( cube, data_to_load.data, data_to_load.size, indices.data, indices.size );
+		instance->load_generic_model ( cube, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 
-	ResourceManager* resource_manager = newinstance->resource_manager();
+	ResourceManager* resource_manager = instance->resource_manager();
 	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
@@ -231,210 +225,210 @@ int main ( int argc, char **argv ) {
 
 	Array<Model> x_models ( 6 );
 
-	x_models[0] = newinstance->create_model ( simple_modelbase_id );
+	x_models[0] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Body.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[1] = newinstance->create_model ( simple_modelbase_id );
+	x_models[1] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Windows.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[2] = newinstance->create_model ( simple_modelbase_id );
+	x_models[2] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_LB.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[3] = newinstance->create_model ( simple_modelbase_id );
+	x_models[3] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_LT.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[4] = newinstance->create_model ( simple_modelbase_id );
+	x_models[4] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_RB.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	x_models[5] = newinstance->create_model ( simple_modelbase_id );
+	x_models[5] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/X/XWing_Wing_RT.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( x_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( x_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
 	Array<Model> tie_models ( 6 );
 
-	tie_models[0] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[0] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Body.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[1] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[1] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Windows.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[2] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[2] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Arm_L.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[3] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[3] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Arm_R.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[4] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[4] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Wing_L.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
-	tie_models[5] = newinstance->create_model ( simple_modelbase_id );
+	tie_models[5] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Tie/Tie_Fighter_Wing_R.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( tie_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( tie_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
 	Array<Model> gallofree_models ( 11 );
 
-	gallofree_models[0] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[0] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/BottomEngine2.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[0], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[1] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[1] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/BottomEngines1.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[1], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[2] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[2] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/Cargo.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[2], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[3] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[3] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/CockPit_Cockpit.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[3], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[4] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[4] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/Greebles.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[4], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[5] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[5] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/HullPlatesBottom.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[5], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[6] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[6] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/HullPlatesTop.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[6], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[6], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[7] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[7] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionBottom.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[7], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[7], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[8] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[8] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionTop.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[8], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[8], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[9] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[9] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/SectionTopInterior.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[9], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[9], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
-	gallofree_models[10] = newinstance->create_model ( simple_modelbase_id );
+	gallofree_models[10] = instance->create_model ( simple_modelbase_id );
 	loadDataFile ( "assets/Gallofree/TopEngines.data", vvv, iiii, vertex_data, index_data );
-	newinstance->load_generic_model ( gallofree_models[10], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
+	instance->load_generic_model ( gallofree_models[10], vvv.data(), vvv.size(), iiii.data(), iiii.size() );
 	vvv.clear();
 	iiii.clear();
 
 
-	InstanceGroup* instancegroup = newinstance->create_instancegroup();//maybe list of modelinstancebases for optimization
-	ContextGroup* contextgroup = newinstance->create_contextgroup();//maybe list of contextbases for optimization
+	InstanceGroup* instancegroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
+	ContextGroup* contextgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
 
-	Context light_vector_context = newinstance->create_context ( lightvector_base_id );
+	Context light_vector_context = instance->create_context ( lightvector_base_id );
 	contextgroup->set_context ( light_vector_context );
 
-	Context camera_matrix = newinstance->create_context ( camera_context_base_id );
+	Context camera_matrix = instance->create_context ( camera_context_base_id );
 	contextgroup->set_context ( camera_matrix );
 
-	Context x_context = newinstance->create_context ( tex_simplemodel_context_base_id );
+	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
-	newinstance->update_context_image ( x_context, 0, x_teximage );
-	newinstance->set_context ( x_models[0], x_context );
-	newinstance->set_context ( x_models[1], x_context );
-	newinstance->set_context ( x_models[2], x_context );
-	newinstance->set_context ( x_models[3], x_context );
-	newinstance->set_context ( x_models[4], x_context );
-	newinstance->set_context ( x_models[5], x_context );
+	instance->update_context_image ( x_context, 0, x_teximage );
+	instance->set_context ( x_models[0], x_context );
+	instance->set_context ( x_models[1], x_context );
+	instance->set_context ( x_models[2], x_context );
+	instance->set_context ( x_models[3], x_context );
+	instance->set_context ( x_models[4], x_context );
+	instance->set_context ( x_models[5], x_context );
 
-	Context skybox_context = newinstance->create_context ( skybox_context_base_id );
-	newinstance->update_context_image ( skybox_context, 0, skybox_teximage );
-	newinstance->set_context ( cube, skybox_context );
+	Context skybox_context = instance->create_context ( skybox_context_base_id );
+	instance->update_context_image ( skybox_context, 0, skybox_teximage );
+	instance->set_context ( cube, skybox_context );
 
-	Context tie_body_context = newinstance->create_context ( tex_simplemodel_context_base_id );
-	Context tie_arm_context = newinstance->create_context ( tex_simplemodel_context_base_id );
-	Context tie_wing_context = newinstance->create_context ( tex_simplemodel_context_base_id );
+	Context tie_body_context = instance->create_context ( tex_simplemodel_context_base_id );
+	Context tie_arm_context = instance->create_context ( tex_simplemodel_context_base_id );
+	Context tie_wing_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_1k.png", 4 );
 	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
 	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
-	newinstance->update_context_image ( tie_body_context, 0, tie_body_teximage );
-	newinstance->update_context_image ( tie_arm_context, 0, tie_arm_teximage );
-	newinstance->update_context_image ( tie_wing_context, 0, tie_wing_teximage );
-	newinstance->set_context ( tie_models[0], tie_body_context );
-	newinstance->set_context ( tie_models[1], tie_body_context );
-	newinstance->set_context ( tie_models[2], tie_arm_context );
-	newinstance->set_context ( tie_models[3], tie_arm_context );
-	newinstance->set_context ( tie_models[4], tie_wing_context );
-	newinstance->set_context ( tie_models[5], tie_wing_context );
+	instance->update_context_image ( tie_body_context, 0, tie_body_teximage );
+	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage );
+	instance->update_context_image ( tie_wing_context, 0, tie_wing_teximage );
+	instance->set_context ( tie_models[0], tie_body_context );
+	instance->set_context ( tie_models[1], tie_body_context );
+	instance->set_context ( tie_models[2], tie_arm_context );
+	instance->set_context ( tie_models[3], tie_arm_context );
+	instance->set_context ( tie_models[4], tie_wing_context );
+	instance->set_context ( tie_models[5], tie_wing_context );
 
-	Context gallofree_context = newinstance->create_context ( tex_simplemodel_context_base_id );
-	Context flat_gallofree_context = newinstance->create_context ( flat_simplemodel_context_base_id );
+	Context gallofree_context = instance->create_context ( tex_simplemodel_context_base_id );
+	Context flat_gallofree_context = instance->create_context ( flat_simplemodel_context_base_id );
 	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
-	newinstance->update_context_image ( gallofree_context, 0, gallofree_teximage );
+	instance->update_context_image ( gallofree_context, 0, gallofree_teximage );
 
 	glm::vec4 color ( 0.75f, 0.75f, 0.75f, 1.0f );
-	newinstance->update_context_data ( flat_gallofree_context, &color );
+	instance->update_context_data ( flat_gallofree_context, &color );
 
-	newinstance->set_context ( gallofree_models[0], gallofree_context );
-	newinstance->set_context ( gallofree_models[1], gallofree_context );
-	newinstance->set_context ( gallofree_models[2], gallofree_context );
-	newinstance->set_context ( gallofree_models[3], gallofree_context );
-	newinstance->set_context ( gallofree_models[4], gallofree_context );
-	newinstance->set_context ( gallofree_models[5], gallofree_context );
-	newinstance->set_context ( gallofree_models[6], gallofree_context );
-	newinstance->set_context ( gallofree_models[7], gallofree_context );
-	newinstance->set_context ( gallofree_models[8], gallofree_context );
-	newinstance->set_context ( gallofree_models[9], gallofree_context );
-	newinstance->set_context ( gallofree_models[10], gallofree_context );
+	instance->set_context ( gallofree_models[0], gallofree_context );
+	instance->set_context ( gallofree_models[1], gallofree_context );
+	instance->set_context ( gallofree_models[2], gallofree_context );
+	instance->set_context ( gallofree_models[3], gallofree_context );
+	instance->set_context ( gallofree_models[4], gallofree_context );
+	instance->set_context ( gallofree_models[5], gallofree_context );
+	instance->set_context ( gallofree_models[6], gallofree_context );
+	instance->set_context ( gallofree_models[7], gallofree_context );
+	instance->set_context ( gallofree_models[8], gallofree_context );
+	instance->set_context ( gallofree_models[9], gallofree_context );
+	instance->set_context ( gallofree_models[10], gallofree_context );
 
-	newinstance->set_context ( gallofree_models[0], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[1], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[2], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[3], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[4], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[5], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[6], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[7], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[8], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[9], flat_gallofree_context );
-	newinstance->set_context ( gallofree_models[10], flat_gallofree_context );
+	instance->set_context ( gallofree_models[0], flat_gallofree_context );
+	instance->set_context ( gallofree_models[1], flat_gallofree_context );
+	instance->set_context ( gallofree_models[2], flat_gallofree_context );
+	instance->set_context ( gallofree_models[3], flat_gallofree_context );
+	instance->set_context ( gallofree_models[4], flat_gallofree_context );
+	instance->set_context ( gallofree_models[5], flat_gallofree_context );
+	instance->set_context ( gallofree_models[6], flat_gallofree_context );
+	instance->set_context ( gallofree_models[7], flat_gallofree_context );
+	instance->set_context ( gallofree_models[8], flat_gallofree_context );
+	instance->set_context ( gallofree_models[9], flat_gallofree_context );
+	instance->set_context ( gallofree_models[10], flat_gallofree_context );
 
 	instancegroup->clear();
 
@@ -447,7 +441,7 @@ int main ( int argc, char **argv ) {
 	g_state.camera.far = 100000.0f;
 
 
-	Window* window = newinstance->create_window();
+	Window* window = instance->create_window();
 
 	window->on_resize = [] ( Window * window, float x, float y ) {
 		g_state.camera.aspect = x / y;
@@ -480,7 +474,7 @@ int main ( int argc, char **argv ) {
 			keystate.time_pressed = g_state.current_timestamp;
 		}
 		if(text) {
-			KeyState& keystate = g_state.utf32_keystates[(u32)button];
+			KeyState& keystate = g_state.utf32_keystates[utf8_to_utf32(text)];
 			keystate.pressed = ispressed;
 			keystate.time_pressed = g_state.current_timestamp;
 		}
@@ -502,10 +496,15 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image();
 
-	RenderBundle* bundle = newinstance->create_main_bundle ( instancegroup, contextgroup );
+	RenderBundle* bundle = instance->create_main_bundle ( instancegroup, contextgroup );
 
-	bundle->set_rendertarget ( 0, windowimage );
-	bundle->set_rendertarget ( 1, newinstance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
+	bundle->set_window_dependency(window);
+
+	bundle->get_renderstage(0)->set_rendertarget ( 0, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//ambient + ???
+	bundle->get_renderstage(0)->set_rendertarget ( 1, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e2F16, 1.0f ) );//normals
+	bundle->get_renderstage(0)->set_rendertarget ( 2, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//specular power + intensity + ??? + ???
+	bundle->get_renderstage(0)->set_rendertarget ( 3, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4F16, 1.0f ) );//light-accumulation + specularintensity
+	bundle->get_renderstage(0)->set_rendertarget ( 4, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -577,24 +576,53 @@ int main ( int argc, char **argv ) {
 	DynArray<ShotInstance> shot_instances(red_shots.size() + green_shots.size());
 	DynArray<ShotInstance> engine_instances(engine.size());
 	
-	g_state.slowmotion = true;
-	while ( newinstance->is_window_open() ) {
+	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
+	
+	while ( instance->is_window_open() ) {
 		
 		using namespace std::chrono_literals;
-		
-		std::this_thread::sleep_for(10ms);
 		
 		last = current;
 		current = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
 		g_state.current_timestamp = current.time_since_epoch().count();
 		g_state.delta_time = ns.count();
-		g_logger.log<LogLevel::eInfo> ( "Time %" PRId64 " %" PRId64 "ns elapsed", current.time_since_epoch().count(), ns.count() );
+		
+		static std::chrono::nanoseconds frametime = std::chrono::duration_cast<std::chrono::nanoseconds>(1s) / 60;
+		
+		std::chrono::nanoseconds waittime = frametime - ns - std::chrono::duration_cast<std::chrono::nanoseconds>(1ms);
+		std::this_thread::sleep_for(waittime);
+		
+		Timing timer(&g_logger, "Main-Loop");
 		
 		double delta = ns.count();
 		delta /= 1000000000.0;
 		
-		double adjusted_delta = g_state.slowmotion ? delta / 1000.0 : delta;
+		u32 plus = utf8_to_utf32("+");
+		
+		double adjusted_delta = g_state.utf32_keystates[plus].pressed ? delta : delta / 1000.0;
+		
+		while(!window->eventqueue.empty()) {
+			OSEvent event = window->eventqueue.pop();
+			switch(event.type) {
+			case OSEventType::eButton: {
+				printf("eButton\n");
+			}break;
+			case OSEventType::eMouse: {
+				printf("eMouse\n");
+			}break;
+			case OSEventType::eScroll: {
+				printf("eScroll\n");
+			}break;
+			case OSEventType::eChar: {
+				printf("eChar\n");
+			}break;
+			case OSEventType::eWindow: {
+				printf("eWindow\n");
+			}break;
+			}
+		}
+		
 		
 		for(AModel& xwing : xwings){
 			xwing.move(adjusted_delta);
@@ -627,7 +655,7 @@ int main ( int argc, char **argv ) {
 		
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
-		newinstance->process_events();
+		instance->process_events();
 		instancegroup->clear();
 
 		//eye, center, up
@@ -638,19 +666,19 @@ int main ( int argc, char **argv ) {
 		camera.camera_matrixes = g_state.camera.v2s_mat();
 		camera.camera_pos = g_state.camera.view_vector * 1.0f;
 		
-		newinstance->update_context_data ( camera_matrix, &camera );
+		instance->update_context_data ( camera_matrix, &camera );
 		
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
 		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.5f );
 		
-		newinstance->update_context_data ( light_vector_context, &global_light );
+		instance->update_context_data ( light_vector_context, &global_light );
 
 		glm::mat4 m2s_matrixes[1] = {
 			g_state.camera.v2s_mat() * g_state.camera.w2v_rot_mat()
 		};
-		newinstance->update_context_data ( skybox_context, m2s_matrixes );
+		instance->update_context_data ( skybox_context, m2s_matrixes );
 		instancegroup->register_instances ( skybox_instance_base_id, cube, nullptr, 1 );
 		
 		x_instances.resize(xwings.size());
@@ -686,13 +714,13 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				shot_instances[i].umbracolor = glm::vec4(1.0, 0.01, 0.01, 0.0);
 				shot_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor = glm::vec4(0.0, 1.0, 0.0, 0.0);
+				shot_instances[i + j].umbracolor = glm::vec4(0.01, 1.0, 0.01, 0.0);
 				shot_instances[i + j].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 		}
@@ -708,11 +736,12 @@ int main ( int argc, char **argv ) {
 		}
 		instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
 		
-		newinstance->render_bundles ( {bundle} );
+		instance->render_bundles ( {bundle} );
 	}
 	window->destroy();
 
 	delete bundle;
-	destroy_instance ( newinstance );
+
+	destroy_instance ( instance );
 	return 0;
 }

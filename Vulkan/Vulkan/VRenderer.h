@@ -11,6 +11,19 @@ struct SubmitStore;
 
 struct VRenderTarget;
 
+struct VBundleImageState {
+	vk::Format current_format = vk::Format::eUndefined;
+	VBaseImage* actual_image = nullptr;
+};
+struct VRenderStage : public RenderStage {
+	Array<VBundleImageState> v_bundlestates;
+	
+	VRenderStage ( RenderStageType type ) : RenderStage(type) {}
+	virtual ~VRenderStage() {}
+
+	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) = 0;
+};
+
 struct VRenderer {
 	VInstance* const v_instance;
 	bool needs_rebuild_pipeline_layout;
@@ -32,14 +45,4 @@ struct VRenderer {
 
 	void v_update_image ( u32 index, VBaseImage* image );
 
-};
-
-struct VRenderStage : public RenderStage {
-	Array<RenderImageDef> input_image_defs;
-
-	VRenderStage ( Array<RenderImageDef> input_image_defs );
-
-	virtual ~VRenderStage() {}
-//    List of renderers
-//    List of rendertargets
 };

@@ -1,6 +1,11 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+//output
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec2 outNormal;
+layout(location = 2) out vec4 outSpecular;
+
 //input
 layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec3 v_texCoord;
@@ -13,9 +18,6 @@ layout (set=1, binding = 0) uniform lightVectorBuffer {
 
 layout (set=2, binding=0) uniform texture2D diffuseTexture;
 layout (set=2, binding=1) uniform sampler textureSampler;
-
-//output
-layout(location = 0) out vec4 outColor;
 
 void main() {
 	vec3 view_direction = normalize(-v_position);
@@ -39,4 +41,6 @@ void main() {
 	vec4 ambientcolor = texture(sampler2D(diffuseTexture, textureSampler), vec2(v_texCoord.x, -1.0f * v_texCoord.y));
    
 	outColor = ambientcolor * light.direction_amb.w + ambientcolor * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
+	outNormal = normal_direction.xy;
+	outSpecular = vec4(v_position, 0.0);
 }

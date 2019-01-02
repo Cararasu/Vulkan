@@ -4,38 +4,12 @@
 #include "Monitor.h"
 #include "World.h"
 #include "Resources.h"
+#include "WindowEvent.h"
 #include <functional>
+#include <mutex>
+#include <queue>
+#include "Queues.h"
 
-enum class KeyCode {
-	eUnknown = -1,
-	eMouseLeft = 0, eMouseRight, eMouseMiddle, eMouse4, eMouse5, eMouse6, eMouse7, eMouse8,
-	eSpace, eApostrophe, eComma, eSemicolon, eGraveAccent,
-	eMinus, ePlus,
-	eEqual, ePeriod, eSlash, eBackslash,
-	eLBracket, eRBracket,
-	
-	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9,
-	eA, eB, eC, eD, eE, eF, eG, eH, eI, eJ, 
-	eK, eL, eM, eN, eO, eP, eQ, eR, eS, eT, 
-	eU, eV, eW, eX, eY, eZ, 
-	
-	eF1, eF2, eF3, eF4, eF5, eF6, eF7, eF8, eF9, eF10,
-	eF11, eF12, eF13, eF14, eF15, eF16, eF17, eF18, eF19, eF20,
-	eF21, eF22, eF23, eF24, eF25,
-	
-	eKP0, eKP1, eKP2, eKP3, eKP4, eKP5, eKP6, eKP7, eKP8, eKP9,
-	eKPDecimal, eKPDivide, eKPMultiply, eKPSubtract, eKPAdd, eKPEnter, eKPEqual, eKP,
-	
-	eLShift, eRShift, eLCntrl, eRCntrl, eLAlt, eRAlt, eLSuper, eRSuper,
-	eMenu, eWorld1, eWorld2,
-	eEscape, eEnter, eTab, eBackspace, 
-	eInsert, eDelete, ePageUp, ePageDown,
-	eHome, eEnd, ePrintScreen, ePause,
-	eCapsLock, eScrollLock,  eNumLock, 
-	eRight, eLeft, eDown, eUp,
-	
-	eMax
-};
 enum class CursorMode {
 	eNormal,
 	eInvisible,
@@ -47,11 +21,6 @@ enum class WindowAlphaBlend {
 	eBlend
 };
 
-enum class PressAction {
-	ePress,
-	eRelease,
-	eRepeat
-};
 
 class Window {
 protected:
@@ -71,6 +40,10 @@ protected:
 	float mouse_x = -1.0f, mouse_y = -1.0f;
 	
 public:
+	//TODO maybe switch out with a resizable circular buffer
+	//it should be able to imlement 
+	ConcurrentCyclingQueue<OSEvent> eventqueue;
+
 	std::function<void(Window*, float, float)> on_resize;
 	std::function<void(Window*, double, double, double, double)> on_mouse_moved;
 	std::function<void(Window*, double, double)> on_scroll;

@@ -1,6 +1,8 @@
 #include "VWindow.h"
 #include "VInstance.h"
 #include "VResourceManager.h"
+#include <render/Timing.h>
+#include <render/UTF.h>
 
 
 KeyCode glfw_button_transform ( int button_code ) {
@@ -317,6 +319,12 @@ void VWindow::initialize() {
 	glfwSetWindowPosCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eMoved;
+			event.window.x = x;
+			event.window.y = y;
+			vulkan_window->eventqueue.push(event);
 			v_logger.log<LogLevel::eDebug> ( "Position of Window %dx%d", x, y );
 			vulkan_window->m_position.apply ( {x, y} );
 		} else {
@@ -326,6 +334,12 @@ void VWindow::initialize() {
 	glfwSetWindowSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eResized;
+			event.window.x = x;
+			event.window.y = y;
+			vulkan_window->eventqueue.push(event);
 			v_logger.log<LogLevel::eDebug> ( "Size of Window %dx%d", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
 			if ( vulkan_window->on_resize ) {
@@ -338,6 +352,10 @@ void VWindow::initialize() {
 	glfwSetWindowCloseCallback ( window, [] ( GLFWwindow * window ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eClosed;
+			vulkan_window->eventqueue.push(event);
 			glfwHideWindow ( window );
 			vulkan_window->m_visible.apply ( false );
 		} else {
@@ -357,6 +375,10 @@ void VWindow::initialize() {
 	glfwSetWindowFocusCallback ( window, [] ( GLFWwindow * window, int focus ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.value = focus == GLFW_TRUE;
+			vulkan_window->eventqueue.push(event);
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
@@ -365,6 +387,11 @@ void VWindow::initialize() {
 	glfwSetWindowIconifyCallback ( window, [] ( GLFWwindow * window, int iconified ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eIconify;
+			event.window.value = iconified == GLFW_TRUE;
+			vulkan_window->eventqueue.push(event);
 			vulkan_window->m_minimized.apply ( iconified == GLFW_TRUE );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
@@ -373,7 +400,9 @@ void VWindow::initialize() {
 	glfwSetFramebufferSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			vulkan_window->rendering_mutex.lock();
 			vulkan_window->framebuffer_size_changed ( {x, y} );
+			vulkan_window->rendering_mutex.unlock();
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -381,6 +410,11 @@ void VWindow::initialize() {
 	glfwSetScrollCallback ( window, [] ( GLFWwindow * window, double xoffset, double yoffset ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eScroll;
+			event.scroll.deltax = xoffset;
+			event.scroll.deltay = yoffset;
+			vulkan_window->eventqueue.push(event);
 			if ( vulkan_window->on_scroll ) vulkan_window->on_scroll ( vulkan_window, xoffset, yoffset );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
@@ -389,6 +423,29 @@ void VWindow::initialize() {
 	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eButton;
+			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
+			event.button.shift = (mods | GLFW_MOD_SHIFT) != 0;
+			event.button.cntrl = (mods | GLFW_MOD_CONTROL) != 0;
+			event.button.alt = (mods | GLFW_MOD_ALT) != 0;
+			event.button.super = (mods | GLFW_MOD_SUPER) != 0;
+			event.button.keycode = glfw_button_transform ( key );
+			event.button.scancode = scancode;
+			const char* text = glfwGetKeyName ( key, scancode );
+			if(text) {
+				event.button.utf8[0] = text[0];
+				event.button.utf8[1] = text[1];
+				if(text[1]) {
+					event.button.utf8[2] = text[2];
+					if(text[2]){
+						event.button.utf8[3] = text[3];
+					}
+				}
+			} else {
+				event.button.utf8[0] = '\0';
+			}
+			vulkan_window->eventqueue.push(event);
 			if ( vulkan_window->on_button_press ) {
 				PressAction pressaction = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
 				vulkan_window->on_button_press ( vulkan_window, glfw_button_transform ( key ), scancode, glfwGetKeyName ( key, scancode ), pressaction, mods );
@@ -420,6 +477,14 @@ void VWindow::initialize() {
 	glfwSetCharModsCallback ( window, [] ( GLFWwindow * window, unsigned int codepoint, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eChar;
+			utf32_to_utf8(codepoint, event.charinput.utf8);
+			event.charinput.shift = (mods | GLFW_MOD_SHIFT) == true;
+			event.charinput.cntrl = (mods | GLFW_MOD_CONTROL) == true;
+			event.charinput.alt = (mods | GLFW_MOD_ALT) == true;
+			event.charinput.super = (mods | GLFW_MOD_SUPER) == true;
+			vulkan_window->eventqueue.push(event);
 			printf ( "%lc ", ( wint_t ) codepoint );
 			if ( mods & GLFW_MOD_SHIFT )
 				printf ( "Shift " );
@@ -531,6 +596,7 @@ void VWindow::initialize() {
 }
 
 void VWindow::prepare_frame() {
+	Timing timer(&v_logger, "Prepare Frame");
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 
 	present_image->set_current_image ( present_image_index );
@@ -542,7 +608,9 @@ void VWindow::prepare_frame() {
 	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
 
-	//TODO reset all needed command_buffers
+	//TODO reset all needed command_buffers	
+	
+	data->frame_index = v_instance->frame_index;
 }
 Image* VWindow::backed_image () {
 	return present_image;

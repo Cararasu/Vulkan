@@ -206,7 +206,7 @@ struct ChangeableValue {
 		value = wanted;
 	}
 	inline void apply ( T val ) {
-		wanted = val;
+		if(wanted == value) wanted = val;
 		value = val;
 	}
 };

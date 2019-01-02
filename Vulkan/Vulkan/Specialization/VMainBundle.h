@@ -5,17 +5,15 @@
 #include <render/Resources.h>
 
 #include "../VHeader.h"
+#include "../VRenderer.h"
 #include <render/Dimensions.h>
+#include "../VWindow.h"
 
 struct VInstanceGroup;
 struct VContextGroup;
 struct VBaseImage;
 struct VInstance;
 
-struct VBundleImageState {
-	vk::Format current_format = vk::Format::eUndefined;
-	VBaseImage* actual_image = nullptr;
-};
 struct PerFrameMainBundleRenderObj {
 	vk::Framebuffer framebuffer;
 	ResettableCommandBuffer command;
@@ -43,32 +41,29 @@ void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct )
 
 void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, vk::CommandBuffer cmdbuffer );
 
-struct VMainBundle : public RenderBundle {
+struct VMainRenderStage : public VRenderStage {
 	VInstance* v_instance;
+	
 	VInstanceGroup* v_igroup;
 	VContextGroup* v_cgroup;
-	Array<VBundleImageState> v_bundleStates;
 
 	PipelineStruct skybox_pipeline;
 	PipelineStruct tex_pipeline;
 	PipelineStruct flat_pipeline;
 	PipelineStruct shot_pipeline;
 	PipelineStruct engine_pipeline;
-
+	
 	Viewport<f32> viewport;
-
+	
 	vk::CommandPool commandpool;
 	Array<PerFrameMainBundleRenderObj> v_per_frame_data;
 	vk::RenderPass v_renderpass;
 
 	u64 last_frame_index_pipeline_built = 0;
-	u64 last_used = 0;
-
-	VMainBundle ( VInstance* v_instance, InstanceGroup* igroup, ContextGroup* cgroup );
-	virtual ~VMainBundle();
-
-	virtual void set_rendertarget ( u32 index, Image* image ) override;
-
+	
+	VMainRenderStage ( VInstance* v_instance, InstanceGroup* igroup, ContextGroup* cgroup );
+	virtual ~VMainRenderStage();
+	
 	void v_destroy_pipeline_layouts();
 	void v_destroy_pipelines();
 	void v_destroy_renderpasses();
@@ -77,7 +72,37 @@ struct VMainBundle : public RenderBundle {
 	void v_check_rebuild();
 	void v_rebuild_pipelines();
 	void v_rebuild_commandbuffer ( u32 index );
-	void v_dispatch();
+	
+	virtual void set_rendertarget ( u32 index, Image* image ) override;
+	
+	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
+};
+struct VMainBundle : public RenderBundle {
+	Array<VRenderStage*> stages;
+	DynArray<std::pair<u32, u32>> dependencies;
+	VWindow* window_dependency;
+	
+	VInstance* v_instance;
+
+	vk::CommandPool commandpool;
+	Array<PerFrameMainBundleRenderObj> v_per_frame_data;
+	
+	u64 last_used = 0;
+
+	VMainBundle ( VInstance* v_instance, InstanceGroup* igroup, ContextGroup* cgroup );
+	virtual ~VMainBundle();
+
+	virtual void add_dependency( u32 src_index, u32 dst_index ) override;
+	virtual void remove_dependency( u32 src_index, u32 dst_index ) override;
+	
+	virtual void set_window_dependency( Window* window ) override;
+	virtual void clear_window_dependency( ) override;
+
+	virtual void set_renderstage ( u32 index, RenderStage* renderstage ) override;
+	virtual RenderStage* get_renderstage ( u32 index ) override;
+	virtual RenderStage* remove_renderstage ( u32 index ) override;
+
+	void v_dispatch ( );
 };
 
 #endif // MAINBUNDLE_H

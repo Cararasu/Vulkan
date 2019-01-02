@@ -7,6 +7,7 @@
 #include "RenderPass.h"
 #include "ResourceManager.h"
 #include "IdArray.h"
+#include <atomic>
 
 struct Device {
 	const char* name;
@@ -32,6 +33,7 @@ struct Instance {
 	virtual bool destroy_window ( Window* window ) = 0;
 
 	virtual void process_events() = 0;
+	virtual void process_events(double timeout) = 0;
 	virtual bool is_window_open() = 0;
 
 	virtual void render_bundles ( Array<RenderBundle*> bundles ) = 0;

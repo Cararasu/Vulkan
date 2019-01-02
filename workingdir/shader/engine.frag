@@ -3,6 +3,8 @@
 
 //output
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec2 outNormal;
+layout(location = 2) out vec4 outSpecular;
 
 layout(location = 0) in vec4 g_eyepos;
 layout(location = 1) in vec3 g_uvs;
@@ -23,4 +25,6 @@ void main() {
 	
 	float spike_factor = pow(distance, 2);
 	outColor = vec4(g_spikeColor * spike_factor + g_umbraColor * pow(distance, 0.25), spike_factor);
+	outNormal = vec2(0.0, 0.0);
+	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

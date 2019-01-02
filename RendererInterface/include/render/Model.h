@@ -60,12 +60,6 @@ struct ContextGroup {
 	virtual void clear() = 0;
 };
 
-struct RenderBundle {
-
-	virtual ~RenderBundle() {}
-
-	virtual void set_rendertarget ( u32 index, Image* image ) = 0;
-};
 
 #define GEN_SETTER(__VALUETYPE, __TYPE) inline void set_value ( void* datablock, const DataGroupDef* groupdef, const __TYPE value, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
 		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\

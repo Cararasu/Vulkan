@@ -134,7 +134,23 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_FALSE, //blendEnable
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
@@ -148,8 +164,8 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		vk::PipelineColorBlendStateCreateInfo colorBlending (
 		    vk::PipelineColorBlendStateCreateFlags(),
 		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
-		    1, colorBlendAttachments, // attachments
-		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+		    3, colorBlendAttachments, // attachments
+			{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
 		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_textured_shader" ) );
@@ -274,7 +290,23 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_FALSE, //blendEnable
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
@@ -288,7 +320,7 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		vk::PipelineColorBlendStateCreateInfo colorBlending (
 		    vk::PipelineColorBlendStateCreateFlags(),
 		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
-		    1, colorBlendAttachments, // attachments
+		    3, colorBlendAttachments, // attachments
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
@@ -413,7 +445,23 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_FALSE, //blendEnable
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_FALSE, //blendEnable
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcColorBlendFactor, dstColorBlendFactor
@@ -427,7 +475,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		vk::PipelineColorBlendStateCreateInfo colorBlending (
 		    vk::PipelineColorBlendStateCreateFlags(),
 		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
-		    1, colorBlendAttachments, // attachments
+		    3, colorBlendAttachments, // attachments
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
@@ -552,10 +600,26 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
 			vk::PipelineColorBlendAttachmentState (
 			    VK_TRUE, //blendEnable
-			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
 			    vk::BlendOp::eAdd,//colorBlendOp
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
 			    vk::BlendOp::eAdd,//alphaBlendOp
@@ -566,7 +630,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		vk::PipelineColorBlendStateCreateInfo colorBlending (
 		    vk::PipelineColorBlendStateCreateFlags(),
 		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
-		    1, colorBlendAttachments, // attachments
+		    3, colorBlendAttachments, // attachments
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
@@ -698,7 +762,23 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
-		vk::PipelineColorBlendAttachmentState colorBlendAttachments[1] = {
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_TRUE, //blendEnable
 			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
@@ -712,7 +792,7 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		vk::PipelineColorBlendStateCreateInfo colorBlending (
 		    vk::PipelineColorBlendStateCreateFlags(),
 		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
-		    1, colorBlendAttachments, // attachments
+		    3, colorBlendAttachments, // attachments
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
@@ -808,11 +888,11 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
 	}
 }
-VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+VMainRenderStage::VMainRenderStage ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
-	v_bundleStates ( 2 ),
 	tex_pipeline ( {
 	simple_modelbase_id, textured_instance_base_id, { camera_context_base_id, lightvector_base_id }, {tex_simplemodel_context_base_id}
 } ),
@@ -822,20 +902,21 @@ shot_pipeline ( {dot_modelbase_id, shot_instance_base_id, {camera_context_base_i
 engine_pipeline ( {dot_modelbase_id, engine_instance_base_id, {camera_context_base_id}, {}} ),
 v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ) {
 
+	v_bundlestates.resize( 5 );
 	if ( !commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
 		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
 	}
 }
 
-VMainBundle::~VMainBundle() {
+VMainRenderStage::~VMainRenderStage() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );
 	commandpool = vk::CommandPool();
 
 	v_destroy_framebuffers();
 	v_destroy_pipeline_layouts();
 }
-void VMainBundle::v_destroy_pipeline_layouts() {
+void VMainRenderStage::v_destroy_pipeline_layouts() {
 	v_destroy_renderpasses();
 	v_destroy_pipelines();
 
@@ -845,7 +926,7 @@ void VMainBundle::v_destroy_pipeline_layouts() {
 	destroy_pipeline_layout ( v_instance, &shot_pipeline );
 	destroy_pipeline_layout ( v_instance, &engine_pipeline );
 }
-void VMainBundle::v_destroy_pipelines() {
+void VMainRenderStage::v_destroy_pipelines() {
 	v_destroy_framebuffers();
 	destroy_pipeline ( v_instance, &tex_pipeline );
 	destroy_pipeline ( v_instance, &flat_pipeline );
@@ -856,13 +937,13 @@ void VMainBundle::v_destroy_pipelines() {
 		data.command.should_reset = true;
 	}
 }
-void VMainBundle::v_destroy_renderpasses() {
+void VMainRenderStage::v_destroy_renderpasses() {
 	if ( v_renderpass ) {
 		v_instance->vk_device ().destroyRenderPass ( v_renderpass );
 		v_renderpass = vk::RenderPass();
 	}
 }
-void VMainBundle::v_destroy_framebuffers() {
+void VMainRenderStage::v_destroy_framebuffers() {
 	for ( PerFrameMainBundleRenderObj& data : v_per_frame_data ) {
 		if ( data.framebuffer ) {
 			v_instance->vk_device ().destroyFramebuffer ( data.framebuffer );
@@ -871,9 +952,9 @@ void VMainBundle::v_destroy_framebuffers() {
 	}
 }
 
-void VMainBundle::set_rendertarget ( u32 index, Image* image ) {
-	assert ( index < v_bundleStates.size );
-	VBundleImageState& imagestate = v_bundleStates[index];
+void VMainRenderStage::set_rendertarget ( u32 index, Image* image ) {
+	assert ( index < v_bundlestates.size );
+	VBundleImageState& imagestate = v_bundlestates[index];
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
 
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
@@ -882,12 +963,12 @@ void VMainBundle::set_rendertarget ( u32 index, Image* image ) {
 	}
 	v_destroy_framebuffers();
 }
-void VMainBundle::v_check_rebuild() {
+void VMainRenderStage::v_check_rebuild() {
 	u32 width = 0, height = 0;
-	for ( VBundleImageState& imagestate : v_bundleStates ) {
+	for ( VBundleImageState& imagestate : v_bundlestates ) {
 		if ( !imagestate.actual_image ) {
 			v_logger.log<LogLevel::eWarn>  ( "One or more Images not set for MainBundle" );
-			return;
+			continue;
 		}
 		if ( last_frame_index_pipeline_built < imagestate.actual_image->created_frame_index ) {
 			v_logger.log<LogLevel::eTrace> ( "Last Frame Index Pipeline Built %" PRId64 "", last_frame_index_pipeline_built );
@@ -901,13 +982,14 @@ void VMainBundle::v_check_rebuild() {
 		height = imagestate.actual_image->extent.height;
 
 	}
+
 	if ( viewport.extend.width != width || viewport.extend.height != height ) {
 		viewport = Viewport<f32> ( 0.0f, 0.0f, width, height, 0.0f, 1.0f );
 		v_destroy_pipelines();
 	}
 }
 
-void VMainBundle::v_rebuild_pipelines() {
+void VMainRenderStage::v_rebuild_pipelines() {
 	gen_pipeline_layout ( v_instance, &tex_pipeline );
 	gen_pipeline_layout ( v_instance, &flat_pipeline );
 	gen_pipeline_layout ( v_instance, &skybox_pipeline );
@@ -915,9 +997,9 @@ void VMainBundle::v_rebuild_pipelines() {
 	gen_pipeline_layout ( v_instance, &engine_pipeline );
 	if ( !v_renderpass ) {
 		v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
-		vk::AttachmentDescription attachments[2] = {
+		vk::AttachmentDescription attachments[] = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            v_bundleStates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eClear,//loadOp
 			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
@@ -926,9 +1008,36 @@ void VMainBundle::v_rebuild_pipelines() {
 			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
 			                          ),
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-			                            v_bundleStates[1].current_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            v_bundlestates[1].current_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eClear,//loadOp
-			                            vk::AttachmentStoreOp::eDontCare,//storeOp
+			                            vk::AttachmentStoreOp::eStore,//storeOp
+			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+			                          ),
+			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
+			                            v_bundlestates[2].current_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentStoreOp::eStore,//storeOp
+			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+			                          ),
+			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
+			                            v_bundlestates[3].current_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentStoreOp::eStore,//storeOp
+			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+			                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+			                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+			                          ),
+			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
+			                            v_bundlestates[4].current_format, vk::SampleCountFlagBits::e1,//format, samples
+			                            vk::AttachmentLoadOp::eClear,//loadOp
+			                            vk::AttachmentStoreOp::eStore,//storeOp
 			                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
 			                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
 			                            vk::ImageLayout::eDepthStencilAttachmentOptimal,//initialLaylout
@@ -936,23 +1045,27 @@ void VMainBundle::v_rebuild_pipelines() {
 			                          )
 		};
 
-		vk::AttachmentReference colorAttachmentRefs[] = {
-			vk::AttachmentReference ( 0, vk::ImageLayout::eColorAttachmentOptimal )
+		vk::AttachmentReference colorAttachmentRefs1[] = {
+			vk::AttachmentReference ( 0, vk::ImageLayout::eColorAttachmentOptimal ),
+			vk::AttachmentReference ( 1, vk::ImageLayout::eColorAttachmentOptimal ),
+			vk::AttachmentReference ( 2, vk::ImageLayout::eColorAttachmentOptimal ),
+			vk::AttachmentReference ( 3, vk::ImageLayout::eColorAttachmentOptimal )
 		};
-		vk::AttachmentReference depthAttachmentRef ( 1, vk::ImageLayout::eDepthStencilAttachmentOptimal );
+		vk::AttachmentReference depthAttachmentRef1 ( 4, vk::ImageLayout::eDepthStencilAttachmentOptimal );
+		
 
 		vk::SubpassDescription subpasses[] = {
 			vk::SubpassDescription (
 			    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
 			    0, nullptr/*inputAttachments*/,
-			    1, colorAttachmentRefs/*colorAttachments*/,
+			    3, colorAttachmentRefs1/*colorAttachments*/,
 			    nullptr,/*resolveAttachments*/
-			    &depthAttachmentRef,/*depthAttackment*/
+			    &depthAttachmentRef1,/*depthAttackment*/
 			    0, nullptr/*preserveAttachments*/
 			)
 		};
 
-		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 2, attachments, 1, subpasses, 0, nullptr/*dependencies*/ );
+		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 5, attachments, 1, subpasses, 0, nullptr/*dependencies*/ );
 
 		v_renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 	}
@@ -963,17 +1076,162 @@ void VMainBundle::v_rebuild_pipelines() {
 	gen_engine_pipeline ( v_instance, &engine_pipeline, viewport, v_renderpass );
 	last_frame_index_pipeline_built = v_instance->frame_index;
 }
-void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
+void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
+	v_check_rebuild();
+	v_rebuild_pipelines();
+
 	PerFrameMainBundleRenderObj& data = v_per_frame_data[index];
 	if ( !data.framebuffer ) {
-		vk::ImageView attachments[2] = {v_bundleStates[0].actual_image->instance_imageview ( index ), v_bundleStates[1].actual_image->instance_imageview ( index ) };
+		vk::ImageView attachments[] = {
+			v_bundlestates[0].actual_image->instance_imageview ( index ),
+			v_bundlestates[1].actual_image->instance_imageview ( index ),
+			v_bundlestates[2].actual_image->instance_imageview ( index ),
+			v_bundlestates[3].actual_image->instance_imageview ( index ),
+			v_bundlestates[4].actual_image->instance_imageview ( index )
+		};
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), v_renderpass,
-			2, attachments,
+			5, attachments,
 			( u32 ) viewport.extend.width, ( u32 ) viewport.extend.height, 1
 		};
 		data.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 	}
+	//update the instancedata
+	void* instance_data = v_igroup->buffer_storeage.allocate_transfer_buffer();
+	for ( auto it = v_igroup->instance_to_data_map.begin(); it != v_igroup->instance_to_data_map.end(); it++ ) {
+		const InstanceBase* instancebase = v_instance->instancebase ( it->first );
+		for ( InstanceBlock& block : it->second ) {
+			if ( block.data ) memcpy ( instance_data + block.offset, block.data, instancebase->instance_datagroup.size * block.count );
+		}
+	}
+	v_igroup->buffer_storeage.transfer_data ( buffer );
+
+	//for each context in the contextgroup update them
+	VUpdateableBufferStorage* bufferstorage = v_instance->context_bufferstorage;
+	bufferstorage->fetch_transferbuffers();
+	for ( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++ ) {
+		for ( VContext* v_context : it->second ) {
+			for ( VBaseImage* v_image : v_context->images ) {
+				if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
+			}
+			if ( v_context->data ) {
+				VThinBuffer staging = bufferstorage->get_buffer_pair ( v_context->buffer_chunk.index ).second;
+				memcpy ( staging.mapped_ptr + v_context->buffer_chunk.offset, v_context->data, v_context->buffer_chunk.size );
+			}
+		}
+	}
+	for ( std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers ) {
+		vk::BufferCopy buffercopy ( 0, 0, p.first->size );
+		buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
+	}
+	bufferstorage->free_transferbuffers ( v_instance->frame_index );
+
+	//barrier for access
+	vk::BufferMemoryBarrier bufferMemoryBarrier[] = {
+		vk::BufferMemoryBarrier ( vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
+								  v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->graphics_queue_id,
+								  v_igroup->buffer_storeage.buffer.buffer, 0, v_igroup->buffer_storeage.buffer.size )
+	};
+	buffer.pipelineBarrier (
+		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput,
+		vk::DependencyFlags(),
+		0, nullptr,//memoryBarrier
+		1, bufferMemoryBarrier,//bufferMemoryBarrier
+		0, nullptr//imageMemoryBarrier
+	);
+
+	vk::ClearValue clearColors[] = {
+		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) ),
+		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) ),
+		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) ),
+		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) ),
+		vk::ClearValue ( vk::ClearDepthStencilValue ( 1.0f, 0 ) )
+	};
+	vk::RenderPassBeginInfo renderPassBeginInfo = {
+		v_renderpass, data.framebuffer,
+		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
+		5, clearColors
+	};
+	v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
+	v_bundlestates[1].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
+	v_bundlestates[2].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
+	v_bundlestates[3].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
+	v_bundlestates[4].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, buffer, index );
+
+	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &engine_pipeline, buffer );
+
+	buffer.endRenderPass();
+}
+VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+	stages ( 1 ),
+	dependencies(),
+	window_dependency ( nullptr ),
+	v_instance ( instance ),
+	commandpool(),
+	v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
+	last_used ( 0 ) {
+
+	if ( !commandpool ) {
+		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
+		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
+	}
+	stages[0] = new VMainRenderStage ( instance, igroup, cgroup );
+}
+VMainBundle::~VMainBundle() {
+	v_instance->vk_device ().destroyCommandPool ( commandpool );
+	commandpool = vk::CommandPool();
+	for(VRenderStage* renderstage : stages) {
+		delete renderstage;
+	}
+}
+
+void VMainBundle::add_dependency ( u32 src_index, u32 dst_index ) {
+	dependencies.push_back ( std::make_pair ( src_index, dst_index ) );
+}
+void VMainBundle::remove_dependency ( u32 src_index, u32 dst_index ) {
+	for ( auto it = dependencies.begin(); it != dependencies.end(); it++ ) {
+		if ( it->first == src_index && it->second == dst_index ) it = dependencies.erase ( it );
+	}
+}
+void VMainBundle::set_window_dependency ( Window* window ) {
+	window_dependency = static_cast<VWindow*> ( window );
+}
+void VMainBundle::clear_window_dependency( ) {
+	window_dependency = nullptr;
+}
+
+void VMainBundle::set_renderstage ( u32 index, RenderStage* renderstage ) {
+	//TODO
+}
+RenderStage* VMainBundle::get_renderstage ( u32 index ) {
+	return stages[index];
+}
+RenderStage* VMainBundle::remove_renderstage ( u32 index ) {
+	//TODO
+	return nullptr;
+}
+void VMainBundle::v_dispatch ( ) {
+
+	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
+
+	u32 index = 0;
+	if ( window_dependency ) {
+		window_dependency->rendering_mutex.lock();
+		window_dependency->prepare_frame();
+		index = window_dependency->present_image->current_index;
+	}
+
+	QueueWrapper* queue_wrapper = &v_instance->queues;
+
+	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eBottomOfPipe );
+
+	PerFrameMainBundleRenderObj& data = v_per_frame_data[index];
 	if ( data.command.should_reset ) {
 		if ( data.command.buffer ) {
 			data.command.buffer.reset ( vk::CommandBufferResetFlags() );
@@ -985,109 +1243,24 @@ void VMainBundle::v_rebuild_commandbuffer ( u32 index ) {
 		};
 		data.command.buffer.begin ( begininfo );
 
-		DynArray<InstanceBlock>& instanceblocks = v_igroup->instance_to_data_map[textured_instance_base_id];
-
-		{
-			//update the instancedata
-			void* instance_data = v_igroup->buffer_storeage.allocate_transfer_buffer();
-			for ( auto it = v_igroup->instance_to_data_map.begin(); it != v_igroup->instance_to_data_map.end(); it++ ) {
-				const InstanceBase* instancebase = v_instance->instancebase ( it->first );
-				for ( InstanceBlock& block : it->second ) {
-					if ( block.data ) memcpy ( instance_data + block.offset, block.data, instancebase->instance_datagroup.size * block.count );
-				}
-			}
-			v_igroup->buffer_storeage.transfer_data ( data.command.buffer );
-
-			//for each context in the contextgroup update them
-			VUpdateableBufferStorage* bufferstorage = v_instance->context_bufferstorage;
-			bufferstorage->fetch_transferbuffers();
-			for( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++) {
-				for(VContext* v_context : it->second){
-					for ( VBaseImage* v_image : v_context->images ) {
-						if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, data.command.buffer );
-					}
-					if(v_context->data) {
-						VThinBuffer staging = bufferstorage->get_buffer_pair(v_context->buffer_chunk.index).second;
-						memcpy ( staging.mapped_ptr + v_context->buffer_chunk.offset, v_context->data, v_context->buffer_chunk.size );
-					}
-				}
-			}
-			for(std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers) {
-				vk::BufferCopy buffercopy ( 0, 0, p.first->size );
-				data.command.buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
-			}
-			bufferstorage->free_transferbuffers ( v_instance->frame_index );
-			
-			//barrier for access
-			vk::BufferMemoryBarrier bufferMemoryBarrier[] = {
-				vk::BufferMemoryBarrier ( vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
-				                          v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->graphics_queue_id,
-				                          v_igroup->buffer_storeage.buffer.buffer, 0, v_igroup->buffer_storeage.buffer.size )
-			};
-			data.command.buffer.pipelineBarrier (
-			    vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput,
-			    vk::DependencyFlags(),
-			    0, nullptr,//memoryBarrier
-			    1, bufferMemoryBarrier,//bufferMemoryBarrier
-			    0, nullptr//imageMemoryBarrier
-			);
+		for(VRenderStage* renderstage : stages) {
+			renderstage->v_dispatch(data.command.buffer, index);
 		}
-
-		vk::ClearValue clearColors[2] = {
-			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.5f, 0.0f} ) ) ),
-			vk::ClearValue ( vk::ClearDepthStencilValue ( 1.0f, 0 ) )
-		};
-		vk::RenderPassBeginInfo renderPassBeginInfo = {
-			v_renderpass, data.framebuffer,
-			vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
-			2, clearColors
-		};
-		v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, data.command.buffer, index );
-		v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, data.command.buffer, index );
-
-		data.command.buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-
-		render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, data.command.buffer );
-		render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, data.command.buffer );
-		render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, data.command.buffer );
-		render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, data.command.buffer );
-		render_pipeline ( v_instance, v_igroup, v_cgroup, &engine_pipeline, data.command.buffer );
-
-		data.command.buffer.endRenderPass();
-		if ( v_bundleStates[0].actual_image->window_target ) {
-			v_bundleStates[0].actual_image->transition_layout ( vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, data.command.buffer, index );
-			v_bundleStates[1].actual_image->transition_layout ( vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::ImageLayout::eGeneral, data.command.buffer, index );
-		}
+		
+		window_dependency->present_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, data.command.buffer, index );
 		data.command.buffer.end();
 		//data.command.should_reset = false;
 	}
-}
-void VMainBundle::v_dispatch() {
-	v_check_rebuild();
-	v_rebuild_pipelines();
-
-	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
-	VWindow* window = v_bundleStates[0].actual_image->window;
-	window->prepare_frame();
-	window->current_framelocal_data()->frame_index = v_instance->frame_index;
-
-	QueueWrapper* queue_wrapper = &v_instance->queues;
-
-	vk::PipelineStageFlags waitDstStageMask ( vk::PipelineStageFlagBits::eBottomOfPipe );
-
-	FrameLocalData* data = window->current_framelocal_data();
-
-	v_rebuild_commandbuffer ( v_bundleStates[0].actual_image->current_index );
 
 	vk::SubmitInfo submitinfos[1] = { vk::SubmitInfo (
-	                                      1, &window->image_available_guard_sem, //waitSem
+	                                      1, &window_dependency->image_available_guard_sem, //waitSem
 	                                      &waitDstStageMask,
-	                                      1, &v_per_frame_data[v_bundleStates[0].actual_image->current_index].command.buffer,//commandbuffers
-	                                      1, &data->present_ready_sem//signalSem
+	                                      1, &data.command.buffer,//commandbuffers
+	                                      1, &window_dependency->current_framelocal_data()->present_ready_sem//signalSem
 	                                  )
 	                                };
 
-	queue_wrapper->graphics_queue.submit ( 1, submitinfos, data->image_presented_fence );
+	queue_wrapper->graphics_queue.submit ( 1, submitinfos, window_dependency->current_framelocal_data()->image_presented_fence );
 
 	if ( !queue_wrapper->combined_graphics_present_queue ) {
 		//@TODO synchronize
@@ -1096,12 +1269,14 @@ void VMainBundle::v_dispatch() {
 	//present image
 	vk::Result results;
 	vk::PresentInfoKHR presentInfo (
-	    1, &data->present_ready_sem,
+	    1, &window_dependency->current_framelocal_data()->present_ready_sem,
 	    //active_sems.size(), active_sems.data(),
-	    1, &window->swap_chain,
-	    &v_bundleStates[0].actual_image->current_index, &results );
+	    1, &window_dependency->swap_chain,
+	    &index, &results );
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	last_used = v_instance->frame_index;
 
 	v_instance->frame_index++;
+	window_dependency->rendering_mutex.unlock();
+	v_logger.log<LogLevel::eWarn> ( "---------------     End Frame    ---------------" );
 }
