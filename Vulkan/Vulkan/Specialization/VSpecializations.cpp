@@ -11,10 +11,14 @@ ContextBaseId skybox_context_base_id;
 ModelBaseId simple_modelbase_id;
 ModelBaseId dot_modelbase_id;
 
+ModelBaseId fullscreen_modelbase_id;
+
 InstanceBaseId textured_instance_base_id;
 InstanceBaseId flat_instance_base_id;
 InstanceBaseId skybox_instance_base_id;
 InstanceBaseId shot_instance_base_id;
+
+InstanceBaseId dirlight_instance_base_id;
 
 InstanceBaseId engine_instance_base_id;
 
@@ -26,6 +30,7 @@ void register_specializations ( VInstance* instance ) {
 	
 	DataGroupDef vertex_datagroup = { { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 };
 
+	DataGroupDef vec3_1_datagroup = { { {ValueType::eF32Vec3, 1, 0}}, sizeof ( glm::vec3 ), 1 };
 	DataGroupDef vector1_datagroup = { { {ValueType::eF32Vec4, 1, 0}}, sizeof ( glm::vec4 ), 1 };
 	DataGroupDef vector2_datagroup = { { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16} }, sizeof ( glm::vec4 ) * 2, 1 };
 
@@ -67,6 +72,10 @@ void register_specializations ( VInstance* instance ) {
 	dot_modelbase_id = instance->static_modelbase_store.insert ( shot_simplemodel );
 	instance->modelbase_registered ( dot_modelbase_id );
 
+	ModelBase fullscreen_model = { 0, vec3_1_datagroup, {} };
+	fullscreen_modelbase_id = instance->static_modelbase_store.insert ( fullscreen_model );
+	instance->modelbase_registered ( fullscreen_modelbase_id );
+
 	//create modelbase from datagroup and contextbases
 	InstanceBase texturedinstance = { 0, matrix_2_datagroup };
 	textured_instance_base_id = instance->static_instancebase_store.insert ( texturedinstance );
@@ -82,6 +91,10 @@ void register_specializations ( VInstance* instance ) {
 	InstanceBase shotinstance = { 0, shot_datagroup };
 	shot_instance_base_id = instance->static_instancebase_store.insert ( shotinstance );
 	instance->instancebase_registered ( shot_instance_base_id );
+
+	InstanceBase dirlightinstance = { 0, empty_datagroup };
+	dirlight_instance_base_id = instance->static_instancebase_store.insert ( dirlightinstance );
+	instance->instancebase_registered ( dirlight_instance_base_id );
 
 	shot_instance_base_id = instance->static_instancebase_store.insert ( { 0, shot_datagroup } );
 	instance->instancebase_registered ( shot_instance_base_id );

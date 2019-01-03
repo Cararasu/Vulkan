@@ -139,6 +139,9 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
 	
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_engine_shader", "shader/engine.frag.sprv" );
+	
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "passthrough_shader", "shader/passthrough.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
 
 	Monitor* primMonitor = instance->get_primary_monitor();
 
@@ -163,6 +166,16 @@ int main ( int argc, char **argv ) {
 		};
 		Array<u16> indices = { 0 };
 		instance->load_generic_model ( dot_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
+	}
+	Model fullscreen_model = instance->create_model ( fullscreen_modelbase_id );
+	{
+		Array<glm::vec3> data_to_load = {
+			glm::vec3 ( 0.0f, 0.0f, 0.0f ),
+			glm::vec3 ( 2.0f, 0.0f, 0.0f ),
+			glm::vec3 ( 0.0f, 2.0f, 0.0f )
+		};
+		Array<u16> indices = { 0, 1, 2 };
+		instance->load_generic_model ( fullscreen_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 
 	Model cube = instance->create_model ( simple_modelbase_id );
@@ -500,11 +513,12 @@ int main ( int argc, char **argv ) {
 
 	bundle->set_window_dependency(window);
 
-	bundle->get_renderstage(0)->set_rendertarget ( 0, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//ambient + ???
+	bundle->get_renderstage(0)->set_rendertarget ( 0, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//ambient + intensity
 	bundle->get_renderstage(0)->set_rendertarget ( 1, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e2F16, 1.0f ) );//normals
 	bundle->get_renderstage(0)->set_rendertarget ( 2, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//specular power + intensity + ??? + ???
 	bundle->get_renderstage(0)->set_rendertarget ( 3, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4F16, 1.0f ) );//light-accumulation + specularintensity
 	bundle->get_renderstage(0)->set_rendertarget ( 4, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
+
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -734,7 +748,9 @@ int main ( int argc, char **argv ) {
 				engine_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 		}
-		instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
+		//instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
+		
+		instancegroup->register_instances ( dirlight_instance_base_id, fullscreen_model, nullptr, 1 );
 		
 		instance->render_bundles ( {bundle} );
 	}

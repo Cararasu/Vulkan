@@ -322,8 +322,16 @@ void VBaseImage::init() {
 
 		if ( type == vk::ImageType::e2D && layers == 1 ) {
 			data.imageview = v_instance->createImageView2D ( data.image, 0, mipmap_layers, v_format, aspect );
+			if(aspect & vk::ImageAspectFlagBits::eDepth && aspect & vk::ImageAspectFlagBits::eStencil) {
+				data.depth_imageview = v_instance->createImageView2D ( data.image, 0, mipmap_layers, v_format, vk::ImageAspectFlagBits::eDepth );
+				data.stencil_imageview = v_instance->createImageView2D ( data.image, 0, mipmap_layers, v_format, vk::ImageAspectFlagBits::eStencil );
+			}
 		} else if ( type == vk::ImageType::e2D ) {
 			data.imageview = v_instance->createImageView2DArray ( data.image, 0, mipmap_layers, 0, layers, v_format, aspect );
+			if(aspect & vk::ImageAspectFlagBits::eDepth && aspect & vk::ImageAspectFlagBits::eStencil) {
+				data.depth_imageview = v_instance->createImageView2DArray ( data.image, 0, mipmap_layers, 0, layers, v_format, vk::ImageAspectFlagBits::eDepth );
+				data.stencil_imageview = v_instance->createImageView2DArray ( data.image, 0, mipmap_layers, 0, layers, v_format, vk::ImageAspectFlagBits::eStencil );
+			}
 		} else {
 			v_logger.log<LogLevel::eDebug> ( "Not implemented %s", to_string ( type ).c_str() );
 			assert ( false );
@@ -343,6 +351,12 @@ void VBaseImage::destroy() {
 	for ( PerImageData& data : per_image_data ) {
 		if ( data.imageview ) {
 			v_instance->destroyImageView ( data.imageview );
+		}
+		if ( data.depth_imageview ) {
+			v_instance->destroyImageView ( data.depth_imageview );
+		}
+		if ( data.stencil_imageview ) {
+			v_instance->destroyImageView ( data.stencil_imageview );
 		}
 		if ( memory.memory ) { //if the image is not managed externally
 			v_instance->m_device.destroyImage ( data.image );

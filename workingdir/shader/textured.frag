@@ -40,7 +40,8 @@ void main() {
 	}
 	vec4 ambientcolor = texture(sampler2D(diffuseTexture, textureSampler), vec2(v_texCoord.x, -1.0f * v_texCoord.y));
    
-	outColor = ambientcolor * light.direction_amb.w + ambientcolor * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
+	outColor = ambientcolor;// * light.direction_amb.w + ambientcolor * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
+	outColor.w = 1/255.0;
 	outNormal = normal_direction.xy;
-	outSpecular = vec4(v_position, 0.0);
+	outSpecular = gl_FragCoord / vec4(500.0, 500.0, 1.0, 1.0);
 }

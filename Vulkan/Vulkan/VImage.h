@@ -12,6 +12,8 @@ ImageFormat transform_image_format ( vk::Format format );
 struct PerImageData {
 	vk::Image image;
 	vk::ImageView imageview;
+	vk::ImageView depth_imageview;
+	vk::ImageView stencil_imageview;
 };
 
 struct VBaseImage : public Image {
@@ -66,6 +68,18 @@ struct VBaseImage : public Image {
 	}
 	vk::ImageView instance_imageview ( ) {
 		return per_image_data[current_index].imageview;
+	}
+	vk::ImageView instance_depth_imageview ( u32 index ) {
+		return per_image_data[index % per_image_data.size()].depth_imageview;
+	}
+	vk::ImageView instance_depth_imageview ( ) {
+		return per_image_data[current_index].depth_imageview;
+	}
+	vk::ImageView instance_stencil_imageview ( u32 index ) {
+		return per_image_data[index % per_image_data.size()].stencil_imageview;
+	}
+	vk::ImageView instance_stencil_imageview ( ) {
+		return per_image_data[current_index].stencil_imageview;
 	}
 	vk::ImageMemoryBarrier transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	        Range<u32> miprange, Range<u32> arrayrange, u32 instance_index,

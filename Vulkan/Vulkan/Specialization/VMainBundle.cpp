@@ -10,11 +10,12 @@
 #include "../VTransformEnums.h"
 #include "../VWindow.h"
 
-void gen_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct ) {
+void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct ) {
 	if ( !p_struct->pipeline_layout ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipeline Layouts" );
 
 		DynArray<vk::DescriptorSetLayout> v_descriptor_set_layouts;
+		if(subpass_input->ds_layout) v_descriptor_set_layouts.push_back ( subpass_input->ds_layout );
 		for ( ContextBaseId id : p_struct->contextBaseId ) {
 			VContextBase& v_contextbase = v_instance->contextbase_map[id];
 			if ( v_contextbase.descriptorset_layout ) v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );
@@ -129,8 +130,12 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		    vk::PipelineDepthStencilStateCreateFlags(),
 		    VK_TRUE, VK_TRUE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
-		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
-		    {}, {}, //front, back
+		    VK_FALSE, VK_TRUE, //depthBoundsTestEnable, stencilTestEnable
+		    {
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/, 
+				vk::CompareOp::eAlways/*compareOp*/,
+				0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
+			}, {}, //front, back
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
@@ -285,8 +290,12 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    vk::PipelineDepthStencilStateCreateFlags(),
 		    VK_TRUE, VK_TRUE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
-		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
-		    {}, {}, //front, back
+		    VK_FALSE, VK_TRUE, //depthBoundsTestEnable, stencilTestEnable
+		    {
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/, 
+				vk::CompareOp::eAlways/*compareOp*/,
+				0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
+			}, {}, //front, back
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
@@ -360,9 +369,8 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
 
-		std::array<vk::VertexInputBindingDescription, 2> vertexInputBindings = {
-			vk::VertexInputBindingDescription ( 0, modelbase->datagroup.size, vk::VertexInputRate::eVertex ),
-			vk::VertexInputBindingDescription ( 1, instancebase->instance_datagroup.size, vk::VertexInputRate::eInstance )
+		std::array<vk::VertexInputBindingDescription, 1> vertexInputBindings = {
+			vk::VertexInputBindingDescription ( 0, modelbase->datagroup.size, vk::VertexInputRate::eVertex )
 		};
 
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
@@ -593,17 +601,21 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 
 		vk::PipelineDepthStencilStateCreateInfo depthStencil (
 		    vk::PipelineDepthStencilStateCreateFlags(),
-		    VK_TRUE, VK_FALSE, //depthTestEnable, depthWriteEnable
+		    VK_TRUE, VK_TRUE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
-		    VK_FALSE, VK_FALSE, //depthBoundsTestEnable, stencilTestEnable
-		    {}, {}, //front, back
+		    VK_FALSE, VK_TRUE, //depthBoundsTestEnable, stencilTestEnable
+		    {
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/, 
+				vk::CompareOp::eAlways/*compareOp*/,
+				0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 0/*reference*/
+			}, {}, //front, back
 		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
 		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
 			vk::PipelineColorBlendAttachmentState (
 			    VK_TRUE, //blendEnable
-			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
 			    vk::BlendOp::eAdd,//colorBlendOp
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
 			    vk::BlendOp::eAdd,//alphaBlendOp
@@ -611,7 +623,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_TRUE, //blendEnable
-			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
 			    vk::BlendOp::eAdd,//colorBlendOp
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
 			    vk::BlendOp::eAdd,//alphaBlendOp
@@ -619,7 +631,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 			),
 			vk::PipelineColorBlendAttachmentState (
 			    VK_TRUE, //blendEnable
-			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha,//eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //eOneMinusSrcAlpha, //srcColorBlendFactor, dstColorBlendFactor
 			    vk::BlendOp::eAdd,//colorBlendOp
 			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
 			    vk::BlendOp::eAdd,//alphaBlendOp
@@ -831,6 +843,149 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
+void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
+	if ( !p_struct->pipeline ) {
+		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+
+		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
+		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
+
+		std::array<vk::VertexInputBindingDescription, 1> vertexInputBindings = {
+			vk::VertexInputBindingDescription ( 0, modelbase->datagroup.size, vk::VertexInputRate::eVertex )
+		};
+
+		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
+		u32 valuecount = 0;
+		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
+			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+		}
+		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
+			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+		}
+		vertexInputAttributes.resize ( valuecount );
+		{
+			u32 index = 0;
+			u32 bindingindex = 0;
+			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
+				VFormatData formatdata = to_v_format ( valuedef.type );
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for ( u32 i = 0; i < count; i++ ) {
+					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
+					index++;
+				}
+			}
+			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
+				VFormatData formatdata = to_v_format ( valuedef.type );
+				u32 count = formatdata.count * valuedef.arraycount;
+				u32 offset = valuedef.offset;
+				for ( u32 i = 0; i < count; i++ ) {
+					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
+					offset += formatdata.bytesize;
+					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
+					index++;
+				}
+			}
+		}
+
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo ( vk::PipelineVertexInputStateCreateFlags(),
+		        vertexInputBindings.size(), vertexInputBindings.data(),
+		        vertexInputAttributes.size, vertexInputAttributes.data );
+
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
+
+		vk::Viewport viewports[] = {
+			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
+		};
+
+		vk::Rect2D scissors[] = {
+			vk::Rect2D ( vk::Offset2D ( 0, 0 ), vk::Extent2D ( viewport.extend.width, viewport.extend.height ) ),
+		};
+
+		vk::PipelineViewportStateCreateInfo viewportState ( vk::PipelineViewportStateCreateFlags(), 1, viewports, 1, scissors );
+
+		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
+		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        VK_FALSE, //depthBiasEnable
+		        0.0f, //depthBiasConstantFactor
+		        0.0f, //depthBiasClamp
+		        0.0f, //depthBiasSlopeFactor
+		        1.0f ); //lineWidth
+
+		vk::PipelineMultisampleStateCreateInfo multisampling (
+		    vk::PipelineMultisampleStateCreateFlags(),
+		    vk::SampleCountFlagBits::e1,
+		    VK_FALSE,//sampleShadingEnable
+		    1.0f, nullptr, //minSampleShading, pSampleMask
+		    VK_FALSE, VK_FALSE //alphaToCoverageEnable, alphaToOneEnable
+		);
+
+
+		vk::PipelineDepthStencilStateCreateInfo depthStencil (
+		    vk::PipelineDepthStencilStateCreateFlags(),
+		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
+		    vk::CompareOp::eLess, //depthCompareOp
+		    VK_FALSE, VK_TRUE, //depthBoundsTestEnable, stencilTestEnable
+		    {
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/, 
+				vk::CompareOp::eEqual/*compareOp*/,
+				0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
+			}, {}, //front, back
+		    0.0f, 1.0f //minDepthBounds, maxDepthBounds
+		);
+		
+		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
+			vk::PipelineColorBlendAttachmentState (
+			    VK_TRUE, //blendEnable
+			    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne, //srcColorBlendFactor, dstColorBlendFactor
+			    vk::BlendOp::eAdd,//colorBlendOp
+			    vk::BlendFactor::eOne, vk::BlendFactor::eZero, //srcAlphaBlendFactor, dstAlphaBlendFactor
+			    vk::BlendOp::eAdd,//alphaBlendOp
+			    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA//colorWriteMask
+			)
+		};
+
+		vk::PipelineColorBlendStateCreateInfo colorBlending (
+		    vk::PipelineColorBlendStateCreateFlags(),
+		    VK_FALSE, vk::LogicOp::eCopy,//logicOpEnable, logicOp
+		    1, colorBlendAttachments, // attachments
+			{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
+		);
+
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "passthrough_shader" ) );
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "dirlight_shader" ) );
+
+		vk::PipelineShaderStageCreateInfo shaderStages[3] = {
+			vk::PipelineShaderStageCreateInfo (
+			    vk::PipelineShaderStageCreateFlags(),
+			    vk::ShaderStageFlagBits::eVertex, vmod->shadermodule,
+			    "main", nullptr//name, specialization
+			),
+			vk::PipelineShaderStageCreateInfo (
+			    vk::PipelineShaderStageCreateFlags(),
+			    vk::ShaderStageFlagBits::eFragment, fmod->shadermodule,
+			    "main", nullptr//name, specialization
+			),
+		};
+		vk::GraphicsPipelineCreateInfo pipelineInfo (
+		    vk::PipelineCreateFlags(),
+		    2, shaderStages,
+		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
+		    nullptr,
+		    p_struct->pipeline_layout,
+		    renderpass,
+		    1,/*subpass*/
+		    vk::Pipeline(),
+		    -1
+		);
+		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+	}
+}
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct ) {
 	if ( p_struct->pipeline ) {
@@ -844,9 +999,16 @@ void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct )
 		p_struct->pipeline_layout = vk::PipelineLayout();
 	}
 }
-void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, vk::CommandBuffer cmdbuffer ) {
+void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer ) {
 
 	DynArray<InstanceBlock>& instanceblocks = igroup->instance_to_data_map[p_struct->instancebase_id];
+	
+	u32 descriptor_offset = 0;
+	
+	if(renderpass_struct->ds_set) {
+		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, 1, &renderpass_struct->ds_set, 0, nullptr );
+		descriptor_offset += 1;
+	}
 
 	DynArray<vk::DescriptorSet> descriptorSets;
 	for ( ContextBaseId id : p_struct->contextBaseId ) {
@@ -854,9 +1016,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		assert ( context_ptr );
 		descriptorSets.push_back ( context_ptr->descriptor_set );
 	}
-	u32 offset = 0;
-	if ( descriptorSets.size() ) cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, offset, descriptorSets.size(), descriptorSets.data(), 0, nullptr );
-	offset += descriptorSets.size();
+	if ( descriptorSets.size() ) cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, descriptorSets, {} );
+	descriptor_offset += descriptorSets.size();
 	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline );
 	IdPtrArray<VModel>& models = v_instance->v_model_map[p_struct->modelbase_id];
 	const ModelBase* modelbase_ptr = v_instance->modelbase ( p_struct->modelbase_id );
@@ -881,10 +1042,14 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			}
 			assert ( found );
 		}
-		if ( model_descriptorSets.size() ) cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, offset, model_descriptorSets.size(), model_descriptorSets.data(), 0, nullptr );
-
+		if ( model_descriptorSets.size() ) cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, model_descriptorSets, {} );
+		
 		cmdbuffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );
-		cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
+		
+		if(instanceblock.data)
+			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
+		else
+			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer}, {0} );
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
 	}
 }
@@ -900,19 +1065,50 @@ flat_pipeline ( {simple_modelbase_id, flat_instance_base_id, { camera_context_ba
 skybox_pipeline ( {simple_modelbase_id, skybox_instance_base_id, { }, {skybox_context_base_id}} ),
 shot_pipeline ( {dot_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {}} ),
 engine_pipeline ( {dot_modelbase_id, engine_instance_base_id, {camera_context_base_id}, {}} ),
-v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ) {
+dirlight_pipeline ( {fullscreen_modelbase_id, dirlight_instance_base_id, {}, {}} ),
+v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
+subpass_inputs(2) {
 
 	v_bundlestates.resize( 5 );
 	if ( !commandpool ) {
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
 		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
 	}
+	
+	Array<vk::DescriptorPoolSize> poolsizes ( 1 );
+	poolsizes[0].descriptorCount = 10;
+	poolsizes[0].type = vk::DescriptorType::eInputAttachment;
+	vk::DescriptorPoolCreateInfo poolInfo ( vk::DescriptorPoolCreateFlags(), 2, poolsizes.size, poolsizes.data );
+	input_ds_pool = v_instance->vk_device().createDescriptorPool ( poolInfo );
+	
+	{
+		subpass_inputs[0].ds_layout = vk::DescriptorSetLayout();
+		subpass_inputs[0].ds_set = vk::DescriptorSet();
+	}
+	{
+		vk::DescriptorSetLayoutBinding binding[4] = {
+			vk::DescriptorSetLayoutBinding( 0, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr ),
+			vk::DescriptorSetLayoutBinding( 1, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr ),
+			vk::DescriptorSetLayoutBinding( 2, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr ),
+			vk::DescriptorSetLayoutBinding( 3, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr )
+		};
+		subpass_inputs[1].ds_layout = v_instance->vk_device ().createDescriptorSetLayout( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 4, binding ), nullptr );
+		
+		vk::DescriptorSetAllocateInfo allocInfo ( input_ds_pool, 1, &subpass_inputs[1].ds_layout );
+		v_instance->vk_device().allocateDescriptorSets ( &allocInfo, &subpass_inputs[1].ds_set );
+	}
 }
 
 VMainRenderStage::~VMainRenderStage() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );
 	commandpool = vk::CommandPool();
-
+	
+	v_instance->vk_device().destroyDescriptorPool(input_ds_pool);
+	
+	for(SubPassInput& subpass_input : subpass_inputs) {
+		v_instance->vk_device().destroyDescriptorSetLayout(subpass_input.ds_layout);
+	}
+	
 	v_destroy_framebuffers();
 	v_destroy_pipeline_layouts();
 }
@@ -925,6 +1121,7 @@ void VMainRenderStage::v_destroy_pipeline_layouts() {
 	destroy_pipeline_layout ( v_instance, &skybox_pipeline );
 	destroy_pipeline_layout ( v_instance, &shot_pipeline );
 	destroy_pipeline_layout ( v_instance, &engine_pipeline );
+	destroy_pipeline_layout ( v_instance, &dirlight_pipeline );
 }
 void VMainRenderStage::v_destroy_pipelines() {
 	v_destroy_framebuffers();
@@ -933,6 +1130,7 @@ void VMainRenderStage::v_destroy_pipelines() {
 	destroy_pipeline ( v_instance, &skybox_pipeline );
 	destroy_pipeline ( v_instance, &shot_pipeline );
 	destroy_pipeline ( v_instance, &engine_pipeline );
+	destroy_pipeline ( v_instance, &dirlight_pipeline );
 	for ( PerFrameMainBundleRenderObj& data : v_per_frame_data ) {
 		data.command.should_reset = true;
 	}
@@ -990,14 +1188,17 @@ void VMainRenderStage::v_check_rebuild() {
 }
 
 void VMainRenderStage::v_rebuild_pipelines() {
-	gen_pipeline_layout ( v_instance, &tex_pipeline );
-	gen_pipeline_layout ( v_instance, &flat_pipeline );
-	gen_pipeline_layout ( v_instance, &skybox_pipeline );
-	gen_pipeline_layout ( v_instance, &shot_pipeline );
-	gen_pipeline_layout ( v_instance, &engine_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &tex_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &flat_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &skybox_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &shot_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &engine_pipeline );
+	
+	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &dirlight_pipeline );
+	
 	if ( !v_renderpass ) {
 		v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
-		vk::AttachmentDescription attachments[] = {
+		std::array<vk::AttachmentDescription, 5> attachments = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
 			                            vk::AttachmentLoadOp::eClear,//loadOp
@@ -1048,13 +1249,22 @@ void VMainRenderStage::v_rebuild_pipelines() {
 		vk::AttachmentReference colorAttachmentRefs1[] = {
 			vk::AttachmentReference ( 0, vk::ImageLayout::eColorAttachmentOptimal ),
 			vk::AttachmentReference ( 1, vk::ImageLayout::eColorAttachmentOptimal ),
-			vk::AttachmentReference ( 2, vk::ImageLayout::eColorAttachmentOptimal ),
-			vk::AttachmentReference ( 3, vk::ImageLayout::eColorAttachmentOptimal )
+			vk::AttachmentReference ( 2, vk::ImageLayout::eColorAttachmentOptimal )
 		};
 		vk::AttachmentReference depthAttachmentRef1 ( 4, vk::ImageLayout::eDepthStencilAttachmentOptimal );
 		
-
-		vk::SubpassDescription subpasses[] = {
+		vk::AttachmentReference inputAttachmentRefs2[] = {
+			vk::AttachmentReference ( 0, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::AttachmentReference ( 1, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::AttachmentReference ( 2, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::AttachmentReference ( 4, vk::ImageLayout::eGeneral )
+		};
+		vk::AttachmentReference depthAttachmentRef2 ( 4, vk::ImageLayout::eGeneral );
+		vk::AttachmentReference colorAttachmentRefs2[] = {
+			vk::AttachmentReference ( 3, vk::ImageLayout::eColorAttachmentOptimal )
+		};
+		
+		std::array<vk::SubpassDescription, 2> subpasses = {
 			vk::SubpassDescription (
 			    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
 			    0, nullptr/*inputAttachments*/,
@@ -1062,18 +1272,63 @@ void VMainRenderStage::v_rebuild_pipelines() {
 			    nullptr,/*resolveAttachments*/
 			    &depthAttachmentRef1,/*depthAttackment*/
 			    0, nullptr/*preserveAttachments*/
+			),
+			vk::SubpassDescription (
+			    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
+			    4, inputAttachmentRefs2/*inputAttachments*/,
+			    1, colorAttachmentRefs2/*colorAttachments*/,
+			    nullptr,/*resolveAttachments*/
+			    &depthAttachmentRef2,/*depthAttackment*/
+			    0, nullptr/*preserveAttachments*/
 			)
 		};
-
-		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 5, attachments, 1, subpasses, 0, nullptr/*dependencies*/ );
+		
+		std::array<vk::SubpassDependency, 1> dependencies = {
+			vk::SubpassDependency(
+				0, 1,/*srcSubpass, dstSubpass*/
+				vk::PipelineStageFlags() | vk::PipelineStageFlagBits::eLateFragmentTests | vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eFragmentShader,/*srcStageMask, dstStageMask*/
+				vk::AccessFlags() | vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite, vk::AccessFlags() | vk::AccessFlagBits::eInputAttachmentRead,/*srcAccessMask, dstAccessMask*/
+				vk::DependencyFlags()/*dependencyFlags*/
+			)
+		};
+		
+		vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(), 
+			attachments.size(), attachments.data(), 
+			subpasses.size(), subpasses.data(), 
+			dependencies.size(), dependencies.data()/*dependencies*/ );
 
 		v_renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
+		
+		std::array<vk::DescriptorImageInfo, 4> dsimageinfo1 = {
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[0].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[1].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[2].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[4].actual_image->instance_depth_imageview(), vk::ImageLayout::eDepthStencilReadOnlyOptimal)
+		};
+		std::array<vk::DescriptorImageInfo, 5> dsimageinfo2 = {
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[0].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[1].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[2].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[3].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
+			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[4].actual_image->instance_depth_imageview(), vk::ImageLayout::eDepthStencilReadOnlyOptimal)
+		};
+		std::array<vk::WriteDescriptorSet, 1> writeDescriptorSets = {
+			vk::WriteDescriptorSet(
+				subpass_inputs[1].ds_set,
+				0, 0, dsimageinfo1.size(),
+				vk::DescriptorType::eInputAttachment,
+				dsimageinfo1.data(),
+				nullptr, nullptr
+			)
+		};
+		v_instance->vk_device().updateDescriptorSets(writeDescriptorSets, {});
 	}
 	gen_tex_pipeline ( v_instance, &tex_pipeline, viewport, v_renderpass );
 	gen_flat_pipeline ( v_instance, &flat_pipeline, viewport, v_renderpass );
 	gen_skybox_pipeline ( v_instance, &skybox_pipeline, viewport, v_renderpass );
 	gen_shot_pipeline ( v_instance, &shot_pipeline, viewport, v_renderpass );
 	gen_engine_pipeline ( v_instance, &engine_pipeline, viewport, v_renderpass );
+	gen_dirlight_pipeline ( v_instance, &dirlight_pipeline, viewport, v_renderpass );
 	last_frame_index_pipeline_built = v_instance->frame_index;
 }
 void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
@@ -1101,7 +1356,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	for ( auto it = v_igroup->instance_to_data_map.begin(); it != v_igroup->instance_to_data_map.end(); it++ ) {
 		const InstanceBase* instancebase = v_instance->instancebase ( it->first );
 		for ( InstanceBlock& block : it->second ) {
-			if ( block.data ) memcpy ( instance_data + block.offset, block.data, instancebase->instance_datagroup.size * block.count );
+			if ( block.data) memcpy ( instance_data + block.offset, block.data, instancebase->instance_datagroup.size * block.count );
 		}
 	}
 	v_igroup->buffer_storeage.transfer_data ( buffer );
@@ -1160,12 +1415,16 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &engine_pipeline, buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &engine_pipeline, &subpass_inputs[0], buffer );
 
+	buffer.nextSubpass(vk::SubpassContents::eInline);
+	
+	render_pipeline ( v_instance, v_igroup, v_cgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
+	
 	buffer.endRenderPass();
 }
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :

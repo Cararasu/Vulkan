@@ -23,9 +23,14 @@ void main() {
 	
 	vec3 distance_vec = g_uvs - (n_eyepos * l1);
 	float distance = 1.0 - clamp(length(distance_vec), 0.0, 1.0);
+	if(distance < 0.5) discard;
 	
-	float curve = pow(distance, 2) * 2.0;
+	/*float curve = pow(distance, 2) * 2.0;
 	outColor = vec4(vec3(1.0, 1.0, 1.0) * curve + g_umbraColor, curve);
+	outNormal = vec2(0.0, 0.0);
+	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);*/
+	
+	outColor = vec4(g_umbraColor, 0.5);
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

@@ -27,8 +27,12 @@ struct PipelineStruct {
 	vk::PipelineLayout pipeline_layout;
 	vk::Pipeline pipeline;
 };
+struct SubPassInput {
+	vk::DescriptorSetLayout ds_layout;
+	vk::DescriptorSet ds_set;
+};
 
-void gen_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
+void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct );
 
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
@@ -36,10 +40,13 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 
+void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
+
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct );
 void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
 
-void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, vk::CommandBuffer cmdbuffer );
+
+void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer );
 
 struct VMainRenderStage : public VRenderStage {
 	VInstance* v_instance;
@@ -53,11 +60,16 @@ struct VMainRenderStage : public VRenderStage {
 	PipelineStruct shot_pipeline;
 	PipelineStruct engine_pipeline;
 	
+	PipelineStruct dirlight_pipeline;
+	
 	Viewport<f32> viewport;
 	
 	vk::CommandPool commandpool;
 	Array<PerFrameMainBundleRenderObj> v_per_frame_data;
 	vk::RenderPass v_renderpass;
+	
+	vk::DescriptorPool input_ds_pool;
+	Array<SubPassInput> subpass_inputs;
 
 	u64 last_frame_index_pipeline_built = 0;
 	

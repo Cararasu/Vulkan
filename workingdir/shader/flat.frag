@@ -38,7 +38,8 @@ void main() {
 	}
 	vec4 ambientcolor = vec4(0.1, 0.1, 0.1, 1.0);
    
-	outColor = ambientcolor * light.direction_amb.w + light.color * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
+	outColor = ambientcolor;// * light.direction_amb.w + ambientcolor * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
+	outColor.w = 1/256.0;
 	outNormal = normal_direction.xy;
-	outSpecular = vec4(v_position, 0.0);
+	outSpecular = gl_FragCoord / vec4(500.0, 500.0, 1.0, 1.0);
 }
