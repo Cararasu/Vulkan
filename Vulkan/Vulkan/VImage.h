@@ -12,8 +12,13 @@ ImageFormat transform_image_format ( vk::Format format );
 struct PerImageData {
 	vk::Image image;
 	vk::ImageView imageview;
-	vk::ImageView depth_imageview;
-	vk::ImageView stencil_imageview;
+};
+
+struct VImageUse {
+	RId id;
+	Range<u32> mipmaps, layers;
+	vk::ImageView imageview;
+	vk::ImageAspectFlags aspects;
 };
 
 struct VBaseImage : public Image {
@@ -26,6 +31,7 @@ struct VBaseImage : public Image {
 	vk::ImageUsageFlags usage;
 	vk::ImageAspectFlags aspect;
 	DynArray<PerImageData> per_image_data;
+	IdArray<VImageUse> usages;
 
 	//window-image
 	vk::Semaphore image_available_sem;
@@ -51,6 +57,12 @@ struct VBaseImage : public Image {
 
 	void fetch_new_window_images ( );
 
+	void delete_use(RId id) {
+		v_instance->destroyImageView(usages[id].imageview);
+		usages.remove(id);
+	}
+	VImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers, u32 index = 0);
+
 	void v_set_extent ( u32 width, u32 height, u32 depth );
 	void v_set_format ( vk::Format format );
 
@@ -69,18 +81,6 @@ struct VBaseImage : public Image {
 	vk::ImageView instance_imageview ( ) {
 		return per_image_data[current_index].imageview;
 	}
-	vk::ImageView instance_depth_imageview ( u32 index ) {
-		return per_image_data[index % per_image_data.size()].depth_imageview;
-	}
-	vk::ImageView instance_depth_imageview ( ) {
-		return per_image_data[current_index].depth_imageview;
-	}
-	vk::ImageView instance_stencil_imageview ( u32 index ) {
-		return per_image_data[index % per_image_data.size()].stencil_imageview;
-	}
-	vk::ImageView instance_stencil_imageview ( ) {
-		return per_image_data[current_index].stencil_imageview;
-	}
 	vk::ImageMemoryBarrier transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	        Range<u32> miprange, Range<u32> arrayrange, u32 instance_index,
 	        vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );
@@ -95,6 +95,7 @@ struct VBaseImage : public Image {
 	}
 
 	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
+	void generate_mipmaps ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer );
 	void generate_mipmaps ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, u32 baseLevel, vk::CommandBuffer commandBuffer ) {
 		generate_mipmaps ( oldLayout, newLayout, {baseLevel, mipmap_layers}, {0, layers}, commandBuffer );
 	}

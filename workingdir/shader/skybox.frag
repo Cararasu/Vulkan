@@ -15,6 +15,7 @@ layout (set=0, binding=2) uniform sampler textureSampler;
 
 void main() {
 	outColor = texture(sampler2DArray(skyboxTextures, textureSampler), vec3(v_texCoord.x, v_texCoord.y, v_texCoord.z));
+	outColor.w = 1.0/255.0;
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

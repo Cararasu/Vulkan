@@ -105,7 +105,7 @@ struct Instance {
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;
 
-	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) = 0;
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageUsage>& image_types, Array<ImageDependency>& dependencies ) = 0;
 
 //---------- Specialized Functions
 

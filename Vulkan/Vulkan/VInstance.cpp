@@ -692,7 +692,7 @@ InstanceGroup* VInstance::create_instancegroup() {
 ContextGroup* VInstance::create_contextgroup() {
 	return new VContextGroup ( this );
 }
-RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) {
+RenderBundle* VInstance::create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageUsage>& image_types, Array<ImageDependency>& dependencies ) {
 	//return new VRenderBundle ( igroup, cgroup, rstages, image_types, dependencies );
 	return nullptr;
 }

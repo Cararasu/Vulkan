@@ -26,6 +26,11 @@ struct Logger {
 	~Logger() = default;
 	
 	template<LogLevel LL>
+	bool is_enabled() const {
+		return LL >= level;
+	}
+	
+	template<LogLevel LL>
 	void log ( const char* fstring, ... ) const {
 		if ( LL >= level ) {
 			printf ( "%s - ", module_name.cstr );

@@ -142,6 +142,8 @@ int main ( int argc, char **argv ) {
 	
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "passthrough_shader", "shader/passthrough.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "lightless_shader", "shader/lightless.frag.sprv" );
+	
 
 	Monitor* primMonitor = instance->get_primary_monitor();
 
@@ -379,6 +381,9 @@ int main ( int argc, char **argv ) {
 
 	Context camera_matrix = instance->create_context ( camera_context_base_id );
 	contextgroup->set_context ( camera_matrix );
+	
+	Context inverse_camera_matrix_context = instance->create_context ( inverse_camera_context_base_id );
+	contextgroup->set_context ( inverse_camera_matrix_context );
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
@@ -513,12 +518,14 @@ int main ( int argc, char **argv ) {
 
 	bundle->set_window_dependency(window);
 
-	bundle->get_renderstage(0)->set_rendertarget ( 0, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//ambient + intensity
-	bundle->get_renderstage(0)->set_rendertarget ( 1, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e2F16, 1.0f ) );//normals
-	bundle->get_renderstage(0)->set_rendertarget ( 2, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1.0f ) );//specular power + intensity + ??? + ???
-	bundle->get_renderstage(0)->set_rendertarget ( 3, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::e4F16, 1.0f ) );//light-accumulation + specularintensity
-	bundle->get_renderstage(0)->set_rendertarget ( 4, instance->resource_manager()->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1.0f ) );
+	bundle->get_renderstage(0)->set_rendertarget ( 0, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//ambient + intensity
+	bundle->get_renderstage(0)->set_rendertarget ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
+	bundle->get_renderstage(0)->set_rendertarget ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
+	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 3, 1.0f );
+	bundle->get_renderstage(0)->set_rendertarget ( 3, lightaccumulation );//light-accumulation + specularintensity
+	bundle->get_renderstage(0)->set_rendertarget ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 
+	bundle->get_renderstage(1)->set_rendertarget ( 0, lightaccumulation );
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -682,6 +689,10 @@ int main ( int argc, char **argv ) {
 		
 		instance->update_context_data ( camera_matrix, &camera );
 		
+		glm::mat4 inverse_camera_matrix = glm::inverse (camera.camera_matrixes);
+		
+		instance->update_context_data ( inverse_camera_matrix_context, &inverse_camera_matrix );
+		
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
@@ -751,6 +762,7 @@ int main ( int argc, char **argv ) {
 		//instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
 		
 		instancegroup->register_instances ( dirlight_instance_base_id, fullscreen_model, nullptr, 1 );
+		instancegroup->register_instances ( lightless_instance_base_id, fullscreen_model, nullptr, 1 );
 		
 		instance->render_bundles ( {bundle} );
 	}

@@ -14,6 +14,7 @@ struct VRenderTarget;
 struct VBundleImageState {
 	vk::Format current_format = vk::Format::eUndefined;
 	VBaseImage* actual_image = nullptr;
+	VImageUse use;
 };
 struct VRenderStage : public RenderStage {
 	Array<VBundleImageState> v_bundlestates;

@@ -20,10 +20,10 @@ struct VRenderBundle : public RenderBundle {
 	VInstanceGroup* igroup;
 	VContextGroup* cgroup;
 	Array<const VRenderStage*> rstages;
-	Array<ImageType> image_types;
+	Array<ImageUsage> image_types;
 	Array<ImageDependency> dependencies;
 
-	VRenderBundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies );
+	VRenderBundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageUsage>& image_types, Array<ImageDependency>& dependencies );
 	virtual ~VRenderBundle();
 
 	void v_dispatch();

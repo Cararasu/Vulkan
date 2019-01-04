@@ -116,6 +116,20 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	stbi_image_free ( pixels );
 	return image;
 }
+ImageUse VResourceManager::create_image_use(Image* image, ImagePart part, Range<u32> mipmaps, Range<u32> layers, u32 index) {
+	VBaseImage* v_image = static_cast<VBaseImage*> ( image );
+	VImageUse vimageuse = v_image->create_use(part, mipmaps, layers, index);
+	return {
+		vimageuse.id, 
+		image, part,
+		vimageuse.mipmaps, vimageuse.layers,
+		index
+	};
+}
+void VResourceManager::delete_image_use(ImageUse imageuse) {
+	VBaseImage* v_image = static_cast<VBaseImage*> ( imageuse.base_image );
+	v_image->usages.remove(imageuse.id);
+}
 Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_layers ) {
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load ( file.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
@@ -158,12 +172,12 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 	stbi_image_free ( pixels );
 	return v_image;
 }
-Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type, float scaling ) {
+Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type, u32 mipmap_layers, float scaling ) {
 	VBaseImage* base_image = dynamic_cast<VBaseImage*> ( image );
 	if ( !base_image ) return nullptr;
-	return v_create_dependant_image ( base_image, type, scaling );
+	return v_create_dependant_image ( base_image, type, mipmap_layers, scaling );
 }
-VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, float scaling ) {
+VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, u32 mipmap_layers, float scaling ) {
 	vk::Format format = transform_image_format ( type );
 
 	vk::ImageUsageFlags usages;
@@ -199,7 +213,7 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	                        base_image->height,
 	                        base_image->depth,
 	                        1,
-	                        base_image->mipmap_layers,
+	                        mipmap_layers,
 	                        format,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,

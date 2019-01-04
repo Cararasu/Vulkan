@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Header.h"
+#include "Dimensions.h"
 #include <atomic>
 
 template<typename IT>
@@ -52,6 +53,14 @@ struct ImageTypeGroup {
 	//sampling-options
 };
 
+struct ImageUse {
+	RId id = 0;
+	Image* base_image;
+	ImagePart part;
+	Range<u32> mipmaps, layers;//array-layers
+	u32 index;
+};
+
 struct Image : public Resource {
 	ImageFormat format;
 	u32 width, height, depth;
@@ -63,8 +72,8 @@ struct Image : public Resource {
 	Image ( ImageFormat format, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, bool window_target ) :
 		format ( format ), width ( width ), height ( height ), depth ( depth ), layers ( layers ), mipmap_layers ( mipmap_layers ),
 		window_target ( window_target ) {
-
 	}
+	
 	virtual ~Image() {}
 };
 

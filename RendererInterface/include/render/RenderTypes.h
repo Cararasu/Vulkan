@@ -151,7 +151,7 @@ inline const char* to_cstring(ValueType type){
 	return "undefined Type";
 }
 
-enum class ImageType {
+enum class ImagePart {
 	eColor,
 	eDepth,
 	eDepthStencil,

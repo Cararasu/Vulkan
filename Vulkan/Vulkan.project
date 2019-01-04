@@ -192,6 +192,7 @@
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/engine.frag -o ../workingdir/shader/engine.frag.sprv</Command>
         <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
         <Command Enabled="yes"/>
       </PreBuild>

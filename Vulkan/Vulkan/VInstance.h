@@ -133,7 +133,7 @@ struct VInstance : public Instance {
 	virtual InstanceGroup* create_instancegroup() override;
 	virtual ContextGroup* create_contextgroup() override;
 
-	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageType>& image_types, Array<ImageDependency>& dependencies ) override;
+	virtual RenderBundle* create_renderbundle ( InstanceGroup* igroup, ContextGroup* cgroup, Array<const RenderStage*>& rstages, Array<ImageUsage>& image_types, Array<ImageDependency>& dependencies ) override;
 
 	virtual void render_bundles ( Array<RenderBundle*> bundles ) override;
 

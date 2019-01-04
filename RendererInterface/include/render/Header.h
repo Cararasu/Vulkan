@@ -37,7 +37,7 @@ struct Array {
 		if(!size) return;
 		data = new T[size];
 		for ( u64 i = 0; i < size; i++){
-			data[i++] = ele;
+			data[i] = ele;
 		}
 	}
 	Array ( const Array<T>& array ) : size ( array.size ), data ( nullptr ) {

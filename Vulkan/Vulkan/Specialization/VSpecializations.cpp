@@ -3,6 +3,9 @@
 #include "../VInstance.h"
 
 ContextBaseId camera_context_base_id;
+
+ContextBaseId inverse_camera_context_base_id;
+
 ContextBaseId lightvector_base_id;
 ContextBaseId tex_simplemodel_context_base_id;
 ContextBaseId flat_simplemodel_context_base_id;
@@ -19,6 +22,7 @@ InstanceBaseId skybox_instance_base_id;
 InstanceBaseId shot_instance_base_id;
 
 InstanceBaseId dirlight_instance_base_id;
+InstanceBaseId lightless_instance_base_id;
 
 InstanceBaseId engine_instance_base_id;
 
@@ -46,6 +50,10 @@ void register_specializations ( VInstance* instance ) {
 	ContextBase camera_context_base = { 0, camera_datagroup };
 	camera_context_base_id = instance->static_contextbase_store.insert ( camera_context_base );
 	instance->contextbase_registered ( camera_context_base_id );
+	
+	ContextBase inverse_camera_context_base = { 0, matrix_datagroup };
+	inverse_camera_context_base_id = instance->static_contextbase_store.insert ( inverse_camera_context_base );
+	instance->contextbase_registered ( inverse_camera_context_base_id );
 
 	ContextBase lightvector_base = { 0, vector2_datagroup };
 	lightvector_base_id = instance->static_contextbase_store.insert ( lightvector_base );
@@ -95,6 +103,9 @@ void register_specializations ( VInstance* instance ) {
 	InstanceBase dirlightinstance = { 0, empty_datagroup };
 	dirlight_instance_base_id = instance->static_instancebase_store.insert ( dirlightinstance );
 	instance->instancebase_registered ( dirlight_instance_base_id );
+	
+	lightless_instance_base_id = instance->static_instancebase_store.insert ( dirlightinstance );
+	instance->instancebase_registered ( lightless_instance_base_id );
 
 	shot_instance_base_id = instance->static_instancebase_store.insert ( { 0, shot_datagroup } );
 	instance->instancebase_registered ( shot_instance_base_id );

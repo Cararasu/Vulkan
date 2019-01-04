@@ -11,35 +11,8 @@ layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec3 v_texCoord;
 layout(location = 2) in vec3 v_normal;
 
-layout (set=1, binding = 0) uniform lightVectorBuffer {
-	vec4 direction_amb;
-	vec4 color;
-} light;
-
-
 void main() {
-	vec3 view_direction = normalize(-v_position);
-	vec3 normal_direction = normalize(v_normal);
-	vec3 light_direction = normalize(-light.direction_amb.xyz);
-	
-	float lambertian = max(dot(light_direction, normal_direction), 0.0);
-	
-	float specular = 0.0;
-	if(lambertian > 0.0) {
-		if(true) {//blinn
-			vec3 halfway_direction = normalize(light_direction + view_direction);
-			float angle = max(dot(halfway_direction, normal_direction), 0.0);
-			specular = pow(angle, 32.0);
-		} else {//phong
-			vec3 reflect_direction = reflect(-light_direction, normal_direction);
-			float angle = max(dot(reflect_direction, -view_direction), 0.0);
-			specular = pow(angle, 8.0);
-		}
-	}
-	vec4 ambientcolor = vec4(0.1, 0.1, 0.1, 1.0);
-   
-	outColor = ambientcolor;// * light.direction_amb.w + ambientcolor * lambertian + (vec4(1.0, 1.0, 1.0, 1.0) * specular);
-	outColor.w = 1/256.0;
-	outNormal = normal_direction.xy;
+	outColor = vec4(0.1, 0.1, 0.1, 1/255.0);
+	outNormal = normalize(v_normal).xy;
 	outSpecular = gl_FragCoord / vec4(500.0, 500.0, 1.0, 1.0);
 }

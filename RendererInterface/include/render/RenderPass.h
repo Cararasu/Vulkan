@@ -19,10 +19,6 @@ enum class ImageUsage {
 	eReadWrite = 0x4,
 };
 
-struct RenderImageDef {
-	ImageType type;
-	ImageUsage usage;
-};
 struct StageImage {
 	u32 stage_index, image_index;
 };

@@ -40,6 +40,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 
+void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass );
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct );
@@ -60,6 +61,7 @@ struct VMainRenderStage : public VRenderStage {
 	PipelineStruct shot_pipeline;
 	PipelineStruct engine_pipeline;
 	
+	PipelineStruct lightless_pipeline;
 	PipelineStruct dirlight_pipeline;
 	
 	Viewport<f32> viewport;
@@ -84,6 +86,16 @@ struct VMainRenderStage : public VRenderStage {
 	void v_check_rebuild();
 	void v_rebuild_pipelines();
 	void v_rebuild_commandbuffer ( u32 index );
+	
+	virtual void set_rendertarget ( u32 index, Image* image ) override;
+	
+	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
+};
+struct VScaleDownRenderStage : public VRenderStage {
+	VInstance* v_instance;
+	
+	VScaleDownRenderStage ( VInstance* v_instance );
+	virtual ~VScaleDownRenderStage();
 	
 	virtual void set_rendertarget ( u32 index, Image* image ) override;
 	
