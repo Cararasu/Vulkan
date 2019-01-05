@@ -20,6 +20,7 @@ struct VContextBase {
 };
 
 struct VBaseImage;
+struct VImageUse;
 
 struct VContext {
 	ContextId id;
@@ -29,7 +30,7 @@ struct VContext {
 	u64 last_frame_index_updated = 0;
 
 	void* data;
-	Array<VBaseImage*> images;
+	Array<VImageUse> images;
 
 	vk::Sampler temp_sampler;
 	vk::DescriptorPool descriptor_pool;

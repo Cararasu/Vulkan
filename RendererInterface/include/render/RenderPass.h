@@ -32,7 +32,8 @@ struct Window;
 
 enum class RenderStageType {
 	eRendering,
-	eBlitting,
+	eDownSample,
+	eCopyToScreen,
 };
 struct RenderStage {
 
@@ -42,6 +43,7 @@ struct RenderStage {
 	virtual ~RenderStage () {}
 
 	virtual void set_rendertarget ( u32 index, Image* image ) = 0;
+	virtual void set_renderwindow ( u32 index, Window* window ) = 0;
 };
 struct RenderBundle {
 

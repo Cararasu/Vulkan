@@ -30,7 +30,7 @@ void main() {
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);*/
 	
-	outColor = vec4(g_umbraColor, 0.5);
+	outColor = vec4(g_umbraColor, 100.0/255.0);
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

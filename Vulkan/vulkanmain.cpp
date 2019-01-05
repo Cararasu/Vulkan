@@ -387,7 +387,7 @@ int main ( int argc, char **argv ) {
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
-	instance->update_context_image ( x_context, 0, x_teximage );
+	instance->update_context_image ( x_context, 0, x_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
 	instance->set_context ( x_models[0], x_context );
 	instance->set_context ( x_models[1], x_context );
 	instance->set_context ( x_models[2], x_context );
@@ -396,7 +396,7 @@ int main ( int argc, char **argv ) {
 	instance->set_context ( x_models[5], x_context );
 
 	Context skybox_context = instance->create_context ( skybox_context_base_id );
-	instance->update_context_image ( skybox_context, 0, skybox_teximage );
+	instance->update_context_image ( skybox_context, 0, skybox_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
 	instance->set_context ( cube, skybox_context );
 
 	Context tie_body_context = instance->create_context ( tex_simplemodel_context_base_id );
@@ -405,9 +405,9 @@ int main ( int argc, char **argv ) {
 	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_1k.png", 4 );
 	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
 	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
-	instance->update_context_image ( tie_body_context, 0, tie_body_teximage );
-	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage );
-	instance->update_context_image ( tie_wing_context, 0, tie_wing_teximage );
+	instance->update_context_image ( tie_body_context, 0, tie_body_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_image ( tie_wing_context, 0, tie_wing_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
 	instance->set_context ( tie_models[0], tie_body_context );
 	instance->set_context ( tie_models[1], tie_body_context );
 	instance->set_context ( tie_models[2], tie_arm_context );
@@ -419,7 +419,7 @@ int main ( int argc, char **argv ) {
 	Context flat_gallofree_context = instance->create_context ( flat_simplemodel_context_base_id );
 	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
-	instance->update_context_image ( gallofree_context, 0, gallofree_teximage );
+	instance->update_context_image ( gallofree_context, 0, gallofree_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
 
 	glm::vec4 color ( 0.75f, 0.75f, 0.75f, 1.0f );
 	instance->update_context_data ( flat_gallofree_context, &color );
@@ -512,13 +512,14 @@ int main ( int argc, char **argv ) {
 	//*window->size() = {800, 800};
 	window->cursor_mode() = CursorMode::eInvisible;
 
-	Image* windowimage = window->backed_image();
+	Image* windowimage = window->backed_image( 0 );
 
 	RenderBundle* bundle = instance->create_main_bundle ( instancegroup, contextgroup );
 
 	bundle->set_window_dependency(window);
 
-	bundle->get_renderstage(0)->set_rendertarget ( 0, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//ambient + intensity
+	Image* diffuse = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f );
+	bundle->get_renderstage(0)->set_rendertarget ( 0, diffuse );//ambient + intensity
 	bundle->get_renderstage(0)->set_rendertarget ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
 	bundle->get_renderstage(0)->set_rendertarget ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
 	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 3, 1.0f );
@@ -526,6 +527,9 @@ int main ( int argc, char **argv ) {
 	bundle->get_renderstage(0)->set_rendertarget ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 
 	bundle->get_renderstage(1)->set_rendertarget ( 0, lightaccumulation );
+	
+	bundle->get_renderstage(2)->set_rendertarget ( 0, diffuse );
+	bundle->get_renderstage(2)->set_renderwindow ( 0, window );
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -696,7 +700,7 @@ int main ( int argc, char **argv ) {
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
-		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.5f );
+		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.2f );
 		
 		instance->update_context_data ( light_vector_context, &global_light );
 

@@ -2,6 +2,7 @@
 #include "VBuffer.h"
 #include "VInstance.h"
 #include "VBufferStorage.h"
+#include "VImage.h"
 
 
 VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), buffer_chunk ( {0, 0, 0} ), data ( nullptr ) {
@@ -9,7 +10,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
 	VContextBase& v_contextbase = v_instance->contextbase_map[contextbase_id];
 
-	images.resize ( contextbase->image_count, nullptr );
+	images.resize ( contextbase->image_count, {} );
 
 	u32 dscount = 0;
 	if ( contextbase->datagroup.size ) dscount++;

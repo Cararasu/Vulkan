@@ -32,7 +32,7 @@ struct VWindow : public Window {
 	//glfw
 	GLFWwindow* window = nullptr;
 
-	VBaseImage* present_image = nullptr;
+	Array<VBaseImage*> present_images;
 	std::mutex rendering_mutex;
 
 	//vulkan
@@ -52,7 +52,8 @@ struct VWindow : public Window {
 	VWindow ( VInstance* instance );
 	virtual ~VWindow();
 
-	virtual Image* backed_image ();
+	virtual Image* backed_image (u32 index) override;
+	virtual u32 backed_image_count () override;
 
 	virtual RendResult update();
 	RendResult v_update();

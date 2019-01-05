@@ -1239,6 +1239,29 @@ subpass_inputs ( 2 ) {
 
 		vk::DescriptorSetAllocateInfo allocInfo ( input_ds_pool, 1, &subpass_inputs[1].ds_layout );
 		v_instance->vk_device().allocateDescriptorSets ( &allocInfo, &subpass_inputs[1].ds_set );
+		
+		subpass_inputs[1].images_used.resize(4);
+		
+		subpass_inputs[1].images_used[0] = {
+			0, nullptr,
+			{0, 1}, {0, 1},
+			vk::ImageView(), vk::ImageAspectFlagBits::eColor
+		};
+		subpass_inputs[1].images_used[1] = {
+			0, nullptr,
+			{0, 1}, {0, 1},
+			vk::ImageView(), vk::ImageAspectFlagBits::eColor
+		};
+		subpass_inputs[1].images_used[2] = {
+			0, nullptr,
+			{0, 1}, {0, 1},
+			vk::ImageView(), vk::ImageAspectFlagBits::eColor
+		};
+		subpass_inputs[1].images_used[3] = {
+			0, nullptr,
+			{0, 1}, {0, 1},
+			vk::ImageView(), vk::ImageAspectFlagBits::eDepth
+		};
 	}
 }
 
@@ -1308,6 +1331,10 @@ void VMainRenderStage::set_rendertarget ( u32 index, Image* image ) {
 		v_destroy_renderpasses();
 	}
 	v_destroy_framebuffers();
+}
+void VMainRenderStage::set_renderwindow ( u32 index, Window* window ) {
+	//TODO implement
+	assert(false);
 }
 void VMainRenderStage::v_check_rebuild() {
 	u32 width = 0, height = 0;
@@ -1447,12 +1474,17 @@ void VMainRenderStage::v_rebuild_pipelines() {
 		        dependencies.size(), dependencies.data() /*dependencies*/ );
 
 		v_renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
-
+		
+		v_bundlestates[0].actual_image->v_create_use(&subpass_inputs[1].images_used[0]);
+		v_bundlestates[1].actual_image->v_create_use(&subpass_inputs[1].images_used[1]);
+		v_bundlestates[2].actual_image->v_create_use(&subpass_inputs[1].images_used[2]);
+		v_bundlestates[4].actual_image->v_create_use(&subpass_inputs[1].images_used[3]);
+		
 		std::array<vk::DescriptorImageInfo, 4> dsimageinfo1 = {
-			vk::DescriptorImageInfo ( vk::Sampler(), v_bundlestates[0].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), v_bundlestates[1].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), v_bundlestates[2].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), v_bundlestates[4].actual_image->create_use(ImagePart::eDepth, {0, 1}, {0, 1}).imageview, vk::ImageLayout::eGeneral )
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[0].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[1].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[2].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[3].imageview, vk::ImageLayout::eGeneral )
 		};
 		/*std::array<vk::DescriptorImageInfo, 5> dsimageinfo2 = {
 			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[0].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
@@ -1488,11 +1520,11 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	PerFrameMainBundleRenderObj& data = v_per_frame_data[index];
 	if ( !data.framebuffer ) {
 		vk::ImageView attachments[] = {
-			v_bundlestates[0].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[1].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[2].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[3].actual_image->create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[4].actual_image->create_use(ImagePart::eDepthStencil, {0, 1}, {0, 1}).imageview
+			v_bundlestates[0].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
+			v_bundlestates[1].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
+			v_bundlestates[2].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
+			v_bundlestates[3].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
+			v_bundlestates[4].actual_image->v_create_use(ImagePart::eDepthStencil, {0, 1}, {0, 1}).imageview
 		};
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), v_renderpass,
@@ -1516,8 +1548,8 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	bufferstorage->fetch_transferbuffers();
 	for ( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++ ) {
 		for ( VContext* v_context : it->second ) {
-			for ( VBaseImage* v_image : v_context->images ) {
-				if ( v_image ) v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
+			for ( VImageUse& vimageuse : v_context->images ) {
+				if ( vimageuse.id ) vimageuse.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
 			}
 			if ( v_context->data ) {
 				VThinBuffer staging = bufferstorage->get_buffer_pair ( v_context->buffer_chunk.index ).second;
@@ -1581,7 +1613,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 
 
-VScaleDownRenderStage::VScaleDownRenderStage ( VInstance* v_instance ) : VRenderStage(RenderStageType::eBlitting), v_instance(v_instance) {
+VScaleDownRenderStage::VScaleDownRenderStage ( VInstance* v_instance ) : VRenderStage(RenderStageType::eDownSample), v_instance(v_instance) {
 	v_bundlestates.resize ( 1 );
 }
 VScaleDownRenderStage::~VScaleDownRenderStage() {
@@ -1595,14 +1627,61 @@ void VScaleDownRenderStage::set_rendertarget ( u32 index, Image* image ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 	}
 }
+void VScaleDownRenderStage::set_renderwindow ( u32 index, Window* window ) {
+	assert(false);
+}
 void VScaleDownRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	VBundleImageState& imagestate = v_bundlestates[0];
 	if(imagestate.actual_image->mipmap_layers > 1) {
 		imagestate.actual_image->generate_mipmaps(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer);
 	}
 }
+VCopyToScreenRenderStage::VCopyToScreenRenderStage ( VInstance* v_instance ) : VRenderStage(RenderStageType::eCopyToScreen), v_instance(v_instance) {
+	v_bundlestates.resize ( 1 );
+}
+VCopyToScreenRenderStage::~VCopyToScreenRenderStage() {
+	
+}
+void VCopyToScreenRenderStage::set_rendertarget ( u32 index, Image* image ) {
+	assert ( index < v_bundlestates.size );
+	VBundleImageState& imagestate = v_bundlestates[index];
+	imagestate.actual_image = static_cast<VBaseImage*> ( image );
+	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
+		imagestate.current_format = imagestate.actual_image->v_format;
+	}
+}
+void VCopyToScreenRenderStage::set_renderwindow ( u32 index, Window* window ) {
+	v_window = static_cast<VWindow*> (window);
+}
+void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
+	
+	VBundleImageState& imagestate = v_bundlestates[0];
+	VBaseImage* window_image = v_window->present_images[v_window->present_image_index];
+	vk::Extent3D window_extent = window_image->extent, 
+		image_extent = imagestate.actual_image->extent;
+	
+	imagestate.actual_image->transition_layout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, buffer);
+	window_image->transition_layout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, buffer);
+	vk::Filter filter = vk::Filter::eNearest;
+	if(window_extent == image_extent) { // if it is the same nearest is enough
+		filter = vk::Filter::eNearest;
+	} else {
+		filter = vk::Filter::eLinear;
+	}
+	vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
+		vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( image_extent.width, image_extent.height, image_extent.depth )
+	}, vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
+		vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( window_extent.width, window_extent.height, window_extent.depth )
+	} );
+	buffer.blitImage(
+		imagestate.actual_image->image, vk::ImageLayout::eTransferSrcOptimal, 
+		window_image->image, vk::ImageLayout::eTransferDstOptimal,
+		1, &imageBlit, filter
+	);
+	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer);
+}
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
-	stages ( 2 ),
+	stages ( 3 ),
 	dependencies(),
 	window_dependency ( nullptr ),
 	v_instance ( instance ),
@@ -1616,6 +1695,7 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGr
 	}
 	stages[0] = new VMainRenderStage ( instance, igroup, cgroup );
 	stages[1] = new VScaleDownRenderStage ( instance );
+	stages[2] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );
@@ -1658,7 +1738,7 @@ void VMainBundle::v_dispatch ( ) {
 	if ( window_dependency ) {
 		window_dependency->rendering_mutex.lock();
 		window_dependency->prepare_frame();
-		index = window_dependency->present_image->current_index;
+		index = window_dependency->present_image_index;
 	}
 
 	QueueWrapper* queue_wrapper = &v_instance->queues;
@@ -1680,8 +1760,6 @@ void VMainBundle::v_dispatch ( ) {
 		for ( VRenderStage* renderstage : stages ) {
 			renderstage->v_dispatch ( data.command.buffer, index );
 		}
-		
-		window_dependency->present_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, data.command.buffer, index );
 		
 		data.command.buffer.end();
 		//data.command.should_reset = false;

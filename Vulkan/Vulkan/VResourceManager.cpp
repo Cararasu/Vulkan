@@ -99,7 +99,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
 
 	cmdbuffer.end();
 
@@ -115,20 +115,6 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 
 	stbi_image_free ( pixels );
 	return image;
-}
-ImageUse VResourceManager::create_image_use(Image* image, ImagePart part, Range<u32> mipmaps, Range<u32> layers, u32 index) {
-	VBaseImage* v_image = static_cast<VBaseImage*> ( image );
-	VImageUse vimageuse = v_image->create_use(part, mipmaps, layers, index);
-	return {
-		vimageuse.id, 
-		image, part,
-		vimageuse.mipmaps, vimageuse.layers,
-		index
-	};
-}
-void VResourceManager::delete_image_use(ImageUse imageuse) {
-	VBaseImage* v_image = static_cast<VBaseImage*> ( imageuse.base_image );
-	v_image->usages.remove(imageuse.id);
 }
 Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_layers ) {
 	int texWidth, texHeight, texChannels;
@@ -155,7 +141,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
-	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->per_image_data[0].image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
+	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
 	//v_image->generate_mipmaps(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, cmdbuffer);
 	cmdbuffer.end();
 

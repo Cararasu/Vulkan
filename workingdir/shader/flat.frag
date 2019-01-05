@@ -12,7 +12,7 @@ layout(location = 1) in vec3 v_texCoord;
 layout(location = 2) in vec3 v_normal;
 
 void main() {
-	outColor = vec4(0.1, 0.1, 0.1, 1/255.0);
+	outColor = vec4(0.5, 0.5, 0.5, 1/255.0);
 	outNormal = normalize(v_normal).xy;
 	outSpecular = gl_FragCoord / vec4(500.0, 500.0, 1.0, 1.0);
 }

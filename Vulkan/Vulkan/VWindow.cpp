@@ -280,7 +280,8 @@ VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ) {
 }
 VWindow::~VWindow() {
 	v_instance->destroy_window ( this );
-	v_instance->m_resource_manager->v_delete_image ( present_image );
+	for(VBaseImage* present_image : present_images)
+		v_instance->m_resource_manager->v_delete_image ( present_image );
 }
 
 void VWindow::initialize() {
@@ -599,8 +600,6 @@ void VWindow::prepare_frame() {
 	Timing timer(&v_logger, "Prepare Frame");
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 
-	present_image->set_current_image ( present_image_index );
-
 	FrameLocalData* data = current_framelocal_data();
 	v_instance->wait_for_frame ( data->frame_index );
 
@@ -612,8 +611,11 @@ void VWindow::prepare_frame() {
 	
 	data->frame_index = v_instance->frame_index;
 }
-Image* VWindow::backed_image () {
-	return present_image;
+Image* VWindow::backed_image ( u32 index ) {
+	return present_images[index];
+}
+u32 VWindow::backed_image_count ( ) {
+	return present_images.size;
 }
 RendResult VWindow::update() {
 	return v_update();
@@ -757,13 +759,37 @@ void VWindow::create_swapchain() {
 		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), v_logger.log<LogLevel::eError> ( "Creation of Swapchain failed" ) );
 		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
 	}
-	if ( present_image ) {
-		present_image->fetch_new_window_images();
-	} else {
-		present_image = v_instance->m_resource_manager->v_images.insert ( new VBaseImage ( v_instance, this ) );
+	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
+	if ( !present_images.size ) {
+		present_images.resize(images.size());
+		for(int i = 0; i < present_images.size; i++) {
+			present_images[i] = new VBaseImage ( v_instance, this );
+			v_instance->m_resource_manager->v_images.insert ( present_images[i] );
+		}
+	}
+	for(int i = 0; i < present_images.size; i++) {
+		VBaseImage* present_image = present_images[i];
+		present_image->destroy();
+		bool changed = present_image->width != swap_chain_extend.width || present_image->height != swap_chain_extend.height || present_image->depth != 0;
+		if ( changed ) {
+			v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
+											present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
+		}
+		present_image->v_set_extent ( swap_chain_extend.width, swap_chain_extend.height, 0 );
+		present_image->v_set_format ( present_swap_format.format );
+		present_image->init ( images[i] );
+		if ( changed ) {
+			auto it = v_instance->m_resource_manager->dependency_map.find ( present_image );
+			if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
+				v_logger.log<LogLevel::eInfo> ( "Found %d dependant Image(s)", it->second.size() );
+				for ( VBaseImage* image : it->second ) {
+					image->rebuild_image ( present_image->width, present_image->height, present_image->depth );
+				}
+			}
+		}
 	}
 
-	create_frame_local_data ( present_image->per_image_data.size() );
+	create_frame_local_data ( present_images.size );
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", extent.x, extent.y );

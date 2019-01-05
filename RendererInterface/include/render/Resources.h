@@ -58,7 +58,6 @@ struct ImageUse {
 	Image* base_image;
 	ImagePart part;
 	Range<u32> mipmaps, layers;//array-layers
-	u32 index;
 };
 
 struct Image : public Resource {
@@ -75,6 +74,9 @@ struct Image : public Resource {
 	}
 	
 	virtual ~Image() {}
+	
+	virtual ImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) = 0;
+	virtual void delete_use(RId id) = 0;
 };
 
 enum class ShaderType {

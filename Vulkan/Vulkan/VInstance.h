@@ -113,7 +113,7 @@ struct VInstance : public Instance {
 	virtual void unload_model ( ModelId modelbase_id ) override;
 
 	virtual void update_context_data ( Context& context, void* data ) override;
-	virtual void update_context_image ( Context& context, u32 index, Image* image ) override;
+	virtual void update_context_image ( Context& context, u32 index, ImageUse imageuse ) override;
 
 	Map<ContextBaseId, VContextBase> contextbase_map;
 	virtual void contextbase_registered ( ContextBaseId id ) override;

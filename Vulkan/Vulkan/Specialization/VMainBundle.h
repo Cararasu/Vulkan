@@ -30,6 +30,7 @@ struct PipelineStruct {
 struct SubPassInput {
 	vk::DescriptorSetLayout ds_layout;
 	vk::DescriptorSet ds_set;
+	Array<VImageUse> images_used;
 };
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct );
@@ -88,6 +89,7 @@ struct VMainRenderStage : public VRenderStage {
 	void v_rebuild_commandbuffer ( u32 index );
 	
 	virtual void set_rendertarget ( u32 index, Image* image ) override;
+	virtual void set_renderwindow ( u32 index, Window* window ) override;
 	
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
 };
@@ -98,6 +100,19 @@ struct VScaleDownRenderStage : public VRenderStage {
 	virtual ~VScaleDownRenderStage();
 	
 	virtual void set_rendertarget ( u32 index, Image* image ) override;
+	virtual void set_renderwindow ( u32 index, Window* window ) override;
+	
+	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
+};
+struct VCopyToScreenRenderStage : public VRenderStage {
+	VInstance* v_instance;
+	VWindow* v_window;
+	
+	VCopyToScreenRenderStage ( VInstance* v_instance );
+	virtual ~VCopyToScreenRenderStage();
+	
+	virtual void set_rendertarget ( u32 index, Image* image ) override;
+	virtual void set_renderwindow ( u32 index, Window* window ) override;
 	
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
 };

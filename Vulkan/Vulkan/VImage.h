@@ -9,16 +9,21 @@ struct VImageWrapper;
 vk::Format transform_image_format ( ImageFormat format );
 ImageFormat transform_image_format ( vk::Format format );
 
-struct PerImageData {
-	vk::Image image;
-	vk::ImageView imageview;
-};
-
 struct VImageUse {
-	RId id;
+	RId id = 0;
+	VBaseImage* image = nullptr;
 	Range<u32> mipmaps, layers;
 	vk::ImageView imageview;
 	vk::ImageAspectFlags aspects;
+	u64 created_frame_index;
+
+	void destroy();
+	operator bool() {
+		return id != 0;
+	}
+	bool equals(VImageUse& rhs){
+		return image == rhs.image && mipmaps == rhs.mipmaps && layers == rhs.layers && aspects == rhs.aspects;
+	}
 };
 
 struct VBaseImage : public Image {
@@ -30,7 +35,7 @@ struct VBaseImage : public Image {
 	vk::ImageTiling tiling;
 	vk::ImageUsageFlags usage;
 	vk::ImageAspectFlags aspect;
-	DynArray<PerImageData> per_image_data;
+	vk::Image image;
 	IdArray<VImageUse> usages;
 
 	//window-image
@@ -49,38 +54,28 @@ struct VBaseImage : public Image {
 	virtual ~VBaseImage() override;
 
 	void init();
-	void init ( DynArray<vk::Image>& images );
+	void init ( vk::Image image );
 	void destroy();
 
 	void rebuild_image ( u32 width, u32 height, u32 depth );
 	void set_current_image ( u32 index );
 
-	void fetch_new_window_images ( );
-
-	void delete_use(RId id) {
+	virtual ImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) override;
+	virtual void delete_use(RId id) {
+		v_delete_use(id);
+	}
+	
+	VImageUse v_create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers);
+	void v_create_use(VImageUse* imageuse);
+	
+	void v_delete_use(RId id) {
 		v_instance->destroyImageView(usages[id].imageview);
 		usages.remove(id);
 	}
-	VImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers, u32 index = 0);
 
 	void v_set_extent ( u32 width, u32 height, u32 depth );
 	void v_set_format ( vk::Format format );
 
-	u32 instance_count () {
-		return per_image_data.size();
-	}
-	vk::Image instance_image ( u32 index ) {
-		return per_image_data[index % per_image_data.size()].image;
-	}
-	vk::Image instance_image ( ) {
-		return per_image_data[current_index].image;
-	}
-	vk::ImageView instance_imageview ( u32 index ) {
-		return per_image_data[index % per_image_data.size()].imageview;
-	}
-	vk::ImageView instance_imageview ( ) {
-		return per_image_data[current_index].imageview;
-	}
 	vk::ImageMemoryBarrier transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 	        Range<u32> miprange, Range<u32> arrayrange, u32 instance_index,
 	        vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags );

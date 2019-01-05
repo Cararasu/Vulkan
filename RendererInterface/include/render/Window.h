@@ -89,7 +89,8 @@ public:
 		return m_fullscreen_monitor;
 	}
 
-	virtual Image* backed_image () = 0;
+	virtual Image* backed_image (u32 index) = 0;
+	virtual u32 backed_image_count () = 0;
 	virtual RendResult update() = 0;
 	virtual RendResult destroy() = 0;
 
