@@ -5,25 +5,64 @@
 
 struct VInstance;
 struct VImageWrapper;
+struct VImageUse;
 
 vk::Format transform_image_format ( ImageFormat format );
 ImageFormat transform_image_format ( vk::Format format );
 
-struct VImageUse {
-	RId id = 0;
-	VBaseImage* image = nullptr;
-	Range<u32> mipmaps, layers;
-	vk::ImageView imageview;
-	vk::ImageAspectFlags aspects;
+struct VImageUseRef {
+	RId id;
+	VBaseImage* image;
 	u64 created_frame_index;
 
-	void destroy();
+	VImageUseRef() : id(0), image(nullptr), created_frame_index(0) {}
+	VImageUseRef(ImageUseRef& useref);
+	VImageUseRef(RId id, VBaseImage* image, u64 created_frame_index);
+	VImageUseRef(const VImageUseRef& rhs);
+	VImageUseRef(const VImageUseRef&& rhs);
+	~VImageUseRef();
+	
+	VImageUseRef& operator=(const VImageUseRef& rhs);
+	
 	operator bool() {
 		return id != 0;
 	}
-	bool equals(VImageUse& rhs){
-		return image == rhs.image && mipmaps == rhs.mipmaps && layers == rhs.layers && aspects == rhs.aspects;
+	operator!() {
+		return id == 0;
 	}
+	bool is_updated ();
+	void set_updated ();
+	vk::ImageView imageview();
+	VImageUse* deref();
+};
+struct VImageUse {
+	RId id;
+	VBaseImage* image;
+	Range<u32> mipmaps, layers;
+	vk::ImageAspectFlags aspects;
+	vk::ImageView imageview;
+	std::atomic<u32> refcount;
+	
+	VImageUse() : id(0), image(nullptr), refcount(0) { }
+	VImageUse& operator=(const VImageUse& rhs) {
+		id = rhs.id;
+		image = rhs.image;
+		mipmaps = rhs.mipmaps;
+		layers = rhs.layers;
+		aspects = rhs.aspects;
+		imageview = rhs.imageview;
+		refcount.store(rhs.refcount);
+	}
+	VImageUse(const VImageUse& rhs) {
+		id = rhs.id;
+		image = rhs.image;
+		mipmaps = rhs.mipmaps;
+		layers = rhs.layers;
+		aspects = rhs.aspects;
+		imageview = rhs.imageview;
+		refcount.store(rhs.refcount);
+	}
+	
 };
 
 struct VBaseImage : public Image {
@@ -60,18 +99,35 @@ struct VBaseImage : public Image {
 	void rebuild_image ( u32 width, u32 height, u32 depth );
 	void set_current_image ( u32 index );
 
-	virtual ImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) override;
-	virtual void delete_use(RId id) {
-		v_delete_use(id);
+	VImageUseRef v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers );
+	void v_create_imageview ( VImageUse* imageuse );
+
+	void v_delete_use ( RId id ) {
+		v_instance->destroyImageView ( usages[id].imageview );
+		usages.remove ( id );
 	}
 	
-	VImageUse v_create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers);
-	void v_create_use(VImageUse* imageuse);
-	
-	void v_delete_use(RId id) {
-		v_instance->destroyImageView(usages[id].imageview);
-		usages.remove(id);
+	virtual ImageUseRef create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) override;
+	void v_register_use(RId id) {
+		if(!id) return;
+		printf("Register Use %d, %d, 0x%x\n", id, usages[id].refcount.load(), usages[id].imageview);
+		usages[id].refcount++;
 	}
+	void v_deregister_use(RId id) {
+		if(!id) return;
+		printf("Deregister Use %d, %d, 0x%x\n", id, usages[id].refcount.load(), usages[id].imageview);
+		if(--usages[id].refcount == 0) {
+			printf("Delete Use\n");
+			v_delete_use (id);
+		}
+	}
+	virtual void register_use(RId id) override {
+		v_register_use(id);
+	}
+	virtual void deregister_use(RId id) override {
+		v_deregister_use(id);
+	}
+
 
 	void v_set_extent ( u32 width, u32 height, u32 depth );
 	void v_set_format ( vk::Format format );
@@ -98,3 +154,40 @@ struct VBaseImage : public Image {
 		generate_mipmaps ( oldLayout, newLayout, {0, mipmap_layers}, {0, layers}, commandBuffer );
 	}
 };
+
+
+inline VImageUseRef::VImageUseRef(ImageUseRef& useref) : id(useref.id), image(static_cast<VBaseImage*>(useref.base_image)), created_frame_index(0) {
+	image->v_register_use(id);
+}
+inline VImageUseRef::VImageUseRef(RId id, VBaseImage* image, u64 created_frame_index) : id(id), image(image), created_frame_index(created_frame_index) {
+	image->v_register_use(id);
+}
+inline VImageUseRef::VImageUseRef(const VImageUseRef& rhs) : id(rhs.id), image(rhs.image), created_frame_index(rhs.created_frame_index) {
+	image->v_register_use(id);
+}
+inline VImageUseRef::VImageUseRef(const VImageUseRef&& rhs) : id(rhs.id), image(rhs.image), created_frame_index(rhs.created_frame_index) {
+	
+}
+inline VImageUseRef& VImageUseRef::operator=(const VImageUseRef& rhs) {
+	image->v_deregister_use(id);
+	id = rhs.id;
+	image = rhs.image;
+	created_frame_index = rhs.created_frame_index;
+	image->v_register_use(id);
+	return *this;
+}
+inline VImageUseRef::~VImageUseRef() {
+	image->v_deregister_use(id);
+}
+inline VImageUse* VImageUseRef::deref() {
+	return id ? &image->usages[id] : nullptr;
+}
+inline bool VImageUseRef::is_updated () {
+	return id ? image->created_frame_index > created_frame_index : false;
+}
+inline void VImageUseRef::set_updated () {
+	created_frame_index = image->created_frame_index;
+}
+inline vk::ImageView VImageUseRef::imageview() {
+	return id ? image->usages[id].imageview : vk::ImageView();
+}

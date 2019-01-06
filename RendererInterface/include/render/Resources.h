@@ -53,11 +53,14 @@ struct ImageTypeGroup {
 	//sampling-options
 };
 
-struct ImageUse {
+struct ImageUseRef {
 	RId id = 0;
-	Image* base_image;
-	ImagePart part;
-	Range<u32> mipmaps, layers;//array-layers
+	Image* base_image = nullptr;
+	
+	ImageUseRef(RId id, Image* base_image);
+	~ImageUseRef();
+	
+	void detach();
 };
 
 struct Image : public Resource {
@@ -75,10 +78,22 @@ struct Image : public Resource {
 	
 	virtual ~Image() {}
 	
-	virtual ImageUse create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) = 0;
-	virtual void delete_use(RId id) = 0;
+	virtual ImageUseRef create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) = 0;
+	virtual void register_use(RId id) = 0;
+	virtual void deregister_use(RId id) = 0;
 };
 
+inline ImageUseRef::ImageUseRef(RId id, Image* base_image) : id(id), base_image(base_image) {
+	base_image->register_use(id);
+}
+inline ImageUseRef::~ImageUseRef() {
+	base_image->deregister_use(id);
+}
+inline void ImageUseRef::detach() {
+	base_image->deregister_use(id);
+	id = 0;
+	base_image = nullptr;
+}
 enum class ShaderType {
 	eVertex,
 	eTessEval,

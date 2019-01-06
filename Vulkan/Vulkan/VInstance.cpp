@@ -795,18 +795,17 @@ void VInstance::update_context_data ( Context& context, void* data ) {
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	v_context->data = data;
 }
-void VInstance::update_context_image ( Context& context, u32 index, ImageUse imageuse ) {
+void VInstance::update_context_image ( Context& context, u32 index, ImageUseRef imageuse ) {
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	const ContextBase* contextbase_ptr = contextbase ( context.contextbase_id );
-	VBaseImage* v_image = static_cast<VBaseImage*> ( imageuse.base_image );
-
-	v_context->images[index] = v_image->usages[imageuse.id];
-
+	
+	v_context->images[index] = VImageUseRef(imageuse);
+	
 	u32 writecount = 0;
 	if ( contextbase_ptr->datagroup.size ) writecount++;
 	if ( contextbase_ptr->image_count ) {
 		//bind descriptorset to image
-		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( vk::Sampler(), v_context->images[index].imageview, vk::ImageLayout::eShaderReadOnlyOptimal );
+		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( vk::Sampler(), v_context->images[index].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
 		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( v_context->descriptor_set, writecount, index, 1, vk::DescriptorType::eSampledImage, &imagewrite, nullptr, nullptr );
 		vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
 		writecount++;

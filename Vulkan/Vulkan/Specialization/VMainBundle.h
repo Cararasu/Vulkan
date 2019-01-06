@@ -16,6 +16,7 @@ struct VInstance;
 
 struct PerFrameMainBundleRenderObj {
 	vk::Framebuffer framebuffer;
+	std::array<VImageUseRef, 5> images;
 	ResettableCommandBuffer command;
 };
 
@@ -30,7 +31,7 @@ struct PipelineStruct {
 struct SubPassInput {
 	vk::DescriptorSetLayout ds_layout;
 	vk::DescriptorSet ds_set;
-	Array<VImageUse> images_used;
+	Array<VImageUseRef> images_used;
 };
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct );

@@ -272,12 +272,6 @@ ImageFormat transform_image_format ( vk::Format format ) {
 		return ImageFormat::eUndefined;
 	}
 }
-void VImageUse::destroy() {
-	if ( id ) {
-		image->delete_use ( id );
-		id = 0;
-	}
-}
 
 VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
@@ -291,7 +285,7 @@ VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :
 	v_instance ( instance ), v_format ( window->present_swap_format.format ), tiling ( vk::ImageTiling::eOptimal ), usage ( vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ) ), aspect ( vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	window ( window ),
 	memory(), current_index ( 0 ), image (), dependent ( false ), fraction ( 0.0f ) {
-		
+
 }
 VBaseImage::~VBaseImage() {
 	v_instance->m_resource_manager->v_delete_dependant_images ( this );
@@ -303,6 +297,10 @@ void VBaseImage::v_set_format ( vk::Format format ) {
 }
 void VBaseImage::init() {
 
+	for ( VImageUse& use : usages ) {
+		if ( use.id ) v_instance->destroyImageView ( use.imageview );
+		use.imageview = vk::ImageView();
+	}
 	u32 queueindices[2] = {v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->transfer_queue_id};
 	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, v_format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eConcurrent, 2, queueindices, vk::ImageLayout::eUndefined );
 
@@ -314,12 +312,26 @@ void VBaseImage::init() {
 	v_instance->m_device.getImageMemoryRequirements ( image, &mem_req );
 	v_instance->allocate_gpu_memory ( mem_req, &memory );
 	vkBindImageMemory ( v_instance->m_device, image, memory.memory, 0 );
-	
+
 	created_frame_index = v_instance->frame_index;
+	for ( VImageUse& use : usages ) {
+		if ( use.id ) {
+			use.image->v_create_imageview ( &use );
+		}
+	}
 }
-void VBaseImage::init ( vk::Image image ) {
-	this->image = image;
+void VBaseImage::init ( vk::Image image_ ) {
+	for ( VImageUse& use : usages ) {
+		if ( use.id ) v_instance->destroyImageView ( use.imageview );
+		use.imageview = vk::ImageView();
+	}
+	image = image_;
 	created_frame_index = v_instance->frame_index;
+	for ( VImageUse& use : usages ) {
+		if ( use.id ) {
+			use.image->v_create_imageview ( &use );
+		}
+	}
 }
 void VBaseImage::destroy() {
 	if ( memory.memory ) { //if the image is not managed externally
@@ -329,13 +341,19 @@ void VBaseImage::destroy() {
 		memory.memory = vk::DeviceMemory();
 	}
 	for ( VImageUse& use : usages ) {
-		v_instance->destroyImageView ( use.imageview );
+		if ( use.id ) v_instance->destroyImageView ( use.imageview );
+		use.imageview = vk::ImageView();
 	}
 	usages.clear();
 }
 
 void VBaseImage::rebuild_image ( u32 width, u32 height, u32 depth ) {
-	destroy();
+	if ( memory.memory ) { //if the image is not managed externally
+		v_instance->m_device.destroyImage ( image );
+		image = vk::Image();
+		v_instance->free_gpu_memory ( memory );
+		memory.memory = vk::DeviceMemory();
+	}
 	v_set_extent ( width * fraction, height * fraction, depth * fraction );
 	init();
 }
@@ -343,40 +361,39 @@ void VBaseImage::set_current_image ( u32 index ) {
 	current_index = index;
 }
 
-ImageUse VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
-	VImageUse vimageuse = v_create_use ( part, mipmaps, layers );
-	return {
-		vimageuse.id,
-		this, part,
-		vimageuse.mipmaps, vimageuse.layers
-	};
-}
-VImageUse VBaseImage::v_create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
-	VImageUse imageuse;
+ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
+	vk::ImageAspectFlags aspects;
 	switch ( part ) {
 	case ImagePart::eColor:
-		imageuse.aspects |= vk::ImageAspectFlagBits::eColor;
+		aspects |= vk::ImageAspectFlagBits::eColor;
 		break;
 	case ImagePart::eDepth:
-		imageuse.aspects |= vk::ImageAspectFlagBits::eDepth;
+		aspects |= vk::ImageAspectFlagBits::eDepth;
 		break;
 	case ImagePart::eDepthStencil:
-		imageuse.aspects |= vk::ImageAspectFlagBits::eDepth;
-		imageuse.aspects |= vk::ImageAspectFlagBits::eStencil;
+		aspects |= vk::ImageAspectFlagBits::eDepth;
+		aspects |= vk::ImageAspectFlagBits::eStencil;
 		break;
 	case ImagePart::eStencil:
-		imageuse.aspects |= vk::ImageAspectFlagBits::eStencil;
+		aspects |= vk::ImageAspectFlagBits::eStencil;
 		break;
 	};
+	VImageUseRef vimageuse = v_create_use ( aspects, mipmaps, layers );
+	return { vimageuse.id, this };
+}
+VImageUseRef VBaseImage::v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers ) {
+	for ( VImageUse& use : usages ) {
+		if ( use.aspects == aspects && use.mipmaps == mipmaps && use.layers == layers ) return VImageUseRef ( use.id, this, created_frame_index );
+	}
+	VImageUse imageuse;
 	imageuse.mipmaps = mipmaps;
 	imageuse.layers = layers;
-	v_create_use ( &imageuse );
-	return imageuse;
+	imageuse.aspects = aspects;
+	imageuse.image = this;
+	v_create_imageview ( &imageuse );
+	return VImageUseRef ( usages.insert ( imageuse ), this, created_frame_index );
 }
-void VBaseImage::v_create_use ( VImageUse* imageuse ) {
-	if ( imageuse->id && imageuse->image ) {
-		imageuse->destroy();
-	}
+void VBaseImage::v_create_imageview ( VImageUse* imageuse ) {
 	if ( type == vk::ImageType::e2D && layers == 1 ) {
 		imageuse->imageview = v_instance->createImageView2D (
 		                          image,
@@ -394,8 +411,6 @@ void VBaseImage::v_create_use ( VImageUse* imageuse ) {
 		v_logger.log<LogLevel::eDebug> ( "Not implemented %s", to_string ( type ).c_str() );
 		assert ( false );
 	}
-	imageuse->image = this;
-	imageuse->id = usages.insert ( *imageuse );
 }
 void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 	if ( height == 0 ) {

@@ -10,7 +10,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
 	VContextBase& v_contextbase = v_instance->contextbase_map[contextbase_id];
 
-	images.resize ( contextbase->image_count, {} );
+	images.resize ( contextbase->image_count, VImageUseRef() );
 
 	u32 dscount = 0;
 	if ( contextbase->datagroup.size ) dscount++;

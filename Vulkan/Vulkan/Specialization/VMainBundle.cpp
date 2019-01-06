@@ -1240,28 +1240,8 @@ subpass_inputs ( 2 ) {
 		vk::DescriptorSetAllocateInfo allocInfo ( input_ds_pool, 1, &subpass_inputs[1].ds_layout );
 		v_instance->vk_device().allocateDescriptorSets ( &allocInfo, &subpass_inputs[1].ds_set );
 		
-		subpass_inputs[1].images_used.resize(4);
+		subpass_inputs[1].images_used.resize(4, {});
 		
-		subpass_inputs[1].images_used[0] = {
-			0, nullptr,
-			{0, 1}, {0, 1},
-			vk::ImageView(), vk::ImageAspectFlagBits::eColor
-		};
-		subpass_inputs[1].images_used[1] = {
-			0, nullptr,
-			{0, 1}, {0, 1},
-			vk::ImageView(), vk::ImageAspectFlagBits::eColor
-		};
-		subpass_inputs[1].images_used[2] = {
-			0, nullptr,
-			{0, 1}, {0, 1},
-			vk::ImageView(), vk::ImageAspectFlagBits::eColor
-		};
-		subpass_inputs[1].images_used[3] = {
-			0, nullptr,
-			{0, 1}, {0, 1},
-			vk::ImageView(), vk::ImageAspectFlagBits::eDepth
-		};
 	}
 }
 
@@ -1322,7 +1302,7 @@ void VMainRenderStage::set_rendertarget ( u32 index, Image* image ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	if(imagestate.use.imageview) {
-		imagestate.actual_image->delete_use(imagestate.use.id);
+		imagestate.actual_image->v_deregister_use(imagestate.use.id);
 		imagestate.use.imageview = vk::ImageView();
 	} 
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
@@ -1475,35 +1455,51 @@ void VMainRenderStage::v_rebuild_pipelines() {
 
 		v_renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 		
-		v_bundlestates[0].actual_image->v_create_use(&subpass_inputs[1].images_used[0]);
-		v_bundlestates[1].actual_image->v_create_use(&subpass_inputs[1].images_used[1]);
-		v_bundlestates[2].actual_image->v_create_use(&subpass_inputs[1].images_used[2]);
-		v_bundlestates[4].actual_image->v_create_use(&subpass_inputs[1].images_used[3]);
-		
+		if(!subpass_inputs[1].images_used[0]) subpass_inputs[1].images_used[0] = v_bundlestates[0].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!subpass_inputs[1].images_used[1]) subpass_inputs[1].images_used[1] = v_bundlestates[1].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!subpass_inputs[1].images_used[2]) subpass_inputs[1].images_used[2] = v_bundlestates[2].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!subpass_inputs[1].images_used[3]) subpass_inputs[1].images_used[3] = v_bundlestates[4].actual_image->v_create_use(vk::ImageAspectFlagBits::eDepth, {0, 1}, {0, 1});
 		std::array<vk::DescriptorImageInfo, 4> dsimageinfo1 = {
-			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[0].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[1].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[2].imageview, vk::ImageLayout::eShaderReadOnlyOptimal ),
-			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[3].imageview, vk::ImageLayout::eGeneral )
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[0].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[1].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[2].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[3].imageview(), vk::ImageLayout::eGeneral )
 		};
-		/*std::array<vk::DescriptorImageInfo, 5> dsimageinfo2 = {
-			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[0].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
-			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[1].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
-			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[2].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
-			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[3].actual_image->instance_imageview(), vk::ImageLayout::eShaderReadOnlyOptimal),
-			vk::DescriptorImageInfo(vk::Sampler(), v_bundlestates[4].actual_image->instance_depth_imageview(), vk::ImageLayout::eGeneral)
-		};*/
 		std::array<vk::WriteDescriptorSet, 1> writeDescriptorSets = {
 			vk::WriteDescriptorSet (
-			    subpass_inputs[1].ds_set,
-			    0, 0, dsimageinfo1.size(),
-			    vk::DescriptorType::eInputAttachment,
-			    dsimageinfo1.data(),
-			    nullptr, nullptr
+				subpass_inputs[1].ds_set,
+				0, 0, dsimageinfo1.size(),
+				vk::DescriptorType::eInputAttachment,
+				dsimageinfo1.data(),
+				nullptr, nullptr
+			)
+		};
+		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
+		
+	} else if(subpass_inputs[1].images_used[0].is_updated() || subpass_inputs[1].images_used[1].is_updated() || subpass_inputs[1].images_used[2].is_updated() || subpass_inputs[1].images_used[3].is_updated()) {
+		subpass_inputs[1].images_used[0].set_updated();
+		subpass_inputs[1].images_used[1].set_updated();
+		subpass_inputs[1].images_used[2].set_updated();
+		subpass_inputs[1].images_used[3].set_updated();
+		std::array<vk::DescriptorImageInfo, 4> dsimageinfo1 = {
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[0].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[1].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[2].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal ),
+			vk::DescriptorImageInfo ( vk::Sampler(), subpass_inputs[1].images_used[3].imageview(), vk::ImageLayout::eGeneral )
+		};
+		std::array<vk::WriteDescriptorSet, 1> writeDescriptorSets = {
+			vk::WriteDescriptorSet (
+				subpass_inputs[1].ds_set,
+				0, 0, dsimageinfo1.size(),
+				vk::DescriptorType::eInputAttachment,
+				dsimageinfo1.data(),
+				nullptr, nullptr
 			)
 		};
 		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
 	}
+	
+	
 	gen_tex_pipeline ( v_instance, &tex_pipeline, viewport, v_renderpass );
 	gen_flat_pipeline ( v_instance, &flat_pipeline, viewport, v_renderpass );
 	gen_skybox_pipeline ( v_instance, &skybox_pipeline, viewport, v_renderpass );
@@ -1519,12 +1515,18 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	PerFrameMainBundleRenderObj& data = v_per_frame_data[index];
 	if ( !data.framebuffer ) {
+		if(!data.images[0]) data.images[0] = v_bundlestates[0].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!data.images[1]) data.images[1] = v_bundlestates[1].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!data.images[2]) data.images[2] = v_bundlestates[2].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!data.images[3]) data.images[3] = v_bundlestates[3].actual_image->v_create_use(vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1});
+		if(!data.images[4]) data.images[4] = v_bundlestates[4].actual_image->v_create_use(vk::ImageAspectFlags() | vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, {0, 1}, {0, 1});
+		
 		vk::ImageView attachments[] = {
-			v_bundlestates[0].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[1].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[2].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[3].actual_image->v_create_use(ImagePart::eColor, {0, 1}, {0, 1}).imageview,
-			v_bundlestates[4].actual_image->v_create_use(ImagePart::eDepthStencil, {0, 1}, {0, 1}).imageview
+			data.images[0].imageview(),
+			data.images[1].imageview(),
+			data.images[2].imageview(),
+			data.images[3].imageview(),
+			data.images[4].imageview()
 		};
 		vk::FramebufferCreateInfo frameBufferCreateInfo = {
 			vk::FramebufferCreateFlags(), v_renderpass,
@@ -1548,8 +1550,8 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	bufferstorage->fetch_transferbuffers();
 	for ( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++ ) {
 		for ( VContext* v_context : it->second ) {
-			for ( VImageUse& vimageuse : v_context->images ) {
-				if ( vimageuse.id ) vimageuse.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
+			for ( VImageUseRef& vimageuseref : v_context->images ) {
+				if ( vimageuseref.id ) vimageuseref.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
 			}
 			if ( v_context->data ) {
 				VThinBuffer staging = bufferstorage->get_buffer_pair ( v_context->buffer_chunk.index ).second;
