@@ -58,8 +58,8 @@ struct ButtonEvent {//20 bytes
 
 struct MouseEvent {//20 bytes
 	MouseMoveAction action;
-	u32 posx, posy;
-	u32 deltax, deltay;
+	float posx, posy;
+	float deltax, deltay;
 };
 struct ScrollEvent {//4 bytes
 	float deltax;

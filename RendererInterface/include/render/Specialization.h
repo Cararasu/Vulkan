@@ -22,7 +22,8 @@ extern InstanceBaseId shot_instance_base_id;
 extern InstanceBaseId engine_instance_base_id;
 
 extern InstanceBaseId dirlight_instance_base_id;
-extern InstanceBaseId lightless_instance_base_id;
+extern InstanceBaseId single_instance_base_id;
+extern InstanceBaseId bloom_instance_base_id;
 
 extern ModelBaseId simplequad_base_id;
 extern InstanceBaseId simplequad_instance_base_id;

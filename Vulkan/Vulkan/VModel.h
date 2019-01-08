@@ -50,6 +50,7 @@ struct VInstanceGroup : public InstanceGroup {
 	VTransientBufferStorage buffer_storeage;
 	Map<InstanceBaseId, DynArray<InstanceBlock>> instance_to_data_map;
 	bool finished = false;
+	u64 last_updated_frame_index = 0;
 
 	VInstanceGroup ( VInstance* instance ) :
 		InstanceGroup(), v_instance ( instance ),

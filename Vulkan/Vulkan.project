@@ -24,6 +24,11 @@
       <File Name="Vulkan/VTransformEnums.cpp"/>
       <File Name="Vulkan/VTransformEnums.h"/>
       <VirtualDirectory Name="Specialization">
+        <File Name="Vulkan/Specialization/VSpecialStructs.h"/>
+        <File Name="Vulkan/Specialization/VMainRenderStage.cpp"/>
+        <File Name="Vulkan/Specialization/VMainRenderStage.h"/>
+        <File Name="Vulkan/Specialization/VBloomRenderStage.cpp"/>
+        <File Name="Vulkan/Specialization/VBloomRenderStage.h"/>
         <File Name="Vulkan/Specialization/VSpecializations.cpp"/>
         <File Name="Vulkan/Specialization/VSpecializations.h"/>
         <File Name="Vulkan/Specialization/VMainBundle.h"/>
@@ -194,6 +199,9 @@
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
+        <Command Enabled="yes"/>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hbloom.frag -o ../workingdir/shader/hbloom.frag.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
         <Command Enabled="yes"/>
       </PreBuild>
       <PostBuild/>

@@ -110,14 +110,11 @@ struct VBaseImage : public Image {
 	virtual ImageUseRef create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) override;
 	void v_register_use(RId id) {
 		if(!id) return;
-		printf("Register Use %d, %d, 0x%x\n", id, usages[id].refcount.load(), usages[id].imageview);
 		usages[id].refcount++;
 	}
 	void v_deregister_use(RId id) {
 		if(!id) return;
-		printf("Deregister Use %d, %d, 0x%x\n", id, usages[id].refcount.load(), usages[id].imageview);
 		if(--usages[id].refcount == 0) {
-			printf("Delete Use\n");
 			v_delete_use (id);
 		}
 	}

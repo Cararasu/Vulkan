@@ -604,14 +604,14 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 				skipped_last = false;
 				lastOldLayout = oldLayout[i];
 				lastNewLayout = newLayout[i];
-				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, 1}, array_range, instance_index, &sourceStage, &destinationStage );
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, instance_index, &sourceStage, &destinationStage );
 				needed_barrier_count++;
 			} else {
 				barriers[needed_barrier_count - 1].subresourceRange.levelCount++;
 			}
 		} else {
 			if ( !skipped_last )
-				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, 1}, array_range, instance_index, &sourceStage, &destinationStage );
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, instance_index, &sourceStage, &destinationStage );
 			skipped_last = true;
 		}
 	}

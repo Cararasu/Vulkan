@@ -343,9 +343,6 @@ void VWindow::initialize() {
 			vulkan_window->eventqueue.push(event);
 			v_logger.log<LogLevel::eDebug> ( "Size of Window %dx%d", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
-			if ( vulkan_window->on_resize ) {
-				vulkan_window->on_resize ( vulkan_window, x, y );
-			}
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -416,7 +413,6 @@ void VWindow::initialize() {
 			event.scroll.deltax = xoffset;
 			event.scroll.deltay = yoffset;
 			vulkan_window->eventqueue.push(event);
-			if ( vulkan_window->on_scroll ) vulkan_window->on_scroll ( vulkan_window, xoffset, yoffset );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -447,10 +443,6 @@ void VWindow::initialize() {
 				event.button.utf8[0] = '\0';
 			}
 			vulkan_window->eventqueue.push(event);
-			if ( vulkan_window->on_button_press ) {
-				PressAction pressaction = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
-				vulkan_window->on_button_press ( vulkan_window, glfw_button_transform ( key ), scancode, glfwGetKeyName ( key, scancode ), pressaction, mods );
-			}
 			switch ( action ) {
 			case GLFW_PRESS:
 				printf ( "Press " );
@@ -503,14 +495,14 @@ void VWindow::initialize() {
 	glfwSetCursorPosCallback ( window, [] ( GLFWwindow * window, double xpos, double ypos ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			//printf ( "Mouse Position %f, %f", xpos,  ypos);
-			if ( vulkan_window->on_mouse_moved ) {
-				double delta_x = vulkan_window->mouse_x < 0.0 ? 0.0 : xpos - vulkan_window->mouse_x;
-				double delta_y = vulkan_window->mouse_y < 0.0 ? 0.0 : ypos - vulkan_window->mouse_y;
-				vulkan_window->mouse_x = xpos;
-				vulkan_window->mouse_y = ypos;
-				vulkan_window->on_mouse_moved ( vulkan_window, xpos, ypos, delta_x, delta_y );
-			}
+			OSEvent event;
+			event.type = OSEventType::eMouse;
+			event.mouse.action = MouseMoveAction::eMoved;
+			event.mouse.deltax = (vulkan_window->mouse_x < 0.0) ? 0.0 : xpos - vulkan_window->mouse_x;
+			event.mouse.deltay = (vulkan_window->mouse_y < 0.0) ? 0.0 : ypos - vulkan_window->mouse_y;
+			event.mouse.posx = vulkan_window->mouse_x = xpos;
+			event.mouse.posy = vulkan_window->mouse_y = ypos;
+			vulkan_window->eventqueue.push(event);
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -518,15 +510,23 @@ void VWindow::initialize() {
 	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eMouse;
 			if ( entered ) {
-				v_logger.log<LogLevel::eTrace> ( "Mouse Entered" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
+				event.mouse.action = MouseMoveAction::eEntered;
+				vulkan_window->eventqueue.push(event);
 			} else {
-				v_logger.log<LogLevel::eTrace> ( "Mouse Left" );
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
+				event.mouse.action = MouseMoveAction::eLeft;
 			}
+			event.mouse.posx = vulkan_window->mouse_x;
+			event.mouse.posy = vulkan_window->mouse_x;
+			event.mouse.deltax = 0.0f;
+			event.mouse.deltay = 0.0f;
+			vulkan_window->eventqueue.push(event);
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -534,9 +534,16 @@ void VWindow::initialize() {
 	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
-			if ( vulkan_window->on_mouse_press ) {
-				vulkan_window->on_mouse_press ( vulkan_window, glfw_mouse_transform ( button ), action == GLFW_PRESS ? PressAction::ePress : PressAction::eRelease, mods );
-			}
+			OSEvent event;
+			event.type = OSEventType::eButton;
+			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
+			event.button.shift = (mods | GLFW_MOD_SHIFT) != 0;
+			event.button.cntrl = (mods | GLFW_MOD_CONTROL) != 0;
+			event.button.alt = (mods | GLFW_MOD_ALT) != 0;
+			event.button.super = (mods | GLFW_MOD_SUPER) != 0;
+			event.button.keycode = glfw_mouse_transform ( button );
+			event.button.scancode = 0;
+			vulkan_window->eventqueue.push(event);
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}

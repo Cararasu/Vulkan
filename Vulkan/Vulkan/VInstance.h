@@ -122,6 +122,7 @@ struct VInstance : public Instance {
 
 	VUpdateableBufferStorage* context_bufferstorage = nullptr;
 	Map<ContextBaseId, IdPtrArray<VContext>> v_context_map;
+	u64 last_contexts_updated_frame_index = 0;
 	virtual Context create_context ( ContextBaseId id ) override;
 
 	Map<ModelBaseId, IdPtrArray<VModel>> v_model_map;

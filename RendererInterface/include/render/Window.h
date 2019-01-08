@@ -44,12 +44,6 @@ public:
 	//it should be able to imlement 
 	ConcurrentCyclingQueue<OSEvent> eventqueue;
 
-	std::function<void(Window*, float, float)> on_resize;
-	std::function<void(Window*, double, double, double, double)> on_mouse_moved;
-	std::function<void(Window*, double, double)> on_scroll;
-	std::function<void(Window*, KeyCode, PressAction, u32 modifiers)> on_mouse_press;
-	std::function<void(Window*, KeyCode, u32, const char*, PressAction, u32 modifiers)> on_button_press;
-	
 	virtual ~Window() {}
 
 	const ChangeableValue<Offset2D<s32>>& position() {

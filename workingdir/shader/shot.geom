@@ -8,12 +8,10 @@ layout (max_vertices = 14) out;
 
 layout(location = 0) in mat4 v_m2wMat[];
 layout(location = 4) in vec3 v_umbraColor[];
-layout(location = 5) in vec3 v_spikeColor[];
 
 layout(location = 0) out vec4 g_eyepos;
 layout(location = 1) out vec3 g_uvs;
 layout(location = 2) out vec3 g_umbraColor;
-layout(location = 3) out vec3 g_spikeColor;
 
 layout (set=0, binding = 0) uniform cameraUniformBuffer {
 	layout(offset = 0) mat4 v2sMatrix;
@@ -48,7 +46,6 @@ void main() {
 		g_eyepos /= g_eyepos.w;
 		
 		g_umbraColor = v_umbraColor[0];
-		g_spikeColor = v_spikeColor[0];
 		
 		EmitVertex();
 	}

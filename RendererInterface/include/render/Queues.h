@@ -87,20 +87,18 @@ struct ConcurrentCyclingQueue {
 		capacity = new_capacity;
 		current_bottom = 0;
 	}
-	void pop(T* t_ptr) {
+	bool pop(T* t_ptr) {
 		mutex.lock();
+		printf("%d\n", current_size);
+		if(!current_size) {
+			mutex.unlock();
+			return false;
+		}
 		*t_ptr = data[current_bottom];
 		current_bottom = (current_bottom + 1) % capacity;
 		current_size--;
 		mutex.unlock();
-	}
-	T pop() {
-		mutex.lock();
-		T t = data[current_bottom];
-		current_bottom = (current_bottom + 1) % capacity;
-		current_size--;
-		mutex.unlock();
-		return t;
+		return true;
 	}
 	u32 size() {
 		mutex.lock();

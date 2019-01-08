@@ -702,7 +702,6 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 			if ( bundle ) {
 				bundle->v_dispatch();
 			}
-			if ( bundle ) bundle->v_dispatch();
 		}
 		if ( VMainBundle* bundle = dynamic_cast<VMainBundle*> ( b ) ) {
 			if ( bundle ) {

@@ -144,6 +144,9 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "lightless_shader", "shader/lightless.frag.sprv" );
 	
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "hbloom_shader", "shader/hbloom.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "vbloom_shader", "shader/vbloom.frag.sprv" );
+	
 
 	Monitor* primMonitor = instance->get_primary_monitor();
 
@@ -461,47 +464,6 @@ int main ( int argc, char **argv ) {
 
 	Window* window = instance->create_window();
 
-	window->on_resize = [] ( Window * window, float x, float y ) {
-		g_state.camera.aspect = x / y;
-	};
-	window->on_mouse_moved = [] ( Window * window, double x, double y, double delta_x, double delta_y ) {
-		if ( g_state.basic_keystates[(u32)KeyCode::eMouseLeft].pressed ) {
-			g_state.camera.turn ( delta_y / 1000.0, delta_x / 1000.0 );
-		}
-	};
-	window->on_scroll = [] ( Window * window, double delta_x, double delta_y ) {
-		g_state.camera.zoom ( -delta_y );
-	};
-	window->on_mouse_press = [] ( Window * window, KeyCode button, PressAction pressed, u32 mods ) {
-		bool ispressed = pressed != PressAction::eRelease;
-		if(button != KeyCode::eUnknown) {
-			KeyState& keystate = g_state.basic_keystates[(u32)button];
-			keystate.pressed = ispressed;
-			keystate.time_pressed = g_state.current_timestamp;
-		}
-	};
-	window->on_button_press = [] ( Window * window, KeyCode button, u32 scancode, const char* text, PressAction pressed, u32 mods ) {
-		bool ispressed = pressed != PressAction::eRelease;
-		if(button == KeyCode::eF10 && pressed == PressAction::ePress) {
-			window->maximized() = !window->maximized();
-			window->update();
-		}
-		if(button != KeyCode::eUnknown) {
-			KeyState& keystate = g_state.basic_keystates[(u32)button];
-			keystate.pressed = ispressed;
-			keystate.time_pressed = g_state.current_timestamp;
-		}
-		if(text) {
-			KeyState& keystate = g_state.utf32_keystates[utf8_to_utf32(text)];
-			keystate.pressed = ispressed;
-			keystate.time_pressed = g_state.current_timestamp;
-		}
-		KeyState& keystate = g_state.keystates[(u32)button];
-		keystate.pressed = ispressed;
-		keystate.time_pressed = g_state.current_timestamp;
-		
-	};
-
 	Extent2D<s32> window_size ( 1000, 600 );
 	window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
 	window->size() = window_size;
@@ -519,17 +481,21 @@ int main ( int argc, char **argv ) {
 	bundle->set_window_dependency(window);
 
 	Image* diffuse = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f );
-	bundle->get_renderstage(0)->set_rendertarget ( 0, diffuse );//ambient + intensity
-	bundle->get_renderstage(0)->set_rendertarget ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
-	bundle->get_renderstage(0)->set_rendertarget ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
-	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 3, 1.0f );
-	bundle->get_renderstage(0)->set_rendertarget ( 3, lightaccumulation );//light-accumulation + specularintensity
-	bundle->get_renderstage(0)->set_rendertarget ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
+	bundle->get_renderstage(0)->set_renderimage ( 0, diffuse );//ambient + intensity
+	bundle->get_renderstage(0)->set_renderimage ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
+	bundle->get_renderstage(0)->set_renderimage ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
+	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 10, 1.0f );
+	bundle->get_renderstage(0)->set_renderimage ( 3, lightaccumulation );//light-accumulation + specularintensity
+	bundle->get_renderstage(0)->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 
-	bundle->get_renderstage(1)->set_rendertarget ( 0, lightaccumulation );
+	bundle->get_renderstage(1)->set_renderimage ( 0, lightaccumulation, {0, 10} );
 	
-	bundle->get_renderstage(2)->set_rendertarget ( 0, diffuse );
-	bundle->get_renderstage(2)->set_renderwindow ( 0, window );
+	bundle->get_renderstage(2)->set_renderimage ( 0, lightaccumulation );
+	bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation );
+	
+	
+	bundle->get_renderstage(4)->set_renderimage ( 0, lightaccumulation );
+	bundle->get_renderstage(4)->set_renderwindow ( 0, window );
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -592,7 +558,6 @@ int main ( int argc, char **argv ) {
 	struct ShotInstance {
 		glm::mat4 mv2_matrix;
 		glm::vec4 umbracolor;
-		glm::vec4 spikecolor;
 	};
 	
 	DynArray<AnInstance> x_instances(xwings.size());
@@ -627,23 +592,65 @@ int main ( int argc, char **argv ) {
 		
 		double adjusted_delta = g_state.utf32_keystates[plus].pressed ? delta : delta / 1000.0;
 		
-		while(!window->eventqueue.empty()) {
-			OSEvent event = window->eventqueue.pop();
+		OSEvent event;
+		while(window->eventqueue.pop(&event)) {
 			switch(event.type) {
 			case OSEventType::eButton: {
-				printf("eButton\n");
+				bool ispressed = event.button.action != PressAction::eRelease;
+				if(event.button.keycode == KeyCode::eF10 && event.button.action == PressAction::ePress) {
+					window->maximized() = !window->maximized();
+					window->update();
+				}
+				if(event.button.keycode != KeyCode::eUnknown) {
+					KeyState& keystate = g_state.basic_keystates[(u32)event.button.keycode];
+					keystate.pressed = ispressed;
+					keystate.time_pressed = g_state.current_timestamp;
+				}
+				if(event.button.utf8[0]) {
+					KeyState& keystate = g_state.utf32_keystates[utf8_to_utf32(event.button.utf8)];
+					keystate.pressed = ispressed;
+					keystate.time_pressed = g_state.current_timestamp;
+				}
+				KeyState& keystate = g_state.keystates[(u32)event.button.keycode];
+				keystate.pressed = ispressed;
+				keystate.time_pressed = g_state.current_timestamp;
 			}break;
 			case OSEventType::eMouse: {
-				printf("eMouse\n");
+				switch(event.mouse.action) {
+				case MouseMoveAction::eMoved:
+					if ( g_state.basic_keystates[(u32)KeyCode::eMouseLeft].pressed ) {
+						g_state.camera.turn ( event.mouse.deltay / 1000.0, event.mouse.deltax / 1000.0 );
+					}
+					break;
+				case MouseMoveAction::eEntered:
+					break;
+				case MouseMoveAction::eLeft:
+					break;
+				}
 			}break;
 			case OSEventType::eScroll: {
-				printf("eScroll\n");
+				g_state.camera.zoom ( -event.scroll.deltay );
 			}break;
 			case OSEventType::eChar: {
 				printf("eChar\n");
 			}break;
 			case OSEventType::eWindow: {
 				printf("eWindow\n");
+				switch(event.window.action) {
+				case WindowAction::eMoved:
+					break;
+				case WindowAction::eResized:
+					g_state.camera.aspect = ((float)event.window.x) / ((float)event.window.y);
+					break;
+				case WindowAction::eIconify:
+					break;
+				case WindowAction::eMaximize:
+					break;
+				case WindowAction::eFocused:
+					break;
+				case WindowAction::eClosed:
+					break;
+				}
 			}break;
 			}
 		}
@@ -744,13 +751,11 @@ int main ( int argc, char **argv ) {
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
 				shot_instances[i].umbracolor = glm::vec4(1.0, 0.01, 0.01, 0.0);
-				shot_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
 				shot_instances[i + j].umbracolor = glm::vec4(0.01, 1.0, 0.01, 0.0);
-				shot_instances[i + j].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 		}
 		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
@@ -760,13 +765,12 @@ int main ( int argc, char **argv ) {
 			for(u32 i = 0; i < engine_instances.size(); i++) {
 				engine_instances[i].mv2_matrix = w2v_matrix * engine[i].m2w_mat();
 				engine_instances[i].umbracolor = glm::vec4(1.0, 0.0, 0.0, 0.0);
-				engine_instances[i].spikecolor = glm::vec4(1.0, 1.0, 1.0, 0.0);
 			}
 		}
 		//instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );
 		
 		instancegroup->register_instances ( dirlight_instance_base_id, fullscreen_model, nullptr, 1 );
-		instancegroup->register_instances ( lightless_instance_base_id, fullscreen_model, nullptr, 1 );
+		instancegroup->register_instances ( single_instance_base_id, fullscreen_model, nullptr, 1 );
 		
 		instance->render_bundles ( {bundle} );
 	}
