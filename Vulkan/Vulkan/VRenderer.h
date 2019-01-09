@@ -14,16 +14,19 @@ struct VRenderTarget;
 struct VBundleImageState {
 	vk::Format current_format = vk::Format::eUndefined;
 	VBaseImage* actual_image = nullptr;
-	Range<u32> miprange;
-	Range<u32> layers;
+	u32 miplayer, arraylayer;
 	VImageUse use;
 };
 struct VRenderStage : public RenderStage {
 	Array<VBundleImageState> v_bundlestates;
+	VContextGroup* v_contextgroup;
 	
 	VRenderStage ( RenderStageType type ) : RenderStage(type) {}
 	virtual ~VRenderStage() {}
 
+	virtual void set_contextgroup ( ContextGroup* contextgroup ) {
+		v_contextgroup = static_cast<VContextGroup*> (contextgroup);
+	}
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) = 0;
 };
 

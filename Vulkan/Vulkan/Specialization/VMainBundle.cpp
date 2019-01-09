@@ -180,12 +180,12 @@ VScaleDownRenderStage::VScaleDownRenderStage ( VInstance* v_instance ) : VRender
 VScaleDownRenderStage::~VScaleDownRenderStage() {
 
 }
-void VScaleDownRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> miprange, Range<u32> layers ) {
+void VScaleDownRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
-	imagestate.miprange = miprange;
-	imagestate.layers = layers;
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 	}
@@ -205,12 +205,12 @@ VCopyToScreenRenderStage::VCopyToScreenRenderStage ( VInstance* v_instance ) : V
 VCopyToScreenRenderStage::~VCopyToScreenRenderStage() {
 
 }
-void VCopyToScreenRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> miprange, Range<u32> layers ) {
+void VCopyToScreenRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
-	imagestate.miprange = miprange;
-	imagestate.layers = layers;
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 	}
@@ -245,7 +245,7 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 	);
 	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer );
 }
-VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
 	stages ( 5 ),
 	dependencies(),
 	window_dependency ( nullptr ),
@@ -258,10 +258,10 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup, ContextGr
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
 		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
 	}
-	stages[0] = new VMainRenderStage ( instance, igroup, cgroup );
+	stages[0] = new VMainRenderStage ( instance, igroup );
 	stages[1] = new VScaleDownRenderStage ( instance );
-	stages[2] = new VBloomRenderStage ( instance, igroup, cgroup );
-	stages[3] = new HBloomRenderStage ( instance, igroup, cgroup );
+	stages[2] = new VBloomRenderStage ( instance, igroup );
+	stages[3] = new HBloomRenderStage ( instance, igroup );
 	stages[4] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {

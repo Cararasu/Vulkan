@@ -42,8 +42,9 @@ struct RenderStage {
 	RenderStage ( RenderStageType type ) : type ( type ) {}
 	virtual ~RenderStage () {}
 
-	virtual void set_renderimage ( u32 index, Image* image, Range<u32> miprange = {0, 1}, Range<u32> layers = {0, 1} ) = 0;
+	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) = 0;
 	virtual void set_renderwindow ( u32 index, Window* window ) = 0;
+	virtual void set_contextgroup ( ContextGroup* contextgroup ) = 0;
 };
 struct RenderBundle {
 

@@ -1094,11 +1094,10 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 }
 
 
-VMainRenderStage::VMainRenderStage ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+VMainRenderStage::VMainRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
 	tex_pipeline ( {
 	simple_modelbase_id, textured_instance_base_id, { camera_context_base_id, lightvector_base_id }, {tex_simplemodel_context_base_id}
 } ),
@@ -1197,7 +1196,7 @@ void VMainRenderStage::v_destroy_framebuffers() {
 	}
 }
 
-void VMainRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> miprange, Range<u32> layers ) {
+void VMainRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	if(imagestate.use.imageview) {
@@ -1205,8 +1204,8 @@ void VMainRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> mip
 		imagestate.use.imageview = vk::ImageView();
 	} 
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
-	imagestate.miprange = miprange;
-	imagestate.layers = layers;
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 		v_destroy_renderpasses();
@@ -1230,10 +1229,13 @@ void VMainRenderStage::v_check_rebuild() {
 			v_destroy_pipelines();
 		}
 
-		assert ( !width || width == imagestate.actual_image->extent.width );
-		assert ( !height || height == imagestate.actual_image->extent.height );
-		width = imagestate.actual_image->extent.width;
-		height = imagestate.actual_image->extent.height;
+		u32 thewidth = imagestate.actual_image->extent.width / (1 << imagestate.miplayer);
+		u32 theheight = imagestate.actual_image->extent.height / (1 << imagestate.miplayer);
+
+		assert ( !width || width == thewidth );
+		assert ( !height || height == theheight );
+		width = thewidth;
+		height = theheight;
 
 	}
 
@@ -1419,7 +1421,10 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	if ( !data.framebuffer ) {
 		for(int i = 0; i < v_bundlestates.size; i++) {
 			if(!data.images[i]) {
-				data.images[i] = v_bundlestates[i].actual_image->v_create_use(v_bundlestates[i].actual_image->aspect, {v_bundlestates[i].miprange.min, 1}, {v_bundlestates[i].layers.min, 1});
+				data.images[i] = v_bundlestates[i].actual_image->v_create_use(
+					v_bundlestates[i].actual_image->aspect, 
+					{v_bundlestates[i].miplayer, v_bundlestates[i].miplayer + 1}, 
+					{v_bundlestates[i].arraylayer, v_bundlestates[i].arraylayer + 1});
 			}
 		}
 		
@@ -1439,7 +1444,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	}
 	
 	update_instancegroup(v_instance, v_igroup, buffer);
-	update_contexts(v_instance, v_cgroup, buffer);
+	update_contexts(v_instance, v_contextgroup, buffer);
 
 	vk::ClearValue clearColors[] = {
 		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) ),
@@ -1461,16 +1466,16 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &tex_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &flat_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &shot_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &engine_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &tex_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &flat_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shot_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[0], buffer );
 
 	buffer.nextSubpass ( vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
 
 	buffer.endRenderPass();
 }

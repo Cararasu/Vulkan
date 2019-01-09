@@ -378,6 +378,8 @@ int main ( int argc, char **argv ) {
 
 	InstanceGroup* instancegroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
+	ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
+	ContextGroup* vbloom_contextgroup = instance->create_contextgroup();
 
 	Sampler* sampler = resource_manager->create_sampler(
 		FilterType::eNearest, FilterType::eNearest, FilterType::eNearest,
@@ -392,6 +394,11 @@ int main ( int argc, char **argv ) {
 	
 	Context inverse_camera_matrix_context = instance->create_context ( inverse_camera_context_base_id );
 	contextgroup->set_context ( inverse_camera_matrix_context );
+	
+	Context hbloom_context = instance->create_context ( hbloom_context_base_id );
+	hbloom_contextgroup->set_context( hbloom_context );
+	Context vbloom_context = instance->create_context ( vbloom_context_base_id );
+	vbloom_contextgroup->set_context( vbloom_context );
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
@@ -487,7 +494,7 @@ int main ( int argc, char **argv ) {
 
 	Image* windowimage = window->backed_image( 0 );
 
-	RenderBundle* bundle = instance->create_main_bundle ( instancegroup, contextgroup );
+	RenderBundle* bundle = instance->create_main_bundle ( instancegroup );
 
 	bundle->set_window_dependency(window);
 
@@ -498,11 +505,26 @@ int main ( int argc, char **argv ) {
 	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 10, 1.0f );
 	bundle->get_renderstage(0)->set_renderimage ( 3, lightaccumulation );//light-accumulation + specularintensity
 	bundle->get_renderstage(0)->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
+	bundle->get_renderstage(0)->set_contextgroup ( contextgroup );
 
-	bundle->get_renderstage(1)->set_renderimage ( 0, lightaccumulation, {0, 10} );
+	bundle->get_renderstage(1)->set_renderimage ( 0, lightaccumulation );
 	
-	bundle->get_renderstage(2)->set_renderimage ( 0, lightaccumulation );
-	bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation );
+	
+	Image* bloomimage = resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 5, 1.0f / (float)(1 << 5) );
+	
+	printf("%f\n", 1.0f / (float)(1 << 5));
+	printf("%dx%d\n", bloomimage->width, bloomimage->height);
+	
+	instance->update_context_image( vbloom_context, 0, lightaccumulation->create_use(ImagePart::eColor, {5, 6}, {0, 1}) );
+	instance->update_context_sampler( vbloom_context, 0, sampler );
+	
+	instance->update_context_image( hbloom_context, 0, bloomimage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler( hbloom_context, 0, sampler );
+	
+	bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage);
+	bundle->get_renderstage(2)->set_contextgroup ( vbloom_contextgroup );
+	bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation, 5 );
+	bundle->get_renderstage(3)->set_contextgroup ( hbloom_contextgroup );
 	
 	
 	bundle->get_renderstage(4)->set_renderimage ( 0, lightaccumulation );

@@ -97,7 +97,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 	if ( !pixels ) {
-		v_logger.log<LogLevel::eWarn>("failed to load texture image from file %s", file.c_str());
+		v_logger.log<LogLevel::eWarn> ( "failed to load texture image from file %s", file.c_str() );
 		throw std::runtime_error ( "failed to load texture image!" );
 	}
 	VThinBuffer buffer = v_instance->request_staging_buffer ( imageSize );
@@ -214,22 +214,22 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	                        aspectFlags,
-	                        vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+	                        vk::MemoryPropertyFlagBits::eDeviceLocal,
+							vk::MemoryPropertyFlags(),
+	                        scaling ) );
 	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {
 		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VBaseImage*>() ) );
 	}
 	it->second.push_back ( v_wrapper );
-	v_wrapper->dependent = true;
-	v_wrapper->fraction = scaling;
 	return v_wrapper;
 }
 void VResourceManager::v_delete_dependant_images ( VBaseImage* image ) {
 	auto it = dependency_map.find ( image );
 	if ( it != dependency_map.end() ) {
 		for ( VBaseImage* image : it->second ) {
-			v_delete_dependant_images(image);
+			v_delete_dependant_images ( image );
 			delete v_images.remove ( image->id );
 		}
 		dependency_map.erase ( it );
@@ -239,11 +239,11 @@ void VResourceManager::delete_image ( Image* image ) {
 	v_delete_image ( static_cast<VBaseImage*> ( image ) );
 }
 void VResourceManager::v_delete_image ( VBaseImage* image ) {
-	v_delete_dependant_images(image);
+	v_delete_dependant_images ( image );
 	delete v_images.remove ( image->id );
 }
-Sampler* VResourceManager::create_sampler(FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp) {
-	VSampler* sampler = new VSampler(v_instance, magnification, minification, mipmapping, u, v, w, lodbias, lodrange, anismax, comp);
+Sampler* VResourceManager::create_sampler ( FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp ) {
+	VSampler* sampler = new VSampler ( v_instance, magnification, minification, mipmapping, u, v, w, lodbias, lodrange, anismax, comp );
 	v_samplers.insert ( sampler );
 	return sampler;
 }

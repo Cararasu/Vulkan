@@ -18,7 +18,6 @@ struct VShadowRenderStage : public VRenderStage {
 	VInstance* v_instance;
 
 	VInstanceGroup* v_igroup;
-	VContextGroup* v_cgroup;
 
 	PipelineStruct shadowmap_pipeline;
 
@@ -31,7 +30,7 @@ struct VShadowRenderStage : public VRenderStage {
 
 	u64 last_frame_index_pipeline_built = 0;
 
-	VShadowRenderStage ( VInstance* v_instance, InstanceGroup* igroup, ContextGroup* cgroup );
+	VShadowRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
 	virtual ~VShadowRenderStage();
 	/*
 	void v_destroy_pipeline_layouts();
@@ -43,7 +42,7 @@ struct VShadowRenderStage : public VRenderStage {
 	void v_rebuild_pipelines();
 	void v_rebuild_commandbuffer ( u32 index );
 
-	virtual void set_renderimage ( u32 index, Image* image, Range<u32> miprange = {0, 1}, Range<u32> layers = {0, 1} ) override;
+	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) override;
 	virtual void set_renderwindow ( u32 index, Window* window ) override;
 
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
@@ -55,7 +54,7 @@ struct VScaleDownRenderStage : public VRenderStage {
 	VScaleDownRenderStage ( VInstance* v_instance );
 	virtual ~VScaleDownRenderStage();
 
-	virtual void set_renderimage ( u32 index, Image* image, Range<u32> miprange = {0, 1}, Range<u32> layers = {0, 1} ) override;
+	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) override;
 	virtual void set_renderwindow ( u32 index, Window* window ) override;
 
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
@@ -67,7 +66,7 @@ struct VCopyToScreenRenderStage : public VRenderStage {
 	VCopyToScreenRenderStage ( VInstance* v_instance );
 	virtual ~VCopyToScreenRenderStage();
 
-	virtual void set_renderimage ( u32 index, Image* image, Range<u32> miprange = {0, 1}, Range<u32> layers = {0, 1} ) override;
+	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) override;
 	virtual void set_renderwindow ( u32 index, Window* window ) override;
 
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
@@ -84,7 +83,7 @@ struct VMainBundle : public RenderBundle {
 
 	u64 last_used = 0;
 
-	VMainBundle ( VInstance* v_instance, InstanceGroup* igroup, ContextGroup* cgroup );
+	VMainBundle ( VInstance* v_instance, InstanceGroup* igroup );
 	virtual ~VMainBundle();
 
 	virtual void add_dependency ( u32 src_index, u32 dst_index ) override;

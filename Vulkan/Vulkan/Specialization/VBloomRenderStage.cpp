@@ -296,12 +296,11 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 	}
 }
 
-VBloomRenderStage::VBloomRenderStage ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+VBloomRenderStage::VBloomRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
-	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {}, {} ),
+	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {vbloom_context_base_id}, {} ),
                 v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
 subpass_inputs(1) {
 
@@ -338,7 +337,7 @@ void VBloomRenderStage::v_destroy_framebuffers() {
 	}
 }
 
-void VBloomRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> miprange, Range<u32> layers ) {
+void VBloomRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	if ( imagestate.use.imageview ) {
@@ -346,8 +345,8 @@ void VBloomRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> mi
 		imagestate.use.imageview = vk::ImageView();
 	}
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
-	imagestate.miprange = miprange;
-	imagestate.layers = layers;
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 		v_destroy_renderpasses();
@@ -370,15 +369,17 @@ void VBloomRenderStage::v_check_rebuild() {
 			v_logger.log<LogLevel::eTrace> ( "Last Image built index %" PRId64 "", imagestate.actual_image->created_frame_index );
 			v_destroy_pipelines();
 		}
+		u32 thewidth = imagestate.actual_image->extent.width / (1 << imagestate.miplayer);
+		u32 theheight = imagestate.actual_image->extent.height / (1 << imagestate.miplayer);
 
-		assert ( !width || width == imagestate.actual_image->extent.width );
-		assert ( !height || height == imagestate.actual_image->extent.height );
-		width = imagestate.actual_image->extent.width;
-		height = imagestate.actual_image->extent.height;
+		assert ( !width || width == thewidth );
+		assert ( !height || height == theheight );
+		width = thewidth;
+		height = theheight;
 
 	}
-
 	if ( viewport.extend.width != width || viewport.extend.height != height ) {
+		printf("VBloom %dx%d\n", width, height);
 		viewport = Viewport<f32> ( 0.0f, 0.0f, width, height, 0.0f, 1.0f );
 		v_destroy_pipelines();
 	}
@@ -435,7 +436,10 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	if ( !data.framebuffer ) {
 		for(int i = 0; i < v_bundlestates.size; i++) {
 			if(!data.images[i]) {
-				data.images[i] = v_bundlestates[i].actual_image->v_create_use(v_bundlestates[i].actual_image->aspect, {v_bundlestates[i].miprange.min, 1}, {v_bundlestates[i].layers.min, 1});
+				data.images[i] = v_bundlestates[i].actual_image->v_create_use(
+						v_bundlestates[i].actual_image->aspect, 
+						{v_bundlestates[i].miplayer, v_bundlestates[i].miplayer + 1}, 
+						{v_bundlestates[i].arraylayer, v_bundlestates[i].arraylayer + 1});
 			}
 		}
 		
@@ -451,7 +455,7 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	}
 	
 	update_instancegroup(v_instance, v_igroup, buffer);
-	update_contexts(v_instance, v_cgroup, buffer);
+	update_contexts(v_instance, v_contextgroup, buffer);
 
 	vk::ClearValue clearColors[] = {
 		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) )
@@ -464,19 +468,18 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &bloom_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer );
 	buffer.endRenderPass();
 }
 
 //--------------------
 
 
-HBloomRenderStage::HBloomRenderStage ( VInstance* instance, InstanceGroup* igroup, ContextGroup* cgroup ) :
+HBloomRenderStage::HBloomRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	v_cgroup ( static_cast<VContextGroup*> ( cgroup ) ),
-	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {}, {} ),
+	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {hbloom_context_base_id}, {} ),
                 v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
 subpass_inputs(1) {
 
@@ -513,7 +516,7 @@ void HBloomRenderStage::v_destroy_framebuffers() {
 	}
 }
 
-void HBloomRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> miprange, Range<u32> layers ) {
+void HBloomRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
 	assert ( index < v_bundlestates.size );
 	VBundleImageState& imagestate = v_bundlestates[index];
 	if ( imagestate.use.imageview ) {
@@ -521,8 +524,8 @@ void HBloomRenderStage::set_renderimage ( u32 index, Image* image, Range<u32> mi
 		imagestate.use.imageview = vk::ImageView();
 	}
 	imagestate.actual_image = static_cast<VBaseImage*> ( image );
-	imagestate.miprange = miprange;
-	imagestate.layers = layers;
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
 	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
 		imagestate.current_format = imagestate.actual_image->v_format;
 		v_destroy_renderpasses();
@@ -546,13 +549,15 @@ void HBloomRenderStage::v_check_rebuild() {
 			v_destroy_pipelines();
 		}
 
-		assert ( !width || width == imagestate.actual_image->extent.width );
-		assert ( !height || height == imagestate.actual_image->extent.height );
-		width = imagestate.actual_image->extent.width;
-		height = imagestate.actual_image->extent.height;
+		u32 thewidth = imagestate.actual_image->extent.width / (1 << imagestate.miplayer);
+		u32 theheight = imagestate.actual_image->extent.height / (1 << imagestate.miplayer);
+
+		assert ( !width || width == thewidth );
+		assert ( !height || height == theheight );
+		width = thewidth;
+		height = theheight;
 
 	}
-
 	if ( viewport.extend.width != width || viewport.extend.height != height ) {
 		viewport = Viewport<f32> ( 0.0f, 0.0f, width, height, 0.0f, 1.0f );
 		v_destroy_pipelines();
@@ -611,7 +616,10 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	if ( !data.framebuffer ) {
 		for(int i = 0; i < v_bundlestates.size; i++) {
 			if(!data.images[i]) {
-				data.images[i] = v_bundlestates[i].actual_image->v_create_use(v_bundlestates[i].actual_image->aspect, {v_bundlestates[i].miprange.min, 1}, {v_bundlestates[i].layers.min, 1});
+				data.images[i] = v_bundlestates[i].actual_image->v_create_use(
+					v_bundlestates[i].actual_image->aspect, 
+					{v_bundlestates[i].miplayer, v_bundlestates[i].miplayer + 1}, 
+					{v_bundlestates[i].arraylayer, v_bundlestates[i].arraylayer + 1});
 			}
 		}
 		
@@ -627,7 +635,7 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	}
 
 	update_instancegroup(v_instance, v_igroup, buffer);
-	update_contexts(v_instance, v_cgroup, buffer);
+	update_contexts(v_instance, v_contextgroup, buffer);
 
 	vk::ClearValue clearColors[] = {
 		vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) )
@@ -640,7 +648,7 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-	render_pipeline ( v_instance, v_igroup, v_cgroup, &bloom_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer );
 	buffer.endRenderPass();
 }
 
