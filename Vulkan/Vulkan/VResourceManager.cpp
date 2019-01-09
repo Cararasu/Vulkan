@@ -1,6 +1,8 @@
 #include "VResourceManager.h"
 #include "VInstance.h"
 #include "VImage.h"
+#include "VSampler.h"
+#include "VTransformEnums.h"
 #include <fstream>
 
 VResourceManager::VResourceManager ( VInstance* instance ) : v_instance ( instance ) {
@@ -11,7 +13,15 @@ VResourceManager::~VResourceManager() {
 		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
 		delete shadermodule;
 	}
-	v_delete_all_image();
+	dependency_map.clear();
+	for ( VBaseImage* image : v_images ) {
+		if ( image ) delete image;
+	}
+	v_images.clear();
+	for ( VSampler* sampler : v_samplers ) {
+		if ( sampler ) delete sampler;
+	}
+	v_samplers.clear();
 }
 
 static std::vector<char> readFile ( String filename ) {
@@ -232,10 +242,8 @@ void VResourceManager::v_delete_image ( VBaseImage* image ) {
 	v_delete_dependant_images(image);
 	delete v_images.remove ( image->id );
 }
-void VResourceManager::v_delete_all_image ( ) {
-	dependency_map.clear();
-	for ( VBaseImage* image : v_images ) {
-		if ( image ) delete image;
-	}
-	v_images.clear();
+Sampler* VResourceManager::create_sampler(FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp) {
+	VSampler* sampler = new VSampler(v_instance, magnification, minification, mipmapping, u, v, w, lodbias, lodrange, anismax, comp);
+	v_samplers.insert ( sampler );
+	return sampler;
 }

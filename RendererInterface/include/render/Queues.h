@@ -89,7 +89,6 @@ struct ConcurrentCyclingQueue {
 	}
 	bool pop(T* t_ptr) {
 		mutex.lock();
-		printf("%d\n", current_size);
 		if(!current_size) {
 			mutex.unlock();
 			return false;

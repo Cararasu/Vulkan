@@ -26,17 +26,17 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -48,7 +48,7 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -185,17 +185,17 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -207,7 +207,7 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -342,17 +342,17 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -364,7 +364,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -497,17 +497,17 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -519,7 +519,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -662,17 +662,17 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -684,7 +684,7 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -822,17 +822,17 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -844,7 +844,7 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -964,17 +964,17 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 		Array<vk::VertexInputAttributeDescription> vertexInputAttributes;
 		u32 valuecount = 0;
 		for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-			valuecount += to_v_format ( valuedef.type ).count * valuedef.arraycount;
+			valuecount += transform_v_format ( valuedef.type ).count * valuedef.arraycount;
 		}
 		vertexInputAttributes.resize ( valuecount );
 		{
 			u32 index = 0;
 			u32 bindingindex = 0;
 			for ( DataValueDef& valuedef : modelbase->datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
@@ -986,7 +986,7 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 				}
 			}
 			for ( DataValueDef& valuedef : instancebase->instance_datagroup.valuedefs ) {
-				VFormatData formatdata = to_v_format ( valuedef.type );
+				VFormatData formatdata = transform_v_format ( valuedef.type );
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {

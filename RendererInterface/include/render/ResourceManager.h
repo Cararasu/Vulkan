@@ -18,4 +18,6 @@ struct ResourceManager {
 	
 	virtual Image* create_dependant_image(Image* image, ImageFormat type, u32 mipmap_layers, float scaling) = 0;
 	virtual void delete_image(Image* image) = 0;
+	
+	virtual Sampler* create_sampler(FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp) = 0;
 };

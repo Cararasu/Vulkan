@@ -7,9 +7,6 @@ struct VInstance;
 struct VImageWrapper;
 struct VImageUse;
 
-vk::Format transform_image_format ( ImageFormat format );
-ImageFormat transform_image_format ( vk::Format format );
-
 struct VImageUseRef {
 	RId id;
 	VBaseImage* image;
@@ -82,7 +79,6 @@ struct VBaseImage : public Image {
 	VWindow *window;
 	//own image
 	GPUMemory memory;
-	u32 current_index;
 	bool dependent;
 	float fraction;
 
@@ -97,7 +93,6 @@ struct VBaseImage : public Image {
 	void destroy();
 
 	void rebuild_image ( u32 width, u32 height, u32 depth );
-	void set_current_image ( u32 index );
 
 	VImageUseRef v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers );
 	void v_create_imageview ( VImageUse* imageuse );

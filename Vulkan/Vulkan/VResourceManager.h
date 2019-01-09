@@ -5,6 +5,7 @@
 
 struct VInstance;
 struct VBaseImage;
+struct VSampler;
 
 struct VResourceManager : public ResourceManager {
 	VInstance* v_instance;
@@ -23,6 +24,7 @@ struct VResourceManager : public ResourceManager {
 	VShaderModule* v_get_shader ( StringReference ref );
 
 	IdPtrArray<VBaseImage> v_images;
+	IdPtrArray<VSampler> v_samplers;
 
 	virtual Image* create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) override;
 	virtual Image* load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) override;
@@ -33,5 +35,6 @@ struct VResourceManager : public ResourceManager {
 	void v_delete_dependant_images ( VBaseImage* image );
 	virtual void delete_image ( Image* image ) override;
 	void v_delete_image ( VBaseImage* image );
-	void v_delete_all_image ( );
+	
+	virtual Sampler* create_sampler(FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp) override;
 };

@@ -21,6 +21,8 @@
     <File Name="AModel.h"/>
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VSampler.cpp"/>
+      <File Name="Vulkan/VSampler.h"/>
       <File Name="Vulkan/VTransformEnums.cpp"/>
       <File Name="Vulkan/VTransformEnums.h"/>
       <VirtualDirectory Name="Specialization">

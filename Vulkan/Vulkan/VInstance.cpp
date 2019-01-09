@@ -8,6 +8,7 @@
 #include "VResourceManager.h"
 #include "Specialization/VMainBundle.h"
 #include "VRenderer.h"
+#include "VSampler.h"
 
 #include "Specialization/VSpecializations.h"
 
@@ -810,7 +811,24 @@ void VInstance::update_context_image ( Context& context, u32 index, ImageUseRef 
 		writecount++;
 	}
 }
-
+void VInstance::update_context_sampler ( Context& context, u32 index, Sampler* sampler ) {
+	VContext* v_context = v_context_map[context.contextbase_id][context.id];
+	const ContextBase* contextbase_ptr = contextbase ( context.contextbase_id );
+	
+	VSampler* v_sampler = m_resource_manager->v_samplers[sampler->id];
+	v_context->samplers[index] = v_sampler;
+	
+	u32 writecount = 0;
+	if ( contextbase_ptr->datagroup.size ) writecount++;
+	if ( contextbase_ptr->image_count ) writecount++;
+	if ( contextbase_ptr->sampler_count ) {
+		//bind descriptorset to image
+		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( v_sampler->sampler, vk::ImageView(), vk::ImageLayout::eUndefined );
+		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( v_context->descriptor_set, writecount, index, 1, vk::DescriptorType::eSampler, &imagewrite, nullptr, nullptr );
+		vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
+		writecount++;
+	}
+}
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {
 

@@ -379,6 +379,11 @@ int main ( int argc, char **argv ) {
 	InstanceGroup* instancegroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
 
+	Sampler* sampler = resource_manager->create_sampler(
+		FilterType::eNearest, FilterType::eNearest, FilterType::eNearest,
+		EdgeHandling::eRepeat, EdgeHandling::eRepeat, EdgeHandling::eRepeat, 
+		0.0f, {0.0f, 1.0f}, 0.0f, DepthComparison::eNone);
+
 	Context light_vector_context = instance->create_context ( lightvector_base_id );
 	contextgroup->set_context ( light_vector_context );
 
@@ -391,6 +396,7 @@ int main ( int argc, char **argv ) {
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
 	instance->update_context_image ( x_context, 0, x_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( x_context, 0, sampler );
 	instance->set_context ( x_models[0], x_context );
 	instance->set_context ( x_models[1], x_context );
 	instance->set_context ( x_models[2], x_context );
@@ -400,6 +406,7 @@ int main ( int argc, char **argv ) {
 
 	Context skybox_context = instance->create_context ( skybox_context_base_id );
 	instance->update_context_image ( skybox_context, 0, skybox_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( skybox_context, 0, sampler );
 	instance->set_context ( cube, skybox_context );
 
 	Context tie_body_context = instance->create_context ( tex_simplemodel_context_base_id );
@@ -409,8 +416,11 @@ int main ( int argc, char **argv ) {
 	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
 	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
 	instance->update_context_image ( tie_body_context, 0, tie_body_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( tie_body_context, 0, sampler );
 	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( tie_arm_context, 0, sampler );
 	instance->update_context_image ( tie_wing_context, 0, tie_wing_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( tie_wing_context, 0, sampler );
 	instance->set_context ( tie_models[0], tie_body_context );
 	instance->set_context ( tie_models[1], tie_body_context );
 	instance->set_context ( tie_models[2], tie_arm_context );
@@ -423,6 +433,7 @@ int main ( int argc, char **argv ) {
 	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
 	instance->update_context_image ( gallofree_context, 0, gallofree_teximage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+	instance->update_context_sampler ( gallofree_context, 0, sampler );
 
 	glm::vec4 color ( 0.75f, 0.75f, 0.75f, 1.0f );
 	instance->update_context_data ( flat_gallofree_context, &color );
@@ -635,7 +646,6 @@ int main ( int argc, char **argv ) {
 				printf("eChar\n");
 			}break;
 			case OSEventType::eWindow: {
-				printf("eWindow\n");
 				switch(event.window.action) {
 				case WindowAction::eMoved:
 					break;

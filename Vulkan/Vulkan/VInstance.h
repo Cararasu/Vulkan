@@ -114,6 +114,7 @@ struct VInstance : public Instance {
 
 	virtual void update_context_data ( Context& context, void* data ) override;
 	virtual void update_context_image ( Context& context, u32 index, ImageUseRef imageuse ) override;
+	virtual void update_context_sampler ( Context& context, u32 index, Sampler* sampler ) override;
 
 	Map<ContextBaseId, VContextBase> contextbase_map;
 	virtual void contextbase_registered ( ContextBaseId id ) override;

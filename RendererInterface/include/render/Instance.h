@@ -101,6 +101,7 @@ struct Instance {
 
 	virtual void update_context_data(Context& context, void* data) = 0;
 	virtual void update_context_image ( Context& context, u32 index, ImageUseRef imageuse ) = 0;
+	virtual void update_context_sampler ( Context& context, u32 index, Sampler* sampler ) = 0;
 
 	virtual InstanceGroup* create_instancegroup() = 0;
 	virtual ContextGroup* create_contextgroup() = 0;

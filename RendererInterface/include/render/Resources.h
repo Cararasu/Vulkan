@@ -12,6 +12,7 @@ struct ObjectInstance {
 };
 
 struct Image;
+struct Sampler;
 //contiguous GPU memory
 struct Buffer;
 struct RenderPass;
@@ -81,6 +82,41 @@ struct Image : public Resource {
 	virtual ImageUseRef create_use(ImagePart part, Range<u32> mipmaps, Range<u32> layers) = 0;
 	virtual void register_use(RId id) = 0;
 	virtual void deregister_use(RId id) = 0;
+};
+enum class FilterType {
+	eNearest,
+	eLinear
+};
+enum class EdgeHandling {
+	eRepeat,
+	eMirror,
+	eClamp
+};
+enum class DepthComparison {
+	eNone,
+	eTrue,
+	eFalse,
+	eLower,
+	eLEquals,
+	eGreater,
+	eGEquals,
+	eEquals,
+	eNEquals
+};
+struct Sampler : public Resource {
+	FilterType magnification, minification, mipmapping;
+	EdgeHandling u, v, w;
+	float lodbias;
+	Range<float> lodrange;
+	float anismax;//<1.0 is disabled
+	//clamp-border?
+	DepthComparison comp;
+
+	Sampler (FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp) :
+		magnification(magnification), minification(minification), mipmapping(mipmapping), u(u), v(v), w(w), lodbias(lodbias), lodrange(lodrange), anismax(anismax), comp(comp) {
+	}
+	
+	virtual ~Sampler() {}
 };
 
 inline ImageUseRef::ImageUseRef(RId id, Image* base_image) : id(id), base_image(base_image) {

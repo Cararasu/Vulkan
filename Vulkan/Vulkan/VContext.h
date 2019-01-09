@@ -21,6 +21,7 @@ struct VContextBase {
 
 struct VBaseImage;
 struct VImageUseRef;
+struct VSampler;
 
 struct VContext {
 	ContextId id;
@@ -31,8 +32,8 @@ struct VContext {
 
 	void* data;
 	Array<VImageUseRef> images;
+	Array<VSampler*> samplers;
 
-	vk::Sampler temp_sampler;
 	vk::DescriptorPool descriptor_pool;
 	vk::DescriptorSet descriptor_set;
 
