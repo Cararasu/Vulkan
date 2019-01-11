@@ -4,16 +4,23 @@
 #include "VWindow.h"
 #include "VTransformEnums.h"
 
-VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended, float fraction ) :
+
+VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, 
+		vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, 
+		vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
 	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ),
-	memory ( needed, recommended ), image (), dependent ( fraction > 0.0f ), fraction ( fraction ) {
-	if(dependent) {
-		this->fraction = 1.0f;
-	}
-	dependent = true;
-	fraction = fraction;
+	memory ( needed, recommended ), image (), dependent ( false ), fraction ( 1.0f ) {
 	v_set_extent ( width, height, depth );
+	init();
+}
+VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, 
+		vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, 
+		float fraction, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
+	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ),
+	memory ( needed, recommended ), image (), dependent ( true ), fraction ( fraction ) {
+	v_set_extent ( width * fraction, height * fraction, depth * fraction );
 	init();
 }
 VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :

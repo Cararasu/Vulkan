@@ -778,8 +778,8 @@ void VWindow::create_swapchain() {
 		VBaseImage* present_image = present_images[i];
 		bool changed = present_image->width != swap_chain_extend.width || present_image->height != swap_chain_extend.height || present_image->depth != 0;
 		if ( changed ) {
-			v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
-											present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
+			v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame %d from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
+											i, present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
 		}
 		present_image->v_set_extent ( swap_chain_extend.width, swap_chain_extend.height, 0 );
 		present_image->v_set_format ( present_swap_format.format );

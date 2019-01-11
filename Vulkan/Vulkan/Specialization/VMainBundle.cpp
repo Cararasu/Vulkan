@@ -13,7 +13,7 @@
 #include "VBloomRenderStage.h"
 
 
-void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct ) {
+void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts ) {
 	if ( !p_struct->pipeline_layout ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipeline Layouts" );
 
@@ -28,8 +28,6 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 			if ( v_contextbase.descriptorset_layout ) v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );
 		}
 
-		std::array<vk::PushConstantRange, 0> pushConstRanges = {};//{vk::PushConstantRange ( vk::ShaderStageFlagBits::eFragment, 0, sizeof ( ObjectPartData ) ) };
-
 		vk::PipelineLayoutCreateInfo createInfo (
 		    vk::PipelineLayoutCreateFlags(),
 		    0, nullptr,//setLayouts
@@ -39,7 +37,11 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 			createInfo.setLayoutCount = v_descriptor_set_layouts.size();
 			createInfo.pSetLayouts = v_descriptor_set_layouts.data();
 		}
-		if ( pushConstRanges.size() != 0 ) {
+		std::array<vk::PushConstantRange, 1> pushConstRanges = {};
+		if(pushconsts) {
+			pushConstRanges[0].stageFlags = vk::ShaderStageFlagBits::eAllGraphics;
+			pushConstRanges[0].offset = pushconsts->offset;
+			pushConstRanges[0].size = pushconsts->size;
 			createInfo.pushConstantRangeCount = pushConstRanges.size();
 			createInfo.pPushConstantRanges = pushConstRanges.data();
 		}
@@ -48,9 +50,11 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 }
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct ) {
-	if ( p_struct->pipeline ) {
-		v_instance->vk_device ().destroyPipeline ( p_struct->pipeline );
-		p_struct->pipeline = vk::Pipeline();
+	for(u32 i = 0; i < p_struct->pipelines.size; i++ ){
+		if ( p_struct->pipelines[i] ) {
+			v_instance->vk_device ().destroyPipeline ( p_struct->pipelines[i] );
+			p_struct->pipelines[i] = vk::Pipeline();
+		}
 	}
 }
 void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct ) {
@@ -105,16 +109,13 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 	}
 	for ( auto it = cgroup->context_map.begin(); it != cgroup->context_map.end(); it++ ) {
 		VContext* v_context = it->second;
+		v_context->update_if_needed();
 		for ( VImageUseRef& vimageuseref : v_context->images ) {
 			if ( vimageuseref ) vimageuseref.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
-			if (vimageuseref.is_updated()) {
-				//TODO update imageview
-				vimageuseref.set_updated();
-			}
 		}
 	}
 }
-void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer ) {
+void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index ) {
 
 	DynArray<InstanceBlock>& instanceblocks = igroup->instance_to_data_map[p_struct->instancebase_id];
 
@@ -129,13 +130,14 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 	for ( ContextBaseId id : p_struct->contextBaseId ) {
 		VContext* context_ptr = cgroup->context_map[id];
 		assert ( context_ptr );
+		context_ptr->update_if_needed();
 		descriptorSets.push_back ( context_ptr->descriptor_set );
 	}
 	if ( descriptorSets.size() ) {
 		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, descriptorSets, {} );
 		descriptor_offset += descriptorSets.size();
 	}
-	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline );
+	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipelines[pipeline_index] );
 	IdPtrArray<VModel>& models = v_instance->v_model_map[p_struct->modelbase_id];
 	const ModelBase* modelbase_ptr = v_instance->modelbase ( p_struct->modelbase_id );
 	for ( InstanceBlock& instanceblock : instanceblocks ) {
@@ -152,6 +154,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			for ( u32 i = 0; i < modelbase_ptr->contextbase_ids.size; i++ ) {
 				if ( modelbase_ptr->contextbase_ids[i] == id ) {
 					assert ( v_model->v_contexts[i] );
+					v_model->v_contexts[i]->update_if_needed();
 					model_descriptorSets.push_back ( v_model->v_contexts[i]->descriptor_set );
 					found = true;
 					break;
@@ -227,12 +230,6 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 
 	imagestate.actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, buffer );
 	window_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, buffer );
-	vk::Filter filter = vk::Filter::eNearest;
-	if ( window_extent == image_extent ) { // if it is the same nearest is enough
-		filter = vk::Filter::eNearest;
-	} else {
-		filter = vk::Filter::eLinear;
-	}
 	vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
 		vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( image_extent.width, image_extent.height, image_extent.depth )
 	}, vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
@@ -241,12 +238,12 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 	buffer.blitImage (
 	    imagestate.actual_image->image, vk::ImageLayout::eTransferSrcOptimal,
 	    window_image->image, vk::ImageLayout::eTransferDstOptimal,
-	    1, &imageBlit, filter
+	    1, &imageBlit, vk::Filter::eLinear
 	);
 	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer );
 }
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
-	stages ( 5 ),
+	stages ( 6 ),
 	dependencies(),
 	window_dependency ( nullptr ),
 	v_instance ( instance ),
@@ -260,9 +257,10 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
 	}
 	stages[0] = new VMainRenderStage ( instance, igroup );
 	stages[1] = new VScaleDownRenderStage ( instance );
-	stages[2] = new VBloomRenderStage ( instance, igroup );
-	stages[3] = new HBloomRenderStage ( instance, igroup );
-	stages[4] = new VCopyToScreenRenderStage ( instance );
+	stages[2] = new VBrightnessRenderStage ( instance, igroup );
+	stages[3] = new VBloomRenderStage ( instance, igroup );
+	stages[4] = new HBloomRenderStage ( instance, igroup );
+	stages[5] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );

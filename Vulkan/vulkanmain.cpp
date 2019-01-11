@@ -144,6 +144,7 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "lightless_shader", "shader/lightless.frag.sprv" );
 	
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "brightness_shader", "shader/brightness.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "hbloom_shader", "shader/hbloom.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "vbloom_shader", "shader/vbloom.frag.sprv" );
 	
@@ -378,11 +379,10 @@ int main ( int argc, char **argv ) {
 
 	InstanceGroup* instancegroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	ContextGroup* contextgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
-	ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
-	ContextGroup* vbloom_contextgroup = instance->create_contextgroup();
+	
 
 	Sampler* sampler = resource_manager->create_sampler(
-		FilterType::eNearest, FilterType::eNearest, FilterType::eNearest,
+		FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
 		EdgeHandling::eRepeat, EdgeHandling::eRepeat, EdgeHandling::eRepeat, 
 		0.0f, {0.0f, 1.0f}, 0.0f, DepthComparison::eNone);
 
@@ -395,10 +395,6 @@ int main ( int argc, char **argv ) {
 	Context inverse_camera_matrix_context = instance->create_context ( inverse_camera_context_base_id );
 	contextgroup->set_context ( inverse_camera_matrix_context );
 	
-	Context hbloom_context = instance->create_context ( hbloom_context_base_id );
-	hbloom_contextgroup->set_context( hbloom_context );
-	Context vbloom_context = instance->create_context ( vbloom_context_base_id );
-	vbloom_contextgroup->set_context( vbloom_context );
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
@@ -502,7 +498,7 @@ int main ( int argc, char **argv ) {
 	bundle->get_renderstage(0)->set_renderimage ( 0, diffuse );//ambient + intensity
 	bundle->get_renderstage(0)->set_renderimage ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
 	bundle->get_renderstage(0)->set_renderimage ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
-	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 10, 1.0f );
+	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, 1.0f );
 	bundle->get_renderstage(0)->set_renderimage ( 3, lightaccumulation );//light-accumulation + specularintensity
 	bundle->get_renderstage(0)->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 	bundle->get_renderstage(0)->set_contextgroup ( contextgroup );
@@ -510,25 +506,40 @@ int main ( int argc, char **argv ) {
 	bundle->get_renderstage(1)->set_renderimage ( 0, lightaccumulation );
 	
 	
-	Image* bloomimage = resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 5, 1.0f / (float)(1 << 5) );
+	Image* bloomimage = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 5, 1.0f / (float)(1 << 1) );
 	
-	printf("%f\n", 1.0f / (float)(1 << 5));
-	printf("%dx%d\n", bloomimage->width, bloomimage->height);
+	{
+		Sampler* bloom_sampler = resource_manager->create_sampler(
+			FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
+			EdgeHandling::eRepeat, EdgeHandling::eRepeat, EdgeHandling::eRepeat, 
+			0.0f, {0.0f, 1.0f}, 0.0f, DepthComparison::eNone);
+		ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
+		ContextGroup* vbloom_contextgroup = instance->create_contextgroup();
+		
+		Context vbloom_context = instance->create_context ( bloom_context_base_id );
+		vbloom_contextgroup->set_context( vbloom_context );
+		
+		instance->update_context_image( vbloom_context, 0, bloomimage->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
+		instance->update_context_sampler( vbloom_context, 0, bloom_sampler );
+		
+		Context hbloom_context = instance->create_context ( bloom_context_base_id );
+		hbloom_contextgroup->set_context( hbloom_context );
+		
+		instance->update_context_image( hbloom_context, 0, lightaccumulation->create_use(ImagePart::eColor, {1, 6}, {0, 1}) );
+		instance->update_context_sampler( hbloom_context, 0, bloom_sampler );
+		
+		bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage);
+		bundle->get_renderstage(2)->set_contextgroup ( hbloom_contextgroup );
+		
+		bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation, 1);
+		bundle->get_renderstage(3)->set_contextgroup ( vbloom_contextgroup );
+		
+		bundle->get_renderstage(4)->set_renderimage ( 0, bloomimage );
+		bundle->get_renderstage(4)->set_contextgroup ( hbloom_contextgroup );
+	}
 	
-	instance->update_context_image( vbloom_context, 0, lightaccumulation->create_use(ImagePart::eColor, {5, 6}, {0, 1}) );
-	instance->update_context_sampler( vbloom_context, 0, sampler );
-	
-	instance->update_context_image( hbloom_context, 0, bloomimage->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
-	instance->update_context_sampler( hbloom_context, 0, sampler );
-	
-	bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage);
-	bundle->get_renderstage(2)->set_contextgroup ( vbloom_contextgroup );
-	bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation, 5 );
-	bundle->get_renderstage(3)->set_contextgroup ( hbloom_contextgroup );
-	
-	
-	bundle->get_renderstage(4)->set_renderimage ( 0, lightaccumulation );
-	bundle->get_renderstage(4)->set_renderwindow ( 0, window );
+	bundle->get_renderstage(5)->set_renderimage ( 0, lightaccumulation );
+	bundle->get_renderstage(5)->set_renderwindow ( 0, window );
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -782,12 +793,12 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor = glm::vec4(1.0, 0.01, 0.01, 0.0);
+				shot_instances[i].umbracolor = glm::vec4(1.0, 0.01, 0.01, 0.5);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor = glm::vec4(0.01, 1.0, 0.01, 0.0);
+				shot_instances[i + j].umbracolor = glm::vec4(0.01, 1.0, 0.01, 0.5);
 			}
 		}
 		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );

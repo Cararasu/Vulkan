@@ -43,6 +43,8 @@ struct VContext {
 	Context context() {
 		return {id, contextbase_id};
 	}
+	
+	void update_if_needed();
 };
 
 struct VContextGroup : public ContextGroup {

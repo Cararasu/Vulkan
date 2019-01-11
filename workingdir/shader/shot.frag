@@ -24,7 +24,7 @@ void main() {
 	float distance = 1.0 - clamp(length(distance_vec), 0.0, 1.0);
 	if(distance == 0.0) discard;
 	
-	outColor = vec4(g_umbraColor, 100.0/255.0);
+	outColor = vec4(g_umbraColor, 10.0/255.0);
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

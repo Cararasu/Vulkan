@@ -3,7 +3,7 @@
 
 #include "VSpecialStructs.h"
 
-void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct );
+void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts = nullptr );
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct );
 void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct );
@@ -12,7 +12,8 @@ void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct )
 void update_instancegroup ( VInstance* v_instance, VInstanceGroup* igroup, vk::CommandBuffer buffer );
 void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::CommandBuffer buffer );
 
-void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer );
+void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index = 0 );
+void render_pipeline_lod ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index );
 
 struct VShadowRenderStage : public VRenderStage {
 	VInstance* v_instance;

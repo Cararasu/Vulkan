@@ -11,8 +11,8 @@
 #include "../VTransformEnums.h"
 #include "../VWindow.h"
 
-void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -166,12 +166,12 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
 
-void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -325,11 +325,11 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
-void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -479,11 +479,11 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
-void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -643,12 +643,12 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
 
-void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -805,11 +805,11 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
-void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -947,11 +947,11 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
-void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass ) {
-	if ( !p_struct->pipeline ) {
+void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
@@ -1089,7 +1089,7 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipeline = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
 

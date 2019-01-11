@@ -214,9 +214,9 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	                        aspectFlags,
+							scaling,
 	                        vk::MemoryPropertyFlagBits::eDeviceLocal,
-							vk::MemoryPropertyFlags(),
-	                        scaling ) );
+							vk::MemoryPropertyFlags() ) );
 	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {

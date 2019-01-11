@@ -64,6 +64,34 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 VContext::~VContext() {
 	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool );
 }
+void VContext::update_if_needed() {
+	bool updated = false;
+	for( VImageUseRef& image : images) {
+		if(image.is_updated()) {
+			image.set_updated();
+			updated = true;
+		}
+	}
+	if(updated) {
+		const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
+		u32 image_index = contextbase->datagroup.size ? 1 : 0;
+		std::vector<vk::DescriptorImageInfo> dsimageinfo(images.size);
+
+		for( int i = 0; i < images.size; i++ ) {
+			dsimageinfo[i] = vk::DescriptorImageInfo ( vk::Sampler(), images[i].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
+		}
+		std::array<vk::WriteDescriptorSet, 1> writeDescriptorSets = {
+			vk::WriteDescriptorSet (
+				descriptor_set,
+				image_index, 0, dsimageinfo.size(),
+				vk::DescriptorType::eSampledImage,
+				dsimageinfo.data(),
+				nullptr, nullptr
+			)
+		};
+		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
+	}
+}
 
 void VContextGroup::set_context ( Context& context ) {
 	context_map.insert ( std::make_pair ( context.contextbase_id, v_instance->v_context_map[context.contextbase_id][context.id] ) );
