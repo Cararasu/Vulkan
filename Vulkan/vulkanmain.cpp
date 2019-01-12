@@ -147,6 +147,7 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "brightness_shader", "shader/brightness.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "hbloom_shader", "shader/hbloom.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "vbloom_shader", "shader/vbloom.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "composition_shader", "shader/composition.frag.sprv" );
 	
 
 	Monitor* primMonitor = instance->get_primary_monitor();
@@ -229,7 +230,7 @@ int main ( int argc, char **argv ) {
 	}
 
 	ResourceManager* resource_manager = instance->resource_manager();
-	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1 );
+	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1, ImageFormat::e4Unorm8 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
@@ -498,48 +499,77 @@ int main ( int argc, char **argv ) {
 	bundle->get_renderstage(0)->set_renderimage ( 0, diffuse );//ambient + intensity
 	bundle->get_renderstage(0)->set_renderimage ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) );//normals
 	bundle->get_renderstage(0)->set_renderimage ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) );//specular power + intensity + ??? + ???
-	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, 1.0f );
+	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 1, 1.0f );
 	bundle->get_renderstage(0)->set_renderimage ( 3, lightaccumulation );//light-accumulation + specularintensity
 	bundle->get_renderstage(0)->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 	bundle->get_renderstage(0)->set_contextgroup ( contextgroup );
 
-	bundle->get_renderstage(1)->set_renderimage ( 0, lightaccumulation );
-	
-	
-	Image* bloomimage = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 5, 1.0f / (float)(1 << 1) );
+	Image* bloomimage1 = resource_manager->create_texture ( 512, 512, 0, 1, 5, ImageFormat::e4F16);
+	Image* bloomimage2 = resource_manager->create_texture ( 512, 512, 0, 1, 5, ImageFormat::e4F16);
 	
 	{
-		Sampler* bloom_sampler = resource_manager->create_sampler(
+		Sampler* downscale_sampler = resource_manager->create_sampler(
 			FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
-			EdgeHandling::eRepeat, EdgeHandling::eRepeat, EdgeHandling::eRepeat, 
-			0.0f, {0.0f, 1.0f}, 0.0f, DepthComparison::eNone);
-		ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
+			EdgeHandling::eMirror, EdgeHandling::eMirror, EdgeHandling::eMirror, 
+			0.0f, {0.0f, 0.0f}, 0.0f, DepthComparison::eNone);
+		ContextGroup* brightness_contextgroup = instance->create_contextgroup();
+		Context brightness_context = instance->create_context ( postproc_context_base_id );
+		
+		instance->update_context_image( brightness_context, 0, lightaccumulation->create_use(ImagePart::eColor, {0, 1}, {0, 1}) );
+		instance->update_context_sampler( brightness_context, 0, downscale_sampler );
+		
+		brightness_contextgroup->set_context( brightness_context );
+		//downscale + brightness low-pass filter
+		bundle->get_renderstage(1)->set_renderimage ( 0, bloomimage1);
+		bundle->get_renderstage(1)->set_contextgroup ( brightness_contextgroup );
+		
+		bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage1, 0);
+		
+		Sampler* bloom_sampler = resource_manager->create_sampler(
+			FilterType::eNearest, FilterType::eNearest, FilterType::eNearest,
+			EdgeHandling::eMirror, EdgeHandling::eMirror, EdgeHandling::eMirror, 
+			0.0f, {0.0f, 5.0f}, 0.0f, DepthComparison::eNone);
 		ContextGroup* vbloom_contextgroup = instance->create_contextgroup();
 		
-		Context vbloom_context = instance->create_context ( bloom_context_base_id );
+		Context vbloom_context = instance->create_context ( postproc_context_base_id );
 		vbloom_contextgroup->set_context( vbloom_context );
 		
-		instance->update_context_image( vbloom_context, 0, bloomimage->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
+		instance->update_context_image( vbloom_context, 0, bloomimage1->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
 		instance->update_context_sampler( vbloom_context, 0, bloom_sampler );
 		
-		Context hbloom_context = instance->create_context ( bloom_context_base_id );
+		ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
+		
+		Context hbloom_context = instance->create_context ( postproc_context_base_id );
 		hbloom_contextgroup->set_context( hbloom_context );
 		
-		instance->update_context_image( hbloom_context, 0, lightaccumulation->create_use(ImagePart::eColor, {1, 6}, {0, 1}) );
+		instance->update_context_image( hbloom_context, 0, bloomimage2->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
 		instance->update_context_sampler( hbloom_context, 0, bloom_sampler );
 		
-		bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage);
-		bundle->get_renderstage(2)->set_contextgroup ( hbloom_contextgroup );
-		
-		bundle->get_renderstage(3)->set_renderimage ( 0, lightaccumulation, 1);
+		//vertical bloom
+		bundle->get_renderstage(3)->set_renderimage ( 0, bloomimage2);
 		bundle->get_renderstage(3)->set_contextgroup ( vbloom_contextgroup );
 		
-		bundle->get_renderstage(4)->set_renderimage ( 0, bloomimage );
+		
+		//horizontal bloom
+		bundle->get_renderstage(4)->set_renderimage ( 0, bloomimage1 );
 		bundle->get_renderstage(4)->set_contextgroup ( hbloom_contextgroup );
+		
+		ContextGroup* composition_contextgroup = instance->create_contextgroup();
+		
+		Context composition_context = instance->create_context ( postproc_context_base_id );
+		composition_contextgroup->set_context( composition_context );
+		
+		instance->update_context_image( composition_context, 0, bloomimage1->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
+		instance->update_context_sampler( composition_context, 0, downscale_sampler );
+		
+		//final bloom composition
+		bundle->get_renderstage(5)->set_renderimage ( 0, lightaccumulation );
+		bundle->get_renderstage(5)->set_contextgroup ( composition_contextgroup );
 	}
 	
-	bundle->get_renderstage(5)->set_renderimage ( 0, lightaccumulation );
-	bundle->get_renderstage(5)->set_renderwindow ( 0, window );
+	bundle->get_renderstage(6)->set_renderimage ( 0, lightaccumulation );
+	bundle->get_renderstage(6)->set_renderwindow ( 0, window );
+	
 
 	struct Light {
 		glm::vec4 direction_amb;
@@ -793,12 +823,12 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor = glm::vec4(1.0, 0.01, 0.01, 0.5);
+				shot_instances[i].umbracolor = glm::vec4(1.0, 0.1, 0.1, 0.33);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor = glm::vec4(0.01, 1.0, 0.01, 0.5);
+				shot_instances[i + j].umbracolor = glm::vec4(0.1, 1.0, 0.1, 0.33);
 			}
 		}
 		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );

@@ -60,6 +60,18 @@ struct VScaleDownRenderStage : public VRenderStage {
 
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
 };
+struct VCopyImageRenderStage : public VRenderStage {
+	VInstance* v_instance;
+	VWindow* v_window;
+
+	VCopyImageRenderStage ( VInstance* v_instance );
+	virtual ~VCopyImageRenderStage();
+
+	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) override;
+	virtual void set_renderwindow ( u32 index, Window* window ) override;
+
+	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) override;
+};
 struct VCopyToScreenRenderStage : public VRenderStage {
 	VInstance* v_instance;
 	VWindow* v_window;

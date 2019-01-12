@@ -78,7 +78,7 @@ void gen_brightness_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -91,19 +91,6 @@ void gen_brightness_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 		    VK_FALSE,//sampleShadingEnable
 		    1.0f, nullptr, //minSampleShading, pSampleMask
 		    VK_FALSE, VK_FALSE //alphaToCoverageEnable, alphaToOneEnable
-		);
-
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencil (
-		    vk::PipelineDepthStencilStateCreateFlags(),
-		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
-		    vk::CompareOp::eLess, //depthCompareOp
-		VK_FALSE, VK_FALSE, { //depthBoundsTestEnable, stencilTestEnable
-			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
-			vk::CompareOp::eEqual/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
-		}, {}, //front, back
-		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
 		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
@@ -142,7 +129,7 @@ void gen_brightness_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 		vk::GraphicsPipelineCreateInfo pipelineInfo (
 		    vk::PipelineCreateFlags(),
 		    2, shaderStages,
-		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
+		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, nullptr, &colorBlending,
 		    nullptr,
 		    p_struct->pipeline_layout,
 		    renderpass,
@@ -220,7 +207,7 @@ void gen_hbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -233,19 +220,6 @@ void gen_hbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		    VK_FALSE,//sampleShadingEnable
 		    1.0f, nullptr, //minSampleShading, pSampleMask
 		    VK_FALSE, VK_FALSE //alphaToCoverageEnable, alphaToOneEnable
-		);
-
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencil (
-		    vk::PipelineDepthStencilStateCreateFlags(),
-		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
-		    vk::CompareOp::eLess, //depthCompareOp
-		VK_FALSE, VK_FALSE, { //depthBoundsTestEnable, stencilTestEnable
-			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
-			vk::CompareOp::eEqual/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
-		}, {}, //front, back
-		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
 		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
@@ -284,7 +258,7 @@ void gen_hbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		vk::GraphicsPipelineCreateInfo pipelineInfo (
 		    vk::PipelineCreateFlags(),
 		    2, shaderStages,
-		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
+		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, nullptr, &colorBlending,
 		    nullptr,
 		    p_struct->pipeline_layout,
 		    renderpass,
@@ -362,7 +336,7 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -375,19 +349,6 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		    VK_FALSE,//sampleShadingEnable
 		    1.0f, nullptr, //minSampleShading, pSampleMask
 		    VK_FALSE, VK_FALSE //alphaToCoverageEnable, alphaToOneEnable
-		);
-
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencil (
-		    vk::PipelineDepthStencilStateCreateFlags(),
-		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
-		    vk::CompareOp::eLess, //depthCompareOp
-		VK_FALSE, VK_FALSE, { //depthBoundsTestEnable, stencilTestEnable
-			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
-			vk::CompareOp::eEqual/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
-		}, {}, //front, back
-		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
 		vk::PipelineColorBlendAttachmentState colorBlendAttachments[] = {
@@ -426,7 +387,7 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		vk::GraphicsPipelineCreateInfo pipelineInfo (
 		    vk::PipelineCreateFlags(),
 		    2, shaderStages,
-		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
+		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, nullptr, &colorBlending,
 		    nullptr,
 		    p_struct->pipeline_layout,
 		    renderpass,
@@ -442,9 +403,11 @@ VBrightnessRenderStage::VBrightnessRenderStage ( VInstance* instance, InstanceGr
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	brightness_pipeline ( fullscreen_modelbase_id, single_instance_base_id, { bloom_context_base_id }, {}, 5 ),
-	renderpasses ( 5 ),
-	subpass_inputs ( 1 ) {
+	brightness_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
+	postproc_context_base_id
+}, {}, 1 ),
+renderpasses ( 1 ),
+subpass_inputs ( 1 ) {
 
 	v_bundlestates.resize ( 1 );
 }
@@ -533,20 +496,20 @@ void VBrightnessRenderStage::v_rebuild_pipelines() {
 	PushConstUsed push = {0, 4};
 	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &brightness_pipeline, &push );
 
-	for(int i = 0; i < renderpasses.size; i++) {
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.renderpass ) {
 			v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
 			std::array<vk::AttachmentDescription, 1> attachments = {
 				vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-											v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
-											vk::AttachmentLoadOp::eDontCare,//loadOp
-											vk::AttachmentStoreOp::eStore,//storeOp
-											vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
-											vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
-											vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
-											vk::ImageLayout::eColorAttachmentOptimal//finalLayout
-										  )
+				                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
+				                            vk::AttachmentLoadOp::eDontCare,//loadOp
+				                            vk::AttachmentStoreOp::eStore,//storeOp
+				                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+				                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+				                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+				                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+				                          )
 			};
 
 			vk::AttachmentReference colorAttachmentRefs1[] = {
@@ -555,27 +518,27 @@ void VBrightnessRenderStage::v_rebuild_pipelines() {
 
 			std::array<vk::SubpassDescription, 1> subpasses = {
 				vk::SubpassDescription (
-					vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
-					0, nullptr/*inputAttachments*/,
-					1, colorAttachmentRefs1/*colorAttachments*/,
-					nullptr,/*resolveAttachments*/
-					nullptr,/*depthAttackment*/
-					0, nullptr/*preserveAttachments*/
+				    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
+				    0, nullptr/*inputAttachments*/,
+				    1, colorAttachmentRefs1/*colorAttachments*/,
+				    nullptr,/*resolveAttachments*/
+				    nullptr,/*depthAttackment*/
+				    0, nullptr/*preserveAttachments*/
 				)
 			};
 
 			vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(),
-					attachments.size(), attachments.data(),
-					subpasses.size(), subpasses.data(),
-					0, nullptr /*dependencies*/ );
+			        attachments.size(), attachments.data(),
+			        subpasses.size(), subpasses.data(),
+			        0, nullptr /*dependencies*/ );
 
 			wrap.renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
-			
+
 		}
 		if ( !brightness_pipeline.pipelines[i] ) {
-			f32 factor = 1.0f / pow(2.0f, (float)i);
+			f32 factor = 1.0f / pow ( 2.0f, ( float ) i );
 			Viewport<f32> t_viewport = Viewport<f32> ( viewport.offset * factor, viewport.extend * factor, viewport.depth * factor );
-			gen_brightness_pipeline ( v_instance, &brightness_pipeline, i, t_viewport, wrap.renderpass);
+			gen_brightness_pipeline ( v_instance, &brightness_pipeline, i, t_viewport, wrap.renderpass );
 		}
 	}
 	last_frame_index_pipeline_built = v_instance->frame_index;
@@ -586,14 +549,14 @@ void VBrightnessRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) 
 
 	update_instancegroup ( v_instance, v_igroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
-	
-	for(int i = 0; i < renderpasses.size; i++) {
+
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.framebuffer ) {
 			for ( int j = 0; j < v_bundlestates.size; j++ ) {
 				if ( !wrap.images[j] ) {
 					wrap.images[j] = v_bundlestates[j].actual_image->v_create_use (
-										 v_bundlestates[j].actual_image->aspect,
+					                     v_bundlestates[j].actual_image->aspect,
 					{v_bundlestates[j].miplayer + i, v_bundlestates[j].miplayer + i + 1},
 					{v_bundlestates[j].arraylayer, v_bundlestates[j].arraylayer + 1} );
 				}
@@ -605,23 +568,23 @@ void VBrightnessRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) 
 			vk::FramebufferCreateInfo frameBufferCreateInfo = {
 				vk::FramebufferCreateFlags(), wrap.renderpass,
 				1, attachments,
-				( u32 ) viewport.extend.width / (1 << i), ( u32 ) viewport.extend.height / (1 << i), 1
+				( u32 ) viewport.extend.width / ( 1 << i ), ( u32 ) viewport.extend.height / ( 1 << i ), 1
 			};
 			wrap.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 		}
-		
+
 		vk::ClearValue clearColors[] = {
 			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) )
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			wrap.renderpass, wrap.framebuffer,
-			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / (1 << i), viewport.offset.y / (1 << i) ), vk::Extent2D ( viewport.extend.x / (1 << i), viewport.extend.y / (1 << i) ) ),
+			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / ( 1 << i ), viewport.offset.y / ( 1 << i ) ), vk::Extent2D ( viewport.extend.x / ( 1 << i ), viewport.extend.y / ( 1 << i ) ) ),
 			1, clearColors
 		};
 		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-		buffer.pushConstants(brightness_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i);
+		buffer.pushConstants ( brightness_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
 		render_pipeline ( v_instance, v_igroup, v_contextgroup, &brightness_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}
@@ -633,9 +596,11 @@ VBloomRenderStage::VBloomRenderStage ( VInstance* instance, InstanceGroup* igrou
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, { bloom_context_base_id }, {}, 5 ),
-	renderpasses ( 5 ),
-	subpass_inputs ( 1 ) {
+	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
+	postproc_context_base_id
+}, {}, 5 ),
+renderpasses ( 5 ),
+subpass_inputs ( 1 ) {
 
 	v_bundlestates.resize ( 1 );
 }
@@ -724,20 +689,20 @@ void VBloomRenderStage::v_rebuild_pipelines() {
 	PushConstUsed push = {0, 4};
 	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &bloom_pipeline, &push );
 
-	for(int i = 0; i < renderpasses.size; i++) {
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.renderpass ) {
 			v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
 			std::array<vk::AttachmentDescription, 1> attachments = {
 				vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-											v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
-											vk::AttachmentLoadOp::eDontCare,//loadOp
-											vk::AttachmentStoreOp::eStore,//storeOp
-											vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
-											vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
-											vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
-											vk::ImageLayout::eColorAttachmentOptimal//finalLayout
-										  )
+				                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
+				                            vk::AttachmentLoadOp::eLoad,//loadOp
+				                            vk::AttachmentStoreOp::eStore,//storeOp
+				                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+				                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+				                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+				                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+				                          )
 			};
 
 			vk::AttachmentReference colorAttachmentRefs1[] = {
@@ -746,26 +711,26 @@ void VBloomRenderStage::v_rebuild_pipelines() {
 
 			std::array<vk::SubpassDescription, 1> subpasses = {
 				vk::SubpassDescription (
-					vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
-					0, nullptr/*inputAttachments*/,
-					1, colorAttachmentRefs1/*colorAttachments*/,
-					nullptr,/*resolveAttachments*/
-					nullptr,/*depthAttackment*/
-					0, nullptr/*preserveAttachments*/
+				    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
+				    0, nullptr/*inputAttachments*/,
+				    1, colorAttachmentRefs1/*colorAttachments*/,
+				    nullptr,/*resolveAttachments*/
+				    nullptr,/*depthAttackment*/
+				    0, nullptr/*preserveAttachments*/
 				)
 			};
 
 			vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(),
-					attachments.size(), attachments.data(),
-					subpasses.size(), subpasses.data(),
-					0, nullptr /*dependencies*/ );
+			        attachments.size(), attachments.data(),
+			        subpasses.size(), subpasses.data(),
+			        0, nullptr /*dependencies*/ );
 
 			wrap.renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 		}
 		if ( !bloom_pipeline.pipelines[i] ) {
-			f32 factor = 1.0f / pow(2.0f, (float)i);
+			f32 factor = 1.0f / pow ( 2.0f, ( float ) i );
 			Viewport<f32> t_viewport = Viewport<f32> ( viewport.offset * factor, viewport.extend * factor, viewport.depth * factor );
-			gen_vbloom_pipeline ( v_instance, &bloom_pipeline, i, t_viewport, wrap.renderpass);
+			gen_vbloom_pipeline ( v_instance, &bloom_pipeline, i, t_viewport, wrap.renderpass );
 		}
 	}
 	last_frame_index_pipeline_built = v_instance->frame_index;
@@ -776,14 +741,14 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	update_instancegroup ( v_instance, v_igroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
-	
-	for(int i = 0; i < renderpasses.size; i++) {
+
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.framebuffer ) {
 			for ( int j = 0; j < v_bundlestates.size; j++ ) {
 				if ( !wrap.images[j] ) {
 					wrap.images[j] = v_bundlestates[j].actual_image->v_create_use (
-										 v_bundlestates[j].actual_image->aspect,
+					                     v_bundlestates[j].actual_image->aspect,
 					{v_bundlestates[j].miplayer + i, v_bundlestates[j].miplayer + i + 1},
 					{v_bundlestates[j].arraylayer, v_bundlestates[j].arraylayer + 1} );
 				}
@@ -795,23 +760,23 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 			vk::FramebufferCreateInfo frameBufferCreateInfo = {
 				vk::FramebufferCreateFlags(), wrap.renderpass,
 				1, attachments,
-				( u32 ) viewport.extend.width / (1 << i), ( u32 ) viewport.extend.height / (1 << i), 1
+				( u32 ) viewport.extend.width / ( 1 << i ), ( u32 ) viewport.extend.height / ( 1 << i ), 1
 			};
 			wrap.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 		}
-		
+
 		vk::ClearValue clearColors[] = {
 			vk::ClearValue ( vk::ClearColorValue ( std::array<float, 4> ( {0.0f, 0.0f, 0.0f, 0.0f} ) ) )
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			wrap.renderpass, wrap.framebuffer,
-			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / (1 << i), viewport.offset.y / (1 << i) ), vk::Extent2D ( viewport.extend.x / (1 << i), viewport.extend.y / (1 << i) ) ),
+			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / ( 1 << i ), viewport.offset.y / ( 1 << i ) ), vk::Extent2D ( viewport.extend.x / ( 1 << i ), viewport.extend.y / ( 1 << i ) ) ),
 			1, clearColors
 		};
 		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-		buffer.pushConstants(bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i);
+		buffer.pushConstants ( bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
 		render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}
@@ -825,9 +790,9 @@ HBloomRenderStage::HBloomRenderStage ( VInstance* instance, InstanceGroup* igrou
 	v_instance ( instance ),
 	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
-	bloom_context_base_id
+	postproc_context_base_id
 }, {}, 5 ),
-renderpasses( 5 ),
+renderpasses ( 5 ),
 subpass_inputs ( 1 ) {
 
 	v_bundlestates.resize ( 1 );
@@ -917,20 +882,20 @@ void HBloomRenderStage::v_rebuild_pipelines() {
 	PushConstUsed push = {0, 4};
 	gen_pipeline_layout ( v_instance, &subpass_inputs[0], &bloom_pipeline, &push );
 
-	for(int i = 0; i < renderpasses.size; i++) {
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.renderpass ) {
 			v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
 			std::array<vk::AttachmentDescription, 1> attachments = {
 				vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
-											v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
-											vk::AttachmentLoadOp::eDontCare,//loadOp
-											vk::AttachmentStoreOp::eStore,//storeOp
-											vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
-											vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
-											vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
-											vk::ImageLayout::eColorAttachmentOptimal//finalLayout
-										  )
+				                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
+				                            vk::AttachmentLoadOp::eLoad,//loadOp
+				                            vk::AttachmentStoreOp::eStore,//storeOp
+				                            vk::AttachmentLoadOp::eDontCare,//stencilLoadOp
+				                            vk::AttachmentStoreOp::eDontCare,//stencilLoadOp
+				                            vk::ImageLayout::eColorAttachmentOptimal,//initialLaylout
+				                            vk::ImageLayout::eColorAttachmentOptimal//finalLayout
+				                          )
 			};
 
 			vk::AttachmentReference colorAttachmentRefs1[] = {
@@ -939,26 +904,26 @@ void HBloomRenderStage::v_rebuild_pipelines() {
 
 			std::array<vk::SubpassDescription, 1> subpasses = {
 				vk::SubpassDescription (
-					vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
-					0, nullptr/*inputAttachments*/,
-					1, colorAttachmentRefs1/*colorAttachments*/,
-					nullptr,/*resolveAttachments*/
-					nullptr,/*depthAttackment*/
-					0, nullptr/*preserveAttachments*/
+				    vk::SubpassDescriptionFlags(), vk::PipelineBindPoint::eGraphics,
+				    0, nullptr/*inputAttachments*/,
+				    1, colorAttachmentRefs1/*colorAttachments*/,
+				    nullptr,/*resolveAttachments*/
+				    nullptr,/*depthAttackment*/
+				    0, nullptr/*preserveAttachments*/
 				)
 			};
 
 			vk::RenderPassCreateInfo renderPassInfo ( vk::RenderPassCreateFlags(),
-					attachments.size(), attachments.data(),
-					subpasses.size(), subpasses.data(),
-					0, nullptr /*dependencies*/ );
+			        attachments.size(), attachments.data(),
+			        subpasses.size(), subpasses.data(),
+			        0, nullptr /*dependencies*/ );
 
 			wrap.renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
 		}
 		if ( !bloom_pipeline.pipelines[i] ) {
-			f32 factor = 1.0f / pow(2.0f, (float)i);
+			f32 factor = 1.0f / pow ( 2.0f, ( float ) i );
 			Viewport<f32> t_viewport = Viewport<f32> ( viewport.offset * factor, viewport.extend * factor, viewport.depth * factor );
-			gen_hbloom_pipeline ( v_instance, &bloom_pipeline, i, t_viewport, wrap.renderpass);
+			gen_hbloom_pipeline ( v_instance, &bloom_pipeline, i, t_viewport, wrap.renderpass );
 		}
 	}
 	last_frame_index_pipeline_built = v_instance->frame_index;
@@ -969,8 +934,8 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	update_instancegroup ( v_instance, v_igroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
-	
-	for(int i = 0; i < renderpasses.size; i++) {
+
+	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.framebuffer ) {
 			for ( int j = 0; j < v_bundlestates.size; j++ ) {
@@ -988,7 +953,7 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 			vk::FramebufferCreateInfo frameBufferCreateInfo = {
 				vk::FramebufferCreateFlags(), wrap.renderpass,
 				1, attachments,
-				( u32 ) viewport.extend.width / (1 << i), ( u32 ) viewport.extend.height / (1 << i), 1
+				( u32 ) viewport.extend.width / ( 1 << i ), ( u32 ) viewport.extend.height / ( 1 << i ), 1
 			};
 			wrap.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 		}
@@ -997,13 +962,13 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		};
 		vk::RenderPassBeginInfo renderPassBeginInfo = {
 			wrap.renderpass, wrap.framebuffer,
-			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / (1 << i), viewport.offset.y / (1 << i) ), vk::Extent2D ( viewport.extend.x / (1 << i), viewport.extend.y / (1 << i) ) ),
+			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / ( 1 << i ), viewport.offset.y / ( 1 << i ) ), vk::Extent2D ( viewport.extend.x / ( 1 << i ), viewport.extend.y / ( 1 << i ) ) ),
 			1, clearColors
 		};
 		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
-		buffer.pushConstants(bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i);
+		buffer.pushConstants ( bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
 		render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}

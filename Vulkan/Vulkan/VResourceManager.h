@@ -26,7 +26,7 @@ struct VResourceManager : public ResourceManager {
 	IdPtrArray<VBaseImage> v_images;
 	IdPtrArray<VSampler> v_samplers;
 
-	virtual Image* create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) override;
+	virtual Image* create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers, ImageFormat format ) override;
 	virtual Image* load_image_to_texture ( std::string file, Image* image, u32 array_layer, u32 mipmap_layer ) override;
 	virtual Image* load_image_to_texture ( std::string file, u32 mipmap_layers ) override;
 

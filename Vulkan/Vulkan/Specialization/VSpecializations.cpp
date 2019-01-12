@@ -11,7 +11,7 @@ ContextBaseId tex_simplemodel_context_base_id;
 ContextBaseId flat_simplemodel_context_base_id;
 ContextBaseId skybox_context_base_id;
 
-ContextBaseId bloom_context_base_id;
+ContextBaseId postproc_context_base_id;
 
 ModelBaseId simple_modelbase_id;
 ModelBaseId dot_modelbase_id;
@@ -69,8 +69,8 @@ void register_specializations ( VInstance* instance ) {
 		instance->contextbase_registered ( flat_simplemodel_context_base_id );
 		
 		ContextBase bloom_context_base = { 0, {{}, 0, 0 }, 1, 1 };
-		bloom_context_base_id = instance->static_contextbase_store.insert ( bloom_context_base );
-		instance->contextbase_registered ( bloom_context_base_id );
+		postproc_context_base_id = instance->static_contextbase_store.insert ( bloom_context_base );
+		instance->contextbase_registered ( postproc_context_base_id );
 		
 	}
 

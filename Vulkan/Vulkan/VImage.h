@@ -49,6 +49,7 @@ struct VImageUse {
 		aspects = rhs.aspects;
 		imageview = rhs.imageview;
 		refcount.store(rhs.refcount);
+		return *this;
 	}
 	VImageUse(const VImageUse& rhs) {
 		id = rhs.id;

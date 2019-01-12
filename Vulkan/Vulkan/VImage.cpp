@@ -410,8 +410,8 @@ void VBaseImage::generate_mipmaps ( vk::ImageLayout* oldLayout, vk::ImageLayout*
 		);
 
 		// Set up a blit from previous mip-level to the next.
-		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspect, mip_range.min, array_range.min, array_range.max - array_range.min ), {
-			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> ( mip_range.min ) ), 1 ), std::max ( int ( extent.height >> ( mip_range.min ) ), 1 ), std::max ( int ( extent.depth >> ( mip_range.min ) ), 1 ) )
+		vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( aspect, index - 1, array_range.min, array_range.max - array_range.min ), {
+			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> ( index - 1 ) ), 1 ), std::max ( int ( extent.height >> ( index - 1 ) ), 1 ), std::max ( int ( extent.depth >> ( index - 1 ) ), 1 ) )
 		}, vk::ImageSubresourceLayers ( aspect, index, array_range.min, array_range.max - array_range.min ), {
 			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> index ), 1 ), std::max ( int ( extent.height >> index ), 1 ), std::max ( int ( extent.depth >> index ), 1 ) )
 		} );

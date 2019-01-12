@@ -11,6 +11,8 @@
 #include "../VTransformEnums.h"
 #include "../VWindow.h"
 
+const u32 LIGHTING_MASK = 0xFFFFFFFF;
+
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
@@ -101,7 +103,7 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 			vk::CompareOp::eAlways/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
+			LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
 		}, {}, //front, back
 		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
@@ -260,7 +262,7 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 			vk::CompareOp::eAlways/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
+			LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
 		}, {}, //front, back
 		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
@@ -572,7 +574,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eReplace/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 			vk::CompareOp::eAlways/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 0/*reference*/
+			LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 0/*reference*/
 		}, {}, //front, back
 		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
@@ -875,7 +877,7 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -898,8 +900,12 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 			VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 				vk::CompareOp::eEqual/*compareOp*/,
-				0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 0/*reference*/
-			}, {}, //front, back
+				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 0/*reference*/
+			}, { //depthBoundsTestEnable, stencilTestEnable
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
+				vk::CompareOp::eEqual/*compareOp*/,
+				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 0/*reference*/
+			}, //front, back
 			0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 
@@ -1017,7 +1023,7 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -1040,8 +1046,12 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 		VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 			vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 			vk::CompareOp::eEqual/*compareOp*/,
-			0xFFFFFFFF/*compareMask*/, 0xFFFFFFFF/*writeMask*/, 1/*reference*/
-		}, {}, //front, back
+			LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
+		}, { //depthBoundsTestEnable, stencilTestEnable
+				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
+				vk::CompareOp::eEqual/*compareOp*/,
+				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
+			}, //front, back
 		0.0f, 1.0f //minDepthBounds, maxDepthBounds
 		);
 

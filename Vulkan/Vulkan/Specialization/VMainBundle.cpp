@@ -11,6 +11,7 @@
 #include "../VWindow.h"
 #include "VMainRenderStage.h"
 #include "VBloomRenderStage.h"
+#include "VFinalCompositionRenderStage.h"
 
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts ) {
@@ -91,6 +92,7 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		}
 		for ( std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers ) {
 			vk::BufferCopy buffercopy ( 0, 0, p.first->size );
+			printf("VThinBuffer transfer 0x%x - 0x%x\n", p.second.buffer, p.first->buffer);
 			buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
 		}
 		bufferstorage->free_transferbuffers ( v_instance->frame_index );
@@ -202,6 +204,45 @@ void VScaleDownRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		imagestate.actual_image->generate_mipmaps ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
 	}
 }
+VCopyImageRenderStage::VCopyImageRenderStage ( VInstance* v_instance ) : VRenderStage ( RenderStageType::eCopyToScreen ), v_instance ( v_instance ) {
+	v_bundlestates.resize ( 2 );
+}
+VCopyImageRenderStage::~VCopyImageRenderStage() {
+
+}
+void VCopyImageRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u32 arraylayer ) {
+	assert ( index < v_bundlestates.size );
+	VBundleImageState& imagestate = v_bundlestates[index];
+	imagestate.actual_image = static_cast<VBaseImage*> ( image );
+	imagestate.miplayer = miplayer;
+	imagestate.arraylayer = arraylayer;
+	if ( imagestate.actual_image->v_format != imagestate.current_format ) {
+		imagestate.current_format = imagestate.actual_image->v_format;
+	}
+}
+void VCopyImageRenderStage::set_renderwindow ( u32 index, Window* window ) {
+	v_window = static_cast<VWindow*> ( window );
+}
+void VCopyImageRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
+
+	VBundleImageState& srcimagestate = v_bundlestates[0];
+	VBundleImageState& dstimagestate = v_bundlestates[1];
+	vk::Extent3D src_extent = srcimagestate.actual_image->extent,
+	             dst_extent = dstimagestate.actual_image->extent;
+
+	srcimagestate.actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal, buffer );
+	dstimagestate.actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, buffer );
+	vk::ImageBlit imageBlit ( vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
+		vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( src_extent.width, src_extent.height, src_extent.depth )
+	}, vk::ImageSubresourceLayers ( vk::ImageAspectFlagBits::eColor, 0, 0, 1 ), {
+		vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( dst_extent.width, dst_extent.height, dst_extent.depth )
+	} );
+	buffer.blitImage (
+	    srcimagestate.actual_image->image, vk::ImageLayout::eTransferSrcOptimal,
+	    dstimagestate.actual_image->image, vk::ImageLayout::eTransferDstOptimal,
+	    1, &imageBlit, vk::Filter::eLinear
+	);
+}
 VCopyToScreenRenderStage::VCopyToScreenRenderStage ( VInstance* v_instance ) : VRenderStage ( RenderStageType::eCopyToScreen ), v_instance ( v_instance ) {
 	v_bundlestates.resize ( 1 );
 }
@@ -243,7 +284,7 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer );
 }
 VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
-	stages ( 6 ),
+	stages ( 7 ),
 	dependencies(),
 	window_dependency ( nullptr ),
 	v_instance ( instance ),
@@ -256,11 +297,12 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
 		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
 	}
 	stages[0] = new VMainRenderStage ( instance, igroup );
-	stages[1] = new VScaleDownRenderStage ( instance );
-	stages[2] = new VBrightnessRenderStage ( instance, igroup );
+	stages[1] = new VBrightnessRenderStage ( instance, igroup );
+	stages[2] = new VScaleDownRenderStage ( instance );
 	stages[3] = new VBloomRenderStage ( instance, igroup );
 	stages[4] = new HBloomRenderStage ( instance, igroup );
-	stages[5] = new VCopyToScreenRenderStage ( instance );
+	stages[5] = new VFinalCompositionRenderStage ( instance, igroup );
+	stages[6] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );

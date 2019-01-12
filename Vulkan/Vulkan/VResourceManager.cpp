@@ -83,9 +83,14 @@ ShaderModule* VResourceManager::get_shader ( StringReference ref ) {
 	return v_get_shader ( ref );
 }
 
-Image* VResourceManager::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers ) {
-	return v_images.insert ( new VBaseImage ( v_instance, width, height, depth, array_layers, mipmap_layers, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
-	                         vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst, vk::ImageAspectFlagBits::eColor,
+Image* VResourceManager::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers, ImageFormat format ) {
+	return v_images.insert ( new VBaseImage ( v_instance, width, height, depth, array_layers, mipmap_layers, transform_image_format(format), vk::ImageTiling::eOptimal,
+	                         vk::ImageUsageFlags() | 
+									vk::ImageUsageFlagBits::eSampled | 
+									vk::ImageUsageFlagBits::eColorAttachment | 
+									vk::ImageUsageFlagBits::eInputAttachment | 
+									vk::ImageUsageFlagBits::eTransferDst | 
+									vk::ImageUsageFlagBits::eTransferSrc, vk::ImageAspectFlagBits::eColor,
 	                         vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 }
 #define STB_IMAGE_IMPLEMENTATION
