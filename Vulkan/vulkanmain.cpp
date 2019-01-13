@@ -138,6 +138,9 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
 	
+	instance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shotlight_shader", "shader/shotlight.geom.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shotlight_shader", "shader/shotlight.frag.sprv" );
+	
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_engine_shader", "shader/engine.frag.sprv" );
 	
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "passthrough_shader", "shader/passthrough.vert.sprv" );
@@ -393,9 +396,6 @@ int main ( int argc, char **argv ) {
 	Context camera_matrix = instance->create_context ( camera_context_base_id );
 	contextgroup->set_context ( camera_matrix );
 	
-	Context inverse_camera_matrix_context = instance->create_context ( inverse_camera_context_base_id );
-	contextgroup->set_context ( inverse_camera_matrix_context );
-	
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
@@ -504,8 +504,8 @@ int main ( int argc, char **argv ) {
 	bundle->get_renderstage(0)->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
 	bundle->get_renderstage(0)->set_contextgroup ( contextgroup );
 
-	Image* bloomimage1 = resource_manager->create_texture ( 512, 512, 0, 1, 5, ImageFormat::e4F16);
-	Image* bloomimage2 = resource_manager->create_texture ( 512, 512, 0, 1, 5, ImageFormat::e4F16);
+	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 6, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
+	Image* bloomimage2 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 6, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
 	
 	{
 		Sampler* downscale_sampler = resource_manager->create_sampler(
@@ -520,7 +520,7 @@ int main ( int argc, char **argv ) {
 		
 		brightness_contextgroup->set_context( brightness_context );
 		//downscale + brightness low-pass filter
-		bundle->get_renderstage(1)->set_renderimage ( 0, bloomimage1);
+		bundle->get_renderstage(1)->set_renderimage ( 0, bloomimage1, 0);
 		bundle->get_renderstage(1)->set_contextgroup ( brightness_contextgroup );
 		
 		bundle->get_renderstage(2)->set_renderimage ( 0, bloomimage1, 0);
@@ -534,7 +534,7 @@ int main ( int argc, char **argv ) {
 		Context vbloom_context = instance->create_context ( postproc_context_base_id );
 		vbloom_contextgroup->set_context( vbloom_context );
 		
-		instance->update_context_image( vbloom_context, 0, bloomimage1->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
+		instance->update_context_image( vbloom_context, 0, bloomimage1->create_use(ImagePart::eColor, {1, 6}, {0, 1}) );
 		instance->update_context_sampler( vbloom_context, 0, bloom_sampler );
 		
 		ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
@@ -542,25 +542,29 @@ int main ( int argc, char **argv ) {
 		Context hbloom_context = instance->create_context ( postproc_context_base_id );
 		hbloom_contextgroup->set_context( hbloom_context );
 		
-		instance->update_context_image( hbloom_context, 0, bloomimage2->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
+		instance->update_context_image( hbloom_context, 0, bloomimage2->create_use(ImagePart::eColor, {1, 6}, {0, 1}) );
 		instance->update_context_sampler( hbloom_context, 0, bloom_sampler );
 		
 		//vertical bloom
-		bundle->get_renderstage(3)->set_renderimage ( 0, bloomimage2);
+		bundle->get_renderstage(3)->set_renderimage ( 0, bloomimage2, 1);
 		bundle->get_renderstage(3)->set_contextgroup ( vbloom_contextgroup );
 		
 		
 		//horizontal bloom
-		bundle->get_renderstage(4)->set_renderimage ( 0, bloomimage1 );
+		bundle->get_renderstage(4)->set_renderimage ( 0, bloomimage1, 1 );
 		bundle->get_renderstage(4)->set_contextgroup ( hbloom_contextgroup );
 		
 		ContextGroup* composition_contextgroup = instance->create_contextgroup();
 		
+		Sampler* composition_bloom_sampler = resource_manager->create_sampler(
+			FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
+			EdgeHandling::eMirror, EdgeHandling::eMirror, EdgeHandling::eMirror, 
+			0.0f, {0.0f, 5.0f}, 0.0f, DepthComparison::eNone);
 		Context composition_context = instance->create_context ( postproc_context_base_id );
 		composition_contextgroup->set_context( composition_context );
 		
-		instance->update_context_image( composition_context, 0, bloomimage1->create_use(ImagePart::eColor, {0, 5}, {0, 1}) );
-		instance->update_context_sampler( composition_context, 0, downscale_sampler );
+		instance->update_context_image( composition_context, 0, bloomimage1->create_use(ImagePart::eColor, {1, 6}, {0, 1}) );
+		instance->update_context_sampler( composition_context, 0, composition_bloom_sampler );
 		
 		//final bloom composition
 		bundle->get_renderstage(5)->set_renderimage ( 0, lightaccumulation );
@@ -592,7 +596,6 @@ int main ( int argc, char **argv ) {
 	
 	DynArray<AModel> gallofrees(1);
 	gallofrees[0].init(glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis(fPIE * 0.5f, glm::vec3(0.0f, -1.0f, 0.0f)), 45.0f, 5.0f);
-	
 	
 	
 	DynArray<AModel> red_shots(2);
@@ -631,7 +634,7 @@ int main ( int argc, char **argv ) {
 	};
 	struct ShotInstance {
 		glm::mat4 mv2_matrix;
-		glm::vec4 umbracolor;
+		glm::vec4 umbracolor_range;
 	};
 	
 	DynArray<AnInstance> x_instances(xwings.size());
@@ -766,16 +769,14 @@ int main ( int argc, char **argv ) {
 		//eye, center, up
 		struct CameraStruct {
 			glm::mat4 camera_matrixes;
+			glm::mat4 inverse_camera_matrix;
 			glm::vec3 camera_pos;
 		} camera;
 		camera.camera_matrixes = g_state.camera.v2s_mat();
+		camera.inverse_camera_matrix = glm::inverse (camera.camera_matrixes);
 		camera.camera_pos = g_state.camera.view_vector * 1.0f;
 		
 		instance->update_context_data ( camera_matrix, &camera );
-		
-		glm::mat4 inverse_camera_matrix = glm::inverse (camera.camera_matrixes);
-		
-		instance->update_context_data ( inverse_camera_matrix_context, &inverse_camera_matrix );
 		
 		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
 		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
@@ -823,12 +824,12 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor = glm::vec4(1.0, 0.1, 0.1, 0.33);
+				shot_instances[i].umbracolor_range = glm::vec4(1.0, 0.0, 0.0, 50.0);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor = glm::vec4(0.1, 1.0, 0.1, 0.33);
+				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 50.0);
 			}
 		}
 		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
@@ -837,7 +838,7 @@ int main ( int argc, char **argv ) {
 		{
 			for(u32 i = 0; i < engine_instances.size(); i++) {
 				engine_instances[i].mv2_matrix = w2v_matrix * engine[i].m2w_mat();
-				engine_instances[i].umbracolor = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				engine_instances[i].umbracolor_range = glm::vec4(1.0, 0.0, 0.0, 0.0);
 			}
 		}
 		//instancegroup->register_instances ( engine_instance_base_id, dot_model, engine_instances.data(), engine_instances.size() );

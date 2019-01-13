@@ -4,8 +4,6 @@
 
 ContextBaseId camera_context_base_id;
 
-ContextBaseId inverse_camera_context_base_id;
-
 ContextBaseId lightvector_base_id;
 ContextBaseId tex_simplemodel_context_base_id;
 ContextBaseId flat_simplemodel_context_base_id;
@@ -38,16 +36,10 @@ void register_specializations ( VInstance* instance ) {
 	{
 		//create contextbase from datagroups
 		ContextBase camera_context_base = { 0, 
-			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64} }, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 ), 1 }
+			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Mat4, 1, 64}, {ValueType::eF32Vec4, 1, 128} }, sizeof ( glm::mat4 ) * 2 + sizeof ( glm::vec4 ), 1 }
 		};
 		camera_context_base_id = instance->static_contextbase_store.insert ( camera_context_base );
 		instance->contextbase_registered ( camera_context_base_id );
-		
-		ContextBase inverse_camera_context_base = { 0, 
-			{ { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 }
-		};
-		inverse_camera_context_base_id = instance->static_contextbase_store.insert ( inverse_camera_context_base );
-		instance->contextbase_registered ( inverse_camera_context_base_id );
 
 		ContextBase lightvector_base = { 0, { { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16} }, sizeof ( glm::vec4 ) * 2, 1 } };
 		lightvector_base_id = instance->static_contextbase_store.insert ( lightvector_base );
@@ -114,14 +106,14 @@ void register_specializations ( VInstance* instance ) {
 
 	shot_instance_base_id = instance->static_instancebase_store.insert ( 
 		{ 0, 
-			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64} }, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 )*1, 1 } 
+			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64}}, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 ), 1 } 
 		}
 	);
 	instance->instancebase_registered ( shot_instance_base_id );
 	
 	engine_instance_base_id = instance->static_instancebase_store.insert (
 		{ 0, 
-			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64} }, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 )*1, 1 } 
+			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64}}, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 ), 1 } 
 		}
 	);
 	instance->instancebase_registered ( engine_instance_base_id );

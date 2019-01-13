@@ -5,11 +5,12 @@
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
-void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
-void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 
 void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
+void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
+void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
+void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 
 struct VMainRenderStage : public VRenderStage {
 	VInstance* v_instance;
@@ -19,11 +20,12 @@ struct VMainRenderStage : public VRenderStage {
 	PipelineStruct skybox_pipeline;
 	PipelineStruct tex_pipeline;
 	PipelineStruct flat_pipeline;
-	PipelineStruct shot_pipeline;
-	PipelineStruct engine_pipeline;
 	
 	PipelineStruct lightless_pipeline;
 	PipelineStruct dirlight_pipeline;
+	PipelineStruct shotlight_pipeline;
+	PipelineStruct shot_pipeline;
+	PipelineStruct engine_pipeline;
 	
 	Viewport<f32> viewport;
 	

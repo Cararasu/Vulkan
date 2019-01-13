@@ -19,11 +19,14 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipeline Layouts" );
 
 		DynArray<vk::DescriptorSetLayout> v_descriptor_set_layouts;
+		//contexts with the input attachments
 		if ( subpass_input->ds_layout ) v_descriptor_set_layouts.push_back ( subpass_input->ds_layout );
+		//contexts from the contextgroup
 		for ( ContextBaseId id : p_struct->contextBaseId ) {
 			VContextBase& v_contextbase = v_instance->contextbase_map[id];
 			if ( v_contextbase.descriptorset_layout ) v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );
 		}
+		//contexts from the model
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			VContextBase& v_contextbase = v_instance->contextbase_map[id];
 			if ( v_contextbase.descriptorset_layout ) v_descriptor_set_layouts.push_back ( v_contextbase.descriptorset_layout );

@@ -32,7 +32,7 @@ struct PipelineStruct {
 	vk::PipelineLayout pipeline_layout;
 	Array<vk::Pipeline> pipelines;
 	
-	PipelineStruct(ModelBaseId modelbase_id, InstanceBaseId instancebase_id, Array<ContextBaseId> contextBaseId, Array<ContextBaseId> model_contextBaseId, u32 pipeline_count = 1) :
+	PipelineStruct(ModelBaseId modelbase_id, InstanceBaseId instancebase_id, Array<ContextBaseId> contextBaseId = {}, Array<ContextBaseId> model_contextBaseId = {}, u32 pipeline_count = 1) :
 		modelbase_id(modelbase_id), instancebase_id(instancebase_id), contextBaseId(contextBaseId), model_contextBaseId(model_contextBaseId), pipeline_layout(), pipelines(pipeline_count) {
 			
 		}
