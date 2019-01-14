@@ -92,7 +92,8 @@ struct Camera {
 		if(glm::length(view_vector) < 1.0f) view_vector = glm::normalize(view_vector);
 	}
 	glm::mat4 v2s_mat() {
-		return glm::infinitePerspective ( fov, aspect, near );
+		//return glm::infinitePerspective ( fov, aspect, near, far );
+		return glm::perspective ( fov, aspect, near, far );
 	}
 	glm::mat4 w2v_mat() {
 		return glm::lookAt ( look_at - view_vector, look_at, up_vector );
@@ -597,15 +598,14 @@ int main ( int argc, char **argv ) {
 	DynArray<AModel> gallofrees(1);
 	gallofrees[0].init(glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis(fPIE * 0.5f, glm::vec3(0.0f, -1.0f, 0.0f)), 45.0f, 5.0f);
 	
-	
 	DynArray<AModel> red_shots(2);
 	{
 		glm::vec3 shot1_translation(4.6f, 0.25f, 7.0f);
 		glm::vec3 shot2_translation(-4.6f, -0.4f, 7.0f);
 		shot1_translation = glm::rotate(xwings[0].rotation, shot1_translation);
 		shot2_translation = glm::rotate(xwings[0].rotation, shot2_translation);
-		red_shots[0].init(xwings[0].position + shot1_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
-		red_shots[1].init(xwings[0].position + shot2_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+		red_shots[0].init(xwings[0].position + shot1_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
+		red_shots[1].init(xwings[0].position + shot2_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
 	}
 	DynArray<AModel> green_shots(2);
 	{
@@ -613,8 +613,8 @@ int main ( int argc, char **argv ) {
 		glm::vec3 shot2_translation(-0.3f, -0.7f, 40.0f);
 		shot1_translation = glm::rotate(ties[1].rotation, shot1_translation);
 		shot2_translation = glm::rotate(ties[1].rotation, shot2_translation);
-		green_shots[0].init(ties[1].position + shot1_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
-		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 200.0f);
+		green_shots[0].init(ties[1].position + shot1_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
+		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
 	}
 	
 	DynArray<AModel> engine(1);
@@ -824,15 +824,15 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor_range = glm::vec4(1.0, 0.0, 0.0, 50.0);
+				shot_instances[i].umbracolor_range = glm::vec4(1.0, 0.0, 0.0, 5.0);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 50.0);
+				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 5.0);
 			}
 		}
-		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
+		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), 1);//shot_instances.size() );
 
 		engine_instances.resize(engine.size());
 		{

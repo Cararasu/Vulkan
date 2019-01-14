@@ -5,6 +5,7 @@
 #include "../VImage.h"
 #include "../VInstance.h"
 #include <render/Specialization.h>
+#include <render/Timing.h>
 #include "../VShader.h"
 #include "../VResourceManager.h"
 #include "../VTransformEnums.h"

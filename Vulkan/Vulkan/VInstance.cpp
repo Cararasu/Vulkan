@@ -239,6 +239,9 @@ VInstance::VInstance() {
 		}
 	}
 #ifndef NDEBUG
+	if ( !extLayers.activateExtension ( "VK_EXT_transform_feedback" ) ) {
+		v_logger.log<LogLevel::eWarn> ( "Extension VK_EXT_transform_feedback not available" );
+	}
 	if ( !extLayers.activateExtension ( VK_EXT_DEBUG_REPORT_EXTENSION_NAME ) ) {
 		v_logger.log<LogLevel::eWarn> ( "Extension %s not available", VK_EXT_DEBUG_REPORT_EXTENSION_NAME );
 	}

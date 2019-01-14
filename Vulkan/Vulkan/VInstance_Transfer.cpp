@@ -1,6 +1,7 @@
 #include "VInstance.h"
 #include "VBuffer.h"
 #include <limits>
+#include <render/Timing.h>
 
 
 VThinBuffer VInstance::request_staging_buffer ( u64 size ) {

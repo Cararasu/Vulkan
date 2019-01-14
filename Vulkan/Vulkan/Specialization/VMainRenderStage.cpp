@@ -544,7 +544,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
 		};
 
-		vk::Rect2D scissors[] = {
+		vk::Rect2D scissors[] = {	
 			vk::Rect2D ( vk::Offset2D ( 0, 0 ), vk::Extent2D ( viewport.extend.width, viewport.extend.height ) ),
 		};
 
@@ -572,7 +572,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		    vk::PipelineDepthStencilStateCreateFlags(),
 		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
-			VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
+			VK_FALSE, VK_FALSE, { //depthBoundsTestEnable, stencilTestEnable
 				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 				vk::CompareOp::eEqual/*compareOp*/,
 				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
@@ -1622,11 +1622,11 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	buffer.nextSubpass ( vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
+	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
+	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
+	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
 
 	buffer.endRenderPass();
 }
