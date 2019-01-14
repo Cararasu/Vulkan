@@ -1,6 +1,5 @@
 libs/
 .codelite/*
 .build-debug_windows/
-workingdir
 *.mk
 Makefile
