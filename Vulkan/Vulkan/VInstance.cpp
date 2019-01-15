@@ -84,14 +84,17 @@ bool VExtLayerStruct::activateLayer ( String name ) {
 			break;
 		}
 	}
-	if ( !found )
+	if ( !found ) {
+		v_logger.log<LogLevel::eWarn> ( "Layer %s not available", name.cstr );
 		return false;
+	}
 	for ( String& layName : neededLayers ) {
 		if ( layName == name ) {
 			return true;
 		}
 	}
 	neededLayers.push_back ( name );
+	v_logger.log<LogLevel::eInfo> ( "Layer %s added", name.cstr );
 	return true;
 }
 bool VExtLayerStruct::activateExtension ( String name ) {
@@ -102,14 +105,17 @@ bool VExtLayerStruct::activateExtension ( String name ) {
 			break;
 		}
 	}
-	if ( !found )
+	if ( !found ) {
+		v_logger.log<LogLevel::eWarn> ( "Extension %s not available", name.cstr );
 		return false;
+	}
 	for ( String& extName : neededExtensions ) {
 		if ( extName == name ) {
 			return true;
 		}
 	}
 	neededExtensions.push_back ( name );
+	v_logger.log<LogLevel::eInfo> ( "Extension %s added", name.cstr );
 	return true;
 }
 
@@ -232,22 +238,11 @@ VInstance::VInstance() {
 	u32 instanceExtCount;
 	const char** glfwReqInstanceExt = glfwGetRequiredInstanceExtensions ( &instanceExtCount );
 	for ( size_t i = 0; i < instanceExtCount; i++ ) {
-		if ( !extLayers.activateExtension ( glfwReqInstanceExt[i] ) ) {
-			v_logger.log<LogLevel::eWarn> ( "Extension %s not available", glfwReqInstanceExt[i] );
-		} else {
-			v_logger.log<LogLevel::eDebug> ( "Activate Extension %s", glfwReqInstanceExt[i] );
-		}
+		extLayers.activateExtension ( glfwReqInstanceExt[i] );
 	}
 #ifndef NDEBUG
-	if ( !extLayers.activateExtension ( "VK_EXT_transform_feedback" ) ) {
-		v_logger.log<LogLevel::eWarn> ( "Extension VK_EXT_transform_feedback not available" );
-	}
-	if ( !extLayers.activateExtension ( VK_EXT_DEBUG_REPORT_EXTENSION_NAME ) ) {
-		v_logger.log<LogLevel::eWarn> ( "Extension %s not available", VK_EXT_DEBUG_REPORT_EXTENSION_NAME );
-	}
-	if ( !extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" ) ) {
-		v_logger.log<LogLevel::eWarn> ( "Layer VK_LAYER_LUNARG_standard_validation not available" );
-	}
+	extLayers.activateExtension ( VK_EXT_DEBUG_REPORT_EXTENSION_NAME );
+	extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" );
 #endif
 
 	vk::ApplicationInfo appInfo ( "Vulcan Instance", VK_MAKE_VERSION ( 1, 0, 0 ), "Wupl-Engine", VK_MAKE_VERSION ( 1, 0, 0 ), VK_MAKE_VERSION ( 1, 0, 61 ) );
@@ -435,14 +430,11 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 			v_logger.log<LogLevel::eDebug> ( "\t%s", prop.layerName );
 		}
 	}
-
-	if ( !v_device->extLayers.activateExtension ( VK_KHR_SWAPCHAIN_EXTENSION_NAME ) ) {
-		v_logger.log<LogLevel::eError> ( "Extension %s not available", VK_KHR_SWAPCHAIN_EXTENSION_NAME );
-	}
+	
+	v_device->extLayers.activateExtension ( VK_KHR_SWAPCHAIN_EXTENSION_NAME );
+	
 #ifndef NDEBUG
-	if ( !v_device->extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" ) ) {
-		v_logger.log<LogLevel::eDebug> ( "Layer VK_LAYER_LUNARG_standard_validation not available" );
-	}
+	v_device->extLayers.activateLayer ( "VK_LAYER_LUNARG_standard_validation" );
 #endif
 	const float priority = 1.0f;
 
@@ -548,6 +540,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
 	physicalDeviceFeatures.geometryShader = VK_TRUE;
+	physicalDeviceFeatures.depthClamp = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
 
 	{

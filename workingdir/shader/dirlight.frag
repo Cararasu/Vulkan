@@ -14,7 +14,7 @@ layout(location = 0) in vec3 v_position;
 
 layout (set=1, binding = 0) uniform camera_struct {
 	layout(offset = 0) mat4 v2sMatrix;
-	layout(offset = 64) mat4 inverse_v2sMatrix;
+	layout(offset = 64) mat4 inv_v2sMatrix;
 	layout(offset = 128) vec4 pos;
 } camera;
 
@@ -23,8 +23,18 @@ layout (set=2, binding = 0) uniform lightVectorBuffer {
 	vec4 color;
 } light;
 
+vec3 reconstruct_pos_from_depth() {
+	float z = subpassLoad(inputDepth).x;
+    float x = v_position.x;
+    float y = v_position.y;
+	vec4 pos = camera.inv_v2sMatrix * vec4(x, y, z, 1.0);
+	return pos.xyz / pos.w;
+}
+
 void main() {
-	vec3 view_direction = normalize(-v_position);
+	vec3 pos = reconstruct_pos_from_depth();
+	
+	vec3 view_direction = normalize(-pos);
 	vec2 normal_temp = subpassLoad(inputNormal).rg;
 	vec3 normal_direction = vec3(normal_temp, sqrt(1 - normal_temp.x*normal_temp.x - normal_temp.y*normal_temp.y));
 	vec3 light_direction = normalize(-light.direction_amb.xyz);

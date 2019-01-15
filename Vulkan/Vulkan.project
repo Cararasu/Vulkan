@@ -17,6 +17,7 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="Camera.h"/>
     <File Name="AModel.cpp"/>
     <File Name="AModel.h"/>
     <File Name="Quads.h"/>
@@ -66,7 +67,6 @@
     </VirtualDirectory>
     <File Name="TODO.txt"/>
     <File Name="vulkanmain.cpp"/>
-    <File Name="ViewPort.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="include"/>
   <Dependencies Name="Debug Windows"/>

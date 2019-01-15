@@ -12,10 +12,12 @@ struct Timing {
 		logger->log<LogLevel::eInfo>("%s - Starting", message);
 	}
 	~Timing(){
-		logger->log<LogLevel::eInfo>("%s - Finished - Elapsed: %" PRId64 "ns", message, std::chrono::duration_cast<std::chrono::nanoseconds> ( std::chrono::high_resolution_clock::now() - starttime ).count());
+		double time = std::chrono::duration_cast<std::chrono::nanoseconds> ( std::chrono::high_resolution_clock::now() - starttime ).count() / 1000000.0;
+		logger->log<LogLevel::eInfo>("%s - Finished - Elapsed: %lfms", message, time);
 	}
 	
 	void timestamp(const char* sub_message) {
-		logger->log<LogLevel::eInfo>("%s - %s - Elapsed: %" PRId64 "ns", message, sub_message, std::chrono::duration_cast<std::chrono::nanoseconds> ( std::chrono::high_resolution_clock::now() - starttime ).count());
+		double time = std::chrono::duration_cast<std::chrono::nanoseconds> ( std::chrono::high_resolution_clock::now() - starttime ).count() / 1000000.0;
+		logger->log<LogLevel::eInfo>("%s - %s - Elapsed: %lfms", message, sub_message, time);
 	}
 };

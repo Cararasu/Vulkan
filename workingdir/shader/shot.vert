@@ -50,7 +50,7 @@ void main() {
 		up.y = -up.y;
 		forward.y = -forward.y;
 		
-		for(int i = 0; i < 14; i++) {
+		for(int i = 0; i < 7; i++) {
 			//fancy bitshift magic
 			int b = 1 << i;
 			vec3 factor = vec3((0x287a & b) != 0, (0x02af & b) != 0, (0x31e3 & b) != 0);
@@ -58,9 +58,9 @@ void main() {
 			vec3 changevec = (right * factor.x) + (up * factor.y) + (forward * factor.z);
 			
 			//vertex-pos in view space
-			vec3 va = center_pos + changevec;
-			v_0[i] = v2sMatrix * vec4(va, 1.0);
-			v_0[i] /= v_0[i].w;
+			v_0[2*i] = vec4(center_pos + changevec, 1.0);
+			v_0[2*i + 1] = v2sMatrix * v_0[2*i];
+			v_0[2*i + 1] /= v_0[2*i + 1].w;
 		}
 	}
 	

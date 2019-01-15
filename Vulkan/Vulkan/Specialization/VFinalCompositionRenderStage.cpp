@@ -327,7 +327,7 @@ void VFinalCompositionRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 in
 			vk::Rect2D ( vk::Offset2D ( viewport.offset.x / ( 1 << i ), viewport.offset.y / ( 1 << i ) ), vk::Extent2D ( viewport.extend.x / ( 1 << i ), viewport.extend.y / ( 1 << i ) ) ),
 			1, clearColors
 		};
-		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
+		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer );
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 		buffer.pushConstants ( composition_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );

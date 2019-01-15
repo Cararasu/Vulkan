@@ -83,7 +83,6 @@ void update_instancegroup ( VInstance* v_instance, VInstanceGroup* igroup, vk::C
 }
 void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::CommandBuffer buffer ) {
 	if ( v_instance->last_contexts_updated_frame_index < v_instance->frame_index ) {
-
 		VUpdateableBufferStorage* bufferstorage = v_instance->context_bufferstorage;
 		bufferstorage->fetch_transferbuffers();
 		for ( auto it = v_instance->v_context_map.begin(); it != v_instance->v_context_map.end(); it++ ) {
@@ -96,18 +95,27 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		}
 		for ( std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers ) {
 			vk::BufferCopy buffercopy ( 0, 0, p.first->size );
-			printf("VThinBuffer transfer 0x%x - 0x%x\n", p.second.buffer, p.first->buffer);
-			buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
+			//printf("VThinBuffer transfer 0x%x - 0x%x\n", p.second.buffer, p.first->buffer);
+			buffer.copyBuffer(p.second.buffer, p.first->buffer, 1, &buffercopy);
 		}
 		bufferstorage->free_transferbuffers ( v_instance->frame_index );
 	}
+	
+	DynArray<vk::ImageMemoryBarrier> barriers;
+	barriers.reserve(32);
+	vk::PipelineStageFlags sourceStage, destinationStage;
+	
 	Map<ModelBaseId, IdPtrArray<VModel>> v_model_map;
 	for(auto& p : v_instance->v_model_map) {
 		for(VModel* v_model : p.second) {
 			for(VContext* v_context : v_model->v_contexts) {
 				if(v_context) {
 					for ( VImageUseRef& vimageuseref : v_context->images ) {
-						if ( vimageuseref ) vimageuseref.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
+						if ( vimageuseref ) {
+							VImageUse* imageuse = vimageuseref.deref();
+							barriers.push_back(vimageuseref.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
+								imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
+						}
 					}
 				}
 			}
@@ -117,9 +125,20 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		VContext* v_context = it->second;
 		v_context->update_if_needed();
 		for ( VImageUseRef& vimageuseref : v_context->images ) {
-			if ( vimageuseref ) vimageuseref.image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, buffer );
+			if ( vimageuseref ) {
+				VImageUse* imageuse = vimageuseref.deref();
+				barriers.push_back(vimageuseref.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
+					imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
+			}
 		}
 	}
+	buffer.pipelineBarrier (
+		sourceStage, destinationStage,
+		vk::DependencyFlags(),
+		{},//memoryBarriers
+		{},//bufferBarriers
+		barriers//imageBarriers
+	);
 }
 void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index ) {
 

@@ -89,7 +89,7 @@ struct OSEvent {
 };
 struct KeyState {
 	bool pressed = false;
-	u64 time_pressed = 0;
+	double time_pressed = 0.0;
 };
 struct InputState {
 	KeyState basic_keystates[(u32)KeyCode::eMax];

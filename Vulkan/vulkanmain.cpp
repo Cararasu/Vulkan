@@ -20,6 +20,8 @@
 #include <render/Timing.h>
 #include <render/UTF.h>
 
+#include "Camera.h"
+
 Logger g_logger ( "main" );
 
 struct SimpleVertex {
@@ -62,45 +64,12 @@ u32 loadDataFile ( std::string file, std::vector<SimpleVertex>& vertices, std::v
 	return true;
 }
 
-struct Camera {
-	glm::vec3 look_at;
-	glm::vec3 view_vector;
-	glm::vec3 up_vector;
-	float fov, aspect, near, far;
+using namespace std::chrono_literals;
 
-	void turn ( float pitch, float yaw, float roll = 0.0f ) {
-		view_vector = glm::rotate ( glm::rotate ( glm::mat4 ( 1.0f ), yaw, up_vector ), pitch, glm::cross ( up_vector, view_vector ) ) * glm::vec4 ( view_vector, 0.0f );
-		up_vector = glm::rotate ( glm::mat4 ( 1.0f ), roll, view_vector ) * glm::vec4 ( up_vector, 0.0f );
-	}
-	void move ( float forward, float sidewards, float upwards = 0.0f ) {
-		glm::vec3 sideward_vec = glm::cross ( view_vector, up_vector );
-		glm::vec3 forward_vec = glm::cross ( up_vector, sideward_vec );
-		glm::vec3 change_vec = glm::normalize ( forward_vec ) * forward + glm::normalize ( sideward_vec ) * sidewards + glm::normalize ( up_vector ) * upwards;
-		look_at += change_vec;
-	}
-	void move ( glm::vec3 move_vec ) {
-		glm::vec3 sideward_vec = glm::cross ( view_vector, up_vector );
-		glm::vec3 forward_vec = glm::cross ( up_vector, sideward_vec );
-		glm::vec3 change_vec = glm::normalize ( forward_vec ) * move_vec.z + glm::normalize ( sideward_vec ) * move_vec.x + glm::normalize ( up_vector ) * move_vec.y;
-		look_at += change_vec;
-	}
-	void move_forward ( float forward, float sidewards, float upwards ) {
-		look_at += view_vector * forward;
-	}
-	void zoom ( float zoom ) {
-		view_vector *= std::pow ( 1.1f, zoom );
-		if(glm::length(view_vector) < 1.0f) view_vector = glm::normalize(view_vector);
-	}
-	glm::mat4 v2s_mat() {
-		//return glm::infinitePerspective ( fov, aspect, near, far );
-		return glm::perspective ( fov, aspect, near, far );
-	}
-	glm::mat4 w2v_mat() {
-		return glm::lookAt ( look_at - view_vector, look_at, up_vector );
-	}
-	glm::mat4 w2v_rot_mat() {
-		return glm::lookAt ( glm::vec3 ( 0.0f, 0.0f, 0.0f ), view_vector, up_vector );
-	}
+struct CameraPoint {
+	CameraOrientation target;
+	float time;
+	float fadeout_time = 0.0f;
 };
 
 struct GameState {
@@ -108,10 +77,58 @@ struct GameState {
 	Map<u32, KeyState> utf32_keystates;
 	Map<u32, KeyState> keystates;
 	
-	u64 current_timestamp = 0;
-	u64 delta_time = 0;
+	u64 current_time_ns = 0;
+	u64 delta_real_time_ns = 0;
+	
+	double timescale = 1.0;
+	
+	double current_time = 0.0;
+	double current_real_time = 0.0;
+	double delta_real_time = 0.0;
+	double delta_time = 0.0;
+	
+	bool debug_camera = false;
 	
 	Camera camera;
+	
+	std::chrono::time_point<std::chrono::high_resolution_clock> current;
+	std::chrono::time_point<std::chrono::high_resolution_clock> last;
+	
+	void init() {
+		last = current = std::chrono::high_resolution_clock::now();
+	}
+	
+	void update_tick() {
+		last = current;
+		current = std::chrono::high_resolution_clock::now();
+		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
+		current_time_ns = current.time_since_epoch().count();
+		delta_real_time_ns = ns.count();
+		
+		delta_real_time = static_cast<double>(ns.count()) / 1000000000.0;
+		delta_time = delta_real_time * timescale;
+		current_real_time += delta_real_time;
+		current_time += delta_time;
+	}
+	
+	std::deque<CameraPoint> camera_points;
+	void update_camera() {
+		if(!debug_camera) {
+			float time_remaining = delta_time;
+			while (!camera_points.empty()) {
+				CameraPoint& point = camera_points.front();
+				if(point.time < time_remaining) {
+					camera.orientation = point.target;
+					time_remaining -= point.time;
+					camera_points.pop_front();
+				} else {
+					camera.orientation = interp_camera_orientation(camera.orientation, point.target, time_remaining / point.time);
+					point.time -= time_remaining;
+					break;
+				}
+			}
+		}
+	}
 };
 GameState g_state;
 
@@ -469,15 +486,6 @@ int main ( int argc, char **argv ) {
 
 	instancegroup->clear();
 
-	g_state.camera.look_at = glm::vec3 ( 0.0f, 0.0f, 0.0f );
-	g_state.camera.view_vector = glm::vec3 ( 0.0f, -40.0f, -40.0f );
-	g_state.camera.up_vector = glm::vec3 ( 0.0f, 1.0f, 0.0f );
-	g_state.camera.fov = 120.0f;
-	g_state.camera.aspect = 1.0f;
-	g_state.camera.near = 0.1f;
-	g_state.camera.far = 100000.0f;
-
-
 	Window* window = instance->create_window();
 
 	Extent2D<s32> window_size ( 1000, 600 );
@@ -585,18 +593,18 @@ int main ( int argc, char **argv ) {
 	
 	constexpr float fPIE = M_PI;
 	
-	glm::vec4 light_vector(-0.254, -0.817, -0.51f, 0.0f);
+	glm::vec4 light_vector(-1.0, -1.0, -1.0, 0.0f);
 	
 	DynArray<AModel> xwings(2);
-	xwings[0].init(glm::vec3 ( 5.0f, -5.0f, -10.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.3f, -1.0f, 0.0f))), 6.25f, 20.0f);
-	xwings[1].init(glm::vec3 ( 20.0f, -0.0f, -5.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.25f, -1.0f, 0.0f))), 6.25f, 20.0f);
+	xwings[0].init(glm::vec3 ( 5.0f, -5.0f, -10.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.3f, -1.0f, 0.0f))), 6.25f, 10.0f);
+	xwings[1].init(glm::vec3 ( 20.0f, -0.0f, -5.0f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.25f, -1.0f, 0.0f))), 6.25f, 10.0f);
 	
 	DynArray<AModel> ties(2);
-	ties[0].init(glm::vec3 ( -75.0f, -30.0f, -7.5f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.27f, -1.0f, 0.0f))), 4.5f, 20.0f);
-	ties[1].init(glm::vec3 ( 0.0f, 100.0f, 0.0f ), glm::angleAxis(fPIE * 0.70f, glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f))), 4.5f, 20.0f);
+	ties[0].init(glm::vec3 ( -75.0f, -30.0f, -7.5f ), glm::angleAxis(fPIE * 0.5f, glm::normalize(glm::vec3(0.27f, -1.0f, 0.0f))), 4.5f, 10.0f);
+	ties[1].init(glm::vec3 ( 0.0f, 100.0f, 0.0f ), glm::angleAxis(fPIE * 0.70f, glm::normalize(glm::vec3(1.0f, -1.0f, 1.0f))), 4.5f, 10.0f);
 	
 	DynArray<AModel> gallofrees(1);
-	gallofrees[0].init(glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis(fPIE * 0.5f, glm::vec3(0.0f, -1.0f, 0.0f)), 45.0f, 5.0f);
+	gallofrees[0].init(glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis(fPIE * 0.5f, glm::vec3(0.0f, -1.0f, 0.0f)), 45.0f, 2.0f);
 	
 	DynArray<AModel> red_shots(2);
 	{
@@ -604,8 +612,8 @@ int main ( int argc, char **argv ) {
 		glm::vec3 shot2_translation(-4.6f, -0.4f, 7.0f);
 		shot1_translation = glm::rotate(xwings[0].rotation, shot1_translation);
 		shot2_translation = glm::rotate(xwings[0].rotation, shot2_translation);
-		red_shots[0].init(xwings[0].position + shot1_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
-		red_shots[1].init(xwings[0].position + shot2_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
+		red_shots[0].init(xwings[0].position + shot1_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 100.0f);
+		red_shots[1].init(xwings[0].position + shot2_translation, xwings[0].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 100.0f);
 	}
 	DynArray<AModel> green_shots(2);
 	{
@@ -613,8 +621,8 @@ int main ( int argc, char **argv ) {
 		glm::vec3 shot2_translation(-0.3f, -0.7f, 40.0f);
 		shot1_translation = glm::rotate(ties[1].rotation, shot1_translation);
 		shot2_translation = glm::rotate(ties[1].rotation, shot2_translation);
-		green_shots[0].init(ties[1].position + shot1_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
-		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 20.0f);
+		green_shots[0].init(ties[1].position + shot1_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 100.0f);
+		green_shots[1].init(ties[1].position + shot2_translation, ties[1].rotation, glm::vec3(0.3f, 0.3f, 7.5f), 100.0f);
 	}
 	
 	DynArray<AModel> engine(1);
@@ -624,10 +632,7 @@ int main ( int argc, char **argv ) {
 	}
 	
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> current = std::chrono::high_resolution_clock::now();
-	std::chrono::time_point<std::chrono::high_resolution_clock> last = current;
-
+	
 	struct AnInstance {
 		glm::mat4 mv2_matrix;
 		glm::mat4 normal_matrix;
@@ -645,29 +650,148 @@ int main ( int argc, char **argv ) {
 	
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
 	
+	g_state.current_time = 0.0;
+	
+	g_state.camera = Camera(glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, -40.0f, -40.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), 120.0f, 1.0f, 1.0f, 100000.0f);
+	g_state.init();
+	
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3(-12.046164, -13.634207, -7.643773), 
+			glm::vec3(-49.880421, -26.592588, -2.185984), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.05f,
+		0.005f
+	});
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (-14.810090, -11.617132, -9.343417), 
+			glm::vec3(-6.133424, -5.676908, 15.969853), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.05f
+	});//0.1
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3(-22.630367, -14.195635, -9.737028), 
+			glm::vec3(17.582222, 3.964259, 0.185171), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.075f
+	}); 
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3(-18.297968, -0.848521, 11.102445), 
+			glm::vec3(24.066288, -19.515970, -41.043777), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.075f
+	});//0.25
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (-2.807483, -7.908168, -4.774134), 
+			glm::vec3 (-41.221268, -28.707624, -11.015345), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.1f
+	});//0.35
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (65.056381, 0.003492, -55.338776), 
+			glm::vec3 (-92.664360, 53.707363, 100.285797), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.1f
+	});//0.45
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (-31.204521, -16.191940, 3.798507), 
+			glm::vec3 (95.542442, 19.098755, 23.453302), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.1f
+	});//0.55
+	//circle around the green shots
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (5.0, -4.0, -10.0), 
+			glm::vec3 (5.717276, -10.836809, -29.487591), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.05f
+	});//0.6
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (5.0, -4.0, -10.0), 
+			glm::vec3 (-25.824068, -18.611961, -2.520845), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.05f
+	});//0.65
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (5.0, -4.0, -10.0), 
+			glm::vec3 (-10.873602, -18.818953, 23.393484), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.05f
+	});//0.7
+	//move to the tie which is about to get shot
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (-76.863388, -35.136509, -3.409085), 
+			glm::vec3 (-37.728046, -24.246819, 13.205550), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.07f
+	});//0.77
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (-92.572762, -39.261837, -1.882365), 
+			glm::vec3 (-29.217321, -17.246819, 9.092174), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.04f
+	});//0.81
+	//zoom back during the explosion
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (24.870106, 3.951993, -17.162857), 
+			glm::vec3 (-249.668594, -223.212830, 86.828735), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.005f
+	});//0.815
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (24.870106, 3.951993, -17.162857), 
+			glm::vec3 (-21.543465, -200.529785, -281.107391), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.085f
+	});//0.9
+	g_state.camera_points.push_back({
+		CameraOrientation(
+			glm::vec3 (24.870106, 3.951993, -17.162857), 
+			glm::vec3 (304.739563, -112.192299, -119.350380), 
+			glm::vec3 ( 0.0f, 1.0f, 0.0f )
+		),
+		0.1f
+	});//1.0
+	
 	while ( instance->is_window_open() ) {
+		g_state.timescale = g_state.utf32_keystates[utf8_to_utf32("+")].pressed ? 1.0 : 1 / 100.0;
+		g_state.update_tick();
 		
-		using namespace std::chrono_literals;
-		
-		last = current;
-		current = std::chrono::high_resolution_clock::now();
-		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
-		g_state.current_timestamp = current.time_since_epoch().count();
-		g_state.delta_time = ns.count();
-		
-		static std::chrono::nanoseconds frametime = std::chrono::duration_cast<std::chrono::nanoseconds>(1s) / 60;
-		
-		std::chrono::nanoseconds waittime = frametime - ns - std::chrono::duration_cast<std::chrono::nanoseconds>(1ms);
-		std::this_thread::sleep_for(waittime);
+		g_state.update_camera();
 		
 		Timing timer(&g_logger, "Main-Loop");
 		
-		double delta = ns.count();
-		delta /= 1000000000.0;
-		
-		u32 plus = utf8_to_utf32("+");
-		
-		double adjusted_delta = g_state.utf32_keystates[plus].pressed ? delta : delta / 1000.0;
+		if(g_state.current_time > 0.814) {
+			red_shots.clear();
+		}
+		printf("Time %lf\n", g_state.current_time);
 		
 		OSEvent event;
 		while(window->eventqueue.pop(&event)) {
@@ -681,22 +805,32 @@ int main ( int argc, char **argv ) {
 				if(event.button.keycode != KeyCode::eUnknown) {
 					KeyState& keystate = g_state.basic_keystates[(u32)event.button.keycode];
 					keystate.pressed = ispressed;
-					keystate.time_pressed = g_state.current_timestamp;
+					keystate.time_pressed = g_state.current_time;
 				}
 				if(event.button.utf8[0]) {
 					KeyState& keystate = g_state.utf32_keystates[utf8_to_utf32(event.button.utf8)];
 					keystate.pressed = ispressed;
-					keystate.time_pressed = g_state.current_timestamp;
+					keystate.time_pressed = g_state.current_time;
 				}
 				KeyState& keystate = g_state.keystates[(u32)event.button.keycode];
 				keystate.pressed = ispressed;
-				keystate.time_pressed = g_state.current_timestamp;
+				keystate.time_pressed = g_state.current_time;
+				
+				if( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eC ) {
+					puts ("Camera:");
+					printf("\tPosition: (%f, %f, %f)\n", g_state.camera.orientation.look_at.x, g_state.camera.orientation.look_at.y, g_state.camera.orientation.look_at.z);
+					printf("\tView-Vec: (%f, %f, %f)\n", g_state.camera.orientation.view_vector.x, g_state.camera.orientation.view_vector.y, g_state.camera.orientation.view_vector.z);
+					printf("\tUp-Vec: (%f, %f, %f)\n", g_state.camera.orientation.up_vector.x, g_state.camera.orientation.up_vector.y, g_state.camera.orientation.up_vector.z);
+				}
+				if( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eI ) {
+					g_state.debug_camera = !g_state.debug_camera;
+				}
 			}break;
 			case OSEventType::eMouse: {
 				switch(event.mouse.action) {
 				case MouseMoveAction::eMoved:
 					if ( g_state.basic_keystates[(u32)KeyCode::eMouseLeft].pressed ) {
-						g_state.camera.turn ( event.mouse.deltay / 1000.0, event.mouse.deltax / 1000.0 );
+						g_state.camera.orientation.turn ( event.mouse.deltay / 1000.0, event.mouse.deltax / 1000.0 );
 					}
 					break;
 				case MouseMoveAction::eEntered:
@@ -706,7 +840,7 @@ int main ( int argc, char **argv ) {
 				}
 			}break;
 			case OSEventType::eScroll: {
-				g_state.camera.zoom ( -event.scroll.deltay );
+				g_state.camera.orientation.zoom ( -event.scroll.deltay );
 			}break;
 			case OSEventType::eChar: {
 				printf("eChar\n");
@@ -733,21 +867,21 @@ int main ( int argc, char **argv ) {
 		
 		
 		for(AModel& xwing : xwings){
-			xwing.move(adjusted_delta);
+			xwing.move(g_state.delta_time);
 		}
 		for(AModel& tie : ties){
-			tie.move(adjusted_delta);
+			tie.move(g_state.delta_time);
 		}
 		for(AModel& gallofree : gallofrees){
-			gallofree.move(adjusted_delta);
+			gallofree.move(g_state.delta_time);
 		}
 		for(AModel& shot : red_shots){
-			shot.move(adjusted_delta);
+			shot.move(g_state.delta_time);
 		}
 		for(AModel& shot : green_shots){
-			shot.move(adjusted_delta);
+			shot.move(g_state.delta_time);
 		}
-		float camera_move_factor = glm::length(g_state.camera.view_vector) * delta * 0.25f;
+		float camera_move_factor = glm::length(g_state.camera.orientation.view_vector) * g_state.delta_real_time * 0.25f;
 		
 		glm::vec3 move_vec(0.0f, 0.0f, 0.0f);
 		
@@ -759,7 +893,7 @@ int main ( int argc, char **argv ) {
 		if(g_state.basic_keystates[(u32)KeyCode::eSpace].pressed) move_vec.y += camera_move_factor;
 		if(g_state.basic_keystates[(u32)KeyCode::eLCntrl].pressed) move_vec.y -= camera_move_factor;
 		
-		g_state.camera.move ( move_vec );
+		g_state.camera.orientation.move ( move_vec );
 		
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
@@ -774,19 +908,20 @@ int main ( int argc, char **argv ) {
 		} camera;
 		camera.camera_matrixes = g_state.camera.v2s_mat();
 		camera.inverse_camera_matrix = glm::inverse (camera.camera_matrixes);
-		camera.camera_pos = g_state.camera.view_vector * 1.0f;
+		camera.camera_pos = g_state.camera.orientation.view_vector * 1.0f;
 		
 		instance->update_context_data ( camera_matrix, &camera );
 		
-		glm::mat4 w2v_matrix = g_state.camera.w2v_mat();
-		global_light.direction_amb = glm::normalize ( w2v_matrix * light_vector );
+		glm::mat4 w2v_matrix = g_state.camera.orientation.w2v_mat();
+		glm::mat4 w2v_rot_matrix = g_state.camera.orientation.w2v_rot_mat();
+		global_light.direction_amb = glm::normalize ( w2v_rot_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
 		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.2f );
 		
 		instance->update_context_data ( light_vector_context, &global_light );
 
 		glm::mat4 m2s_matrixes[1] = {
-			g_state.camera.v2s_mat() * g_state.camera.w2v_rot_mat()
+			g_state.camera.v2s_mat() * w2v_rot_matrix
 		};
 		instance->update_context_data ( skybox_context, m2s_matrixes );
 		instancegroup->register_instances ( skybox_instance_base_id, cube, nullptr, 1 );
@@ -832,7 +967,7 @@ int main ( int argc, char **argv ) {
 				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 5.0);
 			}
 		}
-		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), 1);//shot_instances.size() );
+		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
 
 		engine_instances.resize(engine.size());
 		{

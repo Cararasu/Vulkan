@@ -11,7 +11,8 @@
 #include "../VTransformEnums.h"
 #include "../VWindow.h"
 
-const u32 LIGHTING_MASK = 0xFFFFFFFF;
+const u32 LIGHTING_MASK = 0x1;
+const u32 SHADOW_MASK = 0x6;
 
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
@@ -396,7 +397,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		vk::PipelineViewportStateCreateInfo viewportState ( vk::PipelineViewportStateCreateFlags(), 1, viewports, 1, scissors );
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
-		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
+		        VK_TRUE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
 		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
@@ -576,7 +577,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 				vk::CompareOp::eEqual/*compareOp*/,
 				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
-			}, { //depthBoundsTestEnable, stencilTestEnable
+			}, {
 				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 				vk::CompareOp::eEqual/*compareOp*/,
 				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/
@@ -1608,11 +1609,29 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		vk::Rect2D ( vk::Offset2D ( viewport.offset.x, viewport.offset.y ), vk::Extent2D ( viewport.extend.x, viewport.extend.y ) ),
 		5, clearColors
 	};
-	v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
-	v_bundlestates[1].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
-	v_bundlestates[2].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
-	v_bundlestates[3].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, buffer, index );
-	v_bundlestates[4].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, buffer, index );
+	{
+		vk::PipelineStageFlags sourceStage, destinationStage;
+			
+		vk::ImageMemoryBarrier barriers[5] = {
+			v_bundlestates[0].actual_image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 
+							{v_bundlestates[0].miplayer, v_bundlestates[0].miplayer + 1}, {v_bundlestates[0].arraylayer, v_bundlestates[0].arraylayer + 1}, &sourceStage, &destinationStage ),
+			v_bundlestates[1].actual_image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 
+							{v_bundlestates[1].miplayer, v_bundlestates[1].miplayer + 1}, {v_bundlestates[1].arraylayer, v_bundlestates[1].arraylayer + 1}, &sourceStage, &destinationStage ),
+			v_bundlestates[2].actual_image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 
+							{v_bundlestates[2].miplayer, v_bundlestates[2].miplayer + 1}, {v_bundlestates[2].arraylayer, v_bundlestates[2].arraylayer + 1}, &sourceStage, &destinationStage ),
+			v_bundlestates[3].actual_image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, 
+							{v_bundlestates[3].miplayer, v_bundlestates[3].miplayer + 1}, {v_bundlestates[3].arraylayer, v_bundlestates[3].arraylayer + 1}, &sourceStage, &destinationStage ),
+			v_bundlestates[4].actual_image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, 
+							{v_bundlestates[4].miplayer, v_bundlestates[4].miplayer + 1}, {v_bundlestates[4].arraylayer, v_bundlestates[4].arraylayer + 1}, &sourceStage, &destinationStage )
+		};
+		buffer.pipelineBarrier (
+			sourceStage, destinationStage,
+			vk::DependencyFlags(),
+			{},//memoryBarriers
+			{},//bufferBarriers
+			vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 5, barriers ) //imageBarriers
+		);
+	}
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
@@ -1622,9 +1641,9 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	buffer.nextSubpass ( vk::SubpassContents::eInline );
 
-	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
-	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
+	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
 	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
 

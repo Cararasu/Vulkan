@@ -44,7 +44,8 @@ void main() {
 		
 		//vertex-pos in view space
 		vec4 va = center_pos + changevec;
-		gl_Position = v2sMatrix * va;
+		//gl_Position = v2sMatrix * va;
+		gl_Position = v2sMatrix * vec4(va.xyz, 1.0);
 		
 		g_uvs = factor;
 		

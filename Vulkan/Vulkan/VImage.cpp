@@ -167,7 +167,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 	this->height = height;
 	this->depth = depth;
 }
-vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, u32 instance_index, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
+vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> miprange, Range<u32> arrayrange, vk::PipelineStageFlags* srcStageFlags, vk::PipelineStageFlags* dstStageFlags ) {
 
 	vk::AccessFlags srcAccessMask, dstAccessMask;
 
@@ -296,7 +296,7 @@ vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldL
 	       );
 }
 
-void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
+void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 
 	if ( oldLayout == newLayout )
 		return;
@@ -306,7 +306,7 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 		array_range.max = layers;
 
 	vk::PipelineStageFlags sourceStage, destinationStage;
-	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, instance_index, &sourceStage, &destinationStage );
+	vk::ImageMemoryBarrier barrier = transition_layout_impl ( oldLayout, newLayout, mip_range, array_range, &sourceStage, &destinationStage );
 
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
@@ -316,7 +316,7 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 1, &barrier ) //imageBarriers
 	);
 }
-void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer, u32 instance_index ) {
+void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
 	u32 miplayers = mip_range.max - mip_range.min;
 
 	u32 needed_barrier_count = 0;
@@ -344,14 +344,14 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 				skipped_last = false;
 				lastOldLayout = oldLayout[i];
 				lastNewLayout = newLayout[i];
-				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, instance_index, &sourceStage, &destinationStage );
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, &sourceStage, &destinationStage );
 				needed_barrier_count++;
 			} else {
 				barriers[needed_barrier_count - 1].subresourceRange.levelCount++;
 			}
 		} else {
 			if ( !skipped_last )
-				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, instance_index, &sourceStage, &destinationStage );
+				barriers[needed_barrier_count] = transition_layout_impl ( oldLayout[i], newLayout[i], {i, i + 1}, array_range, &sourceStage, &destinationStage );
 			skipped_last = true;
 		}
 	}
@@ -395,8 +395,8 @@ void VBaseImage::generate_mipmaps ( vk::ImageLayout* oldLayout, vk::ImageLayout*
 		transfer_layouts.data[i - 1] = vk::ImageLayout::eTransferSrcOptimal;
 		vk::PipelineStageFlags sourceStage, destinationStage;
 		vk::ImageMemoryBarrier barriers[2] = {
-			transition_layout_impl ( oldLayout[i - 1], transfer_layouts.data[i - 1], {index - 1, index}, array_range, 0, &sourceStage, &destinationStage ),
-			transition_layout_impl ( oldLayout[i], transfer_layouts.data[i], {index, index + 1}, array_range, 0, &sourceStage, &destinationStage ),
+			transition_layout_impl ( oldLayout[i - 1], transfer_layouts.data[i - 1], {index - 1, index}, array_range, &sourceStage, &destinationStage ),
+			transition_layout_impl ( oldLayout[i], transfer_layouts.data[i], {index, index + 1}, array_range, &sourceStage, &destinationStage ),
 		};
 		oldLayout[i - 1] = transfer_layouts.data[i - 1];
 		oldLayout[i] = transfer_layouts.data[i];
