@@ -17,6 +17,8 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
+    <File Name="GameState.cpp"/>
+    <File Name="GameState.h"/>
     <File Name="Initialization.cpp"/>
     <File Name="Initialization.h"/>
     <File Name="Camera.h"/>

@@ -7,11 +7,8 @@
 #include <thread>
 #include <algorithm>
 #include <vector>
-#include <chrono>
 #include <fstream>
 #include <sstream>
-#include <chrono>
-#include <thread>
 
 #include <render/Window.h>
 #include <render/Logger.h>
@@ -21,6 +18,7 @@
 #include <render/UTF.h>
 
 #include "Camera.h"
+#include "GameState.h"
 
 Logger g_logger ( "main" );
 
@@ -74,70 +72,6 @@ float f_rand2() {
 }
 using namespace std::chrono_literals;
 
-struct CameraPoint {
-	CameraOrientation target;
-	float time;
-	float fadeout_time = 0.0f;
-};
-
-struct GameState {
-	KeyState basic_keystates[ ( u32 ) KeyCode::eMax];
-	Map<u32, KeyState> utf32_keystates;
-	Map<u32, KeyState> keystates;
-
-	u64 current_time_ns = 0;
-	u64 delta_real_time_ns = 0;
-
-	double timescale = 1.0;
-
-	double current_time = 0.0;
-	double current_real_time = 0.0;
-	double delta_real_time = 0.0;
-	double delta_time = 0.0;
-
-	bool debug_camera = false;
-
-	Camera camera;
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> current;
-	std::chrono::time_point<std::chrono::high_resolution_clock> last;
-
-	void init() {
-		last = current = std::chrono::high_resolution_clock::now();
-	}
-
-	void update_tick() {
-		last = current;
-		current = std::chrono::high_resolution_clock::now();
-		std::chrono::nanoseconds ns = std::chrono::duration_cast<std::chrono::nanoseconds> ( current - last );
-		current_time_ns = current.time_since_epoch().count();
-		delta_real_time_ns = ns.count();
-
-		delta_real_time = static_cast<double> ( ns.count() ) / 1000000000.0;
-		delta_time = delta_real_time * timescale;
-		current_real_time += delta_real_time;
-		current_time += delta_time;
-	}
-
-	std::deque<CameraPoint> camera_points;
-	void update_camera() {
-		if ( !debug_camera ) {
-			float time_remaining = delta_time;
-			while ( !camera_points.empty() ) {
-				CameraPoint& point = camera_points.front();
-				if ( point.time < time_remaining ) {
-					camera.orientation = point.target;
-					time_remaining -= point.time;
-					camera_points.pop_front();
-				} else {
-					camera.orientation = interp_camera_orientation ( camera.orientation, point.target, time_remaining / point.time );
-					point.time -= time_remaining;
-					break;
-				}
-			}
-		}
-	}
-};
 GameState g_state;
 
 #include <render/Queues.h>
@@ -569,187 +503,17 @@ int main ( int argc, char **argv ) {
 
 	g_state.camera = Camera ( glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, -40.0f, -40.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), 120.0f, 1.0f, 1.0f, 100000.0f );
 	g_state.init();
-
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -12.0, -14.0, -7.0 ),
-		    glm::vec3 ( -50.0, -25.0, -2.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.05f,
-		0.005f
-	} );
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -15.0, -12.0, -10.0 ),
-		    glm::vec3 ( -6.0, -6.0, 16.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.05f
-	} ); //0.1
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -24.0, -14.0, -10.0 ),
-		    glm::vec3 ( 18.0, 4.0, 0.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.075f
-	} );
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -18.0, -0.0, 10.0 ),
-		    glm::vec3 ( 24.0, -20.0, -41.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.075f
-	} ); //0.25
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -3.0, -8.0, -5.0 ),
-		    glm::vec3 ( -40.0, -30.0, -10.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //0.35
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 65.0, 0.0, -55.0 ),
-		    glm::vec3 ( -90.0, 55.0, 100.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //0.45
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -30.0, -15.0, 4.0 ),
-		    glm::vec3 ( 100.0, 20.0, 24.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //0.55
-	//circle around the green shots
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 5.0, -4.0, -10.0 ),
-		    glm::vec3 ( 6.0, -10.0, -30.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.05f
-	} ); //0.6
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 5.0, -4.0, -10.0 ),
-		    glm::vec3 ( -25.0, -18.0, -2.5 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.05f
-	} ); //0.65
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 5.0, -4.0, -10.0 ),
-		    glm::vec3 ( -10.0, -20.0, 24.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.05f
-	} ); //0.7
-	//move to the tie which is about to get shot
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -80.0, -35.0, -5.0 ),
-		    glm::vec3 ( -40.0, -25.0, 15.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.07f
-	} ); //0.77
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -100.0, -45.0, -0.0 ),
-		    glm::vec3 ( -30.0, -20.0, 10.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.04f
-	} ); //0.81
-	//zoom back during the explosion
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 25.0, 5.0, -20.0 ),
-		    glm::vec3 ( -250.0, -225.0, 90.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.01f
-	} ); //0.815
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( 25.0, 5.0, -18.0 ),
-		    glm::vec3 ( -20.0, -200.0, -300.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.09f
-	} ); //0.9
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -16.0, -60.0, -32.0 ),
-		    glm::vec3 ( 320.0, -70.0, -110.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.0
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 ( -40.0, -60.0, -3.0 ),
-		    glm::vec3 ( 200.0, -128.0, 255.0 ),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.1
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 (-80.0, -32.0, -7.5),
-		    glm::vec3 (-80.0, -55.0, 0.0),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.2
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 (-80.0, -32.0, -7.5),
-		    glm::vec3 (20.0, -40.0, -90.0),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.3
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 (-80.0, -32.0, -7.5),
-		    glm::vec3 (40.0, -5.0, 90.0),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.4
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 (-40.0, -32.0, -25.0),
-		    glm::vec3 (-80.0, -40.0, 40.0),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.5
-	g_state.camera_points.push_back ( {
-		CameraOrientation (
-		    glm::vec3 (10.0, -15.0, 20.0),
-		    glm::vec3 (-60.0, -60.0, -100.0),
-		    glm::vec3 ( 0.0f, 1.0f, 0.0f )
-		),
-		0.1f
-	} ); //1.6
+	
+	setup_camerapoints(&g_state);
 	
 	bool explosion = false;
 	bool shot_despawn = false;
 
 	srand ( time ( NULL ) );
 
+	g_state.timescale = 1.0 / 100.0;
+	
 	while ( instance->is_window_open() ) {
-		g_state.timescale = g_state.utf32_keystates[utf8_to_utf32 ( "+" )].pressed ? 1.0 / 10.0 : 1.0 / 100.0;
 		g_state.update_tick();
 
 		g_state.update_camera();
@@ -800,6 +564,15 @@ int main ( int argc, char **argv ) {
 				keystate.pressed = ispressed;
 				keystate.time_pressed = g_state.current_time;
 
+				if ( event.button.keycode == KeyCode::ePlus || event.button.keycode == KeyCode::eKPAdd ) {
+					if(!g_state.debug_camera) {
+						if(event.button.action == PressAction::ePress) {
+							g_state.timescale = 1.0 / 10.0;
+						} else if(event.button.action == PressAction::eRelease) {
+							g_state.timescale = 1.0 / 100.0;
+						}
+					}
+				}
 				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eC ) {
 					puts ( "Camera:" );
 					printf ( "\tPosition: (%f, %f, %f)\n", g_state.camera.orientation.look_at.x, g_state.camera.orientation.look_at.y, g_state.camera.orientation.look_at.z );
@@ -808,6 +581,11 @@ int main ( int argc, char **argv ) {
 				}
 				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eI ) {
 					g_state.debug_camera = !g_state.debug_camera;
+					if(g_state.debug_camera) {
+						g_state.timescale = 0.0;
+					} else {
+						g_state.timescale = 1.0 / 10.0;
+					}
 				}
 			}
 			break;
