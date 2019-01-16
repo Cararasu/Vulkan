@@ -8,11 +8,6 @@ layout(location = 0) in vec4 g_eyepos;
 layout(location = 1) in vec3 g_uvs;
 layout(location = 2) in vec4 g_umbraColor;
 
-layout (set=0, binding = 0) uniform cameraUniformBuffer {
-	layout(offset = 0) mat4 v2sMatrix;
-	layout(offset = 64) vec3 eyepos;
-};
-
 
 void main() {
 	vec3 n_eyepos = normalize(g_eyepos.xyz - g_uvs);

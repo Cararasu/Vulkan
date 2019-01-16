@@ -16,7 +16,7 @@ u64 VTransientBufferStorage::allocate_chunk ( u64 size ) {
 	max_offset += size;
 	return t;
 }
-constexpr u64 MIN_VERTEXBUFFER = 4192;
+constexpr u64 MIN_VERTEXBUFFER = 1024*1024;
 void* VTransientBufferStorage::allocate_transfer_buffer ( ) {
 	needed_size = max_offset > MIN_VERTEXBUFFER ? max_offset : MIN_VERTEXBUFFER;
 

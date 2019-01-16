@@ -41,7 +41,6 @@ void main() {
 	float intensity = (g_umbraColor_range.w - min(distance, g_umbraColor_range.w)) / g_umbraColor_range.w;
 	intensity *= intensity;
 	
-	
 	float lambertian = max(dot(light_direction, normal_direction), 0.0);
 	
 	float specular = 0.0;
@@ -61,5 +60,5 @@ void main() {
 	
 	vec3 reflectcolor = diffuseColor.rgb * g_umbraColor_range.rgb * (lambertian + 0.1);
    
-	outLightAccumulation = vec4(reflectcolor * intensity, 1.0);
+	outLightAccumulation = vec4(reflectcolor * intensity * specular, 1.0);
 }

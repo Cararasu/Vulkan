@@ -170,8 +170,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 
 		VModel* v_model = models[instanceblock.model_id];
 
-		v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
-		v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
+		//v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
+		//v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
 
 		DynArray<vk::DescriptorSet> model_descriptorSets;
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {

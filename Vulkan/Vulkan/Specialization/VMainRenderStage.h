@@ -10,7 +10,7 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
-void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
+void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 
 struct VMainRenderStage : public VRenderStage {
 	VInstance* v_instance;
@@ -25,6 +25,7 @@ struct VMainRenderStage : public VRenderStage {
 	PipelineStruct dirlight_pipeline;
 	PipelineStruct shotlight_pipeline;
 	PipelineStruct shot_pipeline;
+	PipelineStruct billboard_pipeline;
 	
 	Viewport<f32> viewport;
 	

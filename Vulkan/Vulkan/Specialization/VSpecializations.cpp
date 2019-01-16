@@ -8,6 +8,7 @@ ContextBaseId lightvector_base_id;
 ContextBaseId tex_simplemodel_context_base_id;
 ContextBaseId flat_simplemodel_context_base_id;
 ContextBaseId skybox_context_base_id;
+ContextBaseId explosion_context_base_id;
 
 ContextBaseId postproc_context_base_id;
 
@@ -20,12 +21,11 @@ InstanceBaseId textured_instance_base_id;
 InstanceBaseId flat_instance_base_id;
 InstanceBaseId skybox_instance_base_id;
 InstanceBaseId shot_instance_base_id;
+InstanceBaseId billboard_instance_base_id;
 
 InstanceBaseId dirlight_instance_base_id;
 InstanceBaseId single_instance_base_id;
 InstanceBaseId bloom_instance_base_id;
-
-InstanceBaseId engine_instance_base_id;
 
 ModelBaseId simplequad_base_id;
 InstanceBaseId simplequad_instance_base_id;
@@ -55,6 +55,14 @@ void register_specializations ( VInstance* instance ) {
 		};
 		skybox_context_base_id = instance->static_contextbase_store.insert ( skybox_simplemodel_context_base );
 		instance->contextbase_registered ( skybox_context_base_id );
+		
+		
+		ContextBase explosion_simplemodel_context_base = { 0, 
+			{ { }, 0, 1 }, 
+			1, 1 
+		};
+		explosion_context_base_id = instance->static_contextbase_store.insert ( explosion_simplemodel_context_base );
+		instance->contextbase_registered ( explosion_context_base_id );
 
 		ContextBase flat_simplemodel_context_base = { 0, { { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16} }, sizeof ( glm::vec4 ) * 2, 1 }, 0, 0 };
 		flat_simplemodel_context_base_id = instance->static_contextbase_store.insert ( flat_simplemodel_context_base );
@@ -68,7 +76,7 @@ void register_specializations ( VInstance* instance ) {
 
 	DataGroupDef vertex_datagroup = { { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 };
 	//create modelbase from datagroup and contextbases
-	ModelBase tex_simplemodel = { 0, vertex_datagroup, {tex_simplemodel_context_base_id, flat_simplemodel_context_base_id, skybox_context_base_id} };
+	ModelBase tex_simplemodel = { 0, vertex_datagroup, {tex_simplemodel_context_base_id, flat_simplemodel_context_base_id, skybox_context_base_id, explosion_context_base_id} };
 	simple_modelbase_id = instance->static_modelbase_store.insert ( tex_simplemodel );
 	instance->modelbase_registered ( simple_modelbase_id );
 
@@ -110,12 +118,12 @@ void register_specializations ( VInstance* instance ) {
 		}
 	);
 	instance->instancebase_registered ( shot_instance_base_id );
-	
-	engine_instance_base_id = instance->static_instancebase_store.insert (
+
+	billboard_instance_base_id = instance->static_instancebase_store.insert ( 
 		{ 0, 
-			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Vec4, 1, 64}}, sizeof ( glm::mat4 ) + sizeof ( glm::vec4 ), 1 } 
+			{ { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16}}, sizeof ( glm::vec4 ) * 2, 1 } 
 		}
 	);
-	instance->instancebase_registered ( engine_instance_base_id );
+	instance->instancebase_registered ( billboard_instance_base_id );
 
 }
