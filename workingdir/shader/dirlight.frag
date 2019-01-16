@@ -57,5 +57,4 @@ void main() {
 	diffuseColor = diffuseColor * (diffuseColor.w * 255);
    
 	outLightAccumulation = vec4(diffuseColor.rgb * light.direction_amb.w + diffuseColor.rgb * lambertian + (vec3(1.0, 1.0, 1.0) * specular), 1.0);
-	//outLightAccumulation = vec4(abs(view_direction), 1.0);
 }

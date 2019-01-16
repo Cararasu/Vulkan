@@ -156,6 +156,7 @@ int main ( int argc, char **argv ) {
 	instance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shot_shader", "shader/shot.geom.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
 	
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shotlight_shader", "shader/shotlight.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eGeometry, "geom_shotlight_shader", "shader/shotlight.geom.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shotlight_shader", "shader/shotlight.frag.sprv" );
 	
@@ -959,15 +960,15 @@ int main ( int argc, char **argv ) {
 			u32 i = 0;
 			for(; i < red_shots.size(); i++) {
 				shot_instances[i].mv2_matrix = w2v_matrix * red_shots[i].m2w_mat();
-				shot_instances[i].umbracolor_range = glm::vec4(1.0, 0.0, 0.0, 5.0);
+				shot_instances[i].umbracolor_range = glm::vec4(1.0, 0.1, 0.1, 30.0);
 			}
 			u32 j = 0;
 			for(; j < green_shots.size(); j++) {
 				shot_instances[i + j].mv2_matrix = w2v_matrix * green_shots[j].m2w_mat();
-				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 5.0);
+				shot_instances[i + j].umbracolor_range = glm::vec4(0.1, 1.0, 0.1, 30.0);
 			}
 		}
-		instancegroup->register_instances ( shot_instance_base_id, dot_model, shot_instances.data(), shot_instances.size() );
+		instancegroup->register_instances ( shot_instance_base_id, cube, shot_instances.data(), shot_instances.size() );
 
 		engine_instances.resize(engine.size());
 		{

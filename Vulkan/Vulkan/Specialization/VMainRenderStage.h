@@ -25,7 +25,6 @@ struct VMainRenderStage : public VRenderStage {
 	PipelineStruct dirlight_pipeline;
 	PipelineStruct shotlight_pipeline;
 	PipelineStruct shot_pipeline;
-	PipelineStruct engine_pipeline;
 	
 	Viewport<f32> viewport;
 	

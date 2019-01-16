@@ -539,7 +539,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		        vertexInputBindings.size(), vertexInputBindings.data(),
 		        vertexInputAttributes.size, vertexInputAttributes.data );
 
-		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::ePointList, VK_FALSE );
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
 
 		vk::Viewport viewports[] = {
 			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
@@ -553,7 +553,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -603,8 +603,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
-		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_shot_shader" ) );
-		VShaderModule* gmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "geom_shotlight_shader" ) );
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_shotlight_shader" ) );
 		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_shotlight_shader" ) );
 
 		vk::PipelineShaderStageCreateInfo shaderStages[3] = {
@@ -615,18 +614,13 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 			),
 			vk::PipelineShaderStageCreateInfo (
 			    vk::PipelineShaderStageCreateFlags(),
-			    vk::ShaderStageFlagBits::eGeometry, gmod->shadermodule,
-			    "main", nullptr//name, specialization
-			),
-			vk::PipelineShaderStageCreateInfo (
-			    vk::PipelineShaderStageCreateFlags(),
 			    vk::ShaderStageFlagBits::eFragment, fmod->shadermodule,
 			    "main", nullptr//name, specialization
 			),
 		};
 		vk::GraphicsPipelineCreateInfo pipelineInfo (
 		    vk::PipelineCreateFlags(),
-		    3, shaderStages,
+		    2, shaderStages,
 		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
 		    nullptr,
 		    p_struct->pipeline_layout,
@@ -692,7 +686,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		        vertexInputBindings.size(), vertexInputBindings.data(),
 		        vertexInputAttributes.size, vertexInputAttributes.data );
 
-		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::ePointList, VK_FALSE );
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
 
 		vk::Viewport viewports[] = {
 			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
@@ -748,7 +742,6 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		);
 
 		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_shot_shader" ) );
-		VShaderModule* gmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "geom_shot_shader" ) );
 		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_shot_shader" ) );
 
 		vk::PipelineShaderStageCreateInfo shaderStages[3] = {
@@ -759,18 +752,13 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 			),
 			vk::PipelineShaderStageCreateInfo (
 			    vk::PipelineShaderStageCreateFlags(),
-			    vk::ShaderStageFlagBits::eGeometry, gmod->shadermodule,
-			    "main", nullptr//name, specialization
-			),
-			vk::PipelineShaderStageCreateInfo (
-			    vk::PipelineShaderStageCreateFlags(),
 			    vk::ShaderStageFlagBits::eFragment, fmod->shadermodule,
 			    "main", nullptr//name, specialization
 			),
 		};
 		vk::GraphicsPipelineCreateInfo pipelineInfo (
 		    vk::PipelineCreateFlags(),
-		    3, shaderStages,
+		    2, shaderStages,
 		    &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, &depthStencil, &colorBlending,
 		    nullptr,
 		    p_struct->pipeline_layout,
@@ -837,7 +825,7 @@ void gen_engine_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		        vertexInputBindings.size(), vertexInputBindings.data(),
 		        vertexInputAttributes.size, vertexInputAttributes.data );
 
-		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::ePointList, VK_FALSE );
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly ( vk::PipelineInputAssemblyStateCreateFlags(), vk::PrimitiveTopology::eTriangleList, VK_FALSE );
 
 		vk::Viewport viewports[] = {
 			vk::Viewport ( viewport.offset.x, viewport.offset.y, viewport.extend.width, viewport.extend.height, viewport.depth.min, viewport.depth.max )
@@ -1247,9 +1235,8 @@ VMainRenderStage::VMainRenderStage ( VInstance* instance, InstanceGroup* igroup 
 	skybox_pipeline ( simple_modelbase_id, skybox_instance_base_id, { }, {skybox_context_base_id} ),
 	dirlight_pipeline ( fullscreen_modelbase_id, dirlight_instance_base_id, {camera_context_base_id, lightvector_base_id}, {} ),
 	lightless_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {}, {} ),
-	shotlight_pipeline ( dot_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
-	shot_pipeline ( dot_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
-	engine_pipeline ( dot_modelbase_id, engine_instance_base_id, {camera_context_base_id}, {} ),
+	shotlight_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
+	shot_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
 	v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
 	subpass_inputs ( 2 ) {
 
@@ -1311,7 +1298,6 @@ void VMainRenderStage::v_destroy_pipeline_layouts() {
 	destroy_pipeline_layout ( v_instance, &dirlight_pipeline );
 	destroy_pipeline_layout ( v_instance, &shotlight_pipeline );
 	destroy_pipeline_layout ( v_instance, &shot_pipeline );
-	destroy_pipeline_layout ( v_instance, &engine_pipeline );
 }
 void VMainRenderStage::v_destroy_pipelines() {
 	v_destroy_framebuffers();
@@ -1323,7 +1309,6 @@ void VMainRenderStage::v_destroy_pipelines() {
 	destroy_pipeline ( v_instance, &dirlight_pipeline );
 	destroy_pipeline ( v_instance, &shotlight_pipeline );
 	destroy_pipeline ( v_instance, &shot_pipeline );
-	destroy_pipeline ( v_instance, &engine_pipeline );
 	
 	for ( PerFrameRenderObj& data : v_per_frame_data ) {
 		data.command.should_reset = true;
@@ -1402,7 +1387,6 @@ void VMainRenderStage::v_rebuild_pipelines() {
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &dirlight_pipeline );
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &shotlight_pipeline );
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &shot_pipeline );
-	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &engine_pipeline );
 
 	if ( !v_renderpass ) {
 		v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
@@ -1561,7 +1545,6 @@ void VMainRenderStage::v_rebuild_pipelines() {
 	gen_dirlight_pipeline ( v_instance, &dirlight_pipeline, viewport, v_renderpass );
 	gen_shotlight_pipeline ( v_instance, &shotlight_pipeline, viewport, v_renderpass );
 	gen_shot_pipeline ( v_instance, &shot_pipeline, viewport, v_renderpass );
-	gen_engine_pipeline ( v_instance, &engine_pipeline, viewport, v_renderpass );
 	last_frame_index_pipeline_built = v_instance->frame_index;
 }
 void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
@@ -1643,7 +1626,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
-	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
 	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
 

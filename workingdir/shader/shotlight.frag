@@ -31,18 +31,16 @@ void main() {
 	vec3 pos = reconstruct_pos_from_depth();
 	
 	vec3 view_direction = normalize(-pos);
-	
 	vec2 normal_temp = subpassLoad(inputNormal).rg;
 	vec3 normal_direction = vec3(normal_temp, sqrt(1 - normal_temp.x*normal_temp.x - normal_temp.y*normal_temp.y));
-	
 	vec3 lightvec = g_lightpos - pos;
+	vec3 light_direction = normalize(lightvec);
 	
 	float distance = length(lightvec);
 	
 	float intensity = (g_umbraColor_range.w - min(distance, g_umbraColor_range.w)) / g_umbraColor_range.w;
 	intensity *= intensity;
 	
-	vec3 light_direction = normalize(lightvec);
 	
 	float lambertian = max(dot(light_direction, normal_direction), 0.0);
 	
@@ -61,10 +59,7 @@ void main() {
 	vec4 diffuseColor = subpassLoad(inputDiffuse);
 	diffuseColor = diffuseColor * (diffuseColor.w * 255);
 	
-	vec3 reflectcolor = diffuseColor.rgb * g_umbraColor_range.rgb;
+	vec3 reflectcolor = diffuseColor.rgb * g_umbraColor_range.rgb * (lambertian + 0.5);
    
-	outLightAccumulation = vec4(reflectcolor * lambertian + reflectcolor * 0.1, 1.0) * intensity;
-	//outLightAccumulation = vec4(g_lightpos, 1.0);
-	//outLightAccumulation = vec4(lambertian, 1.0, 1.0, 1.0);
-	outLightAccumulation = vec4(0.5, 0.5, 0.5, 1.0);
+	outLightAccumulation = vec4(reflectcolor * intensity, 1.0);
 }

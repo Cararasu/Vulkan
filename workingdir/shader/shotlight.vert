@@ -10,8 +10,8 @@ layout(location = 2) in vec3 normal;
 layout(location = 3) in mat4 m2vMatrix;
 layout(location = 7) in vec4 umbraColor_range;
 
-layout(location = 0) out vec4 v_eyepos;
-layout(location = 1) out vec3 v_uvs;
+layout(location = 0) out vec3 v_position;
+layout(location = 1) out vec3 v_lightpos;
 layout(location = 2) out vec4 v_umbraColor_range;
 
 layout (set=1, binding = 0) uniform cameraUniformBuffer {
@@ -20,13 +20,15 @@ layout (set=1, binding = 0) uniform cameraUniformBuffer {
 };
 
 void main() {
-    gl_Position = v2sMatrix * m2vMatrix * vec4(pos, 1.0);
-	gl_Position.y = -gl_Position.y;
+	//calculate light position in view space
+	vec4 lightpos = m2vMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+	lightpos.y = -lightpos.y;
+	lightpos = lightpos / lightpos.w;
+	v_lightpos = lightpos.xyz;
 	
-	v_uvs = pos;
-	
-	v_eyepos = inverse(m2vMatrix) * vec4(0.0, 0.0, 0.0, 1.0);
-	v_eyepos /= v_eyepos.w;
+	//add the vertex-position and transform to screnn space
+	gl_Position = v2sMatrix * vec4(lightpos.xyz + pos * umbraColor_range.w, 1.0);
+	v_position = gl_Position.xyz / gl_Position.w;
 	
 	v_umbraColor_range = umbraColor_range;
 }
