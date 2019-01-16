@@ -553,7 +553,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eCounterClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -573,7 +573,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		    vk::PipelineDepthStencilStateCreateFlags(),
 		    VK_FALSE, VK_FALSE, //depthTestEnable, depthWriteEnable
 		    vk::CompareOp::eLess, //depthCompareOp
-			VK_FALSE, VK_FALSE, { //depthBoundsTestEnable, stencilTestEnable
+			VK_FALSE, VK_TRUE, { //depthBoundsTestEnable, stencilTestEnable
 				vk::StencilOp::eKeep/*failOp*/, vk::StencilOp::eKeep/*passOp*/, vk::StencilOp::eKeep/*depthFailOp*/,
 				vk::CompareOp::eEqual/*compareOp*/,
 				LIGHTING_MASK/*compareMask*/, LIGHTING_MASK/*writeMask*/, 1/*reference*/

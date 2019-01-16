@@ -539,7 +539,6 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	physicalDeviceFeatures.multiDrawIndirect = VK_TRUE;
-	physicalDeviceFeatures.geometryShader = VK_TRUE;
 	physicalDeviceFeatures.depthClamp = VK_TRUE;
 	physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;// for only mesh rendering
 

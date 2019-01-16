@@ -22,13 +22,13 @@ layout (set=1, binding = 0) uniform cameraUniformBuffer {
 void main() {
 	//calculate light position in view space
 	vec4 lightpos = m2vMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-	lightpos.y = -lightpos.y;
 	lightpos = lightpos / lightpos.w;
 	v_lightpos = lightpos.xyz;
 	
 	//add the vertex-position and transform to screnn space
 	gl_Position = v2sMatrix * vec4(lightpos.xyz + pos * umbraColor_range.w, 1.0);
 	v_position = gl_Position.xyz / gl_Position.w;
+	gl_Position.y = -gl_Position.y;
 	
 	v_umbraColor_range = umbraColor_range;
 }
