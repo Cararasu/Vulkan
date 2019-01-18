@@ -189,9 +189,10 @@ enum class ImageFormat {
 	//depth
 	eD16Unorm, eD32F, 
 	//depthstencil
-	eD24Unorm_St8U, eD32F_St8Uint,
+	eD16F_St8U, eD24Unorm_St8U, eD32F_St8U,
+	
 	//stencil
-	eSt8Uint
+	eSt8U
 };
 enum class ResourceType {
 	eUndefined,

@@ -191,13 +191,13 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	}
 	break;
 	case ImageFormat::eD24Unorm_St8U:
-	case ImageFormat::eD32F_St8Uint: {
+	case ImageFormat::eD32F_St8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
 	break;
-	case ImageFormat::eSt8Uint: {
+	case ImageFormat::eSt8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}

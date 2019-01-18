@@ -19,6 +19,7 @@
 
 #include "Camera.h"
 #include "GameState.h"
+#include "Vulkan/VMemoryAllocator.h"
 
 Logger g_logger ( "main" );
 
@@ -76,8 +77,94 @@ GameState g_state;
 
 #include <render/Queues.h>
 
-int main ( int argc, char **argv ) {
+//  http://www.convertalot.com/sphere_solver.html
+//  Recursive definition of determinate using expansion by minors.
+float determinant( glm::vec4 input[4], int n ) {
+    float d = 0.0f;
+	glm::vec4 mat[4];
 
+    if (n == 2) { // terminate recursion
+        d = input[0][0]*input[1][1] - input[1][0]*input[0][1];
+    }
+    else {
+        d = 0;
+        for (int l = 0; l < n; l++ ) { // do each column
+            for (int i = 1; i < n; i++) { // create minor
+                for (int j = 0, k = 0; j < n; j++) {
+                    if (j == l) continue;
+                    mat[i-1][k] = input[i][j];
+                    k++;
+                }
+            }
+            // sum (+/-)cofactor * minor  
+            d = d + glm::pow(-1.0, l)*input[0][l]*determinant( mat, n-1 );
+        }
+    }
+    return d;
+}
+
+glm::vec4 find_center_of_sphere(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4) {
+	
+	glm::vec3 input[4] = {p1, p2, p3, p4};
+	glm::vec4 mat[4];
+	
+    for (int i = 0; i < 4; i++) { // find minor 11
+        mat[i][0] = input[i][0];
+        mat[i][1] = input[i][1];
+        mat[i][2] = input[i][2];
+        mat[i][3] = 1.0f;
+    }
+	float m11 = determinant(mat, 4);
+    for (int i = 0; i < 4; i++) { // find minor 12 
+        mat[i][0] = input[i][0]*input[i][0] + input[i][1]*input[i][1] + input[i][2]*input[i][2];
+        mat[i][1] = input[i][1];
+        mat[i][2] = input[i][2];
+        mat[i][3] = 1;
+    }
+    float m12 = determinant( mat, 4 );
+    for (int i = 0; i < 4; i++) { // find minor 13
+        mat[i][0] = input[i][0]*input[i][0] + input[i][1]*input[i][1] + input[i][2]*input[i][2];
+        mat[i][1] = input[i][0];
+        mat[i][2] = input[i][2];
+        mat[i][3] = 1;
+    }
+    float m13 = determinant( mat, 4 );
+    for (int i = 0; i < 4; i++) { // find minor 14
+        mat[i][0] = input[i][0]*input[i][0] + input[i][1]*input[i][1] + input[i][2]*input[i][2];
+        mat[i][1] = input[i][0];
+        mat[i][2] = input[i][1];
+        mat[i][3] = 1;
+    }
+    float m14 = determinant( mat, 4 );
+    for (int i = 0; i < 4; i++) { // find minor 15
+        mat[i][0] = input[i][0]*input[i][0] + input[i][1]*input[i][1] + input[i][2]*input[i][2];
+        mat[i][1] = input[i][0];
+        mat[i][2] = input[i][1];
+        mat[i][3] = input[i][2];
+    }
+    float m15 = determinant( mat, 4 );
+
+	float r = 0.0f;
+	float Xo = 0.0f, Yo = 0.0f, Zo = 0.0f;
+    if (m11) {
+        Xo =  0.5f*m12/m11;                     // center of sphere
+        Yo = -0.5f*m13/m11;
+        Zo =  0.5f*m14/m11;
+        r  = glm::sqrt( Xo*Xo + Yo*Yo + Zo*Zo - m15/m11 );
+    }
+	return glm::vec4(Xo, Yo, Zo, r);
+}
+
+//TODO imageCubeArray
+
+//TODO independentBlend
+
+//TODO samplerAnisotropy
+//TODO shaderSampledImageArrayDynamicIndexing 
+//TODO shaderUniformBufferArrayDynamicIndexing
+
+int main ( int argc, char **argv ) {
+	
 	Instance* instance = create_instance ( "Vulkan" );
 	instance->initialize ( InstanceOptions() );
 
@@ -513,6 +600,8 @@ int main ( int argc, char **argv ) {
 
 	g_state.timescale = 1.0 / 100.0;
 	
+	billboards.resize(4);
+	
 	while ( instance->is_window_open() ) {
 		g_state.update_tick();
 
@@ -678,18 +767,112 @@ int main ( int argc, char **argv ) {
 
 		//eye, center, up
 		struct CameraStruct {
-			glm::mat4 camera_matrixes;
+			glm::mat4 v2s_mat;
 			glm::mat4 inverse_camera_matrix;
 			glm::vec3 camera_pos;
 		} camera;
-		camera.camera_matrixes = g_state.camera.v2s_mat();
-		camera.inverse_camera_matrix = glm::inverse ( camera.camera_matrixes );
-		camera.camera_pos = g_state.camera.orientation.view_vector * 1.0f;
+		camera.v2s_mat = g_state.camera.v2s_mat();
+		camera.inverse_camera_matrix = glm::inverse ( camera.v2s_mat );
+		camera.camera_pos = g_state.camera.orientation.look_at - g_state.camera.orientation.view_vector;
 
 		instance->update_context_data ( camera_matrix, &camera );
 
+
 		glm::mat4 w2v_matrix = g_state.camera.orientation.w2v_mat();
 		glm::mat4 w2v_rot_matrix = g_state.camera.orientation.w2v_rot_mat();
+
+		{
+			
+			Camera shadowmap_camera_section_1 = g_state.camera;
+			shadowmap_camera_section_1.far = 100.0f;
+			Camera shadowmap_camera_section_2 = g_state.camera;
+			shadowmap_camera_section_2.near = shadowmap_camera_section_1.far;
+			shadowmap_camera_section_2.far = 1000.0f;
+			Camera shadowmap_camera_section_3 = g_state.camera;
+			shadowmap_camera_section_3.near = shadowmap_camera_section_2.far;
+			
+			glm::mat4 w2s_matrix_1 = shadowmap_camera_section_1.v2s_mat() * shadowmap_camera_section_1.orientation.w2v_mat();
+			glm::mat4 w2s_matrix_2 = shadowmap_camera_section_2.v2s_mat() * shadowmap_camera_section_1.orientation.w2v_mat();
+			glm::mat4 w2s_matrix_3 = shadowmap_camera_section_3.v2s_mat() * shadowmap_camera_section_1.orientation.w2v_mat();
+			
+			glm::mat4 s2w_mat = glm::inverse(w2s_matrix_2);
+			glm::mat4 w2l_mat = glm::lookAt(glm::vec3(0.0f), (glm::vec3)light_vector, glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::mat4 inv_w2l_mat = glm::inverse(w2l_mat);
+			
+			glm::vec3 eye_pos = g_state.camera.orientation.look_at - g_state.camera.orientation.view_vector;
+			glm::vec4 min = glm::vec4(std::numeric_limits<float>::infinity()), max = glm::vec4(-std::numeric_limits<float>::infinity());
+			{
+				glm::vec4 near1 = w2l_mat * s2w_mat * glm::vec4(-1.0f, -1.0f, 0.0f, 1.0);
+				glm::vec4 near2 = w2l_mat * s2w_mat * glm::vec4(-1.0f, 1.0f, 0.0f, 1.0);
+				glm::vec4 near3 = w2l_mat * s2w_mat * glm::vec4(1.0f, -1.0f, 0.0f, 1.0);
+				glm::vec4 near4 = w2l_mat * s2w_mat * glm::vec4(1.0f, 1.0f, 0.0f, 1.0);
+				near1 /= near1.w;
+				near2 /= near2.w;
+				near3 /= near3.w;
+				near4 /= near4.w;
+				printf("%fx%fx%f\n", near1.x, near1.y, near1.z);
+				printf("%fx%fx%f\n", near2.x, near2.y, near2.z);
+				printf("%fx%fx%f\n", near3.x, near3.y, near3.z);
+				printf("%fx%fx%f\n", near4.x, near4.y, near4.z);
+				
+				glm::vec4 far1 = w2l_mat * s2w_mat * glm::vec4(-1.0f, -1.0f, 1.0f, 1.0);
+				glm::vec4 far2 = w2l_mat * s2w_mat * glm::vec4(-1.0f, 1.0f, 1.0f, 1.0);
+				glm::vec4 far3 = w2l_mat * s2w_mat * glm::vec4(1.0f, -1.0f, 1.0f, 1.0);
+				glm::vec4 far4 = w2l_mat * s2w_mat * glm::vec4(1.0f, 1.0f, 1.0f, 1.0);
+				far1 /= far1.w;
+				far2 /= far2.w;
+				far3 /= far3.w;
+				far4 /= far4.w;
+				printf("%fx%fx%f\n", far1.x, far1.y, far1.z);
+				printf("%fx%fx%f\n", far2.x, far2.y, far2.z);
+				printf("%fx%fx%f\n", far3.x, far3.y, far3.z);
+				printf("%fx%fx%f\n", far4.x, far4.y, far4.z);
+				printf("%f\n", glm::length(eye_pos - (glm::vec3)far1));
+				printf("%f\n", glm::length(eye_pos - (glm::vec3)far2));
+				printf("%f\n", glm::length(eye_pos - (glm::vec3)far3));
+				printf("%f\n", glm::length(eye_pos - (glm::vec3)far4));
+				
+				glm::vec4 sphere = find_center_of_sphere(near1, near4, far2, far3);//
+				glm::vec3 sphere_center = sphere;
+				printf("Center %fx%fx%f\n", sphere.x, sphere.y, sphere.z);
+				printf("Range %f\n", sphere.w);
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)near1));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)near2));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)near3));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)near4));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)far1));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)far2));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)far3));
+				printf("Range1 %f\n", glm::length(sphere_center - (glm::vec3)far4));
+				
+				
+				min = glm::min(glm::min(glm::min(glm::min(min, near1), near2), near3), near4);
+				max = glm::max(glm::max(glm::max(glm::max(max, near1), near2), near3), near4);
+				
+				min.z = 0.0f;
+				min.w = 1.0f;
+				min = inv_w2l_mat * min;
+				min /= min.w;
+				
+				max.z = 0.0f;
+				max.w = 1.0f;
+				max = inv_w2l_mat * max;
+				max /= max.w;
+				
+				printf("Min: %fx%fx%f\n", min.x, min.y, min.z);
+				printf("Max: %fx%fx%f\n", max.x, max.y, max.z);
+				
+				billboards.resize(6);
+				billboards[0].init(near1, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+				billboards[1].init(near2, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+				billboards[2].init(near3, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+				billboards[3].init(near4, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+				billboards[2].init(min, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+				billboards[3].init(max, glm::vec3(1.0f), glm::vec2(1.0f, 1.0f), 0.0f, 1.0f, 0);
+			}
+			
+		}
+		
 		global_light.direction_amb = glm::normalize ( w2v_rot_matrix * light_vector );
 		global_light.direction_amb.w = 0.4f;
 		global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.2f );

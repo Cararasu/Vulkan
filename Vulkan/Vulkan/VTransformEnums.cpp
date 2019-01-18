@@ -209,9 +209,9 @@ vk::Format transform_image_format ( ImageFormat format ) {
 		return vk::Format::eD32Sfloat;
 	case ImageFormat::eD24Unorm_St8U:
 		return vk::Format::eD24UnormS8Uint;
-	case ImageFormat::eD32F_St8Uint:
+	case ImageFormat::eD32F_St8U:
 		return vk::Format::eD32SfloatS8Uint;
-	case ImageFormat::eSt8Uint:
+	case ImageFormat::eSt8U:
 		return vk::Format::eS8Uint;
 
 	default:
@@ -344,9 +344,9 @@ ImageFormat transform_image_format ( vk::Format format ) {
 	case vk::Format::eD24UnormS8Uint:
 		return ImageFormat::eD24Unorm_St8U;
 	case vk::Format::eD32SfloatS8Uint:
-		return ImageFormat::eD32F_St8Uint;
+		return ImageFormat::eD32F_St8U;
 	case vk::Format::eS8Uint:
-		return ImageFormat::eSt8Uint;
+		return ImageFormat::eSt8U;
 
 	default:
 		return ImageFormat::eUndefined;

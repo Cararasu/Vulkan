@@ -26,6 +26,7 @@
     <File Name="AModel.h"/>
     <File Name="Quads.h"/>
     <VirtualDirectory Name="Vulkan">
+      <File Name="Vulkan/VMemoryAllocator.h"/>
       <File Name="Vulkan/VSampler.cpp"/>
       <File Name="Vulkan/VSampler.h"/>
       <File Name="Vulkan/VTransformEnums.cpp"/>
@@ -105,7 +106,7 @@
         <Library Value="dl"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="../workingdir/$(ProjectName)" IntermediateDirectory="./Debug" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="./$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="Debug" Command="./workingdir/$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
@@ -115,41 +116,10 @@
         <PostConnectCommands/>
         <StartupCommands/>
       </Debugger>
-      <PreBuild>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.vert -o ../workingdir/shader/textured.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.frag -o ../workingdir/shader/textured.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.vert -o ../workingdir/shader/flat.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.frag -o ../workingdir/shader/flat.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.vert -o ../workingdir/shader/skybox.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.frag -o ../workingdir/shader/skybox.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.vert -o ../workingdir/shader/shotlight.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.frag -o ../workingdir/shader/shotlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/engine.frag -o ../workingdir/shader/engine.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/brightness.frag -o ../workingdir/shader/brightness.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hbloom.frag -o ../workingdir/shader/hbloom.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/composition.frag -o ../workingdir/shader/composition.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-      </PreBuild>
-      <PostBuild/>
+      <PreBuild/>
+      <PostBuild>
+        <Command Enabled="yes">cp ./$(IntermediateDirectory)/$(ProjectName).exe ../workingdir/$(ProjectName).exe</Command>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>
@@ -189,7 +159,7 @@
         <Library Value="vulkan-1"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="../workingdir/$(ProjectName)" IntermediateDirectory="./DebugWind" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="./$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="Debug" Command="../workingdir/$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
@@ -199,43 +169,10 @@
         <PostConnectCommands/>
         <StartupCommands/>
       </Debugger>
-      <PreBuild>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.vert -o ../workingdir/shader/textured.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.frag -o ../workingdir/shader/textured.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.vert -o ../workingdir/shader/flat.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.frag -o ../workingdir/shader/flat.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.vert -o ../workingdir/shader/skybox.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.frag -o ../workingdir/shader/skybox.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.vert -o ../workingdir/shader/shotlight.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.frag -o ../workingdir/shader/shotlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/billboard.vert -o ../workingdir/shader/billboard.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/billboard.frag -o ../workingdir/shader/billboard.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/engine.frag -o ../workingdir/shader/engine.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/brightness.frag -o ../workingdir/shader/brightness.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hbloom.frag -o ../workingdir/shader/hbloom.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/composition.frag -o ../workingdir/shader/composition.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-      </PreBuild>
-      <PostBuild/>
+      <PreBuild/>
+      <PostBuild>
+        <Command Enabled="yes">cp ./$(IntermediateDirectory)/$(ProjectName).exe ../workingdir/$(ProjectName).exe</Command>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>
@@ -279,7 +216,7 @@
         <Library Value="dl"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="../workingdir/$(ProjectName)" IntermediateDirectory="./Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="./$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="Release" Command="../workingdir/$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
@@ -289,41 +226,10 @@
         <PostConnectCommands/>
         <StartupCommands/>
       </Debugger>
-      <PreBuild>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.vert -o ../workingdir/shader/textured.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.frag -o ../workingdir/shader/textured.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.vert -o ../workingdir/shader/flat.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.frag -o ../workingdir/shader/flat.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.vert -o ../workingdir/shader/skybox.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.frag -o ../workingdir/shader/skybox.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.vert -o ../workingdir/shader/shotlight.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.frag -o ../workingdir/shader/shotlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/engine.frag -o ../workingdir/shader/engine.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/brightness.frag -o ../workingdir/shader/brightness.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hbloom.frag -o ../workingdir/shader/hbloom.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/composition.frag -o ../workingdir/shader/composition.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-      </PreBuild>
-      <PostBuild/>
+      <PreBuild/>
+      <PostBuild>
+        <Command Enabled="yes">cp ./$(IntermediateDirectory)/$(ProjectName).exe ../workingdir/$(ProjectName).exe</Command>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>
@@ -364,7 +270,7 @@
         <Library Value="vulkan-1"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
-      <General OutputFile="../workingdir/$(ProjectName)" IntermediateDirectory="./ReleaseWind" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <General OutputFile="./$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="Release" Command="../workingdir/$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../workingdir" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
       <BuildSystem Name="Default"/>
       <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
         <![CDATA[]]>
@@ -374,41 +280,10 @@
         <PostConnectCommands/>
         <StartupCommands/>
       </Debugger>
-      <PreBuild>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.vert -o ../workingdir/shader/quad.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/quad.frag -o ../workingdir/shader/quad.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.vert -o ../workingdir/shader/textured.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/textured.frag -o ../workingdir/shader/textured.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.vert -o ../workingdir/shader/flat.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/flat.frag -o ../workingdir/shader/flat.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.vert -o ../workingdir/shader/skybox.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/skybox.frag -o ../workingdir/shader/skybox.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.vert -o ../workingdir/shader/shotlight.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.frag -o ../workingdir/shader/shotlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/engine.frag -o ../workingdir/shader/engine.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/brightness.frag -o ../workingdir/shader/brightness.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hbloom.frag -o ../workingdir/shader/hbloom.frag.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/composition.frag -o ../workingdir/shader/composition.frag.sprv</Command>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-        <Command Enabled="yes"/>
-      </PreBuild>
-      <PostBuild/>
+      <PreBuild/>
+      <PostBuild>
+        <Command Enabled="yes">cp ./$(IntermediateDirectory)/$(ProjectName).exe ../workingdir/$(ProjectName).exe</Command>
+      </PostBuild>
       <CustomBuild Enabled="no">
         <RebuildCommand/>
         <CleanCommand/>

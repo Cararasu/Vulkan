@@ -173,6 +173,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		//v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
 		//v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
 
+		//TODO improve this as it is terribly bad
+		//maybe sort the contexts? and then binary search?
 		DynArray<vk::DescriptorSet> model_descriptorSets;
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			bool found = false;

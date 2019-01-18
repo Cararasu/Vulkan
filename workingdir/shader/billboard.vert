@@ -20,7 +20,7 @@ layout (set=1, binding = 0) uniform cameraUniformBuffer {
 
 void main() {
 	vec4 adjusted_pos = position;
-	adjusted_pos.xy = adjusted_pos.xy + (pos.xy * scale_index_time.xy);
+	adjusted_pos.xy += pos.xy * scale_index_time.xy;
     gl_Position = v2sMatrix * adjusted_pos;
 	gl_Position.y = -gl_Position.y;
 	

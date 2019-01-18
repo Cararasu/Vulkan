@@ -79,7 +79,7 @@ inline glm::vec3 interp_vec ( glm::vec3 src_vec, glm::vec3 dst_vec, float factor
 	glm::vec3 norm_src = glm::normalize ( src_vec );
 	glm::vec3 norm_dst = glm::normalize ( dst_vec );
 	float len = interp_float ( glm::length ( src_vec ), glm::length ( dst_vec ), factor );
-	if ( norm_src == norm_dst ) {
+	if ( norm_src == norm_dst || norm_src == -norm_dst ) {
 		return norm_src * len;
 	} else {
 		return norm_src * len * glm::angleAxis ( glm::acos ( glm::dot ( norm_src, norm_dst ) ) * factor, glm::normalize ( glm::cross ( dst_vec, src_vec ) ) );
