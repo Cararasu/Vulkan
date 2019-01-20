@@ -35,7 +35,7 @@ void main() {
 	
 	float distance = length(lightvec);
 	
-	float intensity = (v_umbraColor_range.w - min(distance, v_umbraColor_range.w)) / v_umbraColor_range.w;
+	float intensity = 1.0 - (min(distance, v_umbraColor_range.w) / v_umbraColor_range.w);
 	intensity *= intensity;
 	
 	float lambertian = max(dot(light_direction, normal_direction), 0.0);
@@ -53,9 +53,8 @@ void main() {
 		}
 	}
 	vec4 diffuseColor = subpassLoad(inputDiffuse);
-	diffuseColor = diffuseColor * (diffuseColor.w * 51.0);
 	
-	vec3 reflectcolor = diffuseColor.rgb * v_umbraColor_range.rgb * (lambertian + 0.1);
+	vec3 reflectcolor = diffuseColor.rgb * v_umbraColor_range.rgb * (lambertian);
    
-	outLightAccumulation = vec4(reflectcolor * (intensity * specular * 2.0 + intensity), 1.0);
+	outLightAccumulation = vec4(reflectcolor * (intensity * specular * 1.5 + intensity), 1.0);
 }

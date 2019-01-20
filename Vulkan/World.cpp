@@ -307,7 +307,7 @@ void World::init ( Instance* instance ) {
 
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
-	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_1k.png", 4 );
+	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_2k.png", 4 );
 	instance->update_context_image ( x_context, 0, x_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
 	instance->update_context_sampler ( x_context, 0, sampler );
 	for ( Model& model : xwing_models ) instance->set_context ( model, x_context );
@@ -326,9 +326,9 @@ void World::init ( Instance* instance ) {
 	Context tie_body_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Context tie_arm_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Context tie_wing_context = instance->create_context ( tex_simplemodel_context_base_id );
-	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_1k.png", 4 );
-	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_1k.png", 4 );
-	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_1k.png", 4 );
+	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_2k.png", 4 );
+	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_2k.png", 4 );
+	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_2k.png", 4 );
 	instance->update_context_image ( tie_body_context, 0, tie_body_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
 	instance->update_context_sampler ( tie_body_context, 0, sampler );
 	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
@@ -407,7 +407,6 @@ void WorldShard::update_shard ( World* world ) {
 
 	for(int i = 0; i < 3; i++) {
 		shadowmap_data.v2ls_mat[i] = world->shadow_shard[i].camera.v2s_mat() * (world->shadow_shard[i].camera.orientation.w2v_mat() * glm::inverse(cameradata.w2v_mat));
-		//shadowmap_data.v2ls_mat[i] = glm::inverse(cameradata.w2v_mat);
 		shadowmap_data.drawrange[i] = glm::vec4 ( world->shadow_shard[i].camera_near, world->shadow_shard[i].camera_far, 0.0f, 0.0f );
 	}
 	world->instance->update_context_data ( shadowmap_context, &shadowmap_data );

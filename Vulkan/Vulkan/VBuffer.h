@@ -42,28 +42,3 @@ struct VThinBuffer {
 	VThinBuffer ( VInstance* instance, vk::Buffer buffer, vk::DeviceSize size, void* mapped_ptr);
 	~VThinBuffer();
 };
-struct VDividableMemory {
-	GPUMemory memory;
-	u64 offset;
-	void* mapped_ptr = nullptr;
-};
-//store for staging buffers
-constexpr u64 MAX_MEMORY_CUNK_SIZE = 16 * 1024 * 1024;
-struct VDividableBufferStore {
-	VInstance* v_instance;
-	DynArray<VDividableMemory> memory_chunks;
-	DynArray<VDividableMemory> special_memory_chunks;
-	DynArray<vk::Buffer> buffers;
-	vk::BufferUsageFlags usage;
-	vk::MemoryPropertyFlags needed;
-	vk::MemoryPropertyFlags recommended;
-	u64 last_frame_index_acquired = 0;
-
-	VDividableBufferStore ( VInstance* v_instance, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
-	~VDividableBufferStore();
-
-	VThinBuffer acquire_buffer(u64 size);
-	void free_buffers();
-
-	void destroy();
-};

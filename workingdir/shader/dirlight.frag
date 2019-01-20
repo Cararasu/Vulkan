@@ -66,8 +66,6 @@ void main() {
 		}
 	}
 	vec4 diffuseInput = subpassLoad(inputDiffuse);
-	vec3 diffuseColor = diffuseInput.rgb * (diffuseInput.w * 51.0);
-	
 	
 	outLightAccumulation = vec4(0.0, 0.0, 0.0, 1.0);
 	float depth = -pos.z;
@@ -84,7 +82,7 @@ void main() {
 			break;
 		}
 	}
-	outLightAccumulation = vec4(diffuseColor * (((lambertian + specular) * inlight) + light.direction_amb.w), 1.0);
+	outLightAccumulation = vec4(diffuseInput.rgb * (((lambertian + specular) * inlight) + light.direction_amb.w), 1.0);
 }
 
 

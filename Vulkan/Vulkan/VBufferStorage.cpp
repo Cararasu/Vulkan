@@ -128,3 +128,72 @@ void VUpdateableBufferStorage::free_chunk ( Chunk chunk ) {
 	}
 	freelist.push_back ( chunk );
 }
+
+
+VDividableBufferStore::VDividableBufferStore ( VInstance* v_instance, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+	v_instance(v_instance), usage(usage), needed(needed), recommended(recommended) {
+}
+VDividableBufferStore::~VDividableBufferStore() {
+	destroy();
+}
+VThinBuffer VDividableBufferStore::acquire_buffer(u64 size) {
+	last_frame_index_acquired = v_instance->frame_index;
+	vk::Device device = v_instance->vk_device ();
+	vk::Buffer buffer;
+	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
+	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), v_logger.log<LogLevel::eError> ( "Failed To Create Buffer" ) );
+	
+	vk::MemoryRequirements mem_req;
+	device.getBufferMemoryRequirements ( buffer, &mem_req );
+	
+	for(VDividableMemory& memory : memory_chunks) {
+		u64 possible_offset = (((memory.offset - 1) / mem_req.alignment) + 1) * mem_req.alignment;
+		
+		if ( possible_offset < memory.memory.size && mem_req.size < memory.memory.size - possible_offset) {
+			device.bindBufferMemory ( buffer, memory.memory.memory, possible_offset );
+			memory.offset = possible_offset + size;
+			buffers.push_back(buffer);
+			return VThinBuffer ( v_instance, buffer, size, memory.mapped_ptr + possible_offset);
+		}
+	}
+	vk::MemoryRequirements new_mem_req = mem_req;
+	new_mem_req.size = new_mem_req.size > MAX_MEMORY_CUNK_SIZE ? new_mem_req.size : MAX_MEMORY_CUNK_SIZE;
+	
+	GPUMemory memory( new_mem_req.size, needed, recommended );
+	v_logger.log<LogLevel::eDebug>("Allocating Memory for transfer of size %" PRId64, new_mem_req.size);
+	v_instance->allocate_gpu_memory ( new_mem_req, &memory );
+	void* mapped_ptr;
+	vk::Result res = v_instance->vk_device ().mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
+	
+	device.bindBufferMemory ( buffer, memory.memory, 0 );
+	if(new_mem_req.size > MAX_MEMORY_CUNK_SIZE) {
+		special_memory_chunks.push_back ( {memory, mem_req.size, mapped_ptr} );
+	}else{
+		memory_chunks.push_back ( {memory, mem_req.size, mapped_ptr} );
+	}
+	buffers.push_back(buffer);
+	return VThinBuffer ( v_instance, buffer, size, mapped_ptr);
+}
+void VDividableBufferStore::free_buffers() {
+	for(vk::Buffer buffer : buffers) {
+		v_logger.log<LogLevel::eDebug> ( "Destroying Buffer 0x%" PRIx64, static_cast<VkBuffer>(buffer) );
+		v_instance->vk_device ().destroyBuffer ( buffer, nullptr );
+	}
+	for(VDividableMemory& chunk : memory_chunks) {
+		chunk.offset = 0;
+	}
+	for(VDividableMemory& chunk : special_memory_chunks) {
+		v_instance->vk_device ().unmapMemory ( chunk.memory.memory );
+		v_instance->free_gpu_memory ( chunk.memory );
+	}
+	special_memory_chunks.clear();
+	buffers.clear();
+}
+void VDividableBufferStore::destroy() {
+	free_buffers();
+	for(VDividableMemory& chunk : memory_chunks) {
+		v_instance->vk_device ().unmapMemory ( chunk.memory.memory );
+		v_instance->free_gpu_memory ( chunk.memory );
+	}
+	memory_chunks.clear();
+}

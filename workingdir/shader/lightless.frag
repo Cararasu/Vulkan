@@ -11,5 +11,5 @@ layout(location = 0) in vec3 v_position;
 
 void main() {
 	vec4 diffvalue = subpassLoad(inputDiffuse);
-	outLightAccumulation = vec4(diffvalue.rgb * diffvalue.w * 51.0, 1.0);
+	outLightAccumulation = vec4(diffvalue.rgb, 1.0);
 }

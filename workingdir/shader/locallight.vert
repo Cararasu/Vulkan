@@ -25,10 +25,13 @@ void main() {
 	v_lightpos = lightpos.xyz;
 	
 	//add the vertex-position and transform to screnn space
-	gl_Position = v2sMatrix * vec4(lightpos.xyz + pos * umbraColor_range.w, 1.0);
+	vec4 temp = vec4(lightpos.xyz + (pos * umbraColor_range.w), 1.0);
+	gl_Position = v2sMatrix * temp;
+	v_position = gl_Position.xyz;
+	v_position /= gl_Position.w;
+	gl_Position.y = -gl_Position.y;
 	
-	v_position = gl_Position.xyz / gl_Position.w;
-	v_position.y = -v_position.y;
+	//v_position = temp.xyz;
 	
 	v_umbraColor_range = umbraColor_range;
 }
