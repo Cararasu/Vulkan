@@ -5,6 +5,7 @@
 #include "render/Dimensions.h"
 #include "render/RenderPass.h"
 #include "VWindow.h"
+#include "VModel.h"
 
 struct VInstance;
 struct SubmitStore;
@@ -20,12 +21,16 @@ struct VBundleImageState {
 struct VRenderStage : public RenderStage {
 	Array<VBundleImageState> v_bundlestates;
 	VContextGroup* v_contextgroup;
+	VInstanceGroup* v_instancegroup;
 	
 	VRenderStage ( RenderStageType type ) : RenderStage(type) {}
 	virtual ~VRenderStage() {}
 
 	virtual void set_contextgroup ( ContextGroup* contextgroup ) {
 		v_contextgroup = static_cast<VContextGroup*> (contextgroup);
+	}
+	virtual void set_instancegroup ( InstanceGroup* instancegroup ) {
+		v_instancegroup = static_cast<VInstanceGroup*> (instancegroup);
 	}
 	virtual void v_dispatch ( vk::CommandBuffer buffer, u32 index ) = 0;
 };

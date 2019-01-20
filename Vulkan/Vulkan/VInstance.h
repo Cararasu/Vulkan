@@ -140,7 +140,7 @@ struct VInstance : public Instance {
 	virtual void render_bundles ( Array<RenderBundle*> bundles ) override;
 
 //------------ Specialized Functions
-	virtual RenderBundle* create_main_bundle ( InstanceGroup* igroup ) override;
+	virtual RenderBundle* create_main_bundle ( ) override;
 
 //------------ Transfer Data
 //TODO move to seperate Transfer-Object which wraps all this in one logical unit

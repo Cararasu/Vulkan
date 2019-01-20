@@ -16,7 +16,6 @@ layout(location = 2) out vec4 v_umbraColor_range;
 
 layout (set=1, binding = 0) uniform cameraUniformBuffer {
 	layout(offset = 0) mat4 v2sMatrix;
-	layout(offset = 128) vec3 eyepos;
 };
 
 void main() {

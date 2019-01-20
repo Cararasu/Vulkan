@@ -2,12 +2,14 @@
 
 #include "VSpecialStructs.h"
 
-void gen_composition_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 pipeline_index, Viewport<f32> viewport, vk::RenderPass renderpass );
+void gen_model1_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 pipeline_index, Viewport<f32> viewport, vk::RenderPass renderpass );
+void gen_model2_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 pipeline_index, Viewport<f32> viewport, vk::RenderPass renderpass );
 
-struct VFinalCompositionRenderStage : public VRenderStage {
+struct VShadowMapGeneration : public VRenderStage {
 	VInstance* v_instance;
 
-	PipelineStruct composition_pipeline;
+	PipelineStruct model1_pipeline;
+	PipelineStruct model2_pipeline;
 	
 	Viewport<f32> viewport;
 	
@@ -16,9 +18,9 @@ struct VFinalCompositionRenderStage : public VRenderStage {
 	Array<SubPassInput> subpass_inputs;
 	
 	u64 last_frame_index_pipeline_built = 0;
-	
-	VFinalCompositionRenderStage ( VInstance* v_instance );
-	virtual ~VFinalCompositionRenderStage();
+
+	VShadowMapGeneration ( VInstance* v_instance );
+	virtual ~VShadowMapGeneration();
 	
 	void v_destroy_pipeline_layouts();
 	void v_destroy_pipelines();

@@ -16,15 +16,12 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput i
 layout (set=1, binding = 0) uniform cameraUniformBuffer {
 	layout(offset = 0) mat4 v2sMatrix;
 	layout(offset = 64) mat4 inv_v2sMatrix;
-	layout(offset = 128) vec3 eyepos;
 } camera;
 
 vec3 reconstruct_pos_from_depth() {
-	float z = subpassLoad(inputDepth).x;
-    float x = g_position.x;
-    float y = g_position.y;
-	vec4 pos = camera.inv_v2sMatrix * vec4(x, y, z, 1.0);
-	return pos.xyz / pos.w;
+	vec4 screenpos = vec4((g_position.x * 2.0) - 1.0, (g_position.y * 2.0) - 1.0, subpassLoad(inputDepth).x, 1.0);
+	vec4 view_pos = camera.inv_v2sMatrix * screenpos;
+	return view_pos.xyz / view_pos.w;
 }
 
 void main() {

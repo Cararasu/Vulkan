@@ -110,7 +110,7 @@ struct Instance {
 
 //---------- Specialized Functions
 
-	virtual RenderBundle* create_main_bundle ( InstanceGroup* igroup ) = 0;
+	virtual RenderBundle* create_main_bundle ( ) = 0;
 };
 
 Instance* create_instance ( String name );

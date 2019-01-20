@@ -15,7 +15,7 @@ VResourceManager::~VResourceManager() {
 	}
 	dependency_map.clear();
 	for ( VBaseImage* image : v_images ) {
-		if ( image ) delete image;
+		if ( image ) v_delete_image(image);
 	}
 	v_images.clear();
 	for ( VSampler* sampler : v_samplers ) {
@@ -84,14 +84,37 @@ ShaderModule* VResourceManager::get_shader ( StringReference ref ) {
 }
 
 Image* VResourceManager::create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers, ImageFormat format ) {
+	
+	vk::ImageUsageFlags usages = vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc;
+	vk::ImageAspectFlags aspectFlags;
+	switch ( format ) {
+	case ImageFormat::eD16Unorm:
+	case ImageFormat::eD32F: {
+		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
+	}
+	break;
+	case ImageFormat::eD24Unorm_St8U:
+	case ImageFormat::eD32F_St8U: {
+		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
+	break;
+	case ImageFormat::eSt8U: {
+		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+	}
+	break;
+	default: {
+		usages |= vk::ImageUsageFlagBits::eColorAttachment;
+		aspectFlags |= vk::ImageAspectFlagBits::eColor;
+	}
+	break;
+	}
+	
 	return v_images.insert ( new VBaseImage ( v_instance, width, height, depth, array_layers, mipmap_layers, transform_image_format(format), vk::ImageTiling::eOptimal,
-	                         vk::ImageUsageFlags() | 
-									vk::ImageUsageFlagBits::eSampled | 
-									vk::ImageUsageFlagBits::eColorAttachment | 
-									vk::ImageUsageFlagBits::eInputAttachment | 
-									vk::ImageUsageFlagBits::eTransferDst | 
-									vk::ImageUsageFlagBits::eTransferSrc, vk::ImageAspectFlagBits::eColor,
-	                         vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ) );
+	                         usages, aspectFlags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ) );
 }
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -219,10 +242,10 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	                        aspectFlags,
+							base_image->id,
 							scaling,
 	                        vk::MemoryPropertyFlagBits::eDeviceLocal,
 							vk::MemoryPropertyFlags() ) );
-	images.insert ( v_wrapper );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {
 		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VBaseImage*>() ) );
@@ -233,18 +256,33 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 void VResourceManager::v_delete_dependant_images ( VBaseImage* image ) {
 	auto it = dependency_map.find ( image );
 	if ( it != dependency_map.end() ) {
-		for ( VBaseImage* image : it->second ) {
-			v_delete_dependant_images ( image );
-			delete v_images.remove ( image->id );
+		for ( VBaseImage* img : it->second ) {
+			v_delete_image(img);
 		}
-		dependency_map.erase ( it );
+		it->second.clear();
+		it = dependency_map.erase ( it );
 	}
 }
 void VResourceManager::delete_image ( Image* image ) {
 	v_delete_image ( static_cast<VBaseImage*> ( image ) );
 }
 void VResourceManager::v_delete_image ( VBaseImage* image ) {
-	v_delete_dependant_images ( image );
+	if(image->dependant_image) {
+		auto it = dependency_map.find ( v_images[image->dependant_image] );
+		if ( it != dependency_map.end() ) {
+			DynArray<VBaseImage*>& images = it->second;
+			bool deleted = false;
+			for ( auto imit = images.begin(); imit != images.end(); ) {
+				if(image == *imit) {
+					imit = images.erase(imit);
+					deleted = true;
+					continue;
+				}
+				imit++;
+			}
+			assert(deleted);
+		}
+	}
 	delete v_images.remove ( image->id );
 }
 Sampler* VResourceManager::create_sampler ( FilterType magnification, FilterType minification, FilterType mipmapping, EdgeHandling u, EdgeHandling v, EdgeHandling w, float lodbias, Range<float> lodrange, float anismax, DepthComparison comp ) {

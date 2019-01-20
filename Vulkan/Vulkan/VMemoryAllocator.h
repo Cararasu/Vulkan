@@ -48,10 +48,10 @@ struct PerFrameAllocator {
 		chunk->bytesleft -= bytes;
 		return ptr;
 	}
-	void* free(void* data) {
+	void free(void* data) {
 		//no-op
 	}
-	void* clear() {
+	void clear() {
 		int i = 0;
 		PerFrameAllocatorChunk* chunk = &first_chunk;
 		while(chunk->data) {

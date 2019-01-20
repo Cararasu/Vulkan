@@ -18,8 +18,6 @@ void render_pipeline_lod ( VInstance* v_instance, VInstanceGroup* igroup, VConte
 struct VShadowRenderStage : public VRenderStage {
 	VInstance* v_instance;
 
-	VInstanceGroup* v_igroup;
-
 	PipelineStruct shadowmap_pipeline;
 
 	Viewport<f32> viewport;
@@ -31,7 +29,7 @@ struct VShadowRenderStage : public VRenderStage {
 
 	u64 last_frame_index_pipeline_built = 0;
 
-	VShadowRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
+	VShadowRenderStage ( VInstance* v_instance );
 	virtual ~VShadowRenderStage();
 	/*
 	void v_destroy_pipeline_layouts();
@@ -96,7 +94,7 @@ struct VMainBundle : public RenderBundle {
 
 	u64 last_used = 0;
 
-	VMainBundle ( VInstance* v_instance, InstanceGroup* igroup );
+	VMainBundle ( VInstance* v_instance );
 	virtual ~VMainBundle();
 
 	virtual void add_dependency ( u32 src_index, u32 dst_index ) override;

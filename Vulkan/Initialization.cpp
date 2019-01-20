@@ -1,6 +1,7 @@
 
 #include "Initialization.h"
 #include <render/Specialization.h>
+#include "World.h"
 
 void register_shaders ( Instance* instance ) {
 
@@ -26,7 +27,9 @@ void register_shaders ( Instance* instance ) {
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_billboard_shader", "shader/billboard.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_billboard_shader", "shader/billboard.frag.sprv" );
 
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "model_passthrough_shader", "shader/model_passthrough.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "passthrough_shader", "shader/passthrough.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "null_shader", "shader/null.frag.sprv" );
 
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "lightless_shader", "shader/lightless.frag.sprv" );
@@ -35,28 +38,50 @@ void register_shaders ( Instance* instance ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "vbloom_shader", "shader/vbloom.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "composition_shader", "shader/composition.frag.sprv" );
 }
-RenderBundle* setup_renderbundle ( Instance* instance, Window* window, InstanceGroup* instancegroup, ContextGroup* contextgroup ) {
+RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* world, Array<Context>& shadowmap_cameras ) {
 
 	ResourceManager* resource_manager = instance->resource_manager();
 	Image* windowimage = window->backed_image ( 0 );
 
-	RenderBundle* bundle = instance->create_main_bundle ( instancegroup );
+	RenderBundle* bundle = instance->create_main_bundle ( );
 
 	bundle->set_window_dependency ( window );
 
+	u32 renderstage_index = 0;
+
+	Image* shadowmaps = resource_manager->create_texture ( 2048, 2048, 0, 3, 1, ImageFormat::eD32F );
+	for ( int i = 0; i < shadowmap_cameras.size; i++ ) {
+		Context& sm_context = shadowmap_cameras[i];
+		world->shadow_shard[i].cgroup->set_context ( sm_context );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, shadowmaps, 0, i );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( world->shadow_shard[i].cgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->shadow_shard[i].igroup );
+		renderstage_index++;
+	}
+	Sampler* shadowmap_sampler = resource_manager->create_sampler (
+			FilterType::eLinear, FilterType::eLinear, FilterType::eNearest,
+			EdgeHandling::eClamp, EdgeHandling::eClamp, EdgeHandling::eClamp,
+			0.0f, {0.0f, 0.0f}, 0.0f, DepthComparison::eLEquals );
+	world->world_shard.shadowmap_context = instance->create_context ( shadowmap_context_base_id );
+	instance->update_context_image ( world->world_shard.shadowmap_context, 0, shadowmaps->create_use ( ImagePart::eDepth, {0, 1}, {0, 3} ) );
+	instance->update_context_sampler ( world->world_shard.shadowmap_context, 0, shadowmap_sampler );
+	world->world_shard.cgroup->set_context(world->world_shard.shadowmap_context);
+
 	Image* diffuse = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f );
-	bundle->get_renderstage ( 0 )->set_renderimage ( 0, diffuse ); //ambient + intensity
-	bundle->get_renderstage ( 0 )->set_renderimage ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) ); //normals
-	bundle->get_renderstage ( 0 )->set_renderimage ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) ); //specular power + intensity + ??? + ???
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, diffuse ); //ambient + intensity
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 1, resource_manager->create_dependant_image ( windowimage, ImageFormat::e2F16, 1, 1.0f ) ); //normals
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 2, resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f ) ); //specular power + intensity + ??? + ???
 	Image* lightaccumulation = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 1, 1.0f );
-	bundle->get_renderstage ( 0 )->set_renderimage ( 3, lightaccumulation ); //light-accumulation + specularintensity
-	bundle->get_renderstage ( 0 )->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
-	bundle->get_renderstage ( 0 )->set_contextgroup ( contextgroup );
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 3, lightaccumulation ); //light-accumulation + specularintensity
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 4, resource_manager->create_dependant_image ( windowimage, ImageFormat::eD24Unorm_St8U, 1, 1.0f ) );
+	bundle->get_renderstage ( renderstage_index )->set_contextgroup ( world->world_shard.cgroup );
+	bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
 	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 6, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
 	Image* bloomimage2 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 6, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
 
 	{
+		renderstage_index++;
 		Sampler* downscale_sampler = resource_manager->create_sampler (
 		                                 FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
 		                                 EdgeHandling::eMirror, EdgeHandling::eMirror, EdgeHandling::eMirror,
@@ -69,10 +94,13 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, InstanceG
 
 		brightness_contextgroup->set_context ( brightness_context );
 		//downscale + brightness low-pass filter
-		bundle->get_renderstage ( 1 )->set_renderimage ( 0, bloomimage1, 0 );
-		bundle->get_renderstage ( 1 )->set_contextgroup ( brightness_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage1, 0 );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( brightness_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
-		bundle->get_renderstage ( 2 )->set_renderimage ( 0, bloomimage1, 0 );
+		renderstage_index++;
+
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage1, 0 );
 
 		Sampler* bloom_sampler = resource_manager->create_sampler (
 		                             FilterType::eNearest, FilterType::eNearest, FilterType::eNearest,
@@ -94,14 +122,18 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, InstanceG
 		instance->update_context_image ( hbloom_context, 0, bloomimage2->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ) );
 		instance->update_context_sampler ( hbloom_context, 0, bloom_sampler );
 
+		renderstage_index++;
 		//vertical bloom
-		bundle->get_renderstage ( 3 )->set_renderimage ( 0, bloomimage2, 1 );
-		bundle->get_renderstage ( 3 )->set_contextgroup ( vbloom_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage2, 1 );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( vbloom_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
+		renderstage_index++;
 
 		//horizontal bloom
-		bundle->get_renderstage ( 4 )->set_renderimage ( 0, bloomimage1, 1 );
-		bundle->get_renderstage ( 4 )->set_contextgroup ( hbloom_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage1, 1 );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( hbloom_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
 		ContextGroup* composition_contextgroup = instance->create_contextgroup();
 
@@ -115,13 +147,15 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, InstanceG
 		instance->update_context_image ( composition_context, 0, bloomimage1->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ) );
 		instance->update_context_sampler ( composition_context, 0, composition_bloom_sampler );
 
+		renderstage_index++;
 		//final bloom composition
-		bundle->get_renderstage ( 5 )->set_renderimage ( 0, lightaccumulation );
-		bundle->get_renderstage ( 5 )->set_contextgroup ( composition_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, lightaccumulation );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( composition_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 	}
-
-	bundle->get_renderstage ( 6 )->set_renderimage ( 0, lightaccumulation );
-	bundle->get_renderstage ( 6 )->set_renderwindow ( 0, window );
+	renderstage_index++;
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, lightaccumulation );
+	bundle->get_renderstage ( renderstage_index )->set_renderwindow ( 0, window );
 
 	return bundle;
 }

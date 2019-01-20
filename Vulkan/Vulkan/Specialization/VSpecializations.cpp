@@ -9,11 +9,11 @@ ContextBaseId tex_simplemodel_context_base_id;
 ContextBaseId flat_simplemodel_context_base_id;
 ContextBaseId skybox_context_base_id;
 ContextBaseId explosion_context_base_id;
+ContextBaseId shadowmap_context_base_id;
 
 ContextBaseId postproc_context_base_id;
 
 ModelBaseId simple_modelbase_id;
-ModelBaseId dot_modelbase_id;
 
 ModelBaseId fullscreen_modelbase_id;
 
@@ -36,7 +36,8 @@ void register_specializations ( VInstance* instance ) {
 	{
 		//create contextbase from datagroups
 		ContextBase camera_context_base = { 0, 
-			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Mat4, 1, 64}, {ValueType::eF32Vec4, 1, 128} }, sizeof ( glm::mat4 ) * 2 + sizeof ( glm::vec4 ), 1 }
+			{ { {ValueType::eF32Mat4, 1, 0}, {ValueType::eF32Mat4, 1, 64}, {ValueType::eF32Mat4, 1, 128}, {ValueType::eF32Mat4, 1, 192}, {ValueType::eF32Vec4, 1, 256} }, 
+			sizeof ( glm::mat4 ) * 4 + sizeof ( glm::vec4 ), 1 }
 		};
 		camera_context_base_id = instance->static_contextbase_store.insert ( camera_context_base );
 		instance->contextbase_registered ( camera_context_base_id );
@@ -72,6 +73,9 @@ void register_specializations ( VInstance* instance ) {
 		postproc_context_base_id = instance->static_contextbase_store.insert ( bloom_context_base );
 		instance->contextbase_registered ( postproc_context_base_id );
 		
+		ContextBase shadowmap_context_base = { 0, { { {ValueType::eF32Mat4, 3, 0}, {ValueType::eF32Vec4, 3, 196} }, sizeof ( glm::mat4 ) * 3 + sizeof ( glm::vec4 ) * 3, 1 }, 1, 1 };
+		shadowmap_context_base_id = instance->static_contextbase_store.insert ( shadowmap_context_base );
+		instance->contextbase_registered ( shadowmap_context_base_id );
 	}
 
 	DataGroupDef vertex_datagroup = { { {ValueType::eF32Vec3, 1, 0}, {ValueType::eF32Vec3, 1, sizeof ( glm::vec3 ) }, {ValueType::eF32Vec3, 1, 2 * sizeof ( glm::vec3 ) } }, 3 * sizeof ( glm::vec3 ), 1 };
@@ -79,10 +83,6 @@ void register_specializations ( VInstance* instance ) {
 	ModelBase tex_simplemodel = { 0, vertex_datagroup, {tex_simplemodel_context_base_id, flat_simplemodel_context_base_id, skybox_context_base_id, explosion_context_base_id} };
 	simple_modelbase_id = instance->static_modelbase_store.insert ( tex_simplemodel );
 	instance->modelbase_registered ( simple_modelbase_id );
-
-	ModelBase shot_simplemodel = { 0, { { {ValueType::eF32Vec4, 1, 0}}, sizeof ( glm::vec4 ), 1 }, {} };
-	dot_modelbase_id = instance->static_modelbase_store.insert ( shot_simplemodel );
-	instance->modelbase_registered ( dot_modelbase_id );
 
 	ModelBase fullscreen_model = { 0, { { {ValueType::eF32Vec3, 1, 0}}, sizeof ( glm::vec3 ), 1 }, {} };
 	fullscreen_modelbase_id = instance->static_modelbase_store.insert ( fullscreen_model );

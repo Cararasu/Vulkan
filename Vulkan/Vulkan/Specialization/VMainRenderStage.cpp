@@ -1204,14 +1204,13 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 }
 
 
-VMainRenderStage::VMainRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
+VMainRenderStage::VMainRenderStage ( VInstance* instance ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
-	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
-	tex_pipeline ( simple_modelbase_id, textured_instance_base_id, { camera_context_base_id, lightvector_base_id }, {tex_simplemodel_context_base_id} ),
-	flat_pipeline ( simple_modelbase_id, flat_instance_base_id, { camera_context_base_id, lightvector_base_id }, {flat_simplemodel_context_base_id} ),
+	tex_pipeline ( simple_modelbase_id, textured_instance_base_id, { camera_context_base_id }, {tex_simplemodel_context_base_id} ),
+	flat_pipeline ( simple_modelbase_id, flat_instance_base_id, { camera_context_base_id }, {flat_simplemodel_context_base_id} ),
 	skybox_pipeline ( simple_modelbase_id, skybox_instance_base_id, {}, {skybox_context_base_id} ),
-	dirlight_pipeline ( fullscreen_modelbase_id, dirlight_instance_base_id, {camera_context_base_id, lightvector_base_id}, {} ),
+	dirlight_pipeline ( fullscreen_modelbase_id, dirlight_instance_base_id, {camera_context_base_id, lightvector_base_id, shadowmap_context_base_id}, {} ),
 	lightless_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {}, {} ),
 	shotlight_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
 	shot_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
@@ -1560,7 +1559,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		data.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
 	}
 
-	update_instancegroup ( v_instance, v_igroup, buffer );
+	update_instancegroup ( v_instance, v_instancegroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
 
 	vk::ClearValue clearColors[] = {
@@ -1601,18 +1600,18 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &tex_pipeline, &subpass_inputs[0], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &flat_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &tex_pipeline, &subpass_inputs[0], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &flat_pipeline, &subpass_inputs[0], buffer );
 
 	buffer.nextSubpass ( vk::SubpassContents::eInline );
 
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_igroup, v_contextgroup, &billboard_pipeline, &subpass_inputs[1], buffer );
-	//render_pipeline ( v_instance, v_igroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &billboard_pipeline, &subpass_inputs[1], buffer );
+	//render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );
 
 	buffer.endRenderPass();
 }

@@ -40,6 +40,7 @@ struct Resource {
 	std::atomic<bool> loading;
 	std::atomic<bool> loaded;
 
+	Resource() : id(0), created_frame_index(0), loading(false), loaded(false) {}
 };
 
 //stores the objects to dispatch

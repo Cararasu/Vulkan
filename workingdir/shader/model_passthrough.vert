@@ -4,21 +4,22 @@
 //per-vertex
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 uv;
+layout(location = 2) in vec3 normal;
+
+//per-instance
+layout(location = 3) in mat4 m2vMatrix;
+layout(location = 7) in mat4 normalMatrix;
 
 //global-info
 layout (set=0, binding = 0) uniform cameraUniformBuffer {
-	layout(offset = 0) mat4 m2sMatrix;
+	layout(offset = 0) mat4 v2sMatrix;
 };
-
-//output
-layout(location = 0) out vec3 v_texCoord;
 
 out gl_PerVertex {
     vec4 gl_Position;
 };
 
 void main() {
-    gl_Position = m2sMatrix * vec4(pos, 1.0f);
+    gl_Position = v2sMatrix * m2vMatrix * vec4(pos, 1.0f);
 	gl_Position.y = -gl_Position.y;
-	v_texCoord = uv;
 }

@@ -30,5 +30,7 @@ void VInstanceGroup::register_instances ( InstanceBaseId instancebase_id, Array<
 }
 void VInstanceGroup::clear() {
 	buffer_storeage.clear_transfer();
-	instance_to_data_map.clear();
+	for(auto& ele : instance_to_data_map) {
+		ele.second.clear();
+	}
 }

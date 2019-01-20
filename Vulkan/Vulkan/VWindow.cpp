@@ -280,8 +280,10 @@ VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ) {
 }
 VWindow::~VWindow() {
 	v_instance->destroy_window ( this );
-	for(VBaseImage* present_image : present_images)
-		v_instance->m_resource_manager->v_delete_image ( present_image );
+	
+	for(VBaseImage* present_image : present_images) 
+		if(present_image) 
+			v_instance->m_resource_manager->v_delete_image ( present_image );
 }
 
 void VWindow::initialize() {
@@ -770,8 +772,7 @@ void VWindow::create_swapchain() {
 	if ( !present_images.size ) {
 		present_images.resize(images.size());
 		for(int i = 0; i < present_images.size; i++) {
-			present_images[i] = new VBaseImage ( v_instance, this );
-			v_instance->m_resource_manager->v_images.insert ( present_images[i] );
+			present_images[i] = v_instance->m_resource_manager->v_images.insert ( new VBaseImage ( v_instance, this ) );
 		}
 	}
 	for(int i = 0; i < present_images.size; i++) {

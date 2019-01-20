@@ -45,6 +45,7 @@ struct RenderStage {
 	virtual void set_renderimage ( u32 index, Image* image, u32 miplayer = 0, u32 arraylayer = 0 ) = 0;
 	virtual void set_renderwindow ( u32 index, Window* window ) = 0;
 	virtual void set_contextgroup ( ContextGroup* contextgroup ) = 0;
+	virtual void set_instancegroup ( InstanceGroup* instancegroup ) = 0;
 };
 struct RenderBundle {
 

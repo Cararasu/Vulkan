@@ -399,10 +399,9 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 	}
 }
 
-VBrightnessRenderStage::VBrightnessRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
+VBrightnessRenderStage::VBrightnessRenderStage ( VInstance* instance ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
-	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	brightness_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
 	postproc_context_base_id
 }, {}, 1 ),
@@ -547,7 +546,7 @@ void VBrightnessRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) 
 	v_check_rebuild();
 	v_rebuild_pipelines();
 
-	update_instancegroup ( v_instance, v_igroup, buffer );
+	update_instancegroup ( v_instance, v_instancegroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
 
 	for ( int i = 0; i < renderpasses.size; i++ ) {
@@ -585,17 +584,16 @@ void VBrightnessRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) 
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 		buffer.pushConstants ( brightness_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
-		render_pipeline ( v_instance, v_igroup, v_contextgroup, &brightness_pipeline, &subpass_inputs[0], buffer, i );
+		render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &brightness_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}
 }
 
 //--------------------
 
-VBloomRenderStage::VBloomRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
+VBloomRenderStage::VBloomRenderStage ( VInstance* instance ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
-	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
 	postproc_context_base_id
 }, {}, 5 ),
@@ -739,7 +737,7 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	v_check_rebuild();
 	v_rebuild_pipelines();
 
-	update_instancegroup ( v_instance, v_igroup, buffer );
+	update_instancegroup ( v_instance, v_instancegroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
 
 	for ( int i = 0; i < renderpasses.size; i++ ) {
@@ -777,7 +775,7 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 		buffer.pushConstants ( bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
-		render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
+		render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}
 }
@@ -785,10 +783,9 @@ void VBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 //--------------------
 
 
-HBloomRenderStage::HBloomRenderStage ( VInstance* instance, InstanceGroup* igroup ) :
+HBloomRenderStage::HBloomRenderStage ( VInstance* instance ) :
 	VRenderStage ( RenderStageType::eRendering ),
 	v_instance ( instance ),
-	v_igroup ( static_cast<VInstanceGroup*> ( igroup ) ),
 	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
 	postproc_context_base_id
 }, {}, 5 ),
@@ -932,7 +929,7 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 	v_check_rebuild();
 	v_rebuild_pipelines();
 
-	update_instancegroup ( v_instance, v_igroup, buffer );
+	update_instancegroup ( v_instance, v_instancegroup, buffer );
 	update_contexts ( v_instance, v_contextgroup, buffer );
 
 	for ( int i = 0; i < renderpasses.size; i++ ) {
@@ -969,7 +966,7 @@ void HBloomRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
 		buffer.pushConstants ( bloom_pipeline.pipeline_layout, vk::ShaderStageFlagBits::eAllGraphics, 0, 4, &i );
-		render_pipeline ( v_instance, v_igroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
+		render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &bloom_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();
 	}
 

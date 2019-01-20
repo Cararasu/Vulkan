@@ -82,7 +82,7 @@ inline glm::vec3 interp_vec ( glm::vec3 src_vec, glm::vec3 dst_vec, float factor
 	if ( norm_src == norm_dst || norm_src == -norm_dst ) {
 		return norm_src * len;
 	} else {
-		return norm_src * len * glm::angleAxis ( glm::acos ( glm::dot ( norm_src, norm_dst ) ) * factor, glm::normalize ( glm::cross ( dst_vec, src_vec ) ) );
+		return glm::angleAxis ( glm::acos ( glm::dot ( norm_src, norm_dst ) ) * factor, glm::normalize ( glm::cross ( src_vec, dst_vec ) ) ) * (norm_src * len);
 	}
 }
 inline CameraOrientation interp_camera_orientation ( CameraOrientation src_orientation, CameraOrientation dst_orientation, float factor ) {
@@ -91,4 +91,14 @@ inline CameraOrientation interp_camera_orientation ( CameraOrientation src_orien
 	           interp_vec ( src_orientation.view_vector, dst_orientation.view_vector, factor ),
 	           interp_vec ( src_orientation.up_vector, dst_orientation.up_vector, factor )
 	       );
+}
+
+struct Sphere {
+	glm::vec3 center;
+	float range;
+};
+
+Camera generate_shadowmap_camera ( Camera* cam, glm::vec3 light_dir, float near, float far );
+inline Camera generate_shadowmap_camera ( Camera* cam, glm::vec3 light_dir ) {
+	return generate_shadowmap_camera ( cam, light_dir, cam->near, cam->far );
 }

@@ -12,7 +12,7 @@ struct VResourceManager : public ResourceManager {
 	Map<String, u64> shader_string_id_map;
 	IdPtrArray<VShaderModule> shader_array;
 
-	IdPtrArray<VBaseImage> images;
+	IdPtrArray<VBaseImage> v_images;
 	Map<VBaseImage*, DynArray<VBaseImage*>> dependency_map;
 
 	VResourceManager ( VInstance* instance );
@@ -23,7 +23,6 @@ struct VResourceManager : public ResourceManager {
 	virtual ShaderModule* get_shader ( StringReference ref ) override;
 	VShaderModule* v_get_shader ( StringReference ref );
 
-	IdPtrArray<VBaseImage> v_images;
 	IdPtrArray<VSampler> v_samplers;
 
 	virtual Image* create_texture ( u32 width, u32 height, u32 depth, u32 array_layers, u32 mipmap_layers, ImageFormat format ) override;

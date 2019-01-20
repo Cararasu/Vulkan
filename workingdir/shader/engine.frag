@@ -12,7 +12,6 @@ layout(location = 2) in vec3 g_umbraColor;
 
 layout (set=0, binding = 0) uniform cameraUniformBuffer {
 	layout(offset = 0) mat4 v2sMatrix;
-	layout(offset = 64) vec3 eyepos;
 };
 
 void main() {

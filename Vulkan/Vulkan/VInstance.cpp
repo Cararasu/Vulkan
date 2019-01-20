@@ -706,8 +706,8 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 		}
 	}
 }
-RenderBundle* VInstance::create_main_bundle ( InstanceGroup* igroup) {
-	return new VMainBundle ( this, igroup );
+RenderBundle* VInstance::create_main_bundle ( ) {
+	return new VMainBundle ( this );
 }
 
 void VInstance::load_generic_model ( Model& model, void* vertices, u32 vertexcount, u16* indices, u32 indexcount ) {

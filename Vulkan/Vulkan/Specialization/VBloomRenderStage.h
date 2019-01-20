@@ -8,8 +8,6 @@ void gen_vbloom_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 
 struct VBrightnessRenderStage : public VRenderStage {
 	VInstance* v_instance;
-	
-	VInstanceGroup* v_igroup;
 
 	PipelineStruct brightness_pipeline;
 	
@@ -21,7 +19,7 @@ struct VBrightnessRenderStage : public VRenderStage {
 	
 	u64 last_frame_index_pipeline_built = 0;
 	
-	VBrightnessRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
+	VBrightnessRenderStage ( VInstance* v_instance );
 	virtual ~VBrightnessRenderStage();
 	
 	void v_destroy_pipeline_layouts();
@@ -41,8 +39,6 @@ struct VBrightnessRenderStage : public VRenderStage {
 
 struct VBloomRenderStage : public VRenderStage {
 	VInstance* v_instance;
-	
-	VInstanceGroup* v_igroup;
 
 	PipelineStruct bloom_pipeline;
 	
@@ -54,7 +50,7 @@ struct VBloomRenderStage : public VRenderStage {
 	
 	u64 last_frame_index_pipeline_built = 0;
 	
-	VBloomRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
+	VBloomRenderStage ( VInstance* v_instance );
 	virtual ~VBloomRenderStage();
 	
 	void v_destroy_pipeline_layouts();
@@ -74,8 +70,6 @@ struct VBloomRenderStage : public VRenderStage {
 
 struct HBloomRenderStage : public VRenderStage {
 	VInstance* v_instance;
-	
-	VInstanceGroup* v_igroup;
 
 	PipelineStruct bloom_pipeline;
 	
@@ -87,7 +81,7 @@ struct HBloomRenderStage : public VRenderStage {
 	
 	u64 last_frame_index_pipeline_built = 0;
 	
-	HBloomRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
+	HBloomRenderStage ( VInstance* v_instance );
 	virtual ~HBloomRenderStage();
 	
 	void v_destroy_pipeline_layouts();

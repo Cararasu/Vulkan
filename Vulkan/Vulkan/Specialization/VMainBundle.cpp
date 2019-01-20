@@ -13,6 +13,7 @@
 #include "VMainRenderStage.h"
 #include "VBloomRenderStage.h"
 #include "VFinalCompositionRenderStage.h"
+#include "VShadowMapGeneration.h"
 
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts ) {
@@ -167,7 +168,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 	const ModelBase* modelbase_ptr = v_instance->modelbase ( p_struct->modelbase_id );
 	for ( InstanceBlock& instanceblock : instanceblocks ) {
 		if ( instanceblock.modelbase_id != p_struct->modelbase_id ) continue;
-
+		if ( !instanceblock.count ) continue;
 		VModel* v_model = models[instanceblock.model_id];
 
 		//v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
@@ -199,6 +200,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
 		else
 			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer}, {0} );
+		
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
 	}
 }
@@ -308,8 +310,8 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 	);
 	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer );
 }
-VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
-	stages ( 7 ),
+VMainBundle::VMainBundle ( VInstance* instance ) :
+	stages ( 10 ),
 	dependencies(),
 	window_dependency ( nullptr ),
 	v_instance ( instance ),
@@ -321,13 +323,16 @@ VMainBundle::VMainBundle ( VInstance* instance, InstanceGroup* igroup ) :
 		vk::CommandPoolCreateInfo createInfo ( vk::CommandPoolCreateFlagBits::eResetCommandBuffer, v_instance->queues.graphics_queue_id );
 		v_instance->vk_device ().createCommandPool ( &createInfo, nullptr, &commandpool );
 	}
-	stages[0] = new VMainRenderStage ( instance, igroup );
-	stages[1] = new VBrightnessRenderStage ( instance, igroup );
-	stages[2] = new VScaleDownRenderStage ( instance );
-	stages[3] = new VBloomRenderStage ( instance, igroup );
-	stages[4] = new HBloomRenderStage ( instance, igroup );
-	stages[5] = new VFinalCompositionRenderStage ( instance, igroup );
-	stages[6] = new VCopyToScreenRenderStage ( instance );
+	stages[0] = new VShadowMapGeneration ( instance );
+	stages[1] = new VShadowMapGeneration ( instance );
+	stages[2] = new VShadowMapGeneration ( instance );
+	stages[3] = new VMainRenderStage ( instance );
+	stages[4] = new VBrightnessRenderStage ( instance );
+	stages[5] = new VScaleDownRenderStage ( instance );
+	stages[6] = new VBloomRenderStage ( instance );
+	stages[7] = new HBloomRenderStage ( instance );
+	stages[8] = new VFinalCompositionRenderStage ( instance );
+	stages[9] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );

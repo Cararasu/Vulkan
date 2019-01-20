@@ -14,8 +14,6 @@ void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 
 struct VMainRenderStage : public VRenderStage {
 	VInstance* v_instance;
-	
-	VInstanceGroup* v_igroup;
 
 	PipelineStruct skybox_pipeline;
 	PipelineStruct tex_pipeline;
@@ -38,7 +36,7 @@ struct VMainRenderStage : public VRenderStage {
 
 	u64 last_frame_index_pipeline_built = 0;
 	
-	VMainRenderStage ( VInstance* v_instance, InstanceGroup* igroup );
+	VMainRenderStage ( VInstance* v_instance );
 	virtual ~VMainRenderStage();
 	
 	void v_destroy_pipeline_layouts();
