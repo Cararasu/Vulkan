@@ -64,20 +64,20 @@ void World::init ( Instance* instance ) {
 	cube_model = instance->create_model ( simple_modelbase_id );
 	{
 		Array<SimpleVertex> data_to_load = {
-			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
 			{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
 			{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
-			{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
+			{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 0.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ) },
 
 			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
 			{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
 			{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
 			{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ) },
 
-			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 1.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
-			{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
-			{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
-			{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 1.0f, 1.0f, 2.0f ), glm::vec3 ( 1.0f, 0.0f, 0.0f ) },
 
 			{glm::vec3 ( 1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 0.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) },
 			{glm::vec3 ( 1.0f, -1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 3.0f ), glm::vec3 ( 0.0f, 0.0f, -1.0f ) },
@@ -90,8 +90,8 @@ void World::init ( Instance* instance ) {
 			{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 1.0f, 1.0f, 4.0f ), glm::vec3 ( 0.0f, -1.0f, 0.0f ) },
 
 			{glm::vec3 ( -1.0f, 1.0f, 1.0f ), glm::vec3 ( 0.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
-			{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 0.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
-			{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 1.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( -1.0f, 1.0f, -1.0f ), glm::vec3 ( 1.0f, 0.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
+			{glm::vec3 ( -1.0f, -1.0f, 1.0f ), glm::vec3 ( 0.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
 			{glm::vec3 ( -1.0f, -1.0f, -1.0f ), glm::vec3 ( 1.0f, 1.0f, 5.0f ), glm::vec3 ( -1.0f, 0.0f, 0.0f ) },
 		};
 		Array<u16> indices = {
@@ -120,12 +120,12 @@ void World::init ( Instance* instance ) {
 	}
 	ResourceManager* resource_manager = instance->resource_manager();
 	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1, ImageFormat::e4Unorm8 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeZ.png", skybox_teximage, 3, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeY.png", skybox_teximage, 4, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxDark/GalaxyTex_NegativeX.png", skybox_teximage, 5, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeZ.png", skybox_teximage, 3, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeY.png", skybox_teximage, 4, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeX.png", skybox_teximage, 5, 0 );
 
 	Image* explosion_teximage = resource_manager->create_texture ( 256, 256, 0, 32, 1, ImageFormat::e4Unorm8 );
 	for ( int i = 0; i < 32; i++ ) {
@@ -313,7 +313,7 @@ void World::init ( Instance* instance ) {
 	for ( Model& model : xwing_models ) instance->set_context ( model, x_context );
 
 	world_shard.skybox_context = instance->create_context ( skybox_context_base_id );
-	instance->update_context_image ( world_shard.skybox_context, 0, skybox_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
+	instance->update_context_image ( world_shard.skybox_context, 0, skybox_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 6} ) );
 	instance->update_context_sampler ( world_shard.skybox_context, 0, sampler );
 	instance->set_context ( cube_model, world_shard.skybox_context );
 

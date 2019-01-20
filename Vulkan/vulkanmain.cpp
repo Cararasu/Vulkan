@@ -72,13 +72,13 @@ int main ( int argc, char **argv ) {
 
 	Extent2D<s32> window_size ( 1000, 600 );
 	window->position() = primMonitor->offset + ( ( primMonitor->extend / 2 ) - ( window_size / 2 ) );
+	window->showmode() = WindowShowMode::eMaximized;
+	window->fullscreen_monitor() = nullptr;
 	window->size() = window_size;
 	window->visible() = true;
 
-	window->update();
-	//*window->position() = {100, 100};
-	//*window->size() = {800, 800};
 	window->cursor_mode() = CursorMode::eInvisible;
+	window->update();
 
 	Array<Context> sm_contexts = {
 		instance->create_context ( camera_context_base_id ),
@@ -149,7 +149,7 @@ int main ( int argc, char **argv ) {
 		Timing timer ( &g_logger, "Main-Loop" );
 
 		if ( g_state.current_time >= 0.81 && !explosion ) {
-			world.billboards.resize ( 200 );
+			world.billboards.resize ( 500 );
 			for ( size_t i = 0; i < world.billboards.size(); i++ ) {
 				float size = f_rand() * 8.0f + 2.0f;
 				float speed = f_rand();
@@ -174,7 +174,7 @@ int main ( int argc, char **argv ) {
 			case OSEventType::eButton: {
 				bool ispressed = event.button.action != PressAction::eRelease;
 				if ( event.button.keycode == KeyCode::eF10 && event.button.action == PressAction::ePress ) {
-					window->maximized() = !window->maximized();
+					window->showmode() = window->showmode() == WindowShowMode::eMaximized ? WindowShowMode::eWindowed : WindowShowMode::eMaximized;
 					window->update();
 				}
 				if ( event.button.keycode != KeyCode::eUnknown ) {

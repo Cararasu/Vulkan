@@ -20,6 +20,11 @@ enum class WindowAlphaBlend {
 	eOpaque,
 	eBlend
 };
+enum class WindowShowMode {
+	eMaximized,
+	eMinimized,
+	eWindowed
+};
 
 
 class Window {
@@ -27,8 +32,7 @@ protected:
 	ChangeableValue<Offset2D<s32>> m_position = Offset2D<s32> ( 100, 100 );
 	ChangeableValue<Extent2D<s32>> m_size = Extent2D<s32> ( 200, 200 );
 	ChangeableValue<u32> m_refreshrate = 60;
-	ChangeableValue<bool> m_maximized = false;
-	ChangeableValue<bool> m_minimized = false;
+	ChangeableValue<WindowShowMode> m_showmode = WindowShowMode::eWindowed;
 	ChangeableValue<bool> m_focused = true;
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
@@ -55,11 +59,8 @@ public:
 	const ChangeableValue<u32>& refreshrate() {
 		return m_refreshrate;
 	}
-	const ChangeableValue<bool>& maximized() {
-		return m_maximized;
-	}
-	const ChangeableValue<bool>& minimized() {
-		return m_minimized;
+	const ChangeableValue<WindowShowMode>& showmode() {
+		return m_showmode;
 	}
 	const ChangeableValue<bool>& focused() {
 		return m_focused;

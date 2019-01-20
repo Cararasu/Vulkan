@@ -343,8 +343,8 @@
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.vert -o ../workingdir/shader/shot.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shot.frag -o ../workingdir/shader/shot.frag.sprv</Command>
         <Command Enabled="yes"/>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.vert -o ../workingdir/shader/shotlight.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/shotlight.frag -o ../workingdir/shader/shotlight.frag.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/locallight.vert -o ../workingdir/shader/locallight.vert.sprv</Command>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/locallight.frag -o ../workingdir/shader/locallight.frag.sprv</Command>
         <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/billboard.vert -o ../workingdir/shader/billboard.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/billboard.frag -o ../workingdir/shader/billboard.frag.sprv</Command>
@@ -353,7 +353,6 @@
         <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/passthrough.vert -o ../workingdir/shader/passthrough.vert.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/model_passthrough.vert -o ../workingdir/shader/model_passthrough.vert.sprv</Command>
-        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/null.frag -o ../workingdir/shader/null.frag.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/lightless.frag -o ../workingdir/shader/lightless.frag.sprv</Command>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/dirlight.frag -o ../workingdir/shader/dirlight.frag.sprv</Command>
         <Command Enabled="yes"/>

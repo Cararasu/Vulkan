@@ -288,10 +288,20 @@ VWindow::~VWindow() {
 
 void VWindow::initialize() {
 	glfwWindowHint ( GLFW_CLIENT_API, GLFW_NO_API );
-	glfwWindowHint ( GLFW_MAXIMIZED, ( bool ) m_maximized.wanted );
-	glfwWindowHint ( GLFW_AUTO_ICONIFY, ( bool ) m_minimized.wanted );
-	glfwWindowHint ( GLFW_FOCUSED, ( bool ) m_focused.wanted );
-	glfwWindowHint ( GLFW_DECORATED, ( bool ) m_decorated.wanted );
+	switch(m_showmode.wanted) {
+	case WindowShowMode::eMaximized:
+		glfwWindowHint ( GLFW_MAXIMIZED, true );
+		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
+		break;
+	case WindowShowMode::eMinimized:
+		glfwWindowHint ( GLFW_MAXIMIZED, false );
+		glfwWindowHint ( GLFW_AUTO_ICONIFY, true );
+		break;
+	case WindowShowMode::eWindowed:
+		glfwWindowHint ( GLFW_MAXIMIZED, false );
+		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
+		break;
+	}
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
 
@@ -307,8 +317,11 @@ void VWindow::initialize() {
 	}
 
 	window = glfwCreateWindow ( m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr );
-
-	glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
+	
+	if(m_showmode.wanted == WindowShowMode::eWindowed) {
+		glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
+	}
+	m_showmode.apply();
 
 	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), v_logger.log<LogLevel::eError> ( "Creation of Surface failed" ) );
 
@@ -391,8 +404,8 @@ void VWindow::initialize() {
 			event.type = OSEventType::eWindow;
 			event.window.action = WindowAction::eIconify;
 			event.window.value = iconified == GLFW_TRUE;
+			vulkan_window->m_showmode.apply ( iconified == GLFW_TRUE ? WindowShowMode::eMinimized : WindowShowMode::eWindowed );
 			vulkan_window->eventqueue.push(event);
-			vulkan_window->m_minimized.apply ( iconified == GLFW_TRUE );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -639,39 +652,35 @@ RendResult VWindow::v_update() {
 				}
 				m_visible.apply();
 			}
-			//minimized
-			if ( m_minimized.changed() && !m_fullscreen_monitor.wanted ) {
-				if(m_maximized.wanted)
+			if(m_showmode.changed()) {
+				switch(m_showmode.wanted) {
+				case WindowShowMode::eMaximized:
+					if(m_fullscreen_monitor.wanted) {
+						VMonitor* vulkan_monitor = dynamic_cast<VMonitor*> ( m_fullscreen_monitor.wanted );
+						if ( vulkan_monitor ) {
+							VideoMode wanted_mode = vulkan_monitor->find_best_videomode ( m_size.wanted, m_refreshrate.wanted );
+							m_size = wanted_mode.extend;
+							m_refreshrate = wanted_mode.refresh_rate;
+						}
+						glfwSetWindowMonitor ( window, vulkan_monitor ? vulkan_monitor->monitor : nullptr, m_position.wanted.x, m_position.wanted.y, m_size.wanted.x, m_size.wanted.y, m_refreshrate.wanted );
+						m_fullscreen_monitor.apply();
+					} else {
+						glfwMaximizeWindow ( window );
+					}
+					break;
+				case WindowShowMode::eMinimized:
 					glfwIconifyWindow ( window );
-				else 
+					break;
+				case WindowShowMode::eWindowed:
 					glfwRestoreWindow ( window );
-				m_minimized.apply();
-			}
-			//maximized and not fullscreen
-			else if ( m_maximized.changed() && !m_fullscreen_monitor.wanted ) {
-				if(m_maximized.wanted)
-					glfwMaximizeWindow ( window );
-				else 
-					glfwRestoreWindow ( window );
-				m_maximized.apply();
-			}
-			//fullscreen, window mode cnd coming out of minimized or maximized
-			else if ( m_fullscreen_monitor.changed() ) {
-				VMonitor* vulkan_monitor = dynamic_cast<VMonitor*> ( m_fullscreen_monitor.wanted );
-				if ( vulkan_monitor ) {
-					VideoMode wanted_mode = vulkan_monitor->find_best_videomode ( m_size.wanted, m_refreshrate.wanted );
-					m_size = wanted_mode.extend;
-					m_refreshrate = wanted_mode.refresh_rate;
+					break;
 				}
-				glfwSetWindowMonitor ( window, vulkan_monitor ? vulkan_monitor->monitor : nullptr, m_position.wanted.x, m_position.wanted.y, m_size.wanted.x, m_size.wanted.y, m_refreshrate.wanted );
-				m_fullscreen_monitor.apply();
-				break;
 			}
 			if ( m_size.changed() ) {
-				glfwSetWindowSize ( window, m_size.wanted.x, m_size.wanted.y );
+				//glfwSetWindowSize ( window, m_size.wanted.x, m_size.wanted.y );
 			}
 			if ( m_position.changed() ) {
-				glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
+				//glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 			}
 			break;
 		}
@@ -798,8 +807,6 @@ void VWindow::create_swapchain() {
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
 	v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", extent.x, extent.y );
-	v_logger.log<LogLevel::eTrace> ( "Minimized %d", m_minimized.value );
-	v_logger.log<LogLevel::eTrace> ( "Visible %d", m_minimized.value );
 
 	if ( extent.x > 0 && extent.y > 0 )
 		create_swapchain();
