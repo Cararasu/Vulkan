@@ -83,10 +83,8 @@ VDividableBufferStore::VDividableBufferStore ( VInstance* v_instance, vk::Buffer
 VDividableBufferStore::~VDividableBufferStore() {
 	destroy();
 }
-    //DeviceSize size;
-    //DeviceSize alignment;
-    //uint32_t memoryTypeBits;
 VThinBuffer VDividableBufferStore::acquire_buffer(u64 size) {
+	last_frame_index_acquired = v_instance->frame_index;
 	vk::Device device = v_instance->vk_device ();
 	vk::Buffer buffer;
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );

@@ -364,20 +364,21 @@ VInstance::VInstance() {
 	} );
 
 
+	current_free_data = new PerFrameData();
 	initialized = true;
 	
 }
 
 VInstance::~VInstance() {
 	wait_for_frame ( frame_index );
-	while (!ready_staging_buffer_queue.empty()) {
-		delete ready_staging_buffer_queue.front();
-		ready_staging_buffer_queue.pop();
+	assert(per_frame_queue.empty());
+	for(VDividableBufferStore* store : free_data.staging_buffer_stores ) delete store;
+	
+	if(current_staging_buffer_store) {
+		delete current_staging_buffer_store;
+		current_staging_buffer_store = nullptr;
 	}
-	while (!free_staging_buffer_queue.empty()) {
-		delete free_staging_buffer_queue.front().second;
-		free_staging_buffer_queue.pop();
-	}
+	for( vk::Fence fence : free_data.fences ) vk_device().destroyFence ( fence );
 	for ( auto& ele : v_model_map ) {
 		for ( VModel* model : ele.second ) {
 			if ( model ) delete model;
@@ -403,9 +404,6 @@ VInstance::~VInstance() {
 	}
 	for ( std::pair<ContextBaseId, VContextBase> ele : contextbase_map ) {
 		if ( ele.second.descriptorset_layout ) vk_device().destroyDescriptorSetLayout ( ele.second.descriptorset_layout );
-	}
-	for ( vk::Fence fence : free_fences ) {
-		vk_device().destroyFence ( fence );
 	}
 	delete context_bufferstorage;
 	vk_device().destroyCommandPool ( transfer_commandpool );

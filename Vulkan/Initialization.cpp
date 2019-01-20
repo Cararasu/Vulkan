@@ -21,15 +21,14 @@ void register_shaders ( Instance* instance ) {
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shot_shader", "shader/shot.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shot_shader", "shader/shot.frag.sprv" );
 
-	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_shotlight_shader", "shader/shotlight.vert.sprv" );
-	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_shotlight_shader", "shader/shotlight.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_locallight_shader", "shader/locallight.vert.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_locallight_shader", "shader/locallight.frag.sprv" );
 
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "vert_billboard_shader", "shader/billboard.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "frag_billboard_shader", "shader/billboard.frag.sprv" );
 
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "model_passthrough_shader", "shader/model_passthrough.vert.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eVertex, "passthrough_shader", "shader/passthrough.vert.sprv" );
-	instance->resource_manager()->load_shader ( ShaderType::eFragment, "null_shader", "shader/null.frag.sprv" );
 
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "dirlight_shader", "shader/dirlight.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "lightless_shader", "shader/lightless.frag.sprv" );

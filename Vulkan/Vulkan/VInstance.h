@@ -64,6 +64,12 @@ struct VSimpleTransferJob {
 	vk::BufferCopy sections;
 };
 
+struct PerFrameData  {
+	u64 frame_index;
+	DynArray<VDividableBufferStore*> staging_buffer_stores;
+	DynArray<vk::Fence> fences;
+	DynArray<vk::CommandBuffer> command_buffers;
+};
 
 struct VInstance : public Instance {
 	InstanceOptions options;
@@ -83,6 +89,11 @@ struct VInstance : public Instance {
 	bool initialized = false;
 	u64 frame_index = 1;
 	u64 last_completed_frame_index = 0;
+	
+	PerFrameData free_data;
+	PerFrameData* current_free_data = nullptr;
+	std::queue<PerFrameData*> per_frame_queue;
+	DynArray<PerFrameData*> per_frame_datas;
 
 	VInstance();
 	virtual ~VInstance();
@@ -144,22 +155,15 @@ struct VInstance : public Instance {
 
 //------------ Transfer Data
 //TODO move to seperate Transfer-Object which wraps all this in one logical unit
-	std::queue<std::pair<u64, VDividableBufferStore*>> free_staging_buffer_queue;
-	std::queue<VDividableBufferStore*> ready_staging_buffer_queue;
 	VDividableBufferStore* current_staging_buffer_store = nullptr;
 
 	VThinBuffer request_staging_buffer ( u64 size );
-
-	DynArray<vk::Fence> free_fences;
-	std::queue<std::pair<u64, vk::Fence>> free_fence_queue;
 
 	vk::Fence request_fence();
 	void free_fence ( vk::Fence fence );
 
 	vk::CommandPool transfer_commandpool;
-	DynArray<vk::CommandBuffer> free_command_buffers;
-	std::queue<std::pair<u64, vk::CommandBuffer>> free_command_buffer_queue;
-
+	
 	vk::CommandBuffer request_transfer_command_buffer();
 	void free_transfer_command_buffer ( vk::CommandBuffer buffer );
 
@@ -176,6 +180,7 @@ struct VInstance : public Instance {
 
 	//wait until frame completion
 	void wait_for_frame ( u64 frame_index );
+	void prepare_frame ();
 
 	void schedule_on_frame_finish ( FrameFinishCallback callback );
 	void schedule_on_current_frame_finish ( FrameFinishCallback callback );

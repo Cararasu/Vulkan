@@ -149,8 +149,14 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 		    0, nullptr//signalSem
 		)
 	};
-	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
-
+	vk::Fence fence = v_instance->request_fence();
+	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, fence );
+	//TODO make asynch
+	if ( fence ) {
+		v_instance->vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
+		v_instance->vk_device().resetFences ( {fence} );
+		v_instance->free_data.fences.push_back ( fence );
+	}
 	stbi_image_free ( pixels );
 	return image;
 }
@@ -191,8 +197,14 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 		    0, nullptr//signalSem
 		)
 	};
-	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, vk::Fence() );
-
+	vk::Fence fence = v_instance->request_fence();
+	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, fence );
+	//TODO make asynch
+	if ( fence ) {
+		v_instance->vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
+		v_instance->vk_device().resetFences ( {fence} );
+		v_instance->free_data.fences.push_back ( fence );
+	}
 	stbi_image_free ( pixels );
 	return v_image;
 }

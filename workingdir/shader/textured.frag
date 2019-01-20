@@ -20,7 +20,7 @@ void main() {
 	vec4 ambientcolor = texture(sampler2D(diffuseTexture, textureSampler), vec2(v_texCoord.x, -1.0f * v_texCoord.y));
    
 	outColor = ambientcolor;
-	outColor.w = 1/255.0;
+	outColor.w = 1/51.0;
 	outNormal = normal_direction.xy;
 	outSpecular = vec4(v_position, 1.0);//gl_FragCoord / vec4(500.0, 500.0, 1.0, 1.0);
 }

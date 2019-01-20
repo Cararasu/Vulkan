@@ -79,12 +79,14 @@ Sphere find_center_of_sphere(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3
     }
 	return {glm::vec3(Xo, Yo, Zo), r};
 }
+
 Camera generate_shadowmap_camera(Camera* cam, glm::vec3 light_dir, float near, float far){
 	
 	Camera shadowmap_camera = *cam;
 	shadowmap_camera.near = near;
 	shadowmap_camera.far = far;
 	
+	//maybe we want to transform view space directly into light view space
 	glm::mat4 s2w_matrix = glm::inverse(shadowmap_camera.v2s_mat() * shadowmap_camera.orientation.w2v_mat());
 	
 	glm::vec3 forward = glm::normalize(light_dir);
@@ -103,13 +105,14 @@ Camera generate_shadowmap_camera(Camera* cam, glm::vec3 light_dir, float near, f
 	far1 /= far1.w;
 	far2 /= far2.w;
 	
+	//can probably be calculated more easily with aspect and fov only but I have no idea how to do that
 	Sphere sphere = find_center_of_sphere(near1, near2, far1, far2);
 	return Camera( 
-		sphere.center, 
+		sphere.center,
 		forward * (sphere.range + 1000.0f), 
 		glm::vec3(0.0f, 1.0f, 0.0f), 
-		-sphere.range, sphere.range, 
-		sphere.range, -sphere.range, 
-		1.0f, 
-		1000.0f + (4.0f/*THis should be 2.0 but somehow this is too little*/ * sphere.range));
+		-1.0f * sphere.range, sphere.range,
+		sphere.range, -1.0f * sphere.range, 
+		0.0f, 
+		1000.0f + (2.0f * sphere.range));
 }

@@ -485,7 +485,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
 	}
 }
-void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
+void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
 		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
 
@@ -553,7 +553,7 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 
 		vk::PipelineRasterizationStateCreateInfo rasterizer ( vk::PipelineRasterizationStateCreateFlags(),
 		        VK_FALSE, VK_FALSE, //depthClampEnable, rasterizerDiscardEnable
-		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eCounterClockwise,
+		        vk::PolygonMode::eFill, vk::CullModeFlagBits::eFront, vk::FrontFace::eClockwise,
 		        VK_FALSE, //depthBiasEnable
 		        0.0f, //depthBiasConstantFactor
 		        0.0f, //depthBiasClamp
@@ -603,8 +603,8 @@ void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		{0.0f, 0.0f, 0.0f, 0.0f} //blendConstants
 		);
 
-		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_shotlight_shader" ) );
-		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_shotlight_shader" ) );
+		VShaderModule* vmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "vert_locallight_shader" ) );
+		VShaderModule* fmod = v_instance->m_resource_manager->v_get_shader ( StringReference ( "frag_locallight_shader" ) );
 
 		vk::PipelineShaderStageCreateInfo shaderStages[3] = {
 			vk::PipelineShaderStageCreateInfo (
@@ -1212,7 +1212,7 @@ VMainRenderStage::VMainRenderStage ( VInstance* instance ) :
 	skybox_pipeline ( simple_modelbase_id, skybox_instance_base_id, {}, {skybox_context_base_id} ),
 	dirlight_pipeline ( fullscreen_modelbase_id, dirlight_instance_base_id, {camera_context_base_id, lightvector_base_id, shadowmap_context_base_id}, {} ),
 	lightless_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {}, {} ),
-	shotlight_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
+	locallight_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
 	shot_pipeline ( simple_modelbase_id, shot_instance_base_id, {camera_context_base_id}, {} ),
 	billboard_pipeline ( simple_modelbase_id, billboard_instance_base_id, {camera_context_base_id}, {explosion_context_base_id} ),
 	v_per_frame_data ( MAX_PRESENTIMAGE_COUNT ),
@@ -1274,7 +1274,7 @@ void VMainRenderStage::v_destroy_pipeline_layouts() {
 	
 	destroy_pipeline_layout ( v_instance, &lightless_pipeline );
 	destroy_pipeline_layout ( v_instance, &dirlight_pipeline );
-	destroy_pipeline_layout ( v_instance, &shotlight_pipeline );
+	destroy_pipeline_layout ( v_instance, &locallight_pipeline );
 	destroy_pipeline_layout ( v_instance, &shot_pipeline );
 	destroy_pipeline_layout ( v_instance, &billboard_pipeline );
 }
@@ -1286,7 +1286,7 @@ void VMainRenderStage::v_destroy_pipelines() {
 	
 	destroy_pipeline ( v_instance, &lightless_pipeline );
 	destroy_pipeline ( v_instance, &dirlight_pipeline );
-	destroy_pipeline ( v_instance, &shotlight_pipeline );
+	destroy_pipeline ( v_instance, &locallight_pipeline );
 	destroy_pipeline ( v_instance, &shot_pipeline );
 	destroy_pipeline ( v_instance, &billboard_pipeline );
 	
@@ -1365,7 +1365,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &lightless_pipeline );
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &dirlight_pipeline );
-	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &shotlight_pipeline );
+	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &locallight_pipeline );
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &shot_pipeline );
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &billboard_pipeline );
 
@@ -1524,7 +1524,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 	
 	gen_lightless_pipeline ( v_instance, &lightless_pipeline, viewport, v_renderpass );
 	gen_dirlight_pipeline ( v_instance, &dirlight_pipeline, viewport, v_renderpass );
-	gen_shotlight_pipeline ( v_instance, &shotlight_pipeline, viewport, v_renderpass );
+	gen_locallight_pipeline ( v_instance, &locallight_pipeline, viewport, v_renderpass );
 	gen_shot_pipeline ( v_instance, &shot_pipeline, viewport, v_renderpass );
 	gen_billboard_pipeline ( v_instance, &billboard_pipeline, viewport, v_renderpass );
 	last_frame_index_pipeline_built = v_instance->frame_index;
@@ -1608,7 +1608,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &lightless_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &dirlight_pipeline, &subpass_inputs[1], buffer );
-	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &shotlight_pipeline, &subpass_inputs[1], buffer );
+	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &locallight_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &shot_pipeline, &subpass_inputs[1], buffer );
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &billboard_pipeline, &subpass_inputs[1], buffer );
 	//render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &engine_pipeline, &subpass_inputs[1], buffer );

@@ -13,6 +13,7 @@ out gl_PerVertex {
 };
 
 void main() {
-	gl_Position = vec4((pos * vec3(2.0, 2.0, 1.0)) + vec3(-1.0, -1.0, 0.0), 1.0);
-	v_position = vec3(pos.xy, -1.0);
+	gl_Position = vec4((pos * vec3(2.0, 2.0, 1.0)) - vec3(1.0, 1.0, 0.0), 1.0);
+	v_position = gl_Position.xyz;
+	v_position.y = -v_position.y;
 }

@@ -376,6 +376,7 @@ void VMainBundle::v_dispatch ( ) {
 		window_dependency->rendering_mutex.lock();
 		window_dependency->prepare_frame();
 		index = window_dependency->present_image_index;
+		v_instance->prepare_frame();
 	}
 
 	QueueWrapper* queue_wrapper = &v_instance->queues;

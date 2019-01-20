@@ -13,11 +13,7 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput i
 layout(location = 0) in vec3 v_position;
 
 layout (set=1, binding = 0) uniform cameraUniformBuffer {
-	layout(offset = 0) mat4 v2sMatrix;
 	layout(offset = 64) mat4 inv_v2sMatrix;
-	layout(offset = 128) mat4 w2vMatrix;
-	layout(offset = 192) mat4 inv_w2vMatrix;
-	layout(offset = 256) vec3 eyepos;
 } camera;
 
 layout (set=2, binding = 0) uniform lightVectorBuffer {
@@ -33,16 +29,18 @@ layout (set=3, binding = 0) uniform shadowMapBuffer {
 layout (set=3, binding = 1) uniform texture2DArray shadowTexture;
 layout (set=3, binding = 2) uniform sampler sampl; 
 
-vec3 reconstruct_pos_from_depth() {
-	vec4 screenpos = vec4((v_position.x * 2.0) - 1.0, (v_position.y * -2.0) + 1.0, subpassLoad(inputDepth).x, 1.0);
-	vec4 view_pos = camera.inv_v2sMatrix * screenpos;
-	return view_pos.xyz / view_pos.w;
-}
 const mat4 screenspace_to_coords_mat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
 	0.0, 0.5, 0.0, 0.0,
 	0.0, 0.0, 1.0, 0.0,
 	0.5, 0.5, 0.0, 1.0 );
+	
+vec3 reconstruct_pos_from_depth() {
+	vec4 screenpos = vec4(v_position.x, v_position.y, subpassLoad(inputDepth).x, 1.0);
+	vec4 view_pos = camera.inv_v2sMatrix * screenpos;
+	return view_pos.xyz / view_pos.w;
+}
+
 	
 void main() {
 	//this is in view space
@@ -68,7 +66,7 @@ void main() {
 		}
 	}
 	vec4 diffuseInput = subpassLoad(inputDiffuse);
-	vec3 diffuseColor = diffuseInput.rgb * (diffuseInput.w * 255);
+	vec3 diffuseColor = diffuseInput.rgb * (diffuseInput.w * 51.0);
 	
 	
 	outLightAccumulation = vec4(0.0, 0.0, 0.0, 1.0);
@@ -81,6 +79,8 @@ void main() {
 			pos_in_shadowmap = screenspace_to_coords_mat * pos_in_shadowmap;//screen space -> coordinates of texture
 			pos_in_shadowmap /= pos_in_shadowmap.w;
 			inlight = texture( sampler2DArrayShadow(shadowTexture, sampl), vec4(pos_in_shadowmap.x, pos_in_shadowmap.y, float(i), pos_in_shadowmap.z) );
+			//outLightAccumulation = pos_in_shadowmap;
+			//return;
 			break;
 		}
 	}

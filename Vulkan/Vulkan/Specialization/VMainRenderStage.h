@@ -8,7 +8,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 
 void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
-void gen_shotlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
+void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index = 0 );
 
@@ -21,7 +21,7 @@ struct VMainRenderStage : public VRenderStage {
 	
 	PipelineStruct lightless_pipeline;
 	PipelineStruct dirlight_pipeline;
-	PipelineStruct shotlight_pipeline;
+	PipelineStruct locallight_pipeline;
 	PipelineStruct shot_pipeline;
 	PipelineStruct billboard_pipeline;
 	

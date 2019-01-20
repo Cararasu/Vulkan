@@ -4,9 +4,9 @@
 //output
 layout(location = 0) out vec4 outLightAccumulation;
 
-layout(location = 0) in vec3 g_position;
-layout(location = 1) in vec3 g_lightpos;
-layout(location = 2) in vec4 g_umbraColor_range;
+layout(location = 0) in vec3 v_position;
+layout(location = 1) in vec3 v_lightpos;
+layout(location = 2) in vec4 v_umbraColor_range;
 
 layout (input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput inputDiffuse;
 layout (input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput inputNormal;
@@ -19,7 +19,7 @@ layout (set=1, binding = 0) uniform cameraUniformBuffer {
 } camera;
 
 vec3 reconstruct_pos_from_depth() {
-	vec4 screenpos = vec4((g_position.x * 2.0) - 1.0, (g_position.y * 2.0) - 1.0, subpassLoad(inputDepth).x, 1.0);
+	vec4 screenpos = vec4(v_position.x, v_position.y, subpassLoad(inputDepth).x, 1.0);
 	vec4 view_pos = camera.inv_v2sMatrix * screenpos;
 	return view_pos.xyz / view_pos.w;
 }
@@ -30,12 +30,12 @@ void main() {
 	vec3 view_direction = normalize(-pos);
 	vec2 normal_temp = subpassLoad(inputNormal).rg;
 	vec3 normal_direction = vec3(normal_temp, sqrt(1 - normal_temp.x*normal_temp.x - normal_temp.y*normal_temp.y));
-	vec3 lightvec = g_lightpos - pos;
+	vec3 lightvec = v_lightpos - pos;
 	vec3 light_direction = normalize(lightvec);
 	
 	float distance = length(lightvec);
 	
-	float intensity = (g_umbraColor_range.w - min(distance, g_umbraColor_range.w)) / g_umbraColor_range.w;
+	float intensity = (v_umbraColor_range.w - min(distance, v_umbraColor_range.w)) / v_umbraColor_range.w;
 	intensity *= intensity;
 	
 	float lambertian = max(dot(light_direction, normal_direction), 0.0);
@@ -53,9 +53,9 @@ void main() {
 		}
 	}
 	vec4 diffuseColor = subpassLoad(inputDiffuse);
-	diffuseColor = diffuseColor * (diffuseColor.w * 255);
+	diffuseColor = diffuseColor * (diffuseColor.w * 51.0);
 	
-	vec3 reflectcolor = diffuseColor.rgb * g_umbraColor_range.rgb * (lambertian + 0.1);
+	vec3 reflectcolor = diffuseColor.rgb * v_umbraColor_range.rgb * (lambertian + 0.1);
    
-	outLightAccumulation = vec4(reflectcolor * intensity * specular, 1.0);
+	outLightAccumulation = vec4(reflectcolor * (intensity * specular * 2.0 + intensity), 1.0);
 }

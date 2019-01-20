@@ -30,6 +30,7 @@ struct VBuffer {
 
 	void destroy();
 };
+//TODO move to BufferUse similar to ImageUse
 struct VThinBuffer {
 	VInstance* v_instance = nullptr;
 	vk::Buffer buffer;
@@ -46,7 +47,8 @@ struct VDividableMemory {
 	u64 offset;
 	void* mapped_ptr = nullptr;
 };
-constexpr u64 MAX_MEMORY_CUNK_SIZE = 128 * 1024;
+//store for staging buffers
+constexpr u64 MAX_MEMORY_CUNK_SIZE = 16 * 1024 * 1024;
 struct VDividableBufferStore {
 	VInstance* v_instance;
 	DynArray<VDividableMemory> memory_chunks;
@@ -55,6 +57,7 @@ struct VDividableBufferStore {
 	vk::BufferUsageFlags usage;
 	vk::MemoryPropertyFlags needed;
 	vk::MemoryPropertyFlags recommended;
+	u64 last_frame_index_acquired = 0;
 
 	VDividableBufferStore ( VInstance* v_instance, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags() );
 	~VDividableBufferStore();

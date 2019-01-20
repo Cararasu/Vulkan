@@ -42,11 +42,11 @@ GameState g_state;
 //TODO independentBlend
 
 //TODO samplerAnisotropy
-//TODO shaderSampledImageArrayDynamicIndexing 
+//TODO shaderSampledImageArrayDynamicIndexing
 //TODO shaderUniformBufferArrayDynamicIndexing
 
 int main ( int argc, char **argv ) {
-	
+
 	Instance* instance = create_instance ( "Vulkan" );
 	instance->initialize ( InstanceOptions() );
 
@@ -87,24 +87,24 @@ int main ( int argc, char **argv ) {
 	};
 
 	World world;
-	
-	world.init(instance);
-	world.light_vector = glm::normalize(glm::vec3(-1.0, -1.0, -1.0));
+
+	world.init ( instance );
+	world.light_vector = glm::normalize ( glm::vec3 ( -1.0, -1.0, -1.0 ) );
 
 	RenderBundle* bundle = setup_renderbundle ( instance, window, &world, sm_contexts );
-	
-	world.xwings.resize(2);
+
+	world.xwings.resize ( 2 );
 	world.xwings[0].init ( glm::vec3 ( 5.0f, -5.0f, -10.0f ), glm::angleAxis ( glm::pi<float>() * 0.5f, glm::normalize ( glm::vec3 ( 0.3f, -1.0f, 0.0f ) ) ), 6.25f, 10.0f );
 	world.xwings[1].init ( glm::vec3 ( 20.0f, -0.0f, -5.0f ), glm::angleAxis ( glm::pi<float>() * 0.5f, glm::normalize ( glm::vec3 ( 0.25f, -1.0f, 0.0f ) ) ), 6.25f, 10.0f );
 
-	world.ties.resize(2);
+	world.ties.resize ( 2 );
 	world.ties[0].init ( glm::vec3 ( -75.0f, -30.0f, -7.5f ), glm::angleAxis ( glm::pi<float>() * 0.5f, glm::normalize ( glm::vec3 ( 0.27f, -1.0f, 0.0f ) ) ), 4.5f, 10.0f );
 	world.ties[1].init ( glm::vec3 ( 0.0f, 100.0f, 0.0f ), glm::angleAxis ( glm::pi<float>() * 0.7f, glm::normalize ( glm::vec3 ( 1.0f, -1.0f, 1.0f ) ) ), 4.5f, 10.0f );
 
-	world.gallofrees.resize(1);
+	world.gallofrees.resize ( 1 );
 	world.gallofrees[0].init ( glm::vec3 ( 30.0f, -20.0f, -30.0f ), glm::angleAxis ( glm::pi<float>() * 0.5f, glm::vec3 ( 0.0f, -1.0f, 0.0f ) ), 45.0f, 2.0f );
 
-	world.red_shots.resize(2);
+	world.red_shots.resize ( 2 );
 	{
 		glm::vec3 shot1_translation ( 4.6f, 0.25f, 7.0f );
 		glm::vec3 shot2_translation ( -4.6f, -0.4f, 7.0f );
@@ -113,7 +113,7 @@ int main ( int argc, char **argv ) {
 		world.red_shots[0].init ( world.xwings[0].position + shot1_translation, world.xwings[0].rotation, glm::vec3 ( 0.3f, 0.3f, 7.5f ), 100.0f );
 		world.red_shots[1].init ( world.xwings[0].position + shot2_translation, world.xwings[0].rotation, glm::vec3 ( 0.3f, 0.3f, 7.5f ), 100.0f );
 	}
-	world.green_shots.resize(2);
+	world.green_shots.resize ( 2 );
 	{
 		glm::vec3 shot1_translation ( 0.3f, -0.7f, 40.0f );
 		glm::vec3 shot2_translation ( -0.3f, -0.7f, 40.0f );
@@ -122,7 +122,7 @@ int main ( int argc, char **argv ) {
 		world.green_shots[0].init ( world.ties[1].position + shot1_translation, world.ties[1].rotation, glm::vec3 ( 0.3f, 0.3f, 7.5f ), 100.0f );
 		world.green_shots[1].init ( world.ties[1].position + shot2_translation, world.ties[1].rotation, glm::vec3 ( 0.3f, 0.3f, 7.5f ), 100.0f );
 	}
-	world.billboards.resize(0);
+	world.billboards.resize ( 0 );
 
 	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
 
@@ -130,9 +130,9 @@ int main ( int argc, char **argv ) {
 
 	g_state.camera = Camera ( glm::vec3 ( 0.0f, 0.0f, 0.0f ), glm::vec3 ( 0.0f, -40.0f, -40.0f ), glm::vec3 ( 0.0f, 1.0f, 0.0f ), 120.0f, 1.0f, 1.0f, 10000.0f );
 	g_state.init();
-	
-	setup_camerapoints(&g_state);
-	
+
+	setup_camerapoints ( &g_state );
+
 	bool explosion = false;
 	bool shot_despawn = false;
 
@@ -140,6 +140,7 @@ int main ( int argc, char **argv ) {
 
 	g_state.timescale = 1.0 / 100.0;
 	
+
 	while ( instance->is_window_open() ) {
 		g_state.update_tick();
 
@@ -191,10 +192,10 @@ int main ( int argc, char **argv ) {
 				keystate.time_pressed = g_state.current_time;
 
 				if ( event.button.keycode == KeyCode::ePlus || event.button.keycode == KeyCode::eKPAdd ) {
-					if(!g_state.debug_camera) {
-						if(event.button.action == PressAction::ePress) {
+					if ( !g_state.debug_camera ) {
+						if ( event.button.action == PressAction::ePress ) {
 							g_state.timescale = 1.0 / 10.0;
-						} else if(event.button.action == PressAction::eRelease) {
+						} else if ( event.button.action == PressAction::eRelease ) {
 							g_state.timescale = 1.0 / 100.0;
 						}
 					}
@@ -207,7 +208,7 @@ int main ( int argc, char **argv ) {
 				}
 				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eI ) {
 					g_state.debug_camera = !g_state.debug_camera;
-					if(g_state.debug_camera) {
+					if ( g_state.debug_camera ) {
 						g_state.timescale = 0.0;
 					} else {
 						g_state.timescale = 1.0 / 100.0;
@@ -257,7 +258,7 @@ int main ( int argc, char **argv ) {
 			break;
 			}
 		}
-		
+
 		float camera_move_factor = glm::length ( g_state.camera.orientation.view_vector ) * g_state.delta_real_time * 0.25f;
 
 		glm::vec3 move_vec ( 0.0f, 0.0f, 0.0f );
@@ -275,18 +276,18 @@ int main ( int argc, char **argv ) {
 		//this should happen internally in a seperate thread
 		//or outside in a seperate thread but probably internally is better
 		instance->process_events();
-		
+
 		world.world_shard.camera = g_state.camera;
-		world.shadow_shard[0].camera = generate_shadowmap_camera (&g_state.camera, world.light_vector, g_state.camera.near, 25.0f);
+		world.shadow_shard[0].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, g_state.camera.near, 75.0f );
 		world.shadow_shard[0].camera_near = g_state.camera.near;
-		world.shadow_shard[0].camera_far = 50.0f;
-		world.shadow_shard[1].camera = generate_shadowmap_camera (&g_state.camera, world.light_vector, 25.0f, 100.0f);
-		world.shadow_shard[1].camera_near = 50.0f;
-		world.shadow_shard[1].camera_far = 100.0f;
-		world.shadow_shard[2].camera = generate_shadowmap_camera (&g_state.camera, world.light_vector, 100.0f, 500.0f);
-		world.shadow_shard[2].camera_near = 100.0f;
+		world.shadow_shard[0].camera_far = 75.0f;
+		world.shadow_shard[1].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 75.0f, 200.0f );
+		world.shadow_shard[1].camera_near = 75.0f;
+		world.shadow_shard[1].camera_far = 200.0f;
+		world.shadow_shard[2].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 200.0f, 1000.0f );
+		world.shadow_shard[2].camera_near = 200.0f;
 		world.shadow_shard[2].camera_far = 1000.0f;
-		world.update_shards(g_state.delta_time);
+		world.update_shards ( g_state.delta_time );
 
 		instance->render_bundles ( {bundle} );
 	}

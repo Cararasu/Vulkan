@@ -606,18 +606,16 @@ void VWindow::initialize() {
 }
 
 void VWindow::prepare_frame() {
-	Timing timer(&v_logger, "Prepare Frame");
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 
 	FrameLocalData* data = current_framelocal_data();
-	v_instance->wait_for_frame ( data->frame_index );
 
 	//reset for frame
 	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
 	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
+	v_instance->wait_for_frame ( data->frame_index );
 
-	//TODO reset all needed command_buffers	
-	
+	//TODO reset all needed command_buffers
 	data->frame_index = v_instance->frame_index;
 }
 Image* VWindow::backed_image ( u32 index ) {
