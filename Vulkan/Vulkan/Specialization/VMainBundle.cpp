@@ -14,6 +14,7 @@
 #include "VBloomRenderStage.h"
 #include "VFinalCompositionRenderStage.h"
 #include "VShadowMapGeneration.h"
+#include "VHDRRenderStage.h"
 
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts ) {
@@ -311,7 +312,7 @@ void VCopyToScreenRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index 
 	window_image->transition_layout ( vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR, buffer );
 }
 VMainBundle::VMainBundle ( VInstance* instance ) :
-	stages ( 10 ),
+	stages ( 11 ),
 	dependencies(),
 	window_dependency ( nullptr ),
 	v_instance ( instance ),
@@ -332,7 +333,8 @@ VMainBundle::VMainBundle ( VInstance* instance ) :
 	stages[6] = new VBloomRenderStage ( instance );
 	stages[7] = new HBloomRenderStage ( instance );
 	stages[8] = new VFinalCompositionRenderStage ( instance );
-	stages[9] = new VCopyToScreenRenderStage ( instance );
+	stages[9] = new VHDRRenderStage ( instance );
+	stages[10] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
 	v_instance->vk_device ().destroyCommandPool ( commandpool );

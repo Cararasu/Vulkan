@@ -12,7 +12,11 @@ layout(location = 7) in mat4 normalMatrix;
 
 //global-info
 layout (set=0, binding = 0) uniform cameraUniformBuffer {
-	layout(offset = 0) mat4 v2sMatrix;
+	layout(offset = 0) mat4 v2sMatrix;//lv -> ls
+	//layout(offset = 64) mat4 inv_v2sMatrix;
+	layout(offset = 128) mat4 w2vMatrix;//v -> lv
+	//layout(offset = 192) mat4 inv_w2vMatrix;
+	//layout(offset = 256) vec4 eyepos;
 };
 
 out gl_PerVertex {
@@ -20,6 +24,6 @@ out gl_PerVertex {
 };
 
 void main() {
-    gl_Position = v2sMatrix * m2vMatrix * vec4(pos, 1.0f);
+    gl_Position = v2sMatrix * w2vMatrix * m2vMatrix * vec4(pos, 1.0f);
 	gl_Position.y = -gl_Position.y;
 }

@@ -68,11 +68,6 @@ struct ShadowShard {
 	Context camera_matrix;
 	CameraStruct cameradata;
 
-	DynArray<AnInstance> x_instances;
-	DynArray<AnInstance> tie_instances;
-	DynArray<AnInstance> gallofree_instances;
-
-	InstanceGroup* igroup;
 	ContextGroup* cgroup;
 
 	void update_shard ( World* world );

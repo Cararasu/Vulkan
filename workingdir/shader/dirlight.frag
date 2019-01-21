@@ -13,7 +13,11 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput i
 layout(location = 0) in vec3 v_position;
 
 layout (set=1, binding = 0) uniform cameraUniformBuffer {
+	//layout(offset = 0) mat4 v2sMatrix;
 	layout(offset = 64) mat4 inv_v2sMatrix;
+	//layout(offset = 128) mat4 w2vMatrix;
+	//layout(offset = 192) mat4 inv_w2vMatrix;
+	//layout(offset = 256) vec4 eyepos;
 } camera;
 
 layout (set=2, binding = 0) uniform lightVectorBuffer {
@@ -82,7 +86,7 @@ void main() {
 			break;
 		}
 	}
-	outLightAccumulation = vec4(diffuseInput.rgb * (((lambertian + specular) * inlight) + light.direction_amb.w), 1.0);
+	outLightAccumulation = vec4(light.color.rgb * diffuseInput.rgb * (((lambertian + specular * 2.0) * inlight) + light.direction_amb.w), 1.0);
 }
 
 

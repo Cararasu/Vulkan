@@ -81,24 +81,25 @@ Sphere find_center_of_sphere(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3
 }
 
 Camera generate_shadowmap_camera(Camera* cam, glm::vec3 light_dir, float near, float far){
+	glm::vec4 light_vec_in_view_space = cam->orientation.w2v_rot_mat() * glm::vec4(light_dir, 1.0);
+	light_vec_in_view_space /= light_vec_in_view_space.w;
 	
 	Camera shadowmap_camera = *cam;
 	shadowmap_camera.near = near;
 	shadowmap_camera.far = far;
 	
-	//maybe we want to transform view space directly into light view space
-	glm::mat4 s2w_matrix = glm::inverse(shadowmap_camera.v2s_mat() * shadowmap_camera.orientation.w2v_mat());
+	glm::mat4 s2v_matrix = glm::inverse(shadowmap_camera.v2s_mat());
 	
-	glm::vec3 forward = glm::normalize(light_dir);
+	glm::vec3 forward = glm::normalize(glm::vec3(light_vec_in_view_space));
 	//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 	//glm::vec3 right = glm::normalize(glm::cross(forward, up));
 	//up = glm::normalize(glm::cross(right, forward));
 	
-	glm::vec4 near1 = s2w_matrix * glm::vec4(-1.0f, -1.0f, 0.0f, 1.0);//top left
-	glm::vec4 near2 = s2w_matrix * glm::vec4(1.0f, 1.0f, 0.0f, 1.0);//bottom right
+	glm::vec4 near1 = s2v_matrix * glm::vec4(-1.0f, -1.0f, 0.0f, 1.0);//top left
+	glm::vec4 near2 = s2v_matrix * glm::vec4(1.0f, 1.0f, 0.0f, 1.0);//bottom right
 	
-	glm::vec4 far1 = s2w_matrix * glm::vec4(-1.0f, 1.0f, 1.0f, 1.0);//bottom left
-	glm::vec4 far2 = s2w_matrix * glm::vec4(1.0f, -1.0f, 1.0f, 1.0);//top right
+	glm::vec4 far1 = s2v_matrix * glm::vec4(-1.0f, 1.0f, 1.0f, 1.0);//bottom left
+	glm::vec4 far2 = s2v_matrix * glm::vec4(1.0f, -1.0f, 1.0f, 1.0);//top right
 	
 	near1 /= near1.w;
 	near2 /= near2.w;

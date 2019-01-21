@@ -35,6 +35,8 @@
       <File Name="Vulkan/VTransformEnums.cpp"/>
       <File Name="Vulkan/VTransformEnums.h"/>
       <VirtualDirectory Name="Specialization">
+        <File Name="Vulkan/Specialization/VHDRRenderStage.cpp"/>
+        <File Name="Vulkan/Specialization/VHDRRenderStage.h"/>
         <File Name="Vulkan/Specialization/VShadowMapGeneration.cpp"/>
         <File Name="Vulkan/Specialization/VShadowMapGeneration.h"/>
         <File Name="Vulkan/Specialization/VFinalCompositionRenderStage.cpp"/>
@@ -211,6 +213,8 @@
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/vbloom.frag -o ../workingdir/shader/vbloom.frag.sprv</Command>
         <Command Enabled="yes"/>
         <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/composition.frag -o ../workingdir/shader/composition.frag.sprv</Command>
+        <Command Enabled="yes"/>
+        <Command Enabled="yes">$(VULKAN_PATH)/bin/glslc ../workingdir/shader/hdr.frag -o ../workingdir/shader/hdr.frag.sprv</Command>
         <Command Enabled="yes"/>
         <Command Enabled="yes"/>
         <Command Enabled="yes"/>

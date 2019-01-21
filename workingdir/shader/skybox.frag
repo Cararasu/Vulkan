@@ -26,7 +26,7 @@ void main() {
 	if(int(v_texCoord.z + 0.5) <= 5) {
 		outColor = texture(sampler2DArray(skyboxTextures, textureSampler), v_texCoord);
 	}
-	outColor.w = 1.0/51.0;
+	outColor.w = 2.0/51.0;
 	outNormal = vec2(0.0, 0.0);
 	outSpecular = vec4(0.0, 0.0, 0.0, 0.0);
 }

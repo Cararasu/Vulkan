@@ -35,6 +35,7 @@ void register_shaders ( Instance* instance ) {
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "brightness_shader", "shader/brightness.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "hbloom_shader", "shader/hbloom.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "vbloom_shader", "shader/vbloom.frag.sprv" );
+	instance->resource_manager()->load_shader ( ShaderType::eFragment, "hdr_shader", "shader/hdr.frag.sprv" );
 	instance->resource_manager()->load_shader ( ShaderType::eFragment, "composition_shader", "shader/composition.frag.sprv" );
 }
 RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* world, Array<Context>& shadowmap_cameras ) {
@@ -54,7 +55,7 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		world->shadow_shard[i].cgroup->set_context ( sm_context );
 		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, shadowmaps, 0, i );
 		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( world->shadow_shard[i].cgroup );
-		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->shadow_shard[i].igroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 		renderstage_index++;
 	}
 	Sampler* shadowmap_sampler = resource_manager->create_sampler (
@@ -153,7 +154,26 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 	}
 	renderstage_index++;
-	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, lightaccumulation );
+	{
+		ContextGroup* hdr_contextgroup = instance->create_contextgroup();
+		
+		Sampler* composition_hdr_sampler = resource_manager->create_sampler (
+		        FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
+		        EdgeHandling::eMirror, EdgeHandling::eMirror, EdgeHandling::eMirror,
+		        0.0f, {0.0f, 5.0f}, 0.0f, DepthComparison::eNone );
+		Context hdr_context = instance->create_context ( postproc_context_base_id );
+		hdr_contextgroup->set_context ( hdr_context );
+
+		instance->update_context_image ( hdr_context, 0, lightaccumulation->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
+		instance->update_context_sampler ( hdr_context, 0, composition_hdr_sampler );
+		
+		//hdr composition
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, diffuse );
+		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( hdr_contextgroup );
+		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
+	}
+	renderstage_index++;
+	bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, diffuse );
 	bundle->get_renderstage ( renderstage_index )->set_renderwindow ( 0, window );
 
 	return bundle;

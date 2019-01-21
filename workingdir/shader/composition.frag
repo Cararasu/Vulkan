@@ -25,5 +25,6 @@ void main() {
 	for(int i = 0; i < 5; i++) {
 		color += textureLod(sampler2D(bloom, textureSampler), (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy, i);
 	}
+	
 	outLightAccumulation = color;
 }

@@ -119,13 +119,13 @@ void World::init ( Instance* instance ) {
 		instance->load_generic_model ( square_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 	ResourceManager* resource_manager = instance->resource_manager();
-	Image* skybox_teximage = resource_manager->create_texture ( 4096, 4096, 0, 6, 1, ImageFormat::e4Unorm8 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveZ.png", skybox_teximage, 0, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveY.png", skybox_teximage, 1, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveX.png", skybox_teximage, 2, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeZ.png", skybox_teximage, 3, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeY.png", skybox_teximage, 4, 0 );
-	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeX.png", skybox_teximage, 5, 0 );
+	Image* skybox_teximage = resource_manager->create_texture ( 2048, 2048, 0, 6, 1, ImageFormat::e4Unorm8 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveZ_2k.png", skybox_teximage, 0, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveY_2k.png", skybox_teximage, 1, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveX_2k.png", skybox_teximage, 2, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeZ_2k.png", skybox_teximage, 3, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeY_2k.png", skybox_teximage, 4, 0 );
+	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeX_2k.png", skybox_teximage, 5, 0 );
 
 	Image* explosion_teximage = resource_manager->create_texture ( 256, 256, 0, 32, 1, ImageFormat::e4Unorm8 );
 	for ( int i = 0; i < 32; i++ ) {
@@ -276,16 +276,10 @@ void World::init ( Instance* instance ) {
 
 	world_shard.igroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
 	world_shard.cgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
-
-	shadow_shard[0].igroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
-	shadow_shard[0].cgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
-
-	shadow_shard[1].igroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
-	shadow_shard[1].cgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
-
-	shadow_shard[2].igroup = instance->create_instancegroup();//maybe list of modelinstancebases for optimization
-	shadow_shard[2].cgroup = instance->create_contextgroup();//maybe list of contextbases for optimization
-
+	
+	shadow_shard[0].cgroup = instance->create_contextgroup();
+	shadow_shard[1].cgroup = instance->create_contextgroup();
+	shadow_shard[2].cgroup = instance->create_contextgroup();
 
 	Sampler* sampler = resource_manager->create_sampler (
 	                       FilterType::eLinear, FilterType::eLinear, FilterType::eLinear,
@@ -382,7 +376,6 @@ void World::update_shards ( float delta )  {
 		}
 		it++;
 	}
-
 	shadow_shard[0].update_shard ( this );
 	shadow_shard[1].update_shard ( this );
 	shadow_shard[2].update_shard ( this );
@@ -406,7 +399,7 @@ void WorldShard::update_shard ( World* world ) {
 	world->instance->update_context_data ( camera_matrix, &cameradata );
 
 	for(int i = 0; i < 3; i++) {
-		shadowmap_data.v2ls_mat[i] = world->shadow_shard[i].camera.v2s_mat() * (world->shadow_shard[i].camera.orientation.w2v_mat() * glm::inverse(cameradata.w2v_mat));
+		shadowmap_data.v2ls_mat[i] = world->shadow_shard[i].camera.v2s_mat() * world->shadow_shard[i].camera.orientation.w2v_mat();
 		shadowmap_data.drawrange[i] = glm::vec4 ( world->shadow_shard[i].camera_near, world->shadow_shard[i].camera_far, 0.0f, 0.0f );
 	}
 	world->instance->update_context_data ( shadowmap_context, &shadowmap_data );
@@ -468,7 +461,7 @@ void WorldShard::update_shard ( World* world ) {
 	global_light.direction_amb = glm::normalize ( w2v_rot_matrix * glm::vec4 ( world->light_vector, 0.0f ) );
 	//global_light.direction_amb /= global_light.direction_amb.w;
 	global_light.direction_amb.w = 0.4f;
-	global_light.color = glm::vec4 ( 0.5f, 0.5f, 0.5f, 0.2f );
+	global_light.color = glm::vec4 ( 1.5f, 1.4f, 1.1f, 1.0f );
 
 	world->instance->update_context_data ( light_vector_context, &global_light );
 	igroup->register_instances ( dirlight_instance_base_id, world->fullscreen_model, nullptr, 1 );
@@ -479,36 +472,12 @@ void WorldShard::update_shard ( World* world ) {
 }
 void ShadowShard::update_shard ( World* world ) {
 
-	igroup->clear();
-
 	cameradata.v2s_mat = camera.v2s_mat();
 	cameradata.inv_v2s_mat = glm::inverse ( cameradata.v2s_mat );
 	cameradata.w2v_mat = camera.orientation.w2v_mat();
 	cameradata.inv_w2v_mat = glm::inverse ( cameradata.w2v_mat );
 	cameradata.camera_pos = cameradata.w2v_mat * glm::vec4 ( camera.orientation.look_at - camera.orientation.view_vector, 1.0f );
 	cameradata.camera_pos /= cameradata.camera_pos.w;
-
-	x_instances.resize ( world->xwings.size() );
-
-	for ( u32 i = 0; i < world->xwings.size(); i++ ) {
-		x_instances[i].mv2_matrix = cameradata.w2v_mat * world->xwings[i].m2w_mat();
-		x_instances[i].normal_matrix = glm::transpose ( glm::inverse ( x_instances[i].mv2_matrix ) );
-	}
-	igroup->register_instances ( textured_instance_base_id, world->xwing_models, x_instances.data(), x_instances.size() );
-
-	tie_instances.resize ( world->ties.size() );
-	for ( u32 i = 0; i < world->ties.size(); i++ ) {
-		tie_instances[i].mv2_matrix = cameradata.w2v_mat * world->ties[i].m2w_mat();
-		tie_instances[i].normal_matrix = glm::transpose ( glm::inverse ( tie_instances[i].mv2_matrix ) );
-	}
-	igroup->register_instances ( textured_instance_base_id, world->tie_models, tie_instances.data(), tie_instances.size() );
-
-	gallofree_instances.resize ( world->gallofrees.size() );
-	for ( u32 i = 0; i < world->gallofrees.size(); i++ ) {
-		gallofree_instances[i].mv2_matrix = cameradata.w2v_mat * world->gallofrees[i].m2w_mat();
-		gallofree_instances[i].normal_matrix = glm::transpose ( glm::inverse ( gallofree_instances[i].mv2_matrix ) );
-	}
-	igroup->register_instances ( flat_instance_base_id, world->gallofree_models, gallofree_instances.data(), gallofree_instances.size() );
 
 	world->instance->update_context_data ( camera_matrix, &cameradata );
 }
