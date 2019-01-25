@@ -22,8 +22,217 @@
 #include "RenderTypes.h"
 #include "String.h"
 
+#define MAX(lhs, rhs) (lhs > rhs ? lhs : rhs)
+#define MIN(lhs, rhs) (lhs < rhs ? lhs : rhs)
+
+
+template<typename T, typename ALLOC>
+inline T* t_allocate ( ALLOC* allocator, u64 count ) {
+	return reinterpret_cast<T*> ( allocator->allocate ( count * sizeof ( T ), alignof ( T ) ) );
+}
+template<typename T, typename ALLOC>
+inline T* t_reallocate ( ALLOC* allocator, T* old_ptr, u64 count ) {
+	return reinterpret_cast<T*> ( allocator->reallocate ( old_ptr, count * sizeof ( T ), alignof ( T ) ) );
+}
+
 
 //@TODO implement own DynamicArrayClass
+template<typename T, typename ALLOC>
+struct MyDynArray {
+
+	u64 size = 0, capacity = 0;
+	T* data = nullptr;
+	ALLOC* allocator = nullptr;
+
+	typedef T* iterator;
+
+	void free() {
+		if ( data ) {
+			for ( int i = 0; i < size; i++ ) {
+				data[i].~T();
+				allocator->free ( data );
+			}
+			size = 0;
+			capacity = 0;
+			data = nullptr;
+		}
+	}
+
+	MyDynArray ( ALLOC* allocator ) : size ( 0 ), capacity ( 0 ), data ( nullptr ), allocator ( allocator ) {}
+
+	MyDynArray ( u64 size, ALLOC* allocator ) : size ( size ), capacity ( 0 ), data ( nullptr ), allocator ( allocator ) {
+		if ( size ) {
+			capacity = 8;
+			while ( capacity < size ) capacity *= 2;
+			data = t_allocate ( allocator, capacity );
+			for ( int i = 0; i < size; i++ ) {
+				new ( &data[i] ) T;
+			}
+		}
+	}
+	MyDynArray ( u64 size, u64 capacity, ALLOC* allocator ) : size ( size ), capacity ( capacity ), data ( nullptr ), allocator ( allocator ) {
+		if ( size || capacity ) {
+			while ( capacity < size ) capacity *= 2;
+			data = t_allocate ( allocator, capacity );
+			for ( int i = 0; i < size; i++ ) {
+				new ( &data[i] ) T;
+			}
+		}
+	}
+	MyDynArray ( u64 size, const T& ele, ALLOC* allocator ) : size ( size ), capacity ( 8 ), data ( nullptr ), allocator ( allocator ) {
+		if ( size ) {
+			capacity = 8;
+			while ( capacity < size ) capacity *= 2;
+			data = t_allocate ( allocator, capacity );
+			for ( u64 i = 0; i < size; i++ ) {
+				new ( &data[i] ) T ( ele );
+			}
+		}
+
+	}
+	MyDynArray ( const MyDynArray<T, ALLOC>& array ) : size ( array.size ), capacity ( array.capacity ), data ( nullptr ), allocator ( array.allocator ) {
+		if ( size ) {
+			data = t_allocate ( allocator, capacity );
+			for ( int i = 0; i < array.size; i++ ) {
+				new ( &data[i] ) T ( array.data[i] );
+			}
+		}
+	}
+	MyDynArray ( const MyDynArray<T, ALLOC>&& array ) : size ( array.size ), capacity ( array.capacity ), data ( array.data ), allocator ( array.allocator ) {
+		array.size = 0;
+		array.capacity = 0;
+		array.data = nullptr;
+	}
+	MyDynArray<T, ALLOC>& operator= ( const std::initializer_list<T> init_list ) {
+		free();
+		capacity = 0;
+		size = init_list.size();
+		if ( size ) {
+			capacity = 8;
+			while ( capacity < size ) capacity *= 2;
+			data = t_allocate ( allocator, capacity );
+			
+			for ( int i = 0; i < init_list.size(); i++ ) {
+				new ( &data[i] ) T ( init_list[i] );
+			}
+		}
+		return *this;
+	}
+	MyDynArray<T, ALLOC>& operator= ( const MyDynArray<T, ALLOC>& array ) {
+		free();
+		data = nullptr;
+		capacity = 0;
+		size = array.size;
+		if ( size ) {
+			capacity = 8;
+			while ( capacity < size ) capacity *= 2;
+			data = t_allocate ( allocator, capacity );
+			
+			for ( int i = 0; i < array.size(); i++ ) {
+				new ( &data[i] ) T ( std::move ( array[i] ) );
+				i++;
+			}
+		}
+		return *this;
+	}
+	MyDynArray<T, ALLOC>& operator= ( MyDynArray<T, ALLOC>&& array ) {
+		free();
+
+		data = array.data;
+		array.data = nullptr;
+		size = array.size;
+		array.size = 0;
+		capacity = array.capacity;
+		array.capacity = 0;
+		allocator = array.allocator;
+		return *this;
+	}
+	~MyDynArray() {
+		free();
+	}
+
+	void reserve ( u64 min_capacity ) {
+		if ( min_capacity > this->capacity ) {
+			capacity = MAX(capacity, 8);
+			while ( capacity < min_capacity ) capacity *= 2;
+			data = t_reallocate ( allocator, data, capacity );
+		}
+	}
+	void shrink ( u64 min_capacity = 8 ) {
+		if(!size && !min_capacity) {
+			allocator->free(data);
+			data = nullptr;
+			capacity = 0;
+		} else if ( min_capacity > this->capacity ) {
+			capacity = MAX(capacity, 8);
+			while ( capacity < min_capacity ) capacity *= 2;
+			data = t_reallocate ( allocator, data, capacity );
+		}
+	}
+	void push_back ( T&& ele, u64 count = 1 ) {
+		if ( size + count >= capacity ) {
+			capacity = MAX(capacity, 8);
+			while ( capacity < size + count ) capacity *= 2;
+			data = t_reallocate ( allocator, data, capacity );
+		}
+		for ( u64 i = 0; i < count; i++ ) {
+			data[size++] = ele;
+		}
+	}
+	void push_back ( T& ele, u64 count = 1 ) {
+		if ( size + count >= capacity ) {
+			capacity = MAX(capacity, 8);
+			while ( capacity < size + count ) capacity *= 2;
+			data = t_reallocate ( allocator, data, capacity );
+		}
+		for ( u64 i = 0; i < count; i++ ) {
+			data[size++] = ele;
+		}
+	}
+	void pop_back ( u64 count = 1 ) {
+		data[--size].~T();
+	}
+	T& back() {
+		return data[size - 1];
+	}
+
+	void clear ( ) {
+		for(size_t i = 0; i < size; i++) {
+			data[i].~T();
+		}
+		size = 0;
+	}
+	void resize ( u64 size, const T& ele ) {
+		if(size > capacity) {
+			capacity = MAX(capacity, 8);
+			while ( capacity < size ) capacity *= 2;
+			data = t_reallocate ( allocator, data, capacity );
+		}
+		for(size_t i = this->size; i < size; i++) {
+			new (data[i]) T (ele);
+		}
+		this->size = size;
+	}
+
+	T& operator[] ( u64 i ) {
+		return data[i];
+	}
+	const T& operator[] ( u64 i ) const {
+		return data[i];
+	}
+	iterator begin() {
+		return data;
+	}
+	iterator end() {
+		return data + size;
+	}
+	const iterator begin() const {
+		return data;
+	}
+	const iterator end() const {
+		return data + size;
+	}
+};
 template<typename T>
 struct Array {
 	u64 size;
@@ -33,22 +242,22 @@ struct Array {
 
 	Array() : size ( 0 ), data ( nullptr ) {}
 
-	Array(u64 size) : size ( size ), data ( nullptr ) {
-		if(!size) return;
+	Array ( u64 size ) : size ( size ), data ( nullptr ) {
+		if ( !size ) return;
 		data = new T[size];
 	}
-	Array(u64 size, const T& ele) : size ( size ), data ( nullptr ) {
-		if(!size) return;
+	Array ( u64 size, const T& ele ) : size ( size ), data ( nullptr ) {
+		if ( !size ) return;
 		data = new T[size];
-		for ( u64 i = 0; i < size; i++){
+		for ( u64 i = 0; i < size; i++ ) {
 			data[i] = ele;
 		}
 	}
 	Array ( const Array<T>& array ) : size ( array.size ), data ( nullptr ) {
-		if(!size) return;
+		if ( !size ) return;
 		data = new T[size];
 		u64 i = 0;
-		for ( const T& ele : array){
+		for ( const T& ele : array ) {
 			data[i++] = ele;
 		}
 	}
@@ -57,39 +266,39 @@ struct Array {
 		array.size = 0;
 	}
 	Array ( const std::initializer_list<T> init_list ) : size ( init_list.size() ), data ( nullptr ) {
-		if(!size) return;
+		if ( !size ) return;
 		data = new T[size];
 		u64 i = 0;
-		for ( const T& ele : init_list){
+		for ( const T& ele : init_list ) {
 			data[i++] = std::move ( ele );
 		}
 	}
 	Array<T>& operator= ( const std::initializer_list<T> init_list ) {
-		if(data) delete[] data;
+		if ( data ) delete[] data;
 		data = nullptr;
 		size = init_list.size();
-		if(!size) return *this;
+		if ( !size ) return *this;
 		data = new T[size];
 		u64 i = 0;
-		for ( const T& ele : init_list){
+		for ( const T& ele : init_list ) {
 			data[i++] = std::move ( ele );
 		}
 		return *this;
 	}
 	Array<T>& operator= ( const Array<T>& array ) {
-		if(data) delete[] data;
+		if ( data ) delete[] data;
 		data = nullptr;
 		size = array.size;
-		if(!size) return *this;
+		if ( !size ) return *this;
 		data = new T[size];
 		u64 i = 0;
-		for ( const T& ele : array){
+		for ( const T& ele : array ) {
 			data[i++] = std::move ( ele );
 		}
 		return *this;
 	}
 	Array<T>& operator= ( Array<T>&& array ) {
-		if(data) delete[] data;
+		if ( data ) delete[] data;
 		data = array.data;
 		array.data = nullptr;
 		size = array.size;
@@ -97,40 +306,40 @@ struct Array {
 		return *this;
 	}
 	~Array() {
-		if(data) delete[] data;
+		if ( data ) delete[] data;
 		data = nullptr;
 	}
 
 	void resize ( u64 size ) {
 		T* tmp_data = nullptr;
-		if(size != 0){
+		if ( size != 0 ) {
 			tmp_data = new T[size];
 			u64 min = std::min ( size, this->size );
 			for ( u64 i = 0; i < min; i++ ) tmp_data[i] = std::move ( data[i] );
 		}
-		
+
 		delete[] data;
 		data = tmp_data;
 		this->size = size;
 	}
 	void resize ( u64 size, const T& ele ) {
 		T* tmp_data = nullptr;
-		if(size != 0){
+		if ( size != 0 ) {
 			tmp_data = new T[size];
 			for ( u64 i = 0; i < size; i++ ) tmp_data[i] = ele;
 		}
-		
+
 		delete[] data;
 		data = tmp_data;
 		this->size = size;
 	}
 	void resize ( u64 size, T&& ele ) {
 		T* tmp_data = nullptr;
-		if(size != 0){
+		if ( size != 0 ) {
 			tmp_data = new T[size];
 			for ( u64 i = 0; i < size; i++ ) tmp_data[i] = ele;
 		}
-		
+
 		delete[] data;
 		data = tmp_data;
 		this->size = size;
@@ -210,20 +419,20 @@ struct ChangeableValue {
 		value = wanted;
 	}
 	inline void apply ( T val ) {
-		if(wanted == value) wanted = val;
+		if ( wanted == value ) wanted = val;
 		value = val;
 	}
 };
 
 struct IdHandle {
-	union{
-		struct{
+	union {
+		struct {
 			u32 id = 0;
 			u32 uid = 0;
 		};
 		u64 hash;
 	};
-	IdHandle handle(){
+	IdHandle handle() {
 		return *this;
 	}
 };
@@ -238,7 +447,7 @@ inline bool operator> ( IdHandle lh, IdHandle rh ) {
 }
 template<>
 struct std::hash<IdHandle> {
-    size_t operator()(const IdHandle &handle) const {
-        return handle.hash;
-    }
+	size_t operator() ( const IdHandle &handle ) const {
+		return handle.hash;
+	}
 };

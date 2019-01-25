@@ -9,6 +9,41 @@ constexpr uint64_t djb2_hash(const char* ptr) {
 	return ptr ? (*ptr ? (djb2_hash(ptr + 1) * 33) ^ *ptr : 5381) : 0;
 }
 
+struct HString {//TODO
+	union {
+		struct {
+			char* cstr;
+			size_t hash;
+		};
+		struct {
+			char data[sizeof(char*) + sizeof(u64)];
+		};
+	};
+	size_t _size, capacity;
+	
+	HString(const char* cstr) {
+		_size = strlen(cstr) + 1;
+		if(_size <= 16) {
+			memcpy(data, cstr, _size);
+			memset(&data[_size], 0, 16 - _size);
+		} else {
+			this->cstr = strdup(cstr);
+			hash = djb2_hash(cstr);
+		}
+	}
+	
+	const char* c_str() const {
+		if(_size > 16) return cstr;
+		else return data;
+	}
+	size_t length() const {
+		return _size - 1;
+	}
+	size_t size() const {
+		return _size;
+	}
+};
+
 struct String{
 	const char* cstr;
 	u64 hash;
@@ -68,7 +103,7 @@ inline bool operator>=(const String& lhs, const String& rhs){
 	return lhs.hash >= rhs.hash ? true : strcmp(lhs.cstr, rhs.cstr) >= 0;
 }
 
-#define STRINGBUFFER_SIZE (1)
+#define STRINGBUFFER_SIZE (1024)
 struct StringBuilder{
 	struct StringBuilderBuffer{
 		char buffer[STRINGBUFFER_SIZE];
@@ -169,9 +204,9 @@ struct StringBuilder{
 		for(u32 i = 1; i <= count; i++){
 			int digit = value % base;
 			value /= base;
-			if(digit < 10){
+			if(digit < 10){// 0 - 9
 				buffer[count - i] = '0' + digit;
-			}else{
+			}else{// a - f
 				buffer[count - i] = 'a' - 10 + digit;
 			}
 		}

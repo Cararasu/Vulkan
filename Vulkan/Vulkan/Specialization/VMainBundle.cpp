@@ -103,7 +103,7 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		bufferstorage->free_transferbuffers ( v_instance->frame_index );
 	}
 	
-	DynArray<vk::ImageMemoryBarrier> barriers;
+	MyDynArray<vk::ImageMemoryBarrier, AlwaysGrowAllocator> barriers(&v_instance->local_allocator);
 	barriers.reserve(32);
 	vk::PipelineStageFlags sourceStage, destinationStage;
 	
@@ -112,10 +112,10 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		for(VModel* v_model : p.second) {
 			for(VContext* v_context : v_model->v_contexts) {
 				if(v_context) {
-					for ( VImageUseRef& vimageuseref : v_context->images ) {
-						if ( vimageuseref ) {
-							VImageUse* imageuse = vimageuseref.deref();
-							barriers.push_back(vimageuseref.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
+					for ( VBoundTextureResource& texres : v_context->texture_resources ) {
+						if ( texres.imageuse ) {
+							VImageUse* imageuse = texres.imageuse.deref();
+							barriers.push_back(texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
 								imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
 						}
 					}
@@ -126,10 +126,10 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 	for ( auto it = cgroup->context_map.begin(); it != cgroup->context_map.end(); it++ ) {
 		VContext* v_context = it->second;
 		v_context->update_if_needed();
-		for ( VImageUseRef& vimageuseref : v_context->images ) {
-			if ( vimageuseref ) {
-				VImageUse* imageuse = vimageuseref.deref();
-				barriers.push_back(vimageuseref.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
+		for ( VBoundTextureResource& texres : v_context->texture_resources ) {
+			if ( texres.imageuse ) {
+				VImageUse* imageuse = texres.imageuse.deref();
+				barriers.push_back(texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
 					imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
 			}
 		}
@@ -139,7 +139,7 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		vk::DependencyFlags(),
 		{},//memoryBarriers
 		{},//bufferBarriers
-		barriers//imageBarriers
+		vk::ArrayProxy<const vk::ImageMemoryBarrier>(barriers.size, barriers.data)//imageBarriers
 	);
 }
 void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index ) {
@@ -153,16 +153,17 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		descriptor_offset += 1;
 	}
 
-	DynArray<vk::DescriptorSet> descriptorSets;
+	MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> descriptorSets(&v_instance->local_allocator);
+	descriptorSets.reserve(32);
 	for ( ContextBaseId id : p_struct->contextBaseId ) {
 		VContext* context_ptr = cgroup->context_map[id];
 		assert ( context_ptr );
 		context_ptr->update_if_needed();
 		descriptorSets.push_back ( context_ptr->descriptor_set );
 	}
-	if ( descriptorSets.size() ) {
-		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, descriptorSets, {} );
-		descriptor_offset += descriptorSets.size();
+	if ( descriptorSets.size ) {
+		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet>(descriptorSets.size, descriptorSets.data), {} );
+		descriptor_offset += descriptorSets.size;
 	}
 	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipelines[pipeline_index] );
 	IdPtrArray<VModel>& models = v_instance->v_model_map[p_struct->modelbase_id];
@@ -177,7 +178,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 
 		//TODO improve this as it is terribly bad
 		//maybe sort the contexts? and then binary search?
-		DynArray<vk::DescriptorSet> model_descriptorSets;
+		MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> model_descriptorSets(&v_instance->local_allocator);
+		model_descriptorSets.reserve(32);
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			bool found = false;
 			for ( u32 i = 0; i < modelbase_ptr->contextbase_ids.size; i++ ) {
@@ -191,8 +193,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			}
 			assert ( found );
 		}
-		if ( model_descriptorSets.size() ) {
-			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, model_descriptorSets, {} );
+		if ( model_descriptorSets.size ) {
+			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet>(model_descriptorSets.size, model_descriptorSets.data), {} );
 		}
 
 		cmdbuffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );

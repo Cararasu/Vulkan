@@ -13,14 +13,26 @@ struct DataValueDef {
 struct DataGroupDef {
 	Array<DataValueDef> valuedefs;
 	u32 size;
-	u32 arraycount;
+	u32 arraycount = 1;
+	bool needs_write = false;
+};
+enum class TextureResourceType : u8 {
+	eUndefined,
+	eImage,
+	eSampler,
+	eImageSampled,
+	eBufferSampled
+};
+struct TextureResource {
+	TextureResourceType type;
+	u32 arraycount = 1;
+	bool needs_write = false;
 };
 
 struct ContextBase {
 	ContextBaseId id;
 	DataGroupDef datagroup;
-	u32 image_count = 0;
-	u32 sampler_count = 0;
+	Array<TextureResource> texture_resources;
 };
 struct Context {
 	ContextId id;

@@ -5,6 +5,7 @@
 #include "VHeader.h"
 #include <render/IdArray.h>
 #include "VContext.h"
+#include "VMemoryAllocator.h"
 
 #define V_MAX_PGCQUEUE_COUNT (2)
 
@@ -69,9 +70,10 @@ struct PerFrameData  {
 	DynArray<VDividableBufferStore*> staging_buffer_stores;
 	DynArray<vk::Fence> fences;
 	DynArray<vk::CommandBuffer> command_buffers;
+	AlwaysGrowAllocator frame_allocator;
 };
 
-struct VInstance : public Instance {
+	struct VInstance : public Instance {
 	InstanceOptions options;
 
 	VExtLayerStruct extLayers;
@@ -90,6 +92,7 @@ struct VInstance : public Instance {
 	u64 frame_index = 1;
 	u64 last_completed_frame_index = 0;
 	
+	AlwaysGrowAllocator local_allocator;
 	PerFrameData free_data;
 	PerFrameData* current_free_data = nullptr;
 	std::queue<PerFrameData*> per_frame_queue;
@@ -124,8 +127,7 @@ struct VInstance : public Instance {
 	virtual void unload_model ( ModelId modelbase_id ) override;
 
 	virtual void update_context_data ( Context& context, void* data ) override;
-	virtual void update_context_image ( Context& context, u32 index, ImageUseRef imageuse ) override;
-	virtual void update_context_sampler ( Context& context, u32 index, Sampler* sampler ) override;
+	virtual void update_context_image_sampler ( Context& context, u32 index, u32 array_index, ImageUseRef imageuse, Sampler* sampler ) override;
 
 	Map<ContextBaseId, VContextBase> contextbase_map;
 	virtual void contextbase_registered ( ContextBaseId id ) override;

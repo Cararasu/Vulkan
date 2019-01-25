@@ -1,11 +1,14 @@
 #pragma once
 
-#include "VInstance.h"
-#include "render/Resources.h"
+#include <render/Resources.h>
+#include <render/IdArray.h>
+#include "VHeader.h"
 
 struct VInstance;
-struct VImageWrapper;
 struct VImageUse;
+struct VBaseImage;
+struct VInstance;
+struct VWindow;
 
 struct VImageUseRef {
 	RId id;
@@ -103,30 +106,17 @@ struct VBaseImage : public Image {
 	VImageUseRef v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers );
 	void v_create_imageview ( VImageUse* imageuse );
 
-	void v_delete_use ( RId id ) {
-		v_instance->destroyImageView ( usages[id].imageview );
-		usages.remove ( id );
-	}
-	
+	void v_delete_use ( RId id );
+	void v_register_use(RId id);
 	virtual ImageUseRef create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) override;
-	void v_register_use(RId id) {
-		if(!id) return;
-		usages[id].refcount++;
-	}
-	void v_deregister_use(RId id) {
-		if(!id) return;
-		if(--usages[id].refcount == 0) {
-			v_delete_use (id);
-		}
-	}
+	
+	void v_deregister_use(RId id);
 	virtual void register_use(RId id) override {
 		v_register_use(id);
 	}
 	virtual void deregister_use(RId id) override {
 		v_deregister_use(id);
 	}
-
-
 	void v_set_extent ( u32 width, u32 height, u32 depth );
 	void v_set_format ( vk::Format format );
 

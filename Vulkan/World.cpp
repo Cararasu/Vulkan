@@ -302,18 +302,15 @@ void World::init ( Instance* instance ) {
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_2k.png", 4 );
-	instance->update_context_image ( x_context, 0, x_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-	instance->update_context_sampler ( x_context, 0, sampler );
+	instance->update_context_image_sampler ( x_context, 0, 0, x_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
 	for ( Model& model : xwing_models ) instance->set_context ( model, x_context );
 
 	world_shard.skybox_context = instance->create_context ( skybox_context_base_id );
-	instance->update_context_image ( world_shard.skybox_context, 0, skybox_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 6} ) );
-	instance->update_context_sampler ( world_shard.skybox_context, 0, sampler );
+	instance->update_context_image_sampler ( world_shard.skybox_context, 0, 0, skybox_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 6} ), sampler );
 	instance->set_context ( cube_model, world_shard.skybox_context );
 
 	Context explosion_context = instance->create_context ( explosion_context_base_id );
-	instance->update_context_image ( explosion_context, 0, explosion_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 32} ) );
-	instance->update_context_sampler ( explosion_context, 0, sampler );
+	instance->update_context_image_sampler ( explosion_context, 0, 0, explosion_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 32} ), sampler );
 	instance->set_context ( square_model, explosion_context );
 
 
@@ -323,12 +320,9 @@ void World::init ( Instance* instance ) {
 	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_2k.png", 4 );
 	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_2k.png", 4 );
 	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_2k.png", 4 );
-	instance->update_context_image ( tie_body_context, 0, tie_body_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-	instance->update_context_sampler ( tie_body_context, 0, sampler );
-	instance->update_context_image ( tie_arm_context, 0, tie_arm_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-	instance->update_context_sampler ( tie_arm_context, 0, sampler );
-	instance->update_context_image ( tie_wing_context, 0, tie_wing_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-	instance->update_context_sampler ( tie_wing_context, 0, sampler );
+	instance->update_context_image_sampler ( tie_body_context, 0, 0, tie_body_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( tie_arm_context, 0, 0, tie_arm_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( tie_wing_context, 0, 0, tie_wing_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
 	instance->set_context ( tie_models[0], tie_body_context );
 	instance->set_context ( tie_models[1], tie_body_context );
 	instance->set_context ( tie_models[2], tie_arm_context );
@@ -340,8 +334,7 @@ void World::init ( Instance* instance ) {
 	Context flat_gallofree_context = instance->create_context ( flat_simplemodel_context_base_id );
 	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
-	instance->update_context_image ( gallofree_context, 0, gallofree_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-	instance->update_context_sampler ( gallofree_context, 0, sampler );
+	instance->update_context_image_sampler ( gallofree_context, 0, 0, gallofree_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
 
 	glm::vec4 color ( 0.75f, 0.75f, 0.75f, 1.0f );
 	instance->update_context_data ( flat_gallofree_context, &color );

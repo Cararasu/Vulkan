@@ -13,8 +13,7 @@ const mat4 screenspace_to_coords_mat = mat4(
 	0.0, 0.0, 1.0, 0.0,
 	0.5, 0.5, 0.0, 1.0 );
 	
-layout (set=0, binding=0) uniform texture2D tex;
-layout (set=0, binding=1) uniform sampler textureSampler;
+layout (set=0, binding=0) uniform sampler2D tex;
 
 layout(push_constant) uniform LodBlock {
 	int lod;
@@ -23,7 +22,7 @@ layout(push_constant) uniform LodBlock {
 void main() {
 	outLightAccumulation = 
 		max(
-			texture(sampler2D(tex, textureSampler), (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy), 
+			texture(tex, (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy), 
 			vec4(1.0)
 		) - vec4(1.0);
 }

@@ -30,8 +30,7 @@ layout (set=3, binding = 0) uniform shadowMapBuffer {
 	vec4 drawrange[3];
 } shadowMap;
 
-layout (set=3, binding = 1) uniform texture2DArray shadowTexture;
-layout (set=3, binding = 2) uniform sampler sampl; 
+layout (set=3, binding = 1) uniform sampler2DArrayShadow shadowTexture;
 
 const mat4 screenspace_to_coords_mat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
@@ -80,7 +79,7 @@ void main() {
 			pos_in_shadowmap.y = -pos_in_shadowmap.y;//flip y because reasons
 			pos_in_shadowmap = screenspace_to_coords_mat * pos_in_shadowmap;//screen space -> coordinates of texture
 			pos_in_shadowmap /= pos_in_shadowmap.w;
-			inlight = texture( sampler2DArrayShadow(shadowTexture, sampl), vec4(pos_in_shadowmap.x, pos_in_shadowmap.y, float(i), pos_in_shadowmap.z) );
+			inlight = texture( shadowTexture, vec4(pos_in_shadowmap.x, pos_in_shadowmap.y, float(i), pos_in_shadowmap.z) );
 			//outLightAccumulation = pos_in_shadowmap;
 			//return;
 			break;

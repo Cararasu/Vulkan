@@ -204,7 +204,6 @@ void VHDRRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer, u
 	v_destroy_framebuffers();
 }
 void VHDRRenderStage::set_renderwindow ( u32 index, Window* window ) {
-	//TODO implement
 	assert ( false );
 }
 void VHDRRenderStage::v_check_rebuild() {

@@ -8,13 +8,12 @@ layout(location = 0) in vec4 v_uv_index_time;
 layout(location = 1) in vec4 v_indices;
 layout(location = 2) in vec2 v_blend_factors;
 
-layout (set=2, binding=0) uniform texture2DArray explosionTextures;
-layout (set=2, binding=1) uniform sampler textureSampler;
+layout (set=2, binding=0) uniform sampler2DArray explosionTextures;
 
 
 vec4 getColor(vec2 image_position, float factor) {
 	return texture(
-			sampler2DArray(explosionTextures, textureSampler),
+			explosionTextures,
 			vec3((v_uv_index_time.xy + image_position) * 0.25, v_uv_index_time.z)
 		) * factor;
 }

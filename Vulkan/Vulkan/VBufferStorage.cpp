@@ -49,8 +49,6 @@ void VTransientBufferStorage::clear_transfer() {
 	max_offset = 0;
 	changed = true;
 }
-DynArray<VBuffer*> buffers;
-DynArray<Chunk> freelist;
 VUpdateableBufferStorage::VUpdateableBufferStorage ( VInstance* instance, vk::BufferUsageFlags usageflags ) :
 	v_instance ( instance ), usageflags ( usageflags ),
 	buffers ( { std::make_pair(new VBuffer ( instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer())} ),

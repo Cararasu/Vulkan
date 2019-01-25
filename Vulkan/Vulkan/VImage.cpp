@@ -3,6 +3,7 @@
 #include "VResourceManager.h"
 #include "VWindow.h"
 #include "VTransformEnums.h"
+#include "VInstance.h"
 
 
 VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, 
@@ -100,7 +101,14 @@ void VBaseImage::rebuild_image ( u32 width, u32 height, u32 depth ) {
 	v_set_extent ( width * fraction, height * fraction, depth * fraction );
 	init();
 }
-
+void VBaseImage::v_delete_use ( RId id ) {
+	v_instance->destroyImageView ( usages[id].imageview );
+	usages.remove ( id );
+}
+void VBaseImage::v_register_use(RId id) {
+	if(!id) return;
+	usages[id].refcount++;
+}
 ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
 	vk::ImageAspectFlags aspects;
 	switch ( part ) {
@@ -120,6 +128,12 @@ ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u
 	};
 	VImageUseRef vimageuse = v_create_use ( aspects, mipmaps, layers );
 	return { vimageuse.id, this };
+}
+void VBaseImage::v_deregister_use(RId id) {
+	if(!id) return;
+	if(--usages[id].refcount == 0) {
+		v_delete_use (id);
+	}
 }
 VImageUseRef VBaseImage::v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers ) {
 	for ( VImageUse& use : usages ) {

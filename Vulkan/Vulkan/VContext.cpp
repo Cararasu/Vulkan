@@ -3,6 +3,7 @@
 #include "VInstance.h"
 #include "VBufferStorage.h"
 #include "VImage.h"
+#include "VSampler.h"
 
 
 VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 0 ), contextbase_id ( contextbase_id ), v_instance ( instance ), buffer_chunk ( {0, 0, 0} ), data ( nullptr ) {
@@ -10,29 +11,51 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
 	VContextBase& v_contextbase = v_instance->contextbase_map[contextbase_id];
 
-	images.resize ( contextbase->image_count, VImageUseRef() );
-	samplers.resize ( contextbase->sampler_count, nullptr );
+	texture_resources.resize ( contextbase->texture_resources.size );
 
-	u32 dscount = 0;
-	if ( contextbase->datagroup.size ) dscount++;
-	if ( contextbase->image_count ) dscount++;
-	if ( contextbase->sampler_count ) dscount++;
+	u32 offset = contextbase->datagroup.size ? 1 : 0;
 
-	Array<vk::DescriptorPoolSize> poolsizes ( dscount );
-	dscount = 0;
+	Array<vk::DescriptorPoolSize> poolsizes ( offset + contextbase->texture_resources.size );
 	if ( contextbase->datagroup.size ) {
-		poolsizes[dscount] = vk::DescriptorPoolSize ( vk::DescriptorType::eUniformBuffer, 1 );
+		vk::DescriptorType type;
+		if(contextbase->datagroup.needs_write)
+			type = vk::DescriptorType::eStorageBuffer;
+		else
+			type = vk::DescriptorType::eUniformBuffer;
+		poolsizes[0] = vk::DescriptorPoolSize ( type, 1 );
+		//maybe eUniformBufferDynamic and eStorageBufferDynamic
+	}
+	u32 dscount = 0;
+	for ( TextureResource& texres : contextbase->texture_resources ) {
+		vk::DescriptorType type;
+		switch(texres.type) {
+		case TextureResourceType::eImage:
+			if(texres.needs_write)
+				type = vk::DescriptorType::eStorageImage;
+			else
+				type = vk::DescriptorType::eSampledImage;
+			break;
+		case TextureResourceType::eSampler:
+			type = vk::DescriptorType::eSampler;
+			break;
+		case TextureResourceType::eImageSampled:
+			type = vk::DescriptorType::eCombinedImageSampler;
+			break;
+		case TextureResourceType::eBufferSampled:
+			if(texres.needs_write)
+				type = vk::DescriptorType::eStorageTexelBuffer;
+			else
+				type = vk::DescriptorType::eUniformTexelBuffer;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+		texture_resources[dscount].type = type;
+		poolsizes[dscount + offset] = vk::DescriptorPoolSize ( type, texres.arraycount );
 		dscount++;
 	}
-	if ( contextbase->image_count ) {
-		poolsizes[dscount] = vk::DescriptorPoolSize ( vk::DescriptorType::eSampledImage, 1 );
-		dscount++;
-	}
-	if ( contextbase->sampler_count ) {
-		poolsizes[dscount] = vk::DescriptorPoolSize ( vk::DescriptorType::eSampler, 1 );
-		dscount++;
-	}
-	vk::DescriptorPoolCreateInfo poolInfo ( vk::DescriptorPoolCreateFlags(), dscount, poolsizes.size, poolsizes.data );
+	vk::DescriptorPoolCreateInfo poolInfo ( vk::DescriptorPoolCreateFlags(), dscount + offset, poolsizes.size, poolsizes.data );
 	descriptor_pool = v_instance->vk_device().createDescriptorPool ( poolInfo );
 
 	u32 writecount = 0;
@@ -54,42 +77,39 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 		v_instance->vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
 		writecount++;
 	}
-	if ( contextbase->image_count ) {
-		writecount++;
-	}
-	if ( contextbase->sampler_count ) {
-		writecount++;
-	}
 }
 VContext::~VContext() {
 	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool );
 }
 void VContext::update_if_needed() {
 	bool updated = false;
-	for( VImageUseRef& image : images) {
-		if(image.is_updated()) {
-			image.set_updated();
+	for( VBoundTextureResource& texref : texture_resources) {
+		if(texref.imageuse.is_updated()) {
+			texref.imageuse.set_updated();
 			updated = true;
 		}
 	}
 	if(updated) {
 		const ContextBase* contextbase = v_instance->contextbase ( contextbase_id );
-		u32 image_index = contextbase->datagroup.size ? 1 : 0;
-		std::vector<vk::DescriptorImageInfo> dsimageinfo(images.size);
+		u32 offset = contextbase->datagroup.size ? 1 : 0;
+		std::vector<vk::DescriptorImageInfo> dsimageinfo;
+		std::vector<vk::WriteDescriptorSet> writesets;
+		dsimageinfo.resize(texture_resources.size - offset);
+		writesets.resize(texture_resources.size - offset);
 
-		for( int i = 0; i < images.size; i++ ) {
-			dsimageinfo[i] = vk::DescriptorImageInfo ( vk::Sampler(), images[i].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
+		for( int i = 0; i < texture_resources.size - offset; i++ ) {
+			vk::Sampler sampler = texture_resources[i].sampler ? texture_resources[i].sampler->sampler : vk::Sampler();
+			dsimageinfo[i] = vk::DescriptorImageInfo ( sampler, texture_resources[i].imageuse.imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
+			writesets[i] = vk::WriteDescriptorSet (
+					descriptor_set,
+					i + offset, 0, 1,
+					texture_resources[i + offset].type,
+					&dsimageinfo[i],
+					nullptr, nullptr
+				);
 		}
-		std::array<vk::WriteDescriptorSet, 1> writeDescriptorSets = {
-			vk::WriteDescriptorSet (
-				descriptor_set,
-				image_index, 0, dsimageinfo.size(),
-				vk::DescriptorType::eSampledImage,
-				dsimageinfo.data(),
-				nullptr, nullptr
-			)
-		};
-		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
+		//TODO vk::DescriptorType::eSampledImage is wrong
+		v_instance->vk_device().updateDescriptorSets ( writesets, {} );
 	}
 }
 

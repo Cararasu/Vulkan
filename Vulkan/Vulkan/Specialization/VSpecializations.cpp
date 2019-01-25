@@ -46,13 +46,13 @@ void register_specializations ( VInstance* instance ) {
 		lightvector_base_id = instance->static_contextbase_store.insert ( lightvector_base );
 		instance->contextbase_registered ( lightvector_base_id );
 
-		ContextBase tex_simplemodel_context_base = { 0, { {}, 0, 0 }, 1, 1 };
+		ContextBase tex_simplemodel_context_base = { 0, { {}, 0, 0 }, {{TextureResourceType::eImageSampled}}};
 		tex_simplemodel_context_base_id = instance->static_contextbase_store.insert ( tex_simplemodel_context_base );
 		instance->contextbase_registered ( tex_simplemodel_context_base_id );
 
 		ContextBase skybox_simplemodel_context_base = { 0, 
 			{ { {ValueType::eF32Mat4, 1, 0} }, sizeof ( glm::mat4 ), 1 }, 
-			1, 1 
+			{{TextureResourceType::eImageSampled}}
 		};
 		skybox_context_base_id = instance->static_contextbase_store.insert ( skybox_simplemodel_context_base );
 		instance->contextbase_registered ( skybox_context_base_id );
@@ -60,20 +60,20 @@ void register_specializations ( VInstance* instance ) {
 		
 		ContextBase explosion_simplemodel_context_base = { 0, 
 			{ { }, 0, 1 }, 
-			1, 1 
+			{{TextureResourceType::eImageSampled}}
 		};
 		explosion_context_base_id = instance->static_contextbase_store.insert ( explosion_simplemodel_context_base );
 		instance->contextbase_registered ( explosion_context_base_id );
 
-		ContextBase flat_simplemodel_context_base = { 0, { { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16} }, sizeof ( glm::vec4 ) * 2, 1 }, 0, 0 };
+		ContextBase flat_simplemodel_context_base = { 0, { { {ValueType::eF32Vec4, 1, 0}, {ValueType::eF32Vec4, 1, 16} }, sizeof ( glm::vec4 ) * 2, 1 }, {} };
 		flat_simplemodel_context_base_id = instance->static_contextbase_store.insert ( flat_simplemodel_context_base );
 		instance->contextbase_registered ( flat_simplemodel_context_base_id );
 		
-		ContextBase bloom_context_base = { 0, {{}, 0, 0 }, 1, 1 };
+		ContextBase bloom_context_base = { 0, {{}, 0, 0 }, { {TextureResourceType::eImageSampled} } };
 		postproc_context_base_id = instance->static_contextbase_store.insert ( bloom_context_base );
 		instance->contextbase_registered ( postproc_context_base_id );
 		
-		ContextBase shadowmap_context_base = { 0, { { {ValueType::eF32Mat4, 3, 0}, {ValueType::eF32Vec4, 3, 196} }, sizeof ( glm::mat4 ) * 3 + sizeof ( glm::vec4 ) * 3, 1 }, 1, 1 };
+		ContextBase shadowmap_context_base = { 0, { { {ValueType::eF32Mat4, 3, 0}, {ValueType::eF32Vec4, 3, 196} }, sizeof ( glm::mat4 ) * 3 + sizeof ( glm::vec4 ) * 3, 1 }, {{TextureResourceType::eImageSampled}} };
 		shadowmap_context_base_id = instance->static_contextbase_store.insert ( shadowmap_context_base );
 		instance->contextbase_registered ( shadowmap_context_base_id );
 	}

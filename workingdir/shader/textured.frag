@@ -11,13 +11,12 @@ layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec3 v_texCoord;
 layout(location = 2) in vec3 v_normal;
 
-layout (set=1, binding=0) uniform texture2D diffuseTexture;
-layout (set=1, binding=1) uniform sampler textureSampler;
+layout (set=1, binding=0) uniform sampler2D diffuseTexture;
 
 void main() {
 	vec3 normal_direction = normalize(v_normal);
 	
-	vec4 ambientcolor = texture(sampler2D(diffuseTexture, textureSampler), vec2(v_texCoord.x, -1.0f * v_texCoord.y));
+	vec4 ambientcolor = texture(diffuseTexture, vec2(v_texCoord.x, -1.0f * v_texCoord.y));
    
 	outColor = ambientcolor;
 	outColor.w = 1/51.0;

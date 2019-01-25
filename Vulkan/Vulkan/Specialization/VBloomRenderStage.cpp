@@ -460,7 +460,6 @@ void VBrightnessRenderStage::set_renderimage ( u32 index, Image* image, u32 mipl
 	v_destroy_framebuffers();
 }
 void VBrightnessRenderStage::set_renderwindow ( u32 index, Window* window ) {
-	//TODO implement
 	assert ( false );
 }
 void VBrightnessRenderStage::v_check_rebuild() {
@@ -652,7 +651,6 @@ void VBloomRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer,
 	v_destroy_framebuffers();
 }
 void VBloomRenderStage::set_renderwindow ( u32 index, Window* window ) {
-	//TODO implement
 	assert ( false );
 }
 void VBloomRenderStage::v_check_rebuild() {
@@ -844,7 +842,6 @@ void HBloomRenderStage::set_renderimage ( u32 index, Image* image, u32 miplayer,
 	v_destroy_framebuffers();
 }
 void HBloomRenderStage::set_renderwindow ( u32 index, Window* window ) {
-	//TODO implement
 	assert ( false );
 }
 void HBloomRenderStage::v_check_rebuild() {

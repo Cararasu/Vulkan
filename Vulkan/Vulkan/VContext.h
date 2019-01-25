@@ -6,10 +6,12 @@
 #include <render/IdArray.h>
 #include <render/Model.h>
 #include "VBufferStorage.h"
+#include "VImage.h"
 
 struct VBuffer;
 struct VInstance;
 struct VModel;
+struct VSampler;
 
 struct VContextBuffer {
 	//DynArray<>
@@ -19,9 +21,13 @@ struct VContextBase {
 	vk::DescriptorSetLayout descriptorset_layout;
 };
 
-struct VBaseImage;
-struct VImageUseRef;
-struct VSampler;
+
+struct VBoundTextureResource {
+	VImageUseRef imageuse;
+	VSampler* sampler = nullptr;
+	//Bufferuse
+	vk::DescriptorType type;
+};
 
 struct VContext {
 	ContextId id;
@@ -31,8 +37,7 @@ struct VContext {
 	u64 last_frame_index_updated = 0;
 
 	void* data;
-	Array<VImageUseRef> images;
-	Array<VSampler*> samplers;
+	Array<VBoundTextureResource> texture_resources;
 
 	vk::DescriptorPool descriptor_pool;
 	vk::DescriptorSet descriptor_set;

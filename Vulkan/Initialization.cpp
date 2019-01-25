@@ -63,8 +63,7 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 			EdgeHandling::eClamp, EdgeHandling::eClamp, EdgeHandling::eClamp,
 			0.0f, {0.0f, 0.0f}, 0.0f, DepthComparison::eLEquals );
 	world->world_shard.shadowmap_context = instance->create_context ( shadowmap_context_base_id );
-	instance->update_context_image ( world->world_shard.shadowmap_context, 0, shadowmaps->create_use ( ImagePart::eDepth, {0, 1}, {0, 3} ) );
-	instance->update_context_sampler ( world->world_shard.shadowmap_context, 0, shadowmap_sampler );
+	instance->update_context_image_sampler ( world->world_shard.shadowmap_context, 0, 0, shadowmaps->create_use ( ImagePart::eDepth, {0, 1}, {0, 3} ), shadowmap_sampler );
 	world->world_shard.cgroup->set_context(world->world_shard.shadowmap_context);
 
 	Image* diffuse = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4Unorm8, 1, 1.0f );
@@ -89,8 +88,7 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		ContextGroup* brightness_contextgroup = instance->create_contextgroup();
 		Context brightness_context = instance->create_context ( postproc_context_base_id );
 
-		instance->update_context_image ( brightness_context, 0, lightaccumulation->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-		instance->update_context_sampler ( brightness_context, 0, downscale_sampler );
+		instance->update_context_image_sampler ( brightness_context, 0, 0, lightaccumulation->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), downscale_sampler );
 
 		brightness_contextgroup->set_context ( brightness_context );
 		//downscale + brightness low-pass filter
@@ -111,16 +109,14 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		Context vbloom_context = instance->create_context ( postproc_context_base_id );
 		vbloom_contextgroup->set_context ( vbloom_context );
 
-		instance->update_context_image ( vbloom_context, 0, bloomimage1->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ) );
-		instance->update_context_sampler ( vbloom_context, 0, bloom_sampler );
+		instance->update_context_image_sampler ( vbloom_context, 0, 0, bloomimage1->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ), bloom_sampler );
 
 		ContextGroup* hbloom_contextgroup = instance->create_contextgroup();
 
 		Context hbloom_context = instance->create_context ( postproc_context_base_id );
 		hbloom_contextgroup->set_context ( hbloom_context );
 
-		instance->update_context_image ( hbloom_context, 0, bloomimage2->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ) );
-		instance->update_context_sampler ( hbloom_context, 0, bloom_sampler );
+		instance->update_context_image_sampler ( hbloom_context, 0, 0, bloomimage2->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ), bloom_sampler );
 
 		renderstage_index++;
 		//vertical bloom
@@ -144,8 +140,7 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		Context composition_context = instance->create_context ( postproc_context_base_id );
 		composition_contextgroup->set_context ( composition_context );
 
-		instance->update_context_image ( composition_context, 0, bloomimage1->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ) );
-		instance->update_context_sampler ( composition_context, 0, composition_bloom_sampler );
+		instance->update_context_image_sampler ( composition_context, 0, 0, bloomimage1->create_use ( ImagePart::eColor, {1, 6}, {0, 1} ), composition_bloom_sampler );
 
 		renderstage_index++;
 		//final bloom composition
@@ -164,8 +159,7 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		Context hdr_context = instance->create_context ( postproc_context_base_id );
 		hdr_contextgroup->set_context ( hdr_context );
 
-		instance->update_context_image ( hdr_context, 0, lightaccumulation->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ) );
-		instance->update_context_sampler ( hdr_context, 0, composition_hdr_sampler );
+		instance->update_context_image_sampler ( hdr_context, 0, 0, lightaccumulation->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), composition_hdr_sampler );
 		
 		//hdr composition
 		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, diffuse );

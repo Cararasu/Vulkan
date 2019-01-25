@@ -637,22 +637,41 @@ void VInstance::contextbase_registered ( ContextBaseId id ) {
 	const ContextBase* contextbase_ptr = contextbase ( id );
 	u32 ds_size = 0;
 	if ( contextbase_ptr->datagroup.size ) ds_size++;
-	if ( contextbase_ptr->image_count ) ds_size++;
-	if ( contextbase_ptr->image_count ) ds_size++;
+	ds_size += contextbase_ptr->texture_resources.size;
 
 	Array<vk::DescriptorSetLayoutBinding> dslbs ( ds_size );
-	u32 index = 0;
+	u32 dscount = 0;
 	if ( contextbase_ptr->datagroup.size ) {
-		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll, nullptr );
-		index++;
+		dslbs[dscount] = vk::DescriptorSetLayoutBinding ( dscount, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll, nullptr );
+		dscount++;
 	}
-	if ( contextbase_ptr->image_count ) {
-		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eSampledImage, contextbase_ptr->image_count, vk::ShaderStageFlagBits::eAll, nullptr );
-		index++;
-	}
-	if ( contextbase_ptr->sampler_count ) {
-		dslbs[index] = vk::DescriptorSetLayoutBinding ( index, vk::DescriptorType::eSampler, contextbase_ptr->sampler_count, vk::ShaderStageFlagBits::eAll, nullptr );
-		index++;
+	for ( TextureResource& texres : contextbase_ptr->texture_resources ) {
+		vk::DescriptorType type;
+		switch(texres.type) {
+		case TextureResourceType::eImage:
+			if(texres.needs_write)
+				type = vk::DescriptorType::eStorageImage;
+			else
+				type = vk::DescriptorType::eSampledImage;
+			break;
+		case TextureResourceType::eSampler:
+			type = vk::DescriptorType::eSampler;
+			break;
+		case TextureResourceType::eImageSampled:
+			type = vk::DescriptorType::eCombinedImageSampler;
+			break;
+		case TextureResourceType::eBufferSampled:
+			if(texres.needs_write)
+				type = vk::DescriptorType::eStorageTexelBuffer;
+			else
+				type = vk::DescriptorType::eUniformTexelBuffer;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+		dslbs[dscount] = vk::DescriptorSetLayoutBinding ( dscount, type, texres.arraycount, vk::ShaderStageFlagBits::eAll, nullptr );
+		dscount++;
 	}
 
 	VContextBase v_contextbase;
@@ -703,6 +722,7 @@ void VInstance::render_bundles ( Array<RenderBundle*> bundles ) {
 			}
 		}
 	}
+	local_allocator.clear();
 }
 RenderBundle* VInstance::create_main_bundle ( ) {
 	return new VMainBundle ( this );
@@ -788,39 +808,32 @@ void VInstance::update_context_data ( Context& context, void* data ) {
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	v_context->data = data;
 }
-void VInstance::update_context_image ( Context& context, u32 index, ImageUseRef imageuse ) {
+void VInstance::update_context_image_sampler ( Context& context, u32 index, u32 array_index, ImageUseRef imageuse, Sampler* sampler ) {
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	const ContextBase* contextbase_ptr = contextbase ( context.contextbase_id );
 	
-	v_context->images[index] = VImageUseRef(imageuse);
 	
-	u32 writecount = 0;
-	if ( contextbase_ptr->datagroup.size ) writecount++;
-	if ( contextbase_ptr->image_count ) {
-		//bind descriptorset to image
-		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( vk::Sampler(), v_context->images[index].imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
-		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( v_context->descriptor_set, writecount, index, 1, vk::DescriptorType::eSampledImage, &imagewrite, nullptr, nullptr );
-		vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
-		writecount++;
-	}
-}
-void VInstance::update_context_sampler ( Context& context, u32 index, Sampler* sampler ) {
-	VContext* v_context = v_context_map[context.contextbase_id][context.id];
-	const ContextBase* contextbase_ptr = contextbase ( context.contextbase_id );
+	u32 writeindex = contextbase_ptr->datagroup.size ? index + 1 : index;
+	VBoundTextureResource& texres = v_context->texture_resources[index];
 	
+	texres.imageuse = VImageUseRef(imageuse);
 	VSampler* v_sampler = m_resource_manager->v_samplers[sampler->id];
-	v_context->samplers[index] = v_sampler;
+	texres.sampler = v_sampler;
 	
-	u32 writecount = 0;
-	if ( contextbase_ptr->datagroup.size ) writecount++;
-	if ( contextbase_ptr->image_count ) writecount++;
-	if ( contextbase_ptr->sampler_count ) {
-		//bind descriptorset to image
-		vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( v_sampler->sampler, vk::ImageView(), vk::ImageLayout::eUndefined );
-		vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( v_context->descriptor_set, writecount, index, 1, vk::DescriptorType::eSampler, &imagewrite, nullptr, nullptr );
-		vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
-		writecount++;
-	}
+	//bind descriptorset to image
+	vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( 
+			texres.sampler->sampler, 
+			texres.imageuse.imageview(), 
+			vk::ImageLayout::eShaderReadOnlyOptimal );
+	
+	vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( 
+			v_context->descriptor_set, 
+			writeindex,
+			array_index, 
+			1, 
+			texres.type, 
+			&imagewrite, nullptr, nullptr );
+	vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
 }
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {
