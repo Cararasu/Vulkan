@@ -13,10 +13,13 @@ struct VInstance;
 struct VModel;
 struct VSampler;
 
-struct VContextBuffer {
-	//DynArray<>
+extern const u32 CONTEXT_DESCRIPTOR_SET_COUNT;
 
+struct VContextDS {
+	u64 last_updated_frame_index = 0;
+	vk::DescriptorSet descriptor_set;
 };
+
 struct VContextBase {
 	vk::DescriptorSetLayout descriptorset_layout;
 };
@@ -38,9 +41,11 @@ struct VContext {
 
 	void* data;
 	Array<VBoundTextureResource> texture_resources;
+	bool needs_update = true;
 
 	vk::DescriptorPool descriptor_pool;
-	vk::DescriptorSet descriptor_set;
+	u32 current_ds;
+	VContextDS descriptor_sets[2];
 
 	VContext ( VInstance* instance, ContextBaseId contextbase_id );
 	~VContext();
@@ -48,8 +53,13 @@ struct VContext {
 	Context context() {
 		return {id, contextbase_id};
 	}
-	
-	void update_if_needed();
+	void cycle_descriptor_set() {
+		current_ds = (current_ds + 1) % CONTEXT_DESCRIPTOR_SET_COUNT;
+	}
+	vk::DescriptorSet descriptor_set() {
+		return descriptor_sets[current_ds].descriptor_set;
+	}
+	void prepare_for_use();
 };
 
 struct VContextGroup : public ContextGroup {

@@ -45,7 +45,7 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 			createInfo.pSetLayouts = v_descriptor_set_layouts.data();
 		}
 		std::array<vk::PushConstantRange, 1> pushConstRanges = {};
-		if(pushconsts) {
+		if ( pushconsts ) {
 			pushConstRanges[0].stageFlags = vk::ShaderStageFlagBits::eAllGraphics;
 			pushConstRanges[0].offset = pushconsts->offset;
 			pushConstRanges[0].size = pushconsts->size;
@@ -57,7 +57,7 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 }
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct ) {
-	for(u32 i = 0; i < p_struct->pipelines.size; i++ ){
+	for ( u32 i = 0; i < p_struct->pipelines.size; i++ ) {
 		if ( p_struct->pipelines[i] ) {
 			v_instance->vk_device ().destroyPipeline ( p_struct->pipelines[i] );
 			p_struct->pipelines[i] = vk::Pipeline();
@@ -98,25 +98,25 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 		for ( std::pair<VBuffer*, VThinBuffer> p : bufferstorage->buffers ) {
 			vk::BufferCopy buffercopy ( 0, 0, p.first->size );
 			//printf("VThinBuffer transfer 0x%x - 0x%x\n", p.second.buffer, p.first->buffer);
-			buffer.copyBuffer(p.second.buffer, p.first->buffer, 1, &buffercopy);
+			buffer.copyBuffer ( p.second.buffer, p.first->buffer, 1, &buffercopy );
 		}
 		bufferstorage->free_transferbuffers ( v_instance->frame_index );
 	}
-	
-	MyDynArray<vk::ImageMemoryBarrier, AlwaysGrowAllocator> barriers(&v_instance->local_allocator);
-	barriers.reserve(32);
+
+	MyDynArray<vk::ImageMemoryBarrier, AlwaysGrowAllocator> barriers ( &v_instance->local_allocator );
+	barriers.reserve ( 32 );
 	vk::PipelineStageFlags sourceStage, destinationStage;
-	
+
 	Map<ModelBaseId, IdPtrArray<VModel>> v_model_map;
-	for(auto& p : v_instance->v_model_map) {
-		for(VModel* v_model : p.second) {
-			for(VContext* v_context : v_model->v_contexts) {
-				if(v_context) {
+	for ( auto& p : v_instance->v_model_map ) {
+		for ( VModel* v_model : p.second ) {
+			for ( VContext* v_context : v_model->v_contexts ) {
+				if ( v_context ) {
 					for ( VBoundTextureResource& texres : v_context->texture_resources ) {
 						if ( texres.imageuse ) {
 							VImageUse* imageuse = texres.imageuse.deref();
-							barriers.push_back(texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
-								imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
+							barriers.push_back ( texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal,
+							                     imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ) );
 						}
 					}
 				}
@@ -125,21 +125,21 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 	}
 	for ( auto it = cgroup->context_map.begin(); it != cgroup->context_map.end(); it++ ) {
 		VContext* v_context = it->second;
-		v_context->update_if_needed();
+		v_context->prepare_for_use();
 		for ( VBoundTextureResource& texres : v_context->texture_resources ) {
 			if ( texres.imageuse ) {
 				VImageUse* imageuse = texres.imageuse.deref();
-				barriers.push_back(texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal, 
-					imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ));
+				barriers.push_back ( texres.imageuse.image->transition_layout_impl ( vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal,
+				                     imageuse->mipmaps, imageuse->layers, &sourceStage, &destinationStage ) );
 			}
 		}
 	}
 	buffer.pipelineBarrier (
-		sourceStage, destinationStage,
-		vk::DependencyFlags(),
-		{},//memoryBarriers
-		{},//bufferBarriers
-		vk::ArrayProxy<const vk::ImageMemoryBarrier>(barriers.size, barriers.data)//imageBarriers
+	    sourceStage, destinationStage,
+	    vk::DependencyFlags(),
+	    {},//memoryBarriers
+	    {},//bufferBarriers
+	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( barriers.size, barriers.data ) //imageBarriers
 	);
 }
 void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index ) {
@@ -153,16 +153,16 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		descriptor_offset += 1;
 	}
 
-	MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> descriptorSets(&v_instance->local_allocator);
-	descriptorSets.reserve(32);
+	MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> descriptorSets ( &v_instance->local_allocator );
+	descriptorSets.reserve ( 32 );
 	for ( ContextBaseId id : p_struct->contextBaseId ) {
 		VContext* context_ptr = cgroup->context_map[id];
 		assert ( context_ptr );
-		context_ptr->update_if_needed();
-		descriptorSets.push_back ( context_ptr->descriptor_set );
+		context_ptr->prepare_for_use();
+		descriptorSets.push_back ( context_ptr->descriptor_set() );
 	}
 	if ( descriptorSets.size ) {
-		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet>(descriptorSets.size, descriptorSets.data), {} );
+		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet> ( descriptorSets.size, descriptorSets.data ), {} );
 		descriptor_offset += descriptorSets.size;
 	}
 	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipelines[pipeline_index] );
@@ -178,15 +178,15 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 
 		//TODO improve this as it is terribly bad
 		//maybe sort the contexts? and then binary search?
-		MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> model_descriptorSets(&v_instance->local_allocator);
-		model_descriptorSets.reserve(32);
+		MyDynArray<vk::DescriptorSet, AlwaysGrowAllocator> model_descriptorSets ( &v_instance->local_allocator );
+		model_descriptorSets.reserve ( 32 );
 		for ( ContextBaseId id : p_struct->model_contextBaseId ) {
 			bool found = false;
 			for ( u32 i = 0; i < modelbase_ptr->contextbase_ids.size; i++ ) {
 				if ( modelbase_ptr->contextbase_ids[i] == id ) {
 					assert ( v_model->v_contexts[i] );
-					v_model->v_contexts[i]->update_if_needed();
-					model_descriptorSets.push_back ( v_model->v_contexts[i]->descriptor_set );
+					v_model->v_contexts[i]->prepare_for_use();
+					model_descriptorSets.push_back ( v_model->v_contexts[i]->descriptor_set() );
 					found = true;
 					break;
 				}
@@ -194,7 +194,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			assert ( found );
 		}
 		if ( model_descriptorSets.size ) {
-			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet>(model_descriptorSets.size, model_descriptorSets.data), {} );
+			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet> ( model_descriptorSets.size, model_descriptorSets.data ), {} );
 		}
 
 		cmdbuffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );
@@ -203,7 +203,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
 		else
 			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer}, {0} );
-		
+
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
 	}
 }

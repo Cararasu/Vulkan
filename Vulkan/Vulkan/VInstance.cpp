@@ -809,9 +809,11 @@ void VInstance::update_context_data ( Context& context, void* data ) {
 	v_context->data = data;
 }
 void VInstance::update_context_image_sampler ( Context& context, u32 index, u32 array_index, ImageUseRef imageuse, Sampler* sampler ) {
+	
 	VContext* v_context = v_context_map[context.contextbase_id][context.id];
 	const ContextBase* contextbase_ptr = contextbase ( context.contextbase_id );
 	
+	v_context->cycle_descriptor_set();
 	
 	u32 writeindex = contextbase_ptr->datagroup.size ? index + 1 : index;
 	VBoundTextureResource& texres = v_context->texture_resources[index];
@@ -820,20 +822,7 @@ void VInstance::update_context_image_sampler ( Context& context, u32 index, u32 
 	VSampler* v_sampler = m_resource_manager->v_samplers[sampler->id];
 	texres.sampler = v_sampler;
 	
-	//bind descriptorset to image
-	vk::DescriptorImageInfo imagewrite = vk::DescriptorImageInfo ( 
-			texres.sampler->sampler, 
-			texres.imageuse.imageview(), 
-			vk::ImageLayout::eShaderReadOnlyOptimal );
-	
-	vk::WriteDescriptorSet writeDescriptorSet = vk::WriteDescriptorSet ( 
-			v_context->descriptor_set, 
-			writeindex,
-			array_index, 
-			1, 
-			texres.type, 
-			&imagewrite, nullptr, nullptr );
-	vk_device().updateDescriptorSets ( 1, &writeDescriptorSet, 0, nullptr );
+	v_context->needs_update = true;
 }
 
 void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory* memory ) {
