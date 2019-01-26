@@ -54,7 +54,7 @@ void main() {
 	}
 	vec4 diffuseColor = subpassLoad(inputDiffuse);
 	
-	vec3 reflectcolor = diffuseColor.rgb * v_umbraColor_range.rgb * (lambertian);
+	vec3 reflectcolor = diffuseColor.rgb * v_umbraColor_range.rgb;
    
-	outLightAccumulation = vec4(reflectcolor * (intensity * specular * 1.5 + intensity), 1.0);
+	outLightAccumulation = vec4(reflectcolor * (intensity * specular * 1.5  + intensity) * lambertian, 1.0);
 }

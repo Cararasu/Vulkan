@@ -27,7 +27,7 @@ struct VImageUseRef {
 	operator bool() {
 		return id != 0;
 	}
-	operator!() {
+	bool operator!() {
 		return id == 0;
 	}
 	bool is_updated ();

@@ -117,7 +117,7 @@ void VContext::prepare_for_use() {
 			dsimageinfo.resize(texture_resources.size);
 			writesets.resize(texture_resources.size);
 
-			for( int i = 0; i < texture_resources.size; i++ ) {
+			for( u64 i = 0; i < texture_resources.size; i++ ) {
 				vk::Sampler sampler = texture_resources[i].sampler ? texture_resources[i].sampler->sampler : vk::Sampler();
 				dsimageinfo[i] = vk::DescriptorImageInfo ( sampler, texture_resources[i].imageuse.imageview(), vk::ImageLayout::eShaderReadOnlyOptimal );
 				writesets[i] = vk::WriteDescriptorSet (
@@ -128,7 +128,6 @@ void VContext::prepare_for_use() {
 						nullptr, nullptr
 					);
 			}
-			//TODO vk::DescriptorType::eSampledImage is wrong
 			v_instance->vk_device().updateDescriptorSets ( writesets, {} );
 			needs_update = false;
 		}

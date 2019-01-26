@@ -454,7 +454,7 @@ void WorldShard::update_shard ( World* world ) {
 	global_light.direction_amb = glm::normalize ( w2v_rot_matrix * glm::vec4 ( world->light_vector, 0.0f ) );
 	//global_light.direction_amb /= global_light.direction_amb.w;
 	global_light.direction_amb.w = 0.4f;
-	global_light.color = glm::vec4 ( 1.5f, 1.4f, 1.1f, 1.0f );
+	global_light.color = glm::vec4 ( 1.5f, 1.4f, 1.2f, 1.0f );
 
 	world->instance->update_context_data ( light_vector_context, &global_light );
 	igroup->register_instances ( dirlight_instance_base_id, world->fullscreen_model, nullptr, 1 );
