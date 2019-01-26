@@ -45,14 +45,7 @@ GameState g_state;
 //TODO shaderSampledImageArrayDynamicIndexing
 //TODO shaderUniformBufferArrayDynamicIndexing
 
-//TODO
-
-//TODO add bitmask to objects to determine rendering and sort after that bitmask
-
-//TODO change samplers and images and combine them in a list of definitions
-
-//TODO best fit shadowmap to the view frustum
-
+//TODO add bitmask to instances to determine conditional rendering
 
 int main ( int argc, char **argv ) {
 

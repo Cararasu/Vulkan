@@ -105,10 +105,10 @@ Camera generate_shadowmap_camera(Camera* cam, glm::vec3 light_dir, float near, f
 	near2 /= near2.w;
 	far1 /= far1.w;
 	far2 /= far2.w;
-	
 	//can probably be calculated more easily with aspect and fov only but I have no idea how to do that
 	Sphere sphere = find_center_of_sphere(near1, near2, far1, far2);
-	return Camera( 
+	
+	Camera shadow_camera( 
 		sphere.center,
 		forward * (sphere.range + 1000.0f), 
 		glm::vec3(0.0f, 1.0f, 0.0f), 
@@ -116,4 +116,36 @@ Camera generate_shadowmap_camera(Camera* cam, glm::vec3 light_dir, float near, f
 		sphere.range, -1.0f * sphere.range, 
 		0.0f, 
 		1000.0f + (2.0f * sphere.range));
+	
+	glm::mat4 s2lv_matrix = shadow_camera.orientation.w2v_mat() * s2v_matrix;
+	
+	glm::vec4 points[8] = {
+		s2lv_matrix * glm::vec4(-1.0f, -1.0f, 0.0f, 1.0),
+		s2lv_matrix * glm::vec4(1.0f, 1.0f, 0.0f, 1.0),
+		s2lv_matrix * glm::vec4(-1.0f, 1.0f, 0.0f, 1.0),
+		s2lv_matrix * glm::vec4(1.0f, -1.0f, 0.0f, 1.0),
+		
+		s2lv_matrix * glm::vec4(-1.0f, -1.0f, 1.0f, 1.0),
+		s2lv_matrix * glm::vec4(1.0f, 1.0f, 1.0f, 1.0),
+		s2lv_matrix * glm::vec4(-1.0f, 1.0f, 1.0f, 1.0),
+		s2lv_matrix * glm::vec4(1.0f, -1.0f, 1.0f, 1.0),
+	};
+	
+	float xmin = std::numeric_limits<float>::infinity(), xmax = -std::numeric_limits<float>::infinity();
+	float ymin = std::numeric_limits<float>::infinity(), ymax = -std::numeric_limits<float>::infinity();
+	
+	for(int i = 0; i < 8; i++) {
+		points[i] /= points[i].w;
+		xmin = glm::min(xmin, points[i].x);
+		xmax = glm::max(xmax, points[i].x);
+		ymin = glm::min(ymin, points[i].y);
+		ymax = glm::max(ymax, points[i].y);
+	}
+	
+	shadow_camera.left = xmin;
+	shadow_camera.right = xmax;
+	shadow_camera.bottom = ymin;
+	shadow_camera.top = ymax;
+	
+	return shadow_camera;
 }
