@@ -280,15 +280,15 @@ int main ( int argc, char **argv ) {
 		instance->process_events();
 
 		world.world_shard.camera = g_state.camera;
-		world.shadow_shard[0].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, g_state.camera.near, 75.0f );
+		world.shadow_shard[0].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, g_state.camera.near, 100.0f );
 		world.shadow_shard[0].camera_near = g_state.camera.near;
-		world.shadow_shard[0].camera_far = 75.0f;
-		world.shadow_shard[1].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 75.0f, 200.0f );
-		world.shadow_shard[1].camera_near = 75.0f;
-		world.shadow_shard[1].camera_far = 200.0f;
-		world.shadow_shard[2].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 200.0f, 1000.0f );
-		world.shadow_shard[2].camera_near = 200.0f;
-		world.shadow_shard[2].camera_far = 1000.0f;
+		world.shadow_shard[0].camera_far = 100.0f;
+		world.shadow_shard[1].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 100.0f, 400.0f );
+		world.shadow_shard[1].camera_near = 100.0f;
+		world.shadow_shard[1].camera_far = 400.0f;
+		world.shadow_shard[2].camera = generate_shadowmap_camera ( &g_state.camera, world.light_vector, 400.0f, 1000.0f );
+		world.shadow_shard[2].camera_near = 400.0f;
+		world.shadow_shard[2].camera_far = 1500.0f;
 		world.update_shards ( g_state.delta_time );
 
 		instance->render_bundles ( {bundle} );
