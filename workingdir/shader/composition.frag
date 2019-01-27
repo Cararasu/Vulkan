@@ -16,9 +16,10 @@ const mat4 screenspace_to_coords_mat = mat4(
 	0.5, 0.5, 0.0, 1.0 );
 
 void main() {
+	vec4 pos = (screenspace_to_coords_mat * vec4(v_position, 1.0));
 	vec4 color = vec4(0.0);
 	for(int i = 0; i < 7; i++) {
-		color += textureLod(bloom, (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy, i);
+		color += textureLod(bloom, pos.xy, i);
 	}
 	
 	outLightAccumulation = color;

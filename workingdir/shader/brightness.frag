@@ -22,9 +22,10 @@ layout(push_constant) uniform LodBlock {
 const float brightness_cutoff = 1.1;
 
 void main() {
+	vec4 pos = (screenspace_to_coords_mat * vec4(v_position, 1.0));
 	outLightAccumulation = 
 		max(
-			texture(tex, (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy), 
+			texture(tex, pos.xy), 
 			vec4(brightness_cutoff)
 		) - vec4(brightness_cutoff);
 }

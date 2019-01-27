@@ -76,8 +76,8 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 	bundle->get_renderstage ( renderstage_index )->set_contextgroup ( world->world_shard.cgroup );
 	bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
-	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyCeil2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
-	Image* bloomimage2 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyCeil2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
+	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyRound2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
+	Image* bloomimage2 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyRound2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
 
 	{
 		renderstage_index++;

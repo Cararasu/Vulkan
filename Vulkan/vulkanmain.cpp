@@ -72,11 +72,11 @@ int main ( int argc, char **argv ) {
 
 	Window* window = instance->create_window();
 
-	Extent2D<s32> window_size ( instance->get_primary_monitor()->extend - Extent2D<s32>(100.0, 100.0));
-	window->position() = primMonitor->offset + Extent2D<s32>(50.0, 50.0);
+	Extent2D<s32> window_size ( instance->get_primary_monitor()->extend);
+	window->position() = primMonitor->offset;
 	window->showmode() = WindowShowMode::eWindowed;
 	window->fullscreen_monitor() = nullptr;
-	window->border() = WindowBorder::eNormal;
+	window->border() = WindowBorder::eNone;
 	window->size() = window_size;
 	window->visible() = true;
 

@@ -70,8 +70,10 @@ enum class ImageScalingType {
 	eScaleMultiply,
 	eScaleCeil2,
 	eScaleFloor2,
+	eScaleRound2,
 	eScaleMultiplyCeil2,
 	eScaleMultiplyFloor2,
+	eScaleMultiplyRound2,
 };
 
 struct Image : public Resource {
