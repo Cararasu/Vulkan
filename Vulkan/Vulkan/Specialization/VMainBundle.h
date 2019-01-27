@@ -1,5 +1,4 @@
-#ifndef MAINBUNDLE_H
-#define MAINBUNDLE_H
+#pragma once
 
 #include "VSpecialStructs.h"
 
@@ -109,5 +108,3 @@ struct VMainBundle : public RenderBundle {
 
 	void v_dispatch ( );
 };
-
-#endif // MAINBUNDLE_H

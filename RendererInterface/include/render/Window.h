@@ -15,6 +15,10 @@ enum class CursorMode {
 	eInvisible,
 	eCatch,
 };
+enum class WindowBorder {
+	eNormal,
+	eNone,
+};
 
 enum class WindowAlphaBlend {
 	eOpaque,
@@ -33,6 +37,7 @@ protected:
 	ChangeableValue<Extent2D<s32>> m_size = Extent2D<s32> ( 200, 200 );
 	ChangeableValue<u32> m_refreshrate = 60;
 	ChangeableValue<WindowShowMode> m_showmode = WindowShowMode::eWindowed;
+	ChangeableValue<WindowBorder> m_border = WindowBorder::eNormal;
 	ChangeableValue<bool> m_focused = true;
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
@@ -61,6 +66,9 @@ public:
 	}
 	const ChangeableValue<WindowShowMode>& showmode() {
 		return m_showmode;
+	}
+	const ChangeableValue<WindowBorder>& border() {
+		return m_border;
 	}
 	const ChangeableValue<bool>& focused() {
 		return m_focused;

@@ -6,29 +6,29 @@
 #include "VInstance.h"
 
 
-VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, 
-		vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, 
-		vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers,
+                         vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+                         vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
 	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ),
-	memory ( needed, recommended ), image (), dependant_image ( 0 ), fraction ( 1.0f ) {
+	memory ( needed, recommended ), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::eNone ), scaling ( 1.0f ) {
 	v_set_extent ( width, height, depth );
 	init();
 }
-VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers, 
-		vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, 
-		float fraction, RId dependant_image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
+VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers,
+                         vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect,
+                         ImageScalingType scalingtype, float scaling, RId dependant_image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
 	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ),
-	memory ( needed, recommended ), image (), dependant_image ( dependant_image ), fraction ( fraction ) {
-	v_set_extent ( width * fraction, height * fraction, depth * fraction );
+	memory ( needed, recommended ), image (), dependant_image ( dependant_image ), scalingtype ( scalingtype ), scaling ( scaling ) {
+	v_set_extent ( width, height, depth );
 	init();
 }
 VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :
 	Image ( transform_image_format ( window->present_swap_format.format ), window->swap_chain_extend.x, window->swap_chain_extend.y, 0, 1, 1, true ),
 	v_instance ( instance ), v_format ( window->present_swap_format.format ), tiling ( vk::ImageTiling::eOptimal ), usage ( vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ) ), aspect ( vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	window ( window ),
-	memory(), image (), dependant_image ( 0 ), fraction ( 0.0f ) {
+	memory(), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::eNone ), scaling ( 1.0f ) {
 
 }
 VBaseImage::~VBaseImage() {
@@ -98,15 +98,15 @@ void VBaseImage::rebuild_image ( u32 width, u32 height, u32 depth ) {
 		v_instance->free_gpu_memory ( memory );
 		memory.memory = vk::DeviceMemory();
 	}
-	v_set_extent ( width * fraction, height * fraction, depth * fraction );
+	v_set_extent ( width, height, depth );
 	init();
 }
 void VBaseImage::v_delete_use ( RId id ) {
 	v_instance->destroyImageView ( usages[id].imageview );
 	usages.remove ( id );
 }
-void VBaseImage::v_register_use(RId id) {
-	if(!id) return;
+void VBaseImage::v_register_use ( RId id ) {
+	if ( !id ) return;
 	usages[id].refcount++;
 }
 ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
@@ -129,10 +129,10 @@ ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u
 	VImageUseRef vimageuse = v_create_use ( aspects, mipmaps, layers );
 	return { vimageuse.id, this };
 }
-void VBaseImage::v_deregister_use(RId id) {
-	if(!id) return;
-	if(--usages[id].refcount == 0) {
-		v_delete_use (id);
+void VBaseImage::v_deregister_use ( RId id ) {
+	if ( !id ) return;
+	if ( --usages[id].refcount == 0 ) {
+		v_delete_use ( id );
 	}
 }
 VImageUseRef VBaseImage::v_create_use ( vk::ImageAspectFlags aspects, Range<u32> mipmaps, Range<u32> layers ) {
@@ -167,6 +167,44 @@ void VBaseImage::v_create_imageview ( VImageUse* imageuse ) {
 	}
 }
 void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
+	if(scalingtype == ImageScalingType::eScaleMultiply || scalingtype == ImageScalingType::eScaleMultiplyCeil2 || scalingtype == ImageScalingType::eScaleMultiplyFloor2) {
+		width *= scaling;
+		height *= scaling;
+		depth *= scaling;
+	}
+	if(scalingtype == ImageScalingType::eScaleCeil2 || scalingtype == ImageScalingType::eScaleMultiplyCeil2) {
+		if(width != 0) {
+			u32 newval = 1;
+			while (newval < width) newval *= 2;
+			width = newval;
+		}
+		if(height != 0) {
+			u32 newval = 1;
+			while (newval < height) newval *= 2;
+			height = newval;
+		}
+		if(depth != 0) {
+			u32 newval = 1;
+			while (newval < depth) newval *= 2;
+			depth = newval;
+		}
+	} else if(scalingtype == ImageScalingType::eScaleFloor2 || scalingtype == ImageScalingType::eScaleMultiplyFloor2) {
+		if(width != 0) {
+			u32 newval = 1;
+			while (newval < width) newval *= 2;
+			depth = newval / 2;
+		}
+		if(height != 0) {
+			u32 newval = 1;
+			while (newval < height) newval *= 2;
+			depth = newval / 2;
+		}
+		if(depth != 0) {
+			u32 newval = 1;
+			while (newval < depth) newval *= 2;
+			depth = newval / 2;
+		}
+	}
 	if ( height == 0 ) {
 		type = vk::ImageType::e1D;
 		extent = vk::Extent3D ( width, 1, 1 );

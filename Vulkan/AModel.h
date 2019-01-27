@@ -1,5 +1,4 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
 #include <render/Model.h>
 #include <render/Header.h>
@@ -85,5 +84,3 @@ struct BModel {
 	}
 	
 };
-
-#endif // MODEL_H

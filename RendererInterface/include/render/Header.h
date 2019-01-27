@@ -48,7 +48,7 @@ struct MyDynArray {
 
 	void free() {
 		if ( data ) {
-			for ( int i = 0; i < size; i++ ) {
+			for ( u64 i = 0; i < size; i++ ) {
 				data[i].~T();
 				allocator->free ( data );
 			}

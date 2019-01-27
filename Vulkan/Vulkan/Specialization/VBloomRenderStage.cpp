@@ -595,8 +595,8 @@ VBloomRenderStage::VBloomRenderStage ( VInstance* instance ) :
 	v_instance ( instance ),
 	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
 	postproc_context_base_id
-}, {}, 5 ),
-renderpasses ( 5 ),
+}, {}, 7 ),
+renderpasses ( 7 ),
 subpass_inputs ( 1 ) {
 
 	v_bundlestates.resize ( 1 );
@@ -786,8 +786,8 @@ HBloomRenderStage::HBloomRenderStage ( VInstance* instance ) :
 	v_instance ( instance ),
 	bloom_pipeline ( fullscreen_modelbase_id, single_instance_base_id, {
 	postproc_context_base_id
-}, {}, 5 ),
-renderpasses ( 5 ),
+}, {}, 7 ),
+renderpasses ( 7 ),
 subpass_inputs ( 1 ) {
 
 	v_bundlestates.resize ( 1 );

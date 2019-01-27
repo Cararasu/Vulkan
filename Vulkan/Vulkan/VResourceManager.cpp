@@ -208,12 +208,12 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 	stbi_image_free ( pixels );
 	return v_image;
 }
-Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type, u32 mipmap_layers, float scaling ) {
+Image* VResourceManager::create_dependant_image ( Image* image, ImageFormat type, u32 mipmap_layers, ImageScalingType scalingtype, float scaling ) {
 	VBaseImage* base_image = dynamic_cast<VBaseImage*> ( image );
 	if ( !base_image ) return nullptr;
-	return v_create_dependant_image ( base_image, type, mipmap_layers, scaling );
+	return v_create_dependant_image ( base_image, type, mipmap_layers, scalingtype, scaling );
 }
-VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, u32 mipmap_layers, float scaling ) {
+VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image, ImageFormat type, u32 mipmap_layers, ImageScalingType scalingtype, float scaling ) {
 	vk::Format format = transform_image_format ( type );
 
 	vk::ImageUsageFlags usages;
@@ -254,8 +254,9 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	                        aspectFlags,
-							base_image->id,
+							scalingtype,
 							scaling,
+							base_image->id,
 	                        vk::MemoryPropertyFlagBits::eDeviceLocal,
 							vk::MemoryPropertyFlags() ) );
 	auto it = dependency_map.find ( base_image );

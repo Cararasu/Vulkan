@@ -65,6 +65,15 @@ struct ImageUseRef {
 	void detach();
 };
 
+enum class ImageScalingType {
+	eNone,
+	eScaleMultiply,
+	eScaleCeil2,
+	eScaleFloor2,
+	eScaleMultiplyCeil2,
+	eScaleMultiplyFloor2,
+};
+
 struct Image : public Resource {
 	ImageFormat format;
 	u32 width, height, depth;

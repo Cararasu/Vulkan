@@ -84,7 +84,8 @@ struct VBaseImage : public Image {
 	//own image
 	GPUMemory memory;
 	RId dependant_image;
-	float fraction;
+	ImageScalingType scalingtype;
+	float scaling;
 
 	VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers,
 	             vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, 
@@ -92,7 +93,7 @@ struct VBaseImage : public Image {
 
 	VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, u32 layers, u32 mipmap_layers,
 	             vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspect, 
-				 float fraction, RId dependant_image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
+				 ImageScalingType scalingtype, float scaling, RId dependant_image, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended = vk::MemoryPropertyFlags());
 
 	VBaseImage ( VInstance* instance, VWindow* window );
 	virtual ~VBaseImage() override;

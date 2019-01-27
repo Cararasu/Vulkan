@@ -17,7 +17,7 @@ const mat4 screenspace_to_coords_mat = mat4(
 
 void main() {
 	vec4 color = vec4(0.0);
-	for(int i = 0; i < 5; i++) {
+	for(int i = 0; i < 7; i++) {
 		color += textureLod(bloom, (screenspace_to_coords_mat * vec4(v_position, 1.0)).xy, i);
 	}
 	

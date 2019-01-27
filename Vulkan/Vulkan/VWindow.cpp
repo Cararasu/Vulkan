@@ -280,15 +280,15 @@ VWindow::VWindow ( VInstance* instance ) : v_instance ( instance ) {
 }
 VWindow::~VWindow() {
 	v_instance->destroy_window ( this );
-	
-	for(VBaseImage* present_image : present_images) 
-		if(present_image) 
+
+	for ( VBaseImage* present_image : present_images )
+		if ( present_image )
 			v_instance->m_resource_manager->v_delete_image ( present_image );
 }
 
 void VWindow::initialize() {
 	glfwWindowHint ( GLFW_CLIENT_API, GLFW_NO_API );
-	switch(m_showmode.wanted) {
+	switch ( m_showmode.wanted ) {
 	case WindowShowMode::eMaximized:
 		glfwWindowHint ( GLFW_MAXIMIZED, true );
 		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
@@ -304,6 +304,7 @@ void VWindow::initialize() {
 	}
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
+	glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
 
 	VMonitor* fullscreen_monitor = dynamic_cast<VMonitor*> ( this->m_fullscreen_monitor.wanted );
 	if ( fullscreen_monitor ) { //it is fullscreen
@@ -317,8 +318,8 @@ void VWindow::initialize() {
 	}
 
 	window = glfwCreateWindow ( m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr );
-	
-	if(m_showmode.wanted == WindowShowMode::eWindowed) {
+
+	if ( m_showmode.wanted == WindowShowMode::eWindowed ) {
 		glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 	}
 	m_showmode.apply();
@@ -340,7 +341,7 @@ void VWindow::initialize() {
 			event.window.action = WindowAction::eMoved;
 			event.window.x = x;
 			event.window.y = y;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 			v_logger.log<LogLevel::eDebug> ( "Position of Window %dx%d", x, y );
 			vulkan_window->m_position.apply ( {x, y} );
 		} else {
@@ -355,7 +356,7 @@ void VWindow::initialize() {
 			event.window.action = WindowAction::eResized;
 			event.window.x = x;
 			event.window.y = y;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 			v_logger.log<LogLevel::eDebug> ( "Size of Window %dx%d", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
 		} else {
@@ -368,7 +369,7 @@ void VWindow::initialize() {
 			OSEvent event;
 			event.type = OSEventType::eWindow;
 			event.window.action = WindowAction::eClosed;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 			glfwHideWindow ( window );
 			vulkan_window->m_visible.apply ( false );
 		} else {
@@ -391,7 +392,7 @@ void VWindow::initialize() {
 			OSEvent event;
 			event.type = OSEventType::eWindow;
 			event.window.value = focus == GLFW_TRUE;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
@@ -405,7 +406,7 @@ void VWindow::initialize() {
 			event.window.action = WindowAction::eIconify;
 			event.window.value = iconified == GLFW_TRUE;
 			vulkan_window->m_showmode.apply ( iconified == GLFW_TRUE ? WindowShowMode::eMinimized : WindowShowMode::eWindowed );
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -427,7 +428,7 @@ void VWindow::initialize() {
 			event.type = OSEventType::eScroll;
 			event.scroll.deltax = xoffset;
 			event.scroll.deltay = yoffset;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -438,26 +439,26 @@ void VWindow::initialize() {
 			OSEvent event;
 			event.type = OSEventType::eButton;
 			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
-			event.button.shift = (mods | GLFW_MOD_SHIFT) != 0;
-			event.button.cntrl = (mods | GLFW_MOD_CONTROL) != 0;
-			event.button.alt = (mods | GLFW_MOD_ALT) != 0;
-			event.button.super = (mods | GLFW_MOD_SUPER) != 0;
+			event.button.shift = ( mods | GLFW_MOD_SHIFT ) != 0;
+			event.button.cntrl = ( mods | GLFW_MOD_CONTROL ) != 0;
+			event.button.alt = ( mods | GLFW_MOD_ALT ) != 0;
+			event.button.super = ( mods | GLFW_MOD_SUPER ) != 0;
 			event.button.keycode = glfw_button_transform ( key );
 			event.button.scancode = scancode;
 			const char* text = glfwGetKeyName ( key, scancode );
-			if(text) {
+			if ( text ) {
 				event.button.utf8[0] = text[0];
 				event.button.utf8[1] = text[1];
-				if(text[1]) {
+				if ( text[1] ) {
 					event.button.utf8[2] = text[2];
-					if(text[2]){
+					if ( text[2] ) {
 						event.button.utf8[3] = text[3];
 					}
 				}
 			} else {
 				event.button.utf8[0] = '\0';
 			}
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 			switch ( action ) {
 			case GLFW_PRESS:
 				printf ( "Press " );
@@ -487,12 +488,12 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			OSEvent event;
 			event.type = OSEventType::eChar;
-			utf32_to_utf8(codepoint, event.charinput.utf8);
-			event.charinput.shift = (mods | GLFW_MOD_SHIFT) == true;
-			event.charinput.cntrl = (mods | GLFW_MOD_CONTROL) == true;
-			event.charinput.alt = (mods | GLFW_MOD_ALT) == true;
-			event.charinput.super = (mods | GLFW_MOD_SUPER) == true;
-			vulkan_window->eventqueue.push(event);
+			utf32_to_utf8 ( codepoint, event.charinput.utf8 );
+			event.charinput.shift = ( mods | GLFW_MOD_SHIFT ) == true;
+			event.charinput.cntrl = ( mods | GLFW_MOD_CONTROL ) == true;
+			event.charinput.alt = ( mods | GLFW_MOD_ALT ) == true;
+			event.charinput.super = ( mods | GLFW_MOD_SUPER ) == true;
+			vulkan_window->eventqueue.push ( event );
 			printf ( "%lc ", ( wint_t ) codepoint );
 			if ( mods & GLFW_MOD_SHIFT )
 				printf ( "Shift " );
@@ -513,11 +514,11 @@ void VWindow::initialize() {
 			OSEvent event;
 			event.type = OSEventType::eMouse;
 			event.mouse.action = MouseMoveAction::eMoved;
-			event.mouse.deltax = (vulkan_window->mouse_x < 0.0) ? 0.0 : xpos - vulkan_window->mouse_x;
-			event.mouse.deltay = (vulkan_window->mouse_y < 0.0) ? 0.0 : ypos - vulkan_window->mouse_y;
+			event.mouse.deltax = ( vulkan_window->mouse_x < 0.0 ) ? 0.0 : xpos - vulkan_window->mouse_x;
+			event.mouse.deltay = ( vulkan_window->mouse_y < 0.0 ) ? 0.0 : ypos - vulkan_window->mouse_y;
 			event.mouse.posx = vulkan_window->mouse_x = xpos;
 			event.mouse.posy = vulkan_window->mouse_y = ypos;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -531,7 +532,7 @@ void VWindow::initialize() {
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
 				event.mouse.action = MouseMoveAction::eEntered;
-				vulkan_window->eventqueue.push(event);
+				vulkan_window->eventqueue.push ( event );
 			} else {
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
@@ -541,7 +542,7 @@ void VWindow::initialize() {
 			event.mouse.posy = vulkan_window->mouse_x;
 			event.mouse.deltax = 0.0f;
 			event.mouse.deltay = 0.0f;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -552,13 +553,13 @@ void VWindow::initialize() {
 			OSEvent event;
 			event.type = OSEventType::eButton;
 			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
-			event.button.shift = (mods | GLFW_MOD_SHIFT) != 0;
-			event.button.cntrl = (mods | GLFW_MOD_CONTROL) != 0;
-			event.button.alt = (mods | GLFW_MOD_ALT) != 0;
-			event.button.super = (mods | GLFW_MOD_SUPER) != 0;
+			event.button.shift = ( mods | GLFW_MOD_SHIFT ) != 0;
+			event.button.cntrl = ( mods | GLFW_MOD_CONTROL ) != 0;
+			event.button.alt = ( mods | GLFW_MOD_ALT ) != 0;
+			event.button.super = ( mods | GLFW_MOD_SUPER ) != 0;
 			event.button.keycode = glfw_mouse_transform ( button );
 			event.button.scancode = 0;
-			vulkan_window->eventqueue.push(event);
+			vulkan_window->eventqueue.push ( event );
 		} else {
 			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
 		}
@@ -596,19 +597,32 @@ void VWindow::initialize() {
 	{
 		u32 presentModeCount;
 		vkGetPhysicalDeviceSurfacePresentModesKHR ( v_instance->vk_physical_device(), surface, &presentModeCount, nullptr );
+		bool fifo_relaxed = false, immediate = false, mailbox = false;
 		if ( presentModeCount != 0 ) {
 			vk::PresentModeKHR presentModes[presentModeCount];
 			v_instance->vk_physical_device().getSurfacePresentModesKHR ( surface, &presentModeCount, presentModes );
-			chosen_presentation_mode = vk::PresentModeKHR::eFifo;
 			for ( size_t i = 0; i < presentModeCount; i++ ) {
 				if ( presentModes[i] == vk::PresentModeKHR::eMailbox ) {
-					chosen_presentation_mode = vk::PresentModeKHR::eMailbox;
-					break;
+					mailbox = true;
 				} else if ( presentModes[i] == vk::PresentModeKHR::eImmediate ) {
-					chosen_presentation_mode = vk::PresentModeKHR::eImmediate;
+					immediate = true;
+				} else if ( presentModes[i] == vk::PresentModeKHR::eFifoRelaxed ) {
+					fifo_relaxed = true;
 				}
 			}
 		}
+		if ( false ) {
+		//if ( mailbox ) {
+			chosen_presentation_mode = vk::PresentModeKHR::eMailbox;
+		} else if ( false ) { //immediate
+			chosen_presentation_mode = vk::PresentModeKHR::eImmediate;
+		} else if ( false ) {
+		//} else if ( fifo_relaxed ) {
+			chosen_presentation_mode = vk::PresentModeKHR::eFifoRelaxed;
+		} else {
+			chosen_presentation_mode = vk::PresentModeKHR::eFifo;
+		}
+		chosen_presentation_mode = vk::PresentModeKHR::eFifo;
 	}
 
 	if ( m_visible.wanted ) {
@@ -652,10 +666,10 @@ RendResult VWindow::v_update() {
 				}
 				m_visible.apply();
 			}
-			if(m_showmode.changed()) {
-				switch(m_showmode.wanted) {
+			if ( m_showmode.changed() ) {
+				switch ( m_showmode.wanted ) {
 				case WindowShowMode::eMaximized:
-					if(m_fullscreen_monitor.wanted) {
+					if ( m_fullscreen_monitor.wanted ) {
 						VMonitor* vulkan_monitor = dynamic_cast<VMonitor*> ( m_fullscreen_monitor.wanted );
 						if ( vulkan_monitor ) {
 							VideoMode wanted_mode = vulkan_monitor->find_best_videomode ( m_size.wanted, m_refreshrate.wanted );
@@ -747,17 +761,15 @@ void VWindow::create_swapchain() {
 		    0,
 		    swap_chain );
 		QueueWrapper* queue_wrapper = &v_instance->queues;
+		u32 queueFamilyIndices[] = {queue_wrapper->graphics_queue_id, queue_wrapper->present_queue_id};
 		if ( queue_wrapper->combined_graphics_present_queue ) {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eExclusive;
 			swapchainCreateInfo.queueFamilyIndexCount = 1; // Optional
-			u32 queueFamilyIndices[] = {queue_wrapper->graphics_queue_id};
-			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices; // Optional
 		} else {
 			swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 			swapchainCreateInfo.queueFamilyIndexCount = 2;
-			u32 queueFamilyIndices[] = {queue_wrapper->present_queue_id, queue_wrapper->graphics_queue_id};
-			swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		}
+		swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		swapchainCreateInfo.preTransform = capabilities.currentTransform;//VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR??
 		switch ( m_alphablend.value ) {
 		case WindowAlphaBlend::eOpaque:
@@ -777,17 +789,17 @@ void VWindow::create_swapchain() {
 	}
 	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
 	if ( !present_images.size ) {
-		present_images.resize(images.size());
-		for(int i = 0; i < present_images.size; i++) {
+		present_images.resize ( images.size() );
+		for ( int i = 0; i < present_images.size; i++ ) {
 			present_images[i] = v_instance->m_resource_manager->v_images.insert ( new VBaseImage ( v_instance, this ) );
 		}
 	}
-	for(int i = 0; i < present_images.size; i++) {
+	for ( int i = 0; i < present_images.size; i++ ) {
 		VBaseImage* present_image = present_images[i];
 		bool changed = present_image->width != swap_chain_extend.width || present_image->height != swap_chain_extend.height || present_image->depth != 0;
 		if ( changed ) {
 			v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame %d from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
-											i, present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
+			                                i, present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
 		}
 		present_image->v_set_extent ( swap_chain_extend.width, swap_chain_extend.height, 0 );
 		present_image->v_set_format ( present_swap_format.format );

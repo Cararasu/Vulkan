@@ -7,8 +7,6 @@
 #include "VContext.h"
 #include "VMemoryAllocator.h"
 
-#define V_MAX_PGCQUEUE_COUNT (2)
-
 void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties>* layers, std::vector<vk::ExtensionProperties>* extensions );
 
 struct VExtLayerStruct {
