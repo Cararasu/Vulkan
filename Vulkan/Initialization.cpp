@@ -76,8 +76,8 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 	bundle->get_renderstage ( renderstage_index )->set_contextgroup ( world->world_shard.cgroup );
 	bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 
-	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyRound2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
-	Image* bloomimage2 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eScaleMultiplyRound2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
+	Image* bloomimage1 = resource_manager->create_dependant_image ( windowimage, ImageFormat::e4F16, 8, ImageScalingType::eMultiplyRound2, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
+	Image* bloomimage2 = resource_manager->create_dependant_image ( bloomimage1, ImageFormat::e4F16, 7, ImageScalingType::eMultiply, 0.5f );//resource_manager->create_texture ( 1024, 1024, 0, 1, 6, ImageFormat::e4F16);
 
 	{
 		renderstage_index++;
@@ -116,11 +116,11 @@ RenderBundle* setup_renderbundle ( Instance* instance, Window* window, World* wo
 		Context hbloom_context = instance->create_context ( postproc_context_base_id );
 		hbloom_contextgroup->set_context ( hbloom_context );
 
-		instance->update_context_image_sampler ( hbloom_context, 0, 0, bloomimage2->create_use ( ImagePart::eColor, {1, 8}, {0, 1} ), bloom_sampler );
+		instance->update_context_image_sampler ( hbloom_context, 0, 0, bloomimage2->create_use ( ImagePart::eColor, {0, 7}, {0, 1} ), bloom_sampler );
 
 		renderstage_index++;
 		//vertical bloom
-		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage2, 1 );
+		bundle->get_renderstage ( renderstage_index )->set_renderimage ( 0, bloomimage2, 0 );
 		bundle->get_renderstage ( renderstage_index )->set_contextgroup ( vbloom_contextgroup );
 		bundle->get_renderstage ( renderstage_index )->set_instancegroup ( world->world_shard.igroup );
 

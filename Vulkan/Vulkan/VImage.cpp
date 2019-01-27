@@ -167,15 +167,15 @@ void VBaseImage::v_create_imageview ( VImageUse* imageuse ) {
 	}
 }
 void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
-	if(scalingtype == ImageScalingType::eScaleMultiply || 
-			scalingtype == ImageScalingType::eScaleMultiplyCeil2 || 
-			scalingtype == ImageScalingType::eScaleMultiplyFloor2 || 
-			scalingtype == ImageScalingType::eScaleMultiplyRound2) {
+	if(scalingtype == ImageScalingType::eMultiply || 
+			scalingtype == ImageScalingType::eMultiplyCeil2 || 
+			scalingtype == ImageScalingType::eMultiplyFloor2 || 
+			scalingtype == ImageScalingType::eMultiplyRound2) {
 		width *= scaling;
 		height *= scaling;
 		depth *= scaling;
 	}
-	if(scalingtype == ImageScalingType::eScaleCeil2 || scalingtype == ImageScalingType::eScaleMultiplyCeil2) {
+	if(scalingtype == ImageScalingType::eCeil2 || scalingtype == ImageScalingType::eMultiplyCeil2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;
@@ -191,7 +191,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 			while (newval < depth) newval *= 2;
 			depth = newval;
 		}
-	} else if(scalingtype == ImageScalingType::eScaleFloor2 || scalingtype == ImageScalingType::eScaleMultiplyFloor2) {
+	} else if(scalingtype == ImageScalingType::eFloor2 || scalingtype == ImageScalingType::eMultiplyFloor2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;
@@ -207,7 +207,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 			while (newval < depth) newval *= 2;
 			depth = newval / 2;
 		}
-	} else if(scalingtype == ImageScalingType::eScaleRound2 || scalingtype == ImageScalingType::eScaleMultiplyRound2) {
+	} else if(scalingtype == ImageScalingType::eRound2 || scalingtype == ImageScalingType::eMultiplyRound2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;

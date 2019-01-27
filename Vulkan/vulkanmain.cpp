@@ -72,12 +72,11 @@ int main ( int argc, char **argv ) {
 
 	Window* window = instance->create_window();
 
-	Extent2D<s32> window_size ( instance->get_primary_monitor()->extend);
-	window->position() = primMonitor->offset;
-	window->showmode() = WindowShowMode::eWindowed;
+	window->position() = primMonitor->offset + Extent2D<s32>(50, 50);
+	window->showmode() = WindowShowMode::eMaximized;
 	window->fullscreen_monitor() = nullptr;
-	window->border() = WindowBorder::eNone;
-	window->size() = window_size;
+	window->border() = WindowBorder::eNormal;
+	window->size() = instance->get_primary_monitor()->extend - Extent2D<s32>(100, 100);
 	window->visible() = true;
 
 	window->cursor_mode() = CursorMode::eInvisible;
@@ -142,6 +141,10 @@ int main ( int argc, char **argv ) {
 	srand ( time ( NULL ) );
 
 	g_state.timescale = 1.0 / 100.0;
+	
+	
+	g_state.debug_camera = true;
+	g_state.timescale = 0.0;
 
 	while ( instance->is_window_open() ) {
 		g_state.update_tick();
@@ -202,6 +205,22 @@ int main ( int argc, char **argv ) {
 						}
 					}
 				}
+				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eF11 ) {
+					if(window->border() == WindowBorder::eNormal) {
+						window->position() = primMonitor->offset;
+						window->showmode() = WindowShowMode::eWindowed;
+						window->border() = WindowBorder::eNone;
+						window->size() = primMonitor->extend;
+						//window->update();
+					} else {
+						window->position() = primMonitor->offset + Extent2D<s32>(50, 50);
+						window->showmode() = WindowShowMode::eWindowed;
+						window->border() = WindowBorder::eNormal;
+						window->size() = primMonitor->extend - Extent2D<s32>(100, 100);
+						//window->update();
+					}
+				}
+				
 				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eC ) {
 					puts ( "Camera:" );
 					printf ( "\tPosition: (%f, %f, %f)\n", g_state.camera.orientation.look_at.x, g_state.camera.orientation.look_at.y, g_state.camera.orientation.look_at.z );

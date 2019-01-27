@@ -428,6 +428,7 @@ void VMainBundle::v_dispatch ( ) {
 	    //active_sems.size(), active_sems.data(),
 	    1, &window_dependency->swap_chain,
 	    &index, &results );
+	printf("Present %d\n", index);
 	queue_wrapper->present_queue.presentKHR ( &presentInfo );
 	last_used = v_instance->frame_index;
 

@@ -304,7 +304,7 @@ void VWindow::initialize() {
 	}
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
-	glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
+	//glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
 
 	VMonitor* fullscreen_monitor = dynamic_cast<VMonitor*> ( this->m_fullscreen_monitor.wanted );
 	if ( fullscreen_monitor ) { //it is fullscreen
@@ -332,6 +332,7 @@ void VWindow::initialize() {
 	m_visible.apply();
 	m_position.apply();
 	m_size.apply();
+	m_border.apply();
 
 	glfwSetWindowPosCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
@@ -635,6 +636,7 @@ void VWindow::initialize() {
 void VWindow::prepare_frame() {
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 
+	printf("Acquire %d\n", present_image_index);
 	FrameLocalData* data = current_framelocal_data();
 
 	//reset for frame
@@ -656,6 +658,10 @@ RendResult VWindow::update() {
 }
 RendResult VWindow::v_update() {
 	if ( window ) {
+		if(m_border.changed()) {//TODO rebuild window
+			m_border.apply();
+		}
+		
 		while ( true ) { //just so we don't need a goto for this logic ;-)
 			//not visible
 			if ( m_visible.changed() ) {
@@ -691,10 +697,10 @@ RendResult VWindow::v_update() {
 				}
 			}
 			if ( m_size.changed() ) {
-				//glfwSetWindowSize ( window, m_size.wanted.x, m_size.wanted.y );
+				glfwSetWindowSize ( window, m_size.wanted.x, m_size.wanted.y );
 			}
 			if ( m_position.changed() ) {
-				//glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
+				glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 			}
 			break;
 		}

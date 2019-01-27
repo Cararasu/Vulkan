@@ -15,7 +15,7 @@
 // turn the warnings back on
 #pragma GCC diagnostic pop
 
-constexpr u32 MAX_PRESENTIMAGE_COUNT = 2;
+constexpr u32 MAX_PRESENTIMAGE_COUNT = 3;
 
 void printError ( VkResult res );
 
