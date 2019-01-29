@@ -43,6 +43,7 @@ enum class MouseMoveAction : u32 {
 enum class WindowAction : u32 {
 	eMoved,
 	eResized,
+	eFrameResized,
 	eIconify,
 	eMaximize,
 	eFocused,

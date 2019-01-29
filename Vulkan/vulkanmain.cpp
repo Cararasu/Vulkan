@@ -47,6 +47,9 @@ GameState g_state;
 
 //TODO add bitmask to instances to determine conditional rendering
 
+//TODO fix borderless perspective issue
+//TODO fix borderless resize crash
+
 int main ( int argc, char **argv ) {
 
 	Instance* instance = create_instance ( "Vulkan" );
@@ -72,11 +75,11 @@ int main ( int argc, char **argv ) {
 
 	Window* window = instance->create_window();
 
-	window->position() = primMonitor->offset + Extent2D<s32>(50, 50);
-	window->showmode() = WindowShowMode::eMaximized;
+	window->position() = primMonitor->offset;
+	window->showmode() = WindowShowMode::eWindowed;
 	window->fullscreen_monitor() = nullptr;
-	window->border() = WindowBorder::eNormal;
-	window->size() = instance->get_primary_monitor()->extend - Extent2D<s32>(100, 100);
+	window->border() = WindowBorder::eNone;
+	window->size() = instance->get_primary_monitor()->extend;// - Extent2D<s32>(100, 100);
 	window->visible() = true;
 
 	window->cursor_mode() = CursorMode::eInvisible;
@@ -142,6 +145,7 @@ int main ( int argc, char **argv ) {
 
 	g_state.timescale = 1.0 / 100.0;
 	
+	g_state.camera.aspect = ( ( float ) window->size().value.x ) / ( ( float ) window->size().value.y );
 	
 	g_state.debug_camera = true;
 	g_state.timescale = 0.0;
@@ -171,8 +175,7 @@ int main ( int argc, char **argv ) {
 			world.ties.erase ( world.ties.begin() );
 			shot_despawn = true;
 		}
-		printf ( "Time %lf\n", g_state.current_time );
-
+		
 		OSEvent event;
 		while ( window->eventqueue.pop ( &event ) ) {
 			switch ( event.type ) {
@@ -211,13 +214,13 @@ int main ( int argc, char **argv ) {
 						window->showmode() = WindowShowMode::eWindowed;
 						window->border() = WindowBorder::eNone;
 						window->size() = primMonitor->extend;
-						//window->update();
+						window->update();
 					} else {
 						window->position() = primMonitor->offset + Extent2D<s32>(50, 50);
 						window->showmode() = WindowShowMode::eWindowed;
 						window->border() = WindowBorder::eNormal;
 						window->size() = primMonitor->extend - Extent2D<s32>(100, 100);
-						//window->update();
+						window->update();
 					}
 				}
 				
@@ -263,8 +266,10 @@ int main ( int argc, char **argv ) {
 				switch ( event.window.action ) {
 				case WindowAction::eMoved:
 					break;
-				case WindowAction::eResized:
+				case WindowAction::eFrameResized:
 					g_state.camera.aspect = ( ( float ) event.window.x ) / ( ( float ) event.window.y );
+					break;
+				case WindowAction::eResized:
 					break;
 				case WindowAction::eIconify:
 					break;

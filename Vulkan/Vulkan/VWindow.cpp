@@ -295,16 +295,17 @@ void VWindow::initialize() {
 		break;
 	case WindowShowMode::eMinimized:
 		glfwWindowHint ( GLFW_MAXIMIZED, false );
-		glfwWindowHint ( GLFW_AUTO_ICONIFY, true );
+		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
 		break;
 	case WindowShowMode::eWindowed:
 		glfwWindowHint ( GLFW_MAXIMIZED, false );
 		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
 		break;
 	}
+	glfwWindowHint ( GLFW_FLOATING, false );
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
-	//glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
+	glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
 
 	VMonitor* fullscreen_monitor = dynamic_cast<VMonitor*> ( this->m_fullscreen_monitor.wanted );
 	if ( fullscreen_monitor ) { //it is fullscreen
@@ -392,6 +393,7 @@ void VWindow::initialize() {
 		if ( vulkan_window ) {
 			OSEvent event;
 			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eFocused;
 			event.window.value = focus == GLFW_TRUE;
 			vulkan_window->eventqueue.push ( event );
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
@@ -415,6 +417,13 @@ void VWindow::initialize() {
 	glfwSetFramebufferSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
+			OSEvent event;
+			event.type = OSEventType::eWindow;
+			event.window.action = WindowAction::eFrameResized;
+			event.window.x = x;
+			event.window.y = y;
+			vulkan_window->eventqueue.push ( event );
+			v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", x, y );
 			vulkan_window->rendering_mutex.lock();
 			vulkan_window->framebuffer_size_changed ( {x, y} );
 			vulkan_window->rendering_mutex.unlock();
@@ -613,12 +622,12 @@ void VWindow::initialize() {
 			}
 		}
 		if ( false ) {
-		//if ( mailbox ) {
+			//if ( mailbox ) {
 			chosen_presentation_mode = vk::PresentModeKHR::eMailbox;
 		} else if ( false ) { //immediate
 			chosen_presentation_mode = vk::PresentModeKHR::eImmediate;
 		} else if ( false ) {
-		//} else if ( fifo_relaxed ) {
+			//} else if ( fifo_relaxed ) {
 			chosen_presentation_mode = vk::PresentModeKHR::eFifoRelaxed;
 		} else {
 			chosen_presentation_mode = vk::PresentModeKHR::eFifo;
@@ -636,7 +645,7 @@ void VWindow::initialize() {
 void VWindow::prepare_frame() {
 	v_instance->vk_device().acquireNextImageKHR ( swap_chain, std::numeric_limits<u64>::max(), image_available_guard_sem, vk::Fence(), &present_image_index );
 
-	printf("Acquire %d\n", present_image_index);
+	printf ( "Acquire %d\n", present_image_index );
 	FrameLocalData* data = current_framelocal_data();
 
 	//reset for frame
@@ -658,10 +667,10 @@ RendResult VWindow::update() {
 }
 RendResult VWindow::v_update() {
 	if ( window ) {
-		if(m_border.changed()) {//TODO rebuild window
+		if ( m_border.changed() ) { //TODO rebuild window
 			m_border.apply();
 		}
-		
+
 		while ( true ) { //just so we don't need a goto for this logic ;-)
 			//not visible
 			if ( m_visible.changed() ) {
@@ -719,7 +728,9 @@ RendResult VWindow::v_update() {
 			}
 			m_cursormode.apply();
 		}
-	} else {
+	}
+	//seperate branch because we might need to recreate the window
+	if ( !window ) {
 		initialize();
 	}
 	return RendResult::eSuccess;
