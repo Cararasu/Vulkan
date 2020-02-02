@@ -36,40 +36,40 @@ void gatherExtLayer ( vk::PhysicalDevice device, std::vector<vk::LayerProperties
 
 	u32 count;
 	if ( !device ) {
-		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Extension-count" ) );
+		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Extension-count" ) );
 	} else {
-		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Extension-count" ) );
+		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Extension-count" ) );
 	}
 	extensions->resize ( count );
 	if ( !device ) {
-		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, extensions->data() ), v_logger.log<LogLevel::eError> ( "Could not get Extensions" ) );
+		V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( nullptr, &count, extensions->data() ), v_logger.log<LogLevel::Error> ( "Could not get Extensions" ) );
 	} else {
-		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, extensions->data() ), v_logger.log<LogLevel::eError> ( "Could not get Extensions" ) );
+		V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( nullptr, &count, extensions->data() ), v_logger.log<LogLevel::Error> ( "Could not get Extensions" ) );
 	}
 
 	if ( !device ) {
-		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Layer-count" ) );
+		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Layer-count" ) );
 	} else {
-		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Layer-count" ) );
+		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Layer-count" ) );
 	}
 	layers->resize ( count );
 	if ( !device ) {
-		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, layers->data() ), v_logger.log<LogLevel::eError> ( "Could not get Layers" ) );
+		V_CHECKCALL ( vk::enumerateInstanceLayerProperties ( &count, layers->data() ), v_logger.log<LogLevel::Error> ( "Could not get Layers" ) );
 	} else {
-		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, layers->data() ), v_logger.log<LogLevel::eError> ( "Could not get Layers" ) );
+		V_CHECKCALL ( device.enumerateDeviceLayerProperties ( &count, layers->data() ), v_logger.log<LogLevel::Error> ( "Could not get Layers" ) );
 	}
 	for ( vk::LayerProperties& layerProp : *layers ) {
 
 		if ( !device ) {
-			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Extension-count" ) );
+			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Extension-count" ) );
 		} else {
-			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, nullptr ), v_logger.log<LogLevel::eError> ( "Could not get Extension-count" ) );
+			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, nullptr ), v_logger.log<LogLevel::Error> ( "Could not get Extension-count" ) );
 		}
 		vk::ExtensionProperties extensionArray[count];
 		if ( !device ) {
-			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, extensionArray ), v_logger.log<LogLevel::eError> ( "Could not get Extensions" ) );
+			V_CHECKCALL ( vk::enumerateInstanceExtensionProperties ( layerProp.layerName, &count, extensionArray ), v_logger.log<LogLevel::Error> ( "Could not get Extensions" ) );
 		} else {
-			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, extensionArray ), v_logger.log<LogLevel::eError> ( "Could not get Extensions" ) );
+			V_CHECKCALL ( device.enumerateDeviceExtensionProperties ( layerProp.layerName, &count, extensionArray ), v_logger.log<LogLevel::Error> ( "Could not get Extensions" ) );
 		}
 		for ( size_t i = 0; i < count; ++i ) {
 			addExtension ( extensions, extensionArray[i] );
@@ -85,7 +85,7 @@ bool VExtLayerStruct::activateLayer ( String name ) {
 		}
 	}
 	if ( !found ) {
-		v_logger.log<LogLevel::eWarn> ( "Layer %s not available", name.cstr );
+		v_logger.log<LogLevel::Warn> ( "Layer %s not available", name.cstr );
 		return false;
 	}
 	for ( String& layName : neededLayers ) {
@@ -94,7 +94,7 @@ bool VExtLayerStruct::activateLayer ( String name ) {
 		}
 	}
 	neededLayers.push_back ( name );
-	v_logger.log<LogLevel::eInfo> ( "Layer %s added", name.cstr );
+	v_logger.log<LogLevel::Info> ( "Layer %s added", name.cstr );
 	return true;
 }
 bool VExtLayerStruct::activateExtension ( String name ) {
@@ -106,7 +106,7 @@ bool VExtLayerStruct::activateExtension ( String name ) {
 		}
 	}
 	if ( !found ) {
-		v_logger.log<LogLevel::eWarn> ( "Extension %s not available", name.cstr );
+		v_logger.log<LogLevel::Warn> ( "Extension %s not available", name.cstr );
 		return false;
 	}
 	for ( String& extName : neededExtensions ) {
@@ -115,7 +115,7 @@ bool VExtLayerStruct::activateExtension ( String name ) {
 		}
 	}
 	neededExtensions.push_back ( name );
-	v_logger.log<LogLevel::eInfo> ( "Extension %s added", name.cstr );
+	v_logger.log<LogLevel::Info> ( "Extension %s added", name.cstr );
 	return true;
 }
 
@@ -157,10 +157,10 @@ VMonitor::VMonitor ( GLFWmonitor* monitor ) : monitor ( monitor ) {
 		if ( videomode[i].redBits == 8 || videomode[i].greenBits == 8 || videomode[i].blueBits == 8 ) {
 			videomodes[i] = glfw_to_videomode ( videomode[i] );
 			this->extend = max_extend ( this->extend, videomodes[i].extend );
-			v_logger.log<LogLevel::eTrace> ("\tVideomode %dx%d r%dg%db%d %dHz", videomode[i].width, videomode[i].height, videomode[i].redBits, videomode[i].greenBits, videomode[i].blueBits, videomode[i].refreshRate);
+			v_logger.log<LogLevel::Trace> ("\tVideomode %dx%d r%dg%db%d %dHz", videomode[i].width, videomode[i].height, videomode[i].redBits, videomode[i].greenBits, videomode[i].blueBits, videomode[i].refreshRate);
 		}
 	}
-	v_logger.log<LogLevel::eDebug> ( "Monitor %s: %dx%d %dx%d", this->name, this->offset.x, this->offset.y, this->extend.x, this->extend.y );
+	v_logger.log<LogLevel::Debug> ( "Monitor %s: %dx%d %dx%d", this->name, this->offset.x, this->offset.y, this->extend.x, this->extend.y );
 }
 VMonitor::~VMonitor() {
 
@@ -174,7 +174,7 @@ VideoMode VMonitor::current_mode() {
 		u64 object, size_t location, int32_t messageCode,
 		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
 		
-		v_logger.log<LogLevel::eTrace> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		v_logger.log<LogLevel::Trace> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
 		return VK_TRUE;
 	}
 	VkBool32 VKAPI_PTR infoLogger (
@@ -182,7 +182,7 @@ VideoMode VMonitor::current_mode() {
 		u64 object, size_t location, int32_t messageCode,
 		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
 		
-		v_logger.log<LogLevel::eDebug> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		v_logger.log<LogLevel::Debug> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
 		return VK_TRUE;
 	}
 	VkBool32 VKAPI_PTR errorLogger (
@@ -190,7 +190,7 @@ VideoMode VMonitor::current_mode() {
 		u64 object, size_t location, int32_t messageCode,
 		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
 		
-		v_logger.log<LogLevel::eError> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		v_logger.log<LogLevel::Error> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
 		return VK_TRUE;
 	}
 	VkBool32 VKAPI_PTR warnLogger (
@@ -198,7 +198,7 @@ VideoMode VMonitor::current_mode() {
 		u64 object, size_t location, int32_t messageCode,
 		const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
 		
-		v_logger.log<LogLevel::eWarn> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
+		v_logger.log<LogLevel::Warn> ( "Layer: %s - Message: %s", pLayerPrefix, pMessage );
 		return VK_TRUE;
 	}
 	PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
@@ -216,23 +216,23 @@ VInstance::VInstance() {
 		monitors[i] = vmonitor;
 	}
 	if ( glfwVulkanSupported() ) {
-		v_logger.log<LogLevel::eInfo> ( "Vulkan supported" );
+		v_logger.log<LogLevel::Info> ( "Vulkan supported" );
 	} else {
-		v_logger.log<LogLevel::eError> ( "Vulkan not supported" );
+		v_logger.log<LogLevel::Error> ( "Vulkan not supported" );
 		initialized = false;
 		return;
 	}
 	gatherExtLayer ( vk::PhysicalDevice(), &extLayers.availableLayers, &extLayers.availableExtensions );
 
-	if(v_logger.level <= LogLevel::eDebug) {
-		v_logger.log<LogLevel::eDebug> ( "Instance Extensions:" );
+	if(v_logger.level <= LogLevel::Debug) {
+		v_logger.log<LogLevel::Debug> ( "Instance Extensions:" );
 		for ( vk::ExtensionProperties& extProp : extLayers.availableExtensions ) {
-			v_logger.log<LogLevel::eDebug> ( "\t%s", extProp.extensionName );
+			v_logger.log<LogLevel::Debug> ( "\t%s", extProp.extensionName );
 		}
-		v_logger.log<LogLevel::eDebug> ( "Instance Layers:" );
+		v_logger.log<LogLevel::Debug> ( "Instance Layers:" );
 		for ( vk::LayerProperties& layerProp : extLayers.availableLayers ) {
-			v_logger.log<LogLevel::eDebug> ( "\t%s", layerProp.layerName );
-			v_logger.log<LogLevel::eDebug> ( "\t\tDesc: %s", layerProp.description );
+			v_logger.log<LogLevel::Debug> ( "\t%s", layerProp.layerName );
+			v_logger.log<LogLevel::Debug> ( "\t\tDesc: %s", layerProp.description );
 		}
 	}
 	u32 instanceExtCount;
@@ -261,7 +261,7 @@ VInstance::VInstance() {
 		vk::InstanceCreateInfo instanceCreateInfo ( vk::InstanceCreateFlags(), &appInfo,
 		        extLayers.neededLayers.size(), neededLayers,
 		        extLayers.neededExtensions.size(), neededExtensions );
-		V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &v_instance ), v_logger.log<LogLevel::eError> ( "Instance Creation Failed" ) );
+		V_CHECKCALL ( vk::createInstance ( &instanceCreateInfo, nullptr, &v_instance ), v_logger.log<LogLevel::Error> ( "Instance Creation Failed" ) );
 
 	}
 #ifndef NDEBUG
@@ -296,11 +296,11 @@ VInstance::VInstance() {
 	pfn_vkCreateDebugReportCallbackEXT ( v_instance, reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT*> ( &debugReportCallbackCreateInfo ), nullptr, reinterpret_cast<VkDebugReportCallbackEXT*> ( &debugReportCallbackEXT ) );
 #endif
 	u32 devicecount = 0;
-	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, nullptr ), v_logger.log<LogLevel::eError>  ( "Get physical-device count Failed" ) );
+	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, nullptr ), v_logger.log<LogLevel::Error>  ( "Get physical-device count Failed" ) );
 
 	vk::PhysicalDevice physDevices[devicecount];
 	devices.resize ( devicecount );
-	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, physDevices ), v_logger.log<LogLevel::eError>  ( "Get physical-devicec Failed" ) );
+	V_CHECKCALL ( v_instance.enumeratePhysicalDevices ( &devicecount, physDevices ), v_logger.log<LogLevel::Error>  ( "Get physical-devicec Failed" ) );
 
 	for ( size_t i = 0; i < devicecount; i++ ) {
 		VDevice* vulkan_device = new VDevice();
@@ -312,19 +312,19 @@ VInstance::VInstance() {
 
 		gatherExtLayer ( physDevices[i], &vulkan_device->extLayers.availableLayers, &vulkan_device->extLayers.availableExtensions );
 
-		v_logger.log<LogLevel::eInfo>  ( "Physical Device %s", vulkan_device->vkPhysDevProps.deviceName );
+		v_logger.log<LogLevel::Info>  ( "Physical Device %s", vulkan_device->vkPhysDevProps.deviceName );
 
 		vk::PhysicalDeviceMemoryProperties memProperties;
 		vulkan_device->physical_device.getMemoryProperties ( &memProperties );
 
-		if(v_logger.level == LogLevel::eDebug) {
+		if(v_logger.level == LogLevel::Debug) {
 			for ( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ ) {
-				v_logger.log<LogLevel::eDebug>  ( "Memory %d", i );
-				v_logger.log<LogLevel::eDebug> ( "\tHeap Index %d %s", memProperties.memoryTypes[i].heapIndex, to_string ( memProperties.memoryTypes[i].propertyFlags ).c_str() );
+				v_logger.log<LogLevel::Debug>  ( "Memory %d", i );
+				v_logger.log<LogLevel::Debug> ( "\tHeap Index %d %s", memProperties.memoryTypes[i].heapIndex, to_string ( memProperties.memoryTypes[i].propertyFlags ).c_str() );
 			}
 			for ( uint32_t i = 0; i < memProperties.memoryHeapCount; i++ ) {
-				v_logger.log<LogLevel::eDebug> ( "Heap %d", i );
-				v_logger.log<LogLevel::eDebug> ( "\tSize %" PRIu64 " %s", memProperties.memoryHeaps[i].size, to_string ( memProperties.memoryHeaps[i].flags ).c_str() );
+				v_logger.log<LogLevel::Debug> ( "Heap %d", i );
+				v_logger.log<LogLevel::Debug> ( "\tSize %" PRIu64 " %s", memProperties.memoryHeaps[i].size, to_string ( memProperties.memoryHeaps[i].flags ).c_str() );
 			}
 		}
 
@@ -378,7 +378,7 @@ VInstance::~VInstance() {
 		delete current_staging_buffer_store;
 		current_staging_buffer_store = nullptr;
 	}
-	for( vk::Fence fence : free_data.fences ) vk_device().destroyFence ( fence );
+	for( vk::Fence fence : free_data.fences ) vk_device().destroyFence ( fence, nullptr );
 	for ( auto& ele : v_model_map ) {
 		for ( VModel* model : ele.second ) {
 			if ( model ) delete model;
@@ -403,10 +403,10 @@ VInstance::~VInstance() {
 		delete ele;
 	}
 	for ( std::pair<ContextBaseId, VContextBase> ele : contextbase_map ) {
-		if ( ele.second.descriptorset_layout ) vk_device().destroyDescriptorSetLayout ( ele.second.descriptorset_layout );
+		if ( ele.second.descriptorset_layout ) vk_device().destroyDescriptorSetLayout ( ele.second.descriptorset_layout, nullptr );
 	}
 	delete context_bufferstorage;
-	vk_device().destroyCommandPool ( transfer_commandpool );
+	vk_device().destroyCommandPool ( transfer_commandpool, nullptr );
 
 	m_device.destroy ( nullptr );
 
@@ -418,14 +418,14 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	v_device = dynamic_cast<VDevice*> ( device );
 	if ( !initialized && !device )
 		return false;
-	if(v_logger.level <= LogLevel::eDebug) {
-		v_logger.log<LogLevel::eDebug> ( "Device Extensions available:" );
+	if(v_logger.level <= LogLevel::Debug) {
+		v_logger.log<LogLevel::Debug> ( "Device Extensions available:" );
 		for ( vk::ExtensionProperties& prop : v_device->extLayers.availableExtensions ) {
-			v_logger.log<LogLevel::eDebug> ( "\t%s", prop.extensionName );
+			v_logger.log<LogLevel::Debug> ( "\t%s", prop.extensionName );
 		}
-		v_logger.log<LogLevel::eDebug> ( "Device Layers available:" );
+		v_logger.log<LogLevel::Debug> ( "Device Layers available:" );
 		for ( vk::LayerProperties& prop : v_device->extLayers.availableLayers ) {
-			v_logger.log<LogLevel::eDebug> ( "\t%s", prop.layerName );
+			v_logger.log<LogLevel::Debug> ( "\t%s", prop.layerName );
 		}
 	}
 	
@@ -479,7 +479,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	}
 	size_t queueFamilyCount = 0;
 	if ( queues.dedicated_transfer_queue ) {
-		v_logger.log<LogLevel::eDebug> ( "Dedicated Transfer Queue Found" );
+		v_logger.log<LogLevel::Debug> ( "Dedicated Transfer Queue Found" );
 		queueFamilyCount++;
 	}
 
@@ -532,7 +532,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 		currentIndex++;
 	}
 
-	v_logger.log<LogLevel::eDebug> ( "Create %d Present-Graphics-Compute Queues", 1 );
+	v_logger.log<LogLevel::Debug> ( "Create %d Present-Graphics-Compute Queues", 1 );
 
 	vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -555,7 +555,7 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 		                                        v_device->extLayers.neededLayers.size(), neededLayers,
 		                                        v_device->extLayers.neededExtensions.size(), neededExtensions,
 		                                        &physicalDeviceFeatures );
-		V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), v_logger.log<LogLevel::eError> ( "Device Creation Failed" ) );
+		V_CHECKCALL ( v_device->physical_device.createDevice ( &deviceCreateInfo, nullptr, &m_device ), v_logger.log<LogLevel::Error> ( "Device Creation Failed" ) );
 
 	}
 
@@ -581,10 +581,9 @@ bool VInstance::initialize ( InstanceOptions options, Device* device ) {
 	queues.compute_queue_id = cId;
 	queues.combined_graphics_present_queue = ( pId == gId );
 	queues.combined_graphics_compute_queue = ( gId == cId );
-
-	transfer_commandpool = vk_device().createCommandPool (
-	                           vk::CommandPoolCreateInfo ( vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_wrapper()->transfer_queue_id )
-	                       );
+	
+	vk::CommandPoolCreateInfo create_info{ vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_wrapper()->transfer_queue_id };
+	V_CHECKCALL(vk_device().createCommandPool (&create_info, nullptr, &transfer_commandpool), printf("Cannot create CommandPool\n"));
 
 	context_bufferstorage = new VUpdateableBufferStorage(this, vk::BufferUsageFlags() | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst);
 	register_specializations ( this );
@@ -633,7 +632,7 @@ bool VInstance::destroy_window ( Window* window ) {
 	return false;
 }
 void VInstance::contextbase_registered ( ContextBaseId id ) {
-	v_logger.log<LogLevel::eDebug> ( "Registered Context Base 0x%" PRIx32, id );
+	v_logger.log<LogLevel::Debug> ( "Registered Context Base 0x%" PRIx32, id );
 	const ContextBase* contextbase_ptr = contextbase ( id );
 	u32 ds_size = 0;
 	if ( contextbase_ptr->datagroup.size ) ds_size++;
@@ -648,19 +647,19 @@ void VInstance::contextbase_registered ( ContextBaseId id ) {
 	for ( TextureResource& texres : contextbase_ptr->texture_resources ) {
 		vk::DescriptorType type;
 		switch(texres.type) {
-		case TextureResourceType::eImage:
+		case TextureResourceType::Image:
 			if(texres.needs_write)
 				type = vk::DescriptorType::eStorageImage;
 			else
 				type = vk::DescriptorType::eSampledImage;
 			break;
-		case TextureResourceType::eSampler:
+		case TextureResourceType::Sampler:
 			type = vk::DescriptorType::eSampler;
 			break;
-		case TextureResourceType::eImageSampled:
+		case TextureResourceType::ImageSampled:
 			type = vk::DescriptorType::eCombinedImageSampler;
 			break;
-		case TextureResourceType::eBufferSampled:
+		case TextureResourceType::BufferSampled:
 			if(texres.needs_write)
 				type = vk::DescriptorType::eStorageTexelBuffer;
 			else
@@ -675,23 +674,26 @@ void VInstance::contextbase_registered ( ContextBaseId id ) {
 	}
 
 	VContextBase v_contextbase;
-	if ( ds_size ) v_contextbase.descriptorset_layout = vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), dslbs.size, dslbs.data ), nullptr ),
-		                             contextbase_map[id] = v_contextbase;
+	if ( ds_size ) {
+		vk::DescriptorSetLayoutCreateInfo create_info{ vk::DescriptorSetLayoutCreateFlags(), dslbs.size, dslbs.data };
+		V_CHECKCALL(vk_device().createDescriptorSetLayout (&create_info, nullptr, &v_contextbase.descriptorset_layout), printf("Cannot create DescriptorSetLayout\n"));
+	}
+	contextbase_map[id] = v_contextbase;
 }
 void VInstance::modelbase_registered ( ModelBaseId id ) {
-	v_logger.log<LogLevel::eDebug> ( "Registered Model Base 0x%" PRIx32, id );
+	v_logger.log<LogLevel::Debug> ( "Registered Model Base 0x%" PRIx32, id );
 }
 void VInstance::instancebase_registered ( InstanceBaseId id ) {
-	v_logger.log<LogLevel::eDebug> ( "Registered ModelInstance Base 0x%" PRIx32, id );
+	v_logger.log<LogLevel::Debug> ( "Registered ModelInstance Base 0x%" PRIx32, id );
 }
 Context VInstance::create_context ( ContextBaseId contextbase_id ) {
-	v_logger.log<LogLevel::eDebug> ( "Create Context 0x%" PRIx32, contextbase_id );
+	v_logger.log<LogLevel::Debug> ( "Create Context 0x%" PRIx32, contextbase_id );
 	
 	VContext* created_context = v_context_map[contextbase_id].insert ( new VContext ( this, contextbase_id ) );
 	return created_context->context();
 }
 Model VInstance::create_model ( ModelBaseId modelbase_id ) {
-	v_logger.log<LogLevel::eDebug> ( "Create Model 0x%" PRIx32, modelbase_id );
+	v_logger.log<LogLevel::Debug> ( "Create Model 0x%" PRIx32, modelbase_id );
 	VModel* created_model = v_model_map[modelbase_id].insert ( new VModel ( this, modelbase_id ) );
 	return created_model->model();
 }
@@ -835,24 +837,24 @@ void VInstance::allocate_gpu_memory ( vk::MemoryRequirements mem_req, GPUMemory*
 	}
 	if ( memory->heap_index != std::numeric_limits<u32>::max() ) {
 		vk::MemoryAllocateInfo allocInfo ( mem_req.size, memory->heap_index );
-		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory->memory ), v_logger.log<LogLevel::eError> ( "Failed To Create Image Memory" ) );
+		V_CHECKCALL ( m_device.allocateMemory ( &allocInfo, nullptr, &memory->memory ), v_logger.log<LogLevel::Error> ( "Failed To Create Image Memory" ) );
 
-		v_logger.log<LogLevel::eDebug> ( "Allocated %" PRIu64 " Bytes 0x%" PRIx64 "", mem_req.size, memory->memory );
+		v_logger.log<LogLevel::Debug> ( "Allocated %" PRIu64 " Bytes 0x%" PRIx64 "", mem_req.size, memory->memory );
 
 		memory->size = mem_req.size;
 	} else {
-		v_logger.log<LogLevel::eError> ( "Cannot Allocate %" PRIu64 " bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x",
+		v_logger.log<LogLevel::Error> ( "Cannot Allocate %" PRIu64 " bytes Memory for Memtypes: 0x%x Needed Properties: 0x%x Recommended Properties: 0x%x",
 		         mem_req.size, mem_req.memoryTypeBits,
 		         static_cast<VkMemoryPropertyFlags> ( memory->needed ), static_cast<VkMemoryPropertyFlags> ( memory->recommended ) );
 	}
 }
 RendResult VInstance::free_gpu_memory ( GPUMemory memory ) {
 	if ( memory.memory ) {
-		v_logger.log<LogLevel::eDebug> ( "Freeing %" PRIu64 " Bytes of Memory 0x%" PRIx64 "", memory.size, memory.memory );
+		v_logger.log<LogLevel::Debug> ( "Freeing %" PRIu64 " Bytes of Memory 0x%" PRIx64 "", memory.size, memory.memory );
 		vk_device ().freeMemory ( memory.memory, nullptr );
 		memory.memory = vk::DeviceMemory();
 	}
-	return RendResult::eSuccess;
+	return RendResult::Success;
 }
 vk::ImageView VInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 mipOffset, vk::Format format, vk::ImageAspectFlags aspectFlags ) {
 
@@ -866,7 +868,7 @@ vk::ImageView VInstance::createImageView2D ( vk::Image image, u32 mipBase, u32 m
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), v_logger.log<LogLevel::eError> ( "Creation of ImageView failed" ) );
+	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), v_logger.log<LogLevel::Error> ( "Creation of ImageView failed" ) );
 
 	return imageView;
 }
@@ -882,12 +884,12 @@ vk::ImageView VInstance::createImageView2DArray ( vk::Image image, u32 mipBase, 
 
 	vk::ImageView imageView;
 
-	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), v_logger.log<LogLevel::eError> ( "Creation of ImageView failed" ) );
+	V_CHECKCALL ( m_device.createImageView ( &imageViewCreateInfo, nullptr, &imageView ), v_logger.log<LogLevel::Error> ( "Creation of ImageView failed" ) );
 
 	return imageView;
 }
 void VInstance::destroyImageView ( vk::ImageView imageview ) {
-	m_device.destroyImageView ( imageview );
+	m_device.destroyImageView ( imageview, nullptr );
 }
 
 void VInstance::destroyCommandPool ( vk::CommandPool commandPool ) {

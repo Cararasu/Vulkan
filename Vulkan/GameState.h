@@ -12,7 +12,7 @@ struct CameraPoint {
 };
 
 struct GameState {
-	KeyState basic_keystates[ ( u32 ) KeyCode::eMax];
+	KeyState basic_keystates[ ( u32 ) KeyCode::Max];
 	Map<u32, KeyState> utf32_keystates;
 	Map<u32, KeyState> keystates;
 

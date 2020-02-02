@@ -11,7 +11,7 @@ VBaseImage::VBaseImage ( VInstance* instance, u32 width, u32 height, u32 depth, 
                          vk::ImageAspectFlags aspect, vk::MemoryPropertyFlags needed, vk::MemoryPropertyFlags recommended ) :
 	Image ( transform_image_format ( format ), width, height, depth, layers, mipmap_layers, false ),
 	v_instance ( instance ), v_format ( format ), tiling ( tiling ), usage ( usage ), aspect ( aspect ),
-	memory ( needed, recommended ), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::eNone ), scaling ( 1.0f ) {
+	memory ( needed, recommended ), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::None ), scaling ( 1.0f ) {
 	v_set_extent ( width, height, depth );
 	init();
 }
@@ -28,7 +28,7 @@ VBaseImage::VBaseImage ( VInstance* instance, VWindow* window ) :
 	Image ( transform_image_format ( window->present_swap_format.format ), window->swap_chain_extend.x, window->swap_chain_extend.y, 0, 1, 1, true ),
 	v_instance ( instance ), v_format ( window->present_swap_format.format ), tiling ( vk::ImageTiling::eOptimal ), usage ( vk::ImageUsageFlags ( vk::ImageUsageFlagBits::eColorAttachment ) ), aspect ( vk::ImageAspectFlags ( vk::ImageAspectFlagBits::eColor ) ),
 	window ( window ),
-	memory(), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::eNone ), scaling ( 1.0f ) {
+	memory(), image (), dependant_image ( 0 ), scalingtype ( ImageScalingType::None ), scaling ( 1.0f ) {
 
 }
 VBaseImage::~VBaseImage() {
@@ -48,9 +48,9 @@ void VBaseImage::init() {
 	u32 queueindices[2] = {v_instance->queue_wrapper()->graphics_queue_id, v_instance->queue_wrapper()->transfer_queue_id};
 	vk::ImageCreateInfo imageInfo ( vk::ImageCreateFlags(), type, v_format, extent, mipmap_layers, layers, vk::SampleCountFlagBits::e1, tiling, usage, vk::SharingMode::eConcurrent, 2, queueindices, vk::ImageLayout::eUndefined );
 
-	V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &image ), v_logger.log<LogLevel::eError> ( "Failed To Create Image" ) );
+	V_CHECKCALL ( v_instance->m_device.createImage ( &imageInfo, nullptr, &image ), v_logger.log<LogLevel::Error> ( "Failed To Create Image" ) );
 
-	v_logger.log<LogLevel::eDebug> ( "Create Image 0x%x of dimensions %dx%dx%d with usage %s", image, extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
+	v_logger.log<LogLevel::Debug> ( "Create Image 0x%x of dimensions %dx%dx%d with usage %s", image, extent.width, extent.height, extent.depth, to_string ( usage ).c_str() );
 
 	vk::MemoryRequirements mem_req;
 	v_instance->m_device.getImageMemoryRequirements ( image, &mem_req );
@@ -79,7 +79,7 @@ void VBaseImage::init ( vk::Image image_ ) {
 }
 void VBaseImage::destroy() {
 	if ( memory.memory ) { //if the image is not managed externally
-		v_instance->m_device.destroyImage ( image );
+		v_instance->m_device.destroyImage ( image, nullptr );
 		image = vk::Image();
 		v_instance->free_gpu_memory ( memory );
 		memory.memory = vk::DeviceMemory();
@@ -93,7 +93,7 @@ void VBaseImage::destroy() {
 
 void VBaseImage::rebuild_image ( u32 width, u32 height, u32 depth ) {
 	if ( memory.memory ) { //if the image is not managed externally
-		v_instance->m_device.destroyImage ( image );
+		v_instance->m_device.destroyImage ( image, nullptr );
 		image = vk::Image();
 		v_instance->free_gpu_memory ( memory );
 		memory.memory = vk::DeviceMemory();
@@ -112,17 +112,17 @@ void VBaseImage::v_register_use ( RId id ) {
 ImageUseRef VBaseImage::create_use ( ImagePart part, Range<u32> mipmaps, Range<u32> layers ) {
 	vk::ImageAspectFlags aspects;
 	switch ( part ) {
-	case ImagePart::eColor:
+	case ImagePart::Color:
 		aspects |= vk::ImageAspectFlagBits::eColor;
 		break;
-	case ImagePart::eDepth:
+	case ImagePart::Depth:
 		aspects |= vk::ImageAspectFlagBits::eDepth;
 		break;
-	case ImagePart::eDepthStencil:
+	case ImagePart::DepthStencil:
 		aspects |= vk::ImageAspectFlagBits::eDepth;
 		aspects |= vk::ImageAspectFlagBits::eStencil;
 		break;
-	case ImagePart::eStencil:
+	case ImagePart::Stencil:
 		aspects |= vk::ImageAspectFlagBits::eStencil;
 		break;
 	};
@@ -162,20 +162,20 @@ void VBaseImage::v_create_imageview ( VImageUse* imageuse ) {
 		                          v_format, imageuse->aspects
 		                      );
 	} else {
-		v_logger.log<LogLevel::eDebug> ( "Not implemented %s", to_string ( type ).c_str() );
+		v_logger.log<LogLevel::Debug> ( "Not implemented %s", to_string ( type ).c_str() );
 		assert ( false );
 	}
 }
 void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
-	if(scalingtype == ImageScalingType::eMultiply || 
-			scalingtype == ImageScalingType::eMultiplyCeil2 || 
-			scalingtype == ImageScalingType::eMultiplyFloor2 || 
-			scalingtype == ImageScalingType::eMultiplyRound2) {
+	if(scalingtype == ImageScalingType::Multiply || 
+			scalingtype == ImageScalingType::MultiplyCeil2 || 
+			scalingtype == ImageScalingType::MultiplyFloor2 || 
+			scalingtype == ImageScalingType::MultiplyRound2) {
 		width *= scaling;
 		height *= scaling;
 		depth *= scaling;
 	}
-	if(scalingtype == ImageScalingType::eCeil2 || scalingtype == ImageScalingType::eMultiplyCeil2) {
+	if(scalingtype == ImageScalingType::Ceil2 || scalingtype == ImageScalingType::MultiplyCeil2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;
@@ -191,7 +191,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 			while (newval < depth) newval *= 2;
 			depth = newval;
 		}
-	} else if(scalingtype == ImageScalingType::eFloor2 || scalingtype == ImageScalingType::eMultiplyFloor2) {
+	} else if(scalingtype == ImageScalingType::Floor2 || scalingtype == ImageScalingType::MultiplyFloor2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;
@@ -207,7 +207,7 @@ void VBaseImage::v_set_extent ( u32 width, u32 height, u32 depth ) {
 			while (newval < depth) newval *= 2;
 			depth = newval / 2;
 		}
-	} else if(scalingtype == ImageScalingType::eRound2 || scalingtype == ImageScalingType::eMultiplyRound2) {
+	} else if(scalingtype == ImageScalingType::Round2 || scalingtype == ImageScalingType::MultiplyRound2) {
 		if(width != 0) {
 			u32 newval = 1;
 			while (newval < width) newval *= 2;
@@ -356,8 +356,8 @@ vk::ImageMemoryBarrier VBaseImage::transition_layout_impl ( vk::ImageLayout oldL
 	default:
 		assert ( false );
 	}
-	if ( v_logger.is_enabled<LogLevel::eTrace>() ) {
-		v_logger.log<LogLevel::eTrace> (
+	if ( v_logger.is_enabled<LogLevel::Trace>() ) {
+		v_logger.log<LogLevel::Trace> (
 		    "Transition Image 0x%x from %s to %s mip-min %d mip-max %d array-min %d array-max %d",
 		    image, to_string ( oldLayout ).c_str(), to_string ( newLayout ).c_str(), miprange.min, miprange.max, arrayrange.min, arrayrange.max );
 	}
@@ -385,9 +385,9 @@ void VBaseImage::transition_layout ( vk::ImageLayout oldLayout, vk::ImageLayout 
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
-	    {},//memoryBarriers
-	    {},//bufferBarriers
-	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 1, &barrier ) //imageBarriers
+	    0, nullptr,//memoryBarriers
+	    0, nullptr,//bufferBarriers
+	    1, &barrier //imageBarriers
 	);
 }
 void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout* newLayout, Range<u32> mip_range, Range<u32> array_range, vk::CommandBuffer commandBuffer ) {
@@ -434,9 +434,9 @@ void VBaseImage::transition_layout ( vk::ImageLayout* oldLayout, vk::ImageLayout
 	commandBuffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
-	    {},//memoryBarriers
-	    {},//bufferBarriers
-	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( barriers.size, barriers.data ) //imageBarriers
+	    0, nullptr,//memoryBarriers
+	    0, nullptr,//bufferBarriers
+	    barriers.size, barriers.data//imageBarriers
 	);
 }
 
@@ -478,9 +478,9 @@ void VBaseImage::generate_mipmaps ( vk::ImageLayout* oldLayout, vk::ImageLayout*
 		commandBuffer.pipelineBarrier (
 		    sourceStage, destinationStage,
 		    vk::DependencyFlags(),
-		    {},//memoryBarriers
-		    {},//bufferBarriers
-		    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 2, barriers ) //imageBarriers
+		    0, nullptr,//memoryBarriers
+		    0, nullptr,//bufferBarriers
+		    2, barriers//imageBarriers
 		);
 
 		// Set up a blit from previous mip-level to the next.
@@ -489,7 +489,7 @@ void VBaseImage::generate_mipmaps ( vk::ImageLayout* oldLayout, vk::ImageLayout*
 		}, vk::ImageSubresourceLayers ( aspect, index, array_range.min, array_range.max - array_range.min ), {
 			vk::Offset3D ( 0, 0, 0 ), vk::Offset3D ( std::max ( int ( extent.width >> index ), 1 ), std::max ( int ( extent.height >> index ), 1 ), std::max ( int ( extent.depth >> index ), 1 ) )
 		} );
-		commandBuffer.blitImage ( image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, {imageBlit}, vk::Filter::eLinear );
+		commandBuffer.blitImage ( image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, 1, &imageBlit, vk::Filter::eLinear );
 		//commandBuffer.blitImage ( instance_image(), vk::ImageLayout::eGeneral, instance_image(), vk::ImageLayout::eGeneral, {imageBlit}, vk::Filter::eLinear );
 	}
 	transition_layout ( transfer_layouts.data, newLayout, mip_range, array_range, commandBuffer );

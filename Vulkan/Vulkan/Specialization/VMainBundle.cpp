@@ -19,7 +19,7 @@
 
 void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, PipelineStruct* p_struct, PushConstUsed* pushconsts ) {
 	if ( !p_struct->pipeline_layout ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipeline Layouts" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipeline Layouts" );
 
 		DynArray<vk::DescriptorSetLayout> v_descriptor_set_layouts;
 		//contexts with the input attachments
@@ -52,21 +52,21 @@ void gen_pipeline_layout ( VInstance* v_instance, SubPassInput* subpass_input, P
 			createInfo.pushConstantRangeCount = pushConstRanges.size();
 			createInfo.pPushConstantRanges = pushConstRanges.data();
 		}
-		p_struct->pipeline_layout = v_instance->vk_device ().createPipelineLayout ( createInfo, nullptr );
+		V_CHECKCALL(v_instance->vk_device ().createPipelineLayout ( &createInfo, nullptr, &p_struct->pipeline_layout ), printf("Cannot create PipelineLayout\n"));
 	}
 }
 
 void destroy_pipeline ( VInstance* v_instance, PipelineStruct* p_struct ) {
 	for ( u32 i = 0; i < p_struct->pipelines.size; i++ ) {
 		if ( p_struct->pipelines[i] ) {
-			v_instance->vk_device ().destroyPipeline ( p_struct->pipelines[i] );
+			v_instance->vk_device ().destroyPipeline ( p_struct->pipelines[i], nullptr );
 			p_struct->pipelines[i] = vk::Pipeline();
 		}
 	}
 }
 void destroy_pipeline_layout ( VInstance* v_instance, PipelineStruct* p_struct ) {
 	if ( p_struct->pipeline_layout ) {
-		v_instance->vk_device ().destroyPipelineLayout ( p_struct->pipeline_layout );
+		v_instance->vk_device ().destroyPipelineLayout ( p_struct->pipeline_layout, nullptr );
 		p_struct->pipeline_layout = vk::PipelineLayout();
 	}
 }
@@ -137,9 +137,9 @@ void update_contexts ( VInstance* v_instance, VContextGroup* cgroup, vk::Command
 	buffer.pipelineBarrier (
 	    sourceStage, destinationStage,
 	    vk::DependencyFlags(),
-	    {},//memoryBarriers
-	    {},//bufferBarriers
-	    vk::ArrayProxy<const vk::ImageMemoryBarrier> ( barriers.size, barriers.data ) //imageBarriers
+	    0, nullptr,//memoryBarriers
+	    0, nullptr,//bufferBarriers
+	    barriers.size, barriers.data//imageBarriers
 	);
 }
 void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGroup* cgroup, PipelineStruct* p_struct, SubPassInput* renderpass_struct, vk::CommandBuffer cmdbuffer, u32 pipeline_index ) {
@@ -162,7 +162,7 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		descriptorSets.push_back ( context_ptr->descriptor_set() );
 	}
 	if ( descriptorSets.size ) {
-		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet> ( descriptorSets.size, descriptorSets.data ), {} );
+		cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, descriptorSets.size, descriptorSets.data, 1, nullptr );
 		descriptor_offset += descriptorSets.size;
 	}
 	cmdbuffer.bindPipeline ( vk::PipelineBindPoint::eGraphics, p_struct->pipelines[pipeline_index] );
@@ -173,8 +173,8 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 		if ( !instanceblock.count ) continue;
 		VModel* v_model = models[instanceblock.model_id];
 
-		//v_logger.log<LogLevel::eDebug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
-		//v_logger.log<LogLevel::eDebug> ( "Vertices: %d", v_model->indexcount );
+		//v_logger.log<LogLevel::Debug> ( "Instance: 0x%x ModelBase: 0x%x Model-Index: 0x%x Offset: 0x%x Count: %d", instanceblock.base_id, instanceblock.modelbase_id, instanceblock.model_id, instanceblock.offset, instanceblock.count );
+		//v_logger.log<LogLevel::Debug> ( "Vertices: %d", v_model->indexcount );
 
 		//TODO improve this as it is terribly bad
 		//maybe sort the contexts? and then binary search?
@@ -194,15 +194,17 @@ void render_pipeline ( VInstance* v_instance, VInstanceGroup* igroup, VContextGr
 			assert ( found );
 		}
 		if ( model_descriptorSets.size ) {
-			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, vk::ArrayProxy<const vk::DescriptorSet> ( model_descriptorSets.size, model_descriptorSets.data ), {} );
+			cmdbuffer.bindDescriptorSets ( vk::PipelineBindPoint::eGraphics, p_struct->pipeline_layout, descriptor_offset, model_descriptorSets.size, model_descriptorSets.data, 0, nullptr );
 		}
 
 		cmdbuffer.bindIndexBuffer ( v_model->indexbuffer.buffer, 0, v_model->index_is_2byte ? vk::IndexType::eUint16 : vk::IndexType::eUint32 );
 
+		vk::Buffer buffers[2] = {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer};
+		vk::DeviceSize offsets[2] = {0, instanceblock.offset};
 		if ( instanceblock.data )
-			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer, igroup->buffer_storeage.buffer.buffer}, {0, instanceblock.offset} );
+			cmdbuffer.bindVertexBuffers ( 0, 2, buffers, offsets );
 		else
-			cmdbuffer.bindVertexBuffers ( 0, {v_model->vertexbuffer.buffer}, {0} );
+			cmdbuffer.bindVertexBuffers ( 0, 1, buffers, offsets );
 
 		cmdbuffer.drawIndexed ( v_model->indexcount, instanceblock.count, 0, 0, 0 );
 	}
@@ -339,7 +341,7 @@ VMainBundle::VMainBundle ( VInstance* instance ) :
 	stages[10] = new VCopyToScreenRenderStage ( instance );
 }
 VMainBundle::~VMainBundle() {
-	v_instance->vk_device ().destroyCommandPool ( commandpool );
+	v_instance->vk_device ().destroyCommandPool ( commandpool, nullptr );
 	commandpool = vk::CommandPool();
 	for ( VRenderStage* renderstage : stages ) {
 		delete renderstage;
@@ -373,7 +375,7 @@ RenderStage* VMainBundle::remove_renderstage ( u32 index ) {
 }
 void VMainBundle::v_dispatch ( ) {
 
-	v_logger.log<LogLevel::eWarn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
+	v_logger.log<LogLevel::Warn> ( "--------------- FrameBoundary %d ---------------", v_instance->frame_index );
 
 	u32 index = 0;
 	if ( window_dependency ) {
@@ -397,7 +399,7 @@ void VMainBundle::v_dispatch ( ) {
 		vk::CommandBufferBeginInfo begininfo = {
 			vk::CommandBufferUsageFlags(), nullptr
 		};
-		data.command.buffer.begin ( begininfo );
+		data.command.buffer.begin ( &begininfo );
 
 		for ( VRenderStage* renderstage : stages ) {
 			renderstage->v_dispatch ( data.command.buffer, index );
@@ -434,5 +436,5 @@ void VMainBundle::v_dispatch ( ) {
 
 	v_instance->frame_index++;
 	window_dependency->rendering_mutex.unlock();
-	v_logger.log<LogLevel::eWarn> ( "---------------     End Frame    ---------------" );
+	v_logger.log<LogLevel::Warn> ( "---------------     End Frame    ---------------" );
 }

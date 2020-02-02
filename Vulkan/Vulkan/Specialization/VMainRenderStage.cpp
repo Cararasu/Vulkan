@@ -16,7 +16,7 @@ const u32 SHADOW_MASK = 0x6;
 
 void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -43,7 +43,7 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -55,7 +55,7 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -169,13 +169,15 @@ void gen_tex_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpor
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 
 void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -202,7 +204,7 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -214,7 +216,7 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -328,12 +330,14 @@ void gen_flat_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -359,7 +363,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -371,7 +375,7 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -482,12 +486,14 @@ void gen_skybox_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, View
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -514,7 +520,7 @@ void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -526,7 +532,7 @@ void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -629,12 +635,14 @@ void gen_locallight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, 
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -661,7 +669,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -673,7 +681,7 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -767,13 +775,15 @@ void gen_shot_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewpo
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 
 void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -800,7 +810,7 @@ void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -812,7 +822,7 @@ void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -906,13 +916,15 @@ void gen_billboard_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 
 void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -938,7 +950,7 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -950,7 +962,7 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -1053,12 +1065,14 @@ void gen_lightless_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, V
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create graphicspipeline"));
 	}
 }
 void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Viewport<f32> viewport, vk::RenderPass renderpass, u32 pipeline_index ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -1084,7 +1098,7 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -1096,7 +1110,7 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -1199,7 +1213,9 @@ void gen_dirlight_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, Vi
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create GraphicsPipeline\n"));
 	}
 }
 
@@ -1228,7 +1244,7 @@ VMainRenderStage::VMainRenderStage ( VInstance* instance ) :
 	poolsizes[0].descriptorCount = 10;
 	poolsizes[0].type = vk::DescriptorType::eInputAttachment;
 	vk::DescriptorPoolCreateInfo poolInfo ( vk::DescriptorPoolCreateFlags(), 2, poolsizes.size, poolsizes.data );
-	input_ds_pool = v_instance->vk_device().createDescriptorPool ( poolInfo );
+	V_CHECKCALL(v_instance->vk_device().createDescriptorPool ( &poolInfo, nullptr, &input_ds_pool ), printf("Cannot create DescriptorPool\n"));
 
 	{
 		subpass_inputs[0].ds_layout = vk::DescriptorSetLayout();
@@ -1241,7 +1257,11 @@ VMainRenderStage::VMainRenderStage ( VInstance* instance ) :
 			vk::DescriptorSetLayoutBinding ( 2, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr ),
 			vk::DescriptorSetLayoutBinding ( 3, vk::DescriptorType::eInputAttachment, 1, vk::ShaderStageFlagBits::eFragment, nullptr )
 		};
-		subpass_inputs[1].ds_layout = v_instance->vk_device ().createDescriptorSetLayout ( vk::DescriptorSetLayoutCreateInfo ( vk::DescriptorSetLayoutCreateFlags(), 4, binding ), nullptr );
+		vk::DescriptorSetLayoutCreateInfo create_info( vk::DescriptorSetLayoutCreateFlags(), 4, binding );
+		V_CHECKCALL(v_instance->vk_device ().createDescriptorSetLayout ( &create_info, nullptr, &subpass_inputs[1].ds_layout ),
+			printf("Cannot create DescriptorSet\n"));
+		
+	V_CHECKCALL(v_instance->vk_device().createDescriptorPool ( &poolInfo, nullptr, &input_ds_pool ), printf("Cannot create DescriptorPool"));
 
 		vk::DescriptorSetAllocateInfo allocInfo ( input_ds_pool, 1, &subpass_inputs[1].ds_layout );
 		v_instance->vk_device().allocateDescriptorSets ( &allocInfo, &subpass_inputs[1].ds_set );
@@ -1252,13 +1272,13 @@ VMainRenderStage::VMainRenderStage ( VInstance* instance ) :
 }
 
 VMainRenderStage::~VMainRenderStage() {
-	v_instance->vk_device ().destroyCommandPool ( commandpool );
+	v_instance->vk_device ().destroyCommandPool ( commandpool, nullptr );
 	commandpool = vk::CommandPool();
 
-	v_instance->vk_device().destroyDescriptorPool ( input_ds_pool );
+	v_instance->vk_device().destroyDescriptorPool ( input_ds_pool, nullptr );
 
 	for ( SubPassInput& subpass_input : subpass_inputs ) {
-		v_instance->vk_device().destroyDescriptorSetLayout ( subpass_input.ds_layout );
+		v_instance->vk_device().destroyDescriptorSetLayout ( subpass_input.ds_layout, nullptr );
 	}
 
 	v_destroy_framebuffers();
@@ -1296,14 +1316,14 @@ void VMainRenderStage::v_destroy_pipelines() {
 }
 void VMainRenderStage::v_destroy_renderpasses() {
 	if ( v_renderpass ) {
-		v_instance->vk_device ().destroyRenderPass ( v_renderpass );
+		v_instance->vk_device ().destroyRenderPass ( v_renderpass, nullptr );
 		v_renderpass = vk::RenderPass();
 	}
 }
 void VMainRenderStage::v_destroy_framebuffers() {
 	for ( PerFrameRenderObj& data : v_per_frame_data ) {
 		if ( data.framebuffer ) {
-			v_instance->vk_device ().destroyFramebuffer ( data.framebuffer );
+			v_instance->vk_device ().destroyFramebuffer ( data.framebuffer, nullptr );
 			data.framebuffer = vk::Framebuffer();
 		}
 	}
@@ -1333,12 +1353,12 @@ void VMainRenderStage::v_check_rebuild() {
 	u32 width = 0, height = 0;
 	for ( VBundleImageState& imagestate : v_bundlestates ) {
 		if ( !imagestate.actual_image ) {
-			v_logger.log<LogLevel::eWarn>  ( "One or more Images not set for MainBundle" );
+			v_logger.log<LogLevel::Warn>  ( "One or more Images not set for MainBundle" );
 			continue;
 		}
 		if ( last_frame_index_pipeline_built < imagestate.actual_image->created_frame_index ) {
-			v_logger.log<LogLevel::eTrace> ( "Last Frame Index Pipeline Built %" PRId64 "", last_frame_index_pipeline_built );
-			v_logger.log<LogLevel::eTrace> ( "Last Image built index %" PRId64 "", imagestate.actual_image->created_frame_index );
+			v_logger.log<LogLevel::Trace> ( "Last Frame Index Pipeline Built %" PRId64 "", last_frame_index_pipeline_built );
+			v_logger.log<LogLevel::Trace> ( "Last Image built index %" PRId64 "", imagestate.actual_image->created_frame_index );
 			v_destroy_pipelines();
 		}
 
@@ -1370,7 +1390,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 	gen_pipeline_layout ( v_instance, &subpass_inputs[1], &billboard_pipeline );
 
 	if ( !v_renderpass ) {
-		v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
+		v_logger.log<LogLevel::Debug> ( "Rebuild Renderpasses" );
 		std::array<vk::AttachmentDescription, 5> attachments = {
 			vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 			                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
@@ -1470,7 +1490,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 		        subpasses.size(), subpasses.data(),
 		        dependencies.size(), dependencies.data() /*dependencies*/ );
 
-		v_renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
+		V_CHECKCALL(v_instance->vk_device ().createRenderPass ( &renderPassInfo, nullptr, &v_renderpass ), printf("Cannot create RenderPass\n"));
 
 
 		if ( !subpass_inputs[1].images_used[0] ) subpass_inputs[1].images_used[0] = v_bundlestates[0].actual_image->v_create_use ( vk::ImageAspectFlagBits::eColor, {0, 1}, {0, 1} );
@@ -1492,7 +1512,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 			    nullptr, nullptr
 			)
 		};
-		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
+		v_instance->vk_device().updateDescriptorSets ( 1, writeDescriptorSets.data(), 0, nullptr );
 
 	} else if ( subpass_inputs[1].images_used[0].is_updated() || subpass_inputs[1].images_used[1].is_updated() || subpass_inputs[1].images_used[2].is_updated() || subpass_inputs[1].images_used[3].is_updated() ) {
 		subpass_inputs[1].images_used[0].set_updated();
@@ -1514,7 +1534,7 @@ void VMainRenderStage::v_rebuild_pipelines() {
 			    nullptr, nullptr
 			)
 		};
-		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets, {} );
+		v_instance->vk_device().updateDescriptorSets ( writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr );
 	}
 
 
@@ -1556,7 +1576,7 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 			5, attachments,
 			( u32 ) viewport.extend.width, ( u32 ) viewport.extend.height, 1
 		};
-		data.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
+		V_CHECKCALL(v_instance->vk_device ().createFramebuffer ( &frameBufferCreateInfo, nullptr,  &data.framebuffer ), printf("Cannot create FrameBuffer\n"));
 	}
 
 	update_instancegroup ( v_instance, v_instancegroup, buffer );
@@ -1592,13 +1612,13 @@ void VMainRenderStage::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		buffer.pipelineBarrier (
 			sourceStage, destinationStage,
 			vk::DependencyFlags(),
-			{},//memoryBarriers
-			{},//bufferBarriers
-			vk::ArrayProxy<const vk::ImageMemoryBarrier> ( 5, barriers ) //imageBarriers
+			0, nullptr,//memoryBarriers
+			0, nullptr,//bufferBarriers
+			5, barriers//imageBarriers
 		);
 	}
 
-	buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+	buffer.beginRenderPass ( &renderPassBeginInfo, vk::SubpassContents::eInline );
 
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &skybox_pipeline, &subpass_inputs[0], buffer );
 	render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &tex_pipeline, &subpass_inputs[0], buffer );

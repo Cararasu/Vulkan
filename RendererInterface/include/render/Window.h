@@ -11,23 +11,23 @@
 #include "Queues.h"
 
 enum class CursorMode {
-	eNormal,
-	eInvisible,
-	eCatch,
+	Normal,
+	Invisible,
+	Catch,
 };
 enum class WindowBorder {
-	eNormal,
-	eNone,
+	Normal,
+	None,
 };
 
 enum class WindowAlphaBlend {
-	eOpaque,
-	eBlend
+	Opaque,
+	Blend
 };
 enum class WindowShowMode {
-	eMaximized,
-	eMinimized,
-	eWindowed
+	Maximized,
+	Minimized,
+	Windowed
 };
 
 
@@ -36,14 +36,14 @@ protected:
 	ChangeableValue<Offset2D<s32>> m_position = Offset2D<s32> ( 100, 100 );
 	ChangeableValue<Extent2D<s32>> m_size = Extent2D<s32> ( 200, 200 );
 	ChangeableValue<u32> m_refreshrate = 60;
-	ChangeableValue<WindowShowMode> m_showmode = WindowShowMode::eWindowed;
-	ChangeableValue<WindowBorder> m_border = WindowBorder::eNormal;
+	ChangeableValue<WindowShowMode> m_showmode = WindowShowMode::Windowed;
+	ChangeableValue<WindowBorder> m_border = WindowBorder::Normal;
 	ChangeableValue<bool> m_focused = true;
 	ChangeableValue<bool> m_decorated = true;
 	ChangeableValue<bool> m_visible = false;
 	ChangeableValue<bool> m_resizable = true;
-	ChangeableValue<WindowAlphaBlend> m_alphablend = WindowAlphaBlend::eOpaque;
-	ChangeableValue<CursorMode> m_cursormode = CursorMode::eNormal;
+	ChangeableValue<WindowAlphaBlend> m_alphablend = WindowAlphaBlend::Opaque;
+	ChangeableValue<CursorMode> m_cursormode = CursorMode::Normal;
 	ChangeableValue<Monitor*> m_fullscreen_monitor = nullptr;
 	
 	float mouse_x = -1.0f, mouse_y = -1.0f;

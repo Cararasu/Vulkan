@@ -11,6 +11,7 @@
 #pragma GCC diagnostic push
 // turn off the specific warning. Can also use "-Wall"
 #pragma GCC diagnostic ignored "-Wall"
+#define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
 // turn the warnings back on
 #pragma GCC diagnostic pop

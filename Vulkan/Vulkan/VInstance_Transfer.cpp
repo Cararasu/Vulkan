@@ -22,10 +22,13 @@ vk::Fence VInstance::request_fence () {
 		free_data.fences.pop_back();
 		return fence;
 	}
-	return vk_device().createFence ( vk::FenceCreateInfo ( vk::FenceCreateFlags() ) );
+	vk::FenceCreateInfo create_info{ vk::FenceCreateFlags() };
+	vk::Fence fence;
+	V_CHECKCALL( vk_device().createFence ( &create_info, nullptr, &fence ),
+		printf("Cannot create Fence\n"));
 }
 void VInstance::free_fence ( vk::Fence fence ) {
-	v_logger.log<LogLevel::eDebug> ( "Freeing Fence 0x%" PRIx64, fence );
+	v_logger.log<LogLevel::Debug> ( "Freeing Fence 0x%" PRIx64, fence );
 	current_free_data->fences.push_back ( fence );
 }
 vk::CommandBuffer VInstance::request_transfer_command_buffer() {
@@ -42,7 +45,7 @@ vk::CommandBuffer VInstance::request_transfer_command_buffer() {
 	return commandBuffer;
 }
 void VInstance::free_transfer_command_buffer ( vk::CommandBuffer buffer ) {
-	v_logger.log<LogLevel::eDebug> ( "Freeing CommandBuffer 0x%" PRIx64, buffer );
+	v_logger.log<LogLevel::Debug> ( "Freeing CommandBuffer 0x%" PRIx64, buffer );
 	current_free_data->command_buffers.push_back ( buffer );
 }
 
@@ -61,9 +64,9 @@ vk::Semaphore VInstance::schedule_transfer_data ( Array<VSimpleTransferJob>& job
 //a fence for optional cpu-synchronization and cpu-side check for completion
 //maybe do it in a queue that has lower priority
 vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs ) {
-	vk::CommandBuffer cmdbuffer = request_transfer_command_buffer ( );
-
-	cmdbuffer.begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlags() | vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
+	vk::CommandBuffer cmdbuffer{ request_transfer_command_buffer() };
+	vk::CommandBufferBeginInfo begin_info{ vk::CommandBufferUsageFlags() | vk::CommandBufferUsageFlagBits::eOneTimeSubmit };
+	cmdbuffer.begin ( &begin_info );
 
 	for ( VSimpleTransferJob& transfer_job : jobs ) {
 		cmdbuffer.copyBuffer ( transfer_job.source_buffer.buffer, transfer_job.target_buffer->buffer, 1, &transfer_job.sections );
@@ -91,23 +94,23 @@ vk::Fence VInstance::do_transfer_data_asynch ( Array<VSimpleTransferJob>& jobs )
 void VInstance::transfer_data ( Array<VSimpleTransferJob>& jobs ) {
 	vk::Fence fence = do_transfer_data_asynch ( jobs );
 	if ( fence ) {
-		vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
-		vk_device().resetFences ( {fence} );
+		vk_device().waitForFences ( 1, &fence, true, std::numeric_limits<u64>::max() );
+		vk_device().resetFences ( 1, &fence );
 		free_data.fences.push_back ( fence );
 	}
 }
 
 void VInstance::wait_for_frame ( u64 wait_index ) {
 	if ( wait_index <= last_completed_frame_index ) return;
-	v_logger.log<LogLevel::eInfo> ( "Waiting for Frame %" PRId64, wait_index );
+	v_logger.log<LogLevel::Info> ( "Waiting for Frame %" PRId64, wait_index );
 	while ( !per_frame_queue.empty() ) {
 		PerFrameData* data = per_frame_queue.front();
 		if ( data->frame_index > wait_index ) {
 			break;
 		}
 		if ( !data->fences.empty() ) {
-			vk_device().waitForFences ( data->fences, true, std::numeric_limits<u64>::max() );
-			vk_device().resetFences ( data->fences );
+			vk_device().waitForFences ( data->fences.size(), data->fences.data(), true, std::numeric_limits<u64>::max() );
+			vk_device().resetFences ( data->fences.size(), data->fences.data() );
 		}
 		for ( VDividableBufferStore* buffer_store : data->staging_buffer_stores ) {
 			buffer_store->free_buffers();

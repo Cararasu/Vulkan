@@ -1,53 +1,53 @@
 #pragma once
 
 enum class KeyCode : s32 {
-	eUnknown = -1,
-	eMouseLeft = 0, eMouseRight, eMouseMiddle, eMouse4, eMouse5, eMouse6, eMouse7, eMouse8,
-	eSpace, eApostrophe, eComma, eSemicolon, eGraveAccent,
-	eMinus, ePlus,
-	eEqual, ePeriod, eSlash, eBackslash,
-	eLBracket, eRBracket,
+	Unknown = -1,
+	MouseLeft = 0, MouseRight, MouseMiddle, Mouse4, Mouse5, Mouse6, Mouse7, Mouse8,
+	Space, Apostrophe, Comma, Semicolon, GraveAccent,
+	Minus, Plus,
+	Equal, Period, Slash, Backslash,
+	LBracket, RBracket,
 	
-	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9,
-	eA, eB, eC, eD, eE, eF, eG, eH, eI, eJ, 
-	eK, eL, eM, eN, eO, eP, eQ, eR, eS, eT, 
-	eU, eV, eW, eX, eY, eZ, 
+	Digit0, Digit1, Digit2, Digit3, Digit4, Digit5, Digit6, Digit7, Digit8, Digit9,
+	A, B, C, D, E, F, G, H, I, J, 
+	K, L, M, N, O, P, Q, R, S, T, 
+	U, V, W, X, Y, Z, 
 	
-	eF1, eF2, eF3, eF4, eF5, eF6, eF7, eF8, eF9, eF10,
-	eF11, eF12, eF13, eF14, eF15, eF16, eF17, eF18, eF19, eF20,
-	eF21, eF22, eF23, eF24, eF25,
+	F1, F2, F3, F4, F5, F6, F7, F8, F9, F10,
+	F11, F12, F13, F14, F15, F16, F17, F18, F19, F20,
+	F21, F22, F23, F24, F25,
 	
-	eKP0, eKP1, eKP2, eKP3, eKP4, eKP5, eKP6, eKP7, eKP8, eKP9,
-	eKPDecimal, eKPDivide, eKPMultiply, eKPSubtract, eKPAdd, eKPEnter, eKPEqual, eKP,
+	KP0, KP1, KP2, KP3, KP4, KP5, KP6, KP7, KP8, KP9,
+	KPDecimal, KPDivide, KPMultiply, KPSubtract, KPAdd, KPEnter, KPEqual, KP,
 	
-	eLShift, eRShift, eLCntrl, eRCntrl, eLAlt, eRAlt, eLSuper, eRSuper,
-	eMenu, eWorld1, eWorld2,
-	eEscape, eEnter, eTab, eBackspace, 
-	eInsert, eDelete, ePageUp, ePageDown,
-	eHome, eEnd, ePrintScreen, ePause,
-	eCapsLock, eScrollLock,  eNumLock, 
-	eRight, eLeft, eDown, eUp,
+	LShift, RShift, LCntrl, RCntrl, LAlt, RAlt, LSuper, RSuper,
+	Menu, World1, World2,
+	Escape, Enter, Tab, Backspace, 
+	Insert, Delete, PageUp, PageDown,
+	Home, End, PrintScreen, Pause,
+	CapsLock, ScrollLock,  NumLock, 
+	Right, Left, Down, Up,
 	
-	eMax
+	Max
 };
 enum class PressAction : u32 {
-	ePress,
-	eRelease,
-	eRepeat
+	Press,
+	Release,
+	Repeat
 };
 enum class MouseMoveAction : u32 {
-	eMoved,
-	eEntered,
-	eLeft
+	Moved,
+	Entered,
+	Left
 };
 enum class WindowAction : u32 {
-	eMoved,
-	eResized,
-	eFrameResized,
-	eIconify,
-	eMaximize,
-	eFocused,
-	eClosed,
+	Moved,
+	Resized,
+	FrameResized,
+	Iconify,
+	Maximize,
+	Focused,
+	Closed,
 };
 struct ButtonEvent {//20 bytes
 	PressAction action;
@@ -76,7 +76,7 @@ struct WindowEvent {//4 bytes
 	bool value;
 };
 enum class OSEventType : u32 {
-	eButton, eMouse, eScroll, eChar, eWindow
+	Button, Mouse, Scroll, Char, Window
 };
 struct OSEvent {
 	OSEventType type;
@@ -93,7 +93,7 @@ struct KeyState {
 	double time_pressed = 0.0;
 };
 struct InputState {
-	KeyState basic_keystates[(u32)KeyCode::eMax];
+	KeyState basic_keystates[(u32) KeyCode::Max];
 	Map<u32, KeyState> utf8_keystates;
 	Map<u32, KeyState> scancode_keystates;
 };

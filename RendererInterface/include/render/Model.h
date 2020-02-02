@@ -17,11 +17,11 @@ struct DataGroupDef {
 	bool needs_write = false;
 };
 enum class TextureResourceType : u8 {
-	eUndefined,
-	eImage,
-	eSampler,
-	eImageSampled,
-	eBufferSampled
+	Undefined,
+	Image,
+	Sampler,
+	ImageSampled,
+	BufferSampled
 };
 struct TextureResource {
 	TextureResourceType type;
@@ -78,92 +78,92 @@ struct ContextGroup {
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, &value, sizeof(__TYPE));\
 	}
-GEN_SETTER ( ValueType::eU8, u8 )
-GEN_SETTER ( ValueType::eU16, u16 )
-GEN_SETTER ( ValueType::eU32, u32 )
-GEN_SETTER ( ValueType::eU64, u64 )
+GEN_SETTER ( ValueType::U8, u8 )
+GEN_SETTER ( ValueType::U16, u16 )
+GEN_SETTER ( ValueType::U32, u32 )
+GEN_SETTER ( ValueType::U64, u64 )
 
-GEN_SETTER ( ValueType::eS8, s8 )
-GEN_SETTER ( ValueType::eS16, s16 )
-GEN_SETTER ( ValueType::eS32, s32 )
-GEN_SETTER ( ValueType::eS64, s64 )
+GEN_SETTER ( ValueType::S8, s8 )
+GEN_SETTER ( ValueType::S16, s16 )
+GEN_SETTER ( ValueType::S32, s32 )
+GEN_SETTER ( ValueType::S64, s64 )
 
-GEN_SETTER ( ValueType::eF32, f32 )
-GEN_SETTER ( ValueType::eF64, f64 )
+GEN_SETTER ( ValueType::F32, f32 )
+GEN_SETTER ( ValueType::F64, f64 )
 #undef GEN_SETTER
 #define GEN_SETTER(__VALUETYPE, __TYPE, __COUNT) inline void set_value_v##__COUNT ( void* datablock, const DataGroupDef* groupdef, const __TYPE* valptr, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
 		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + __COUNT*sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, valptr, __COUNT*sizeof(__TYPE));\
 	}
-GEN_SETTER ( ValueType::eU8, u8, 2 )
-GEN_SETTER ( ValueType::eU8, u8, 3 )
-GEN_SETTER ( ValueType::eU8, u8, 4 )
-GEN_SETTER ( ValueType::eU16, u16, 2 )
-GEN_SETTER ( ValueType::eU16, u16, 3 )
-GEN_SETTER ( ValueType::eU16, u16, 4 )
-GEN_SETTER ( ValueType::eU32, u32, 2 )
-GEN_SETTER ( ValueType::eU32, u32, 3 )
-GEN_SETTER ( ValueType::eU32, u32, 4 )
-GEN_SETTER ( ValueType::eU64, u64, 2 )
-GEN_SETTER ( ValueType::eU64, u64, 3 )
-GEN_SETTER ( ValueType::eU64, u64, 4 )
+GEN_SETTER ( ValueType::U8, u8, 2 )
+GEN_SETTER ( ValueType::U8, u8, 3 )
+GEN_SETTER ( ValueType::U8, u8, 4 )
+GEN_SETTER ( ValueType::U16, u16, 2 )
+GEN_SETTER ( ValueType::U16, u16, 3 )
+GEN_SETTER ( ValueType::U16, u16, 4 )
+GEN_SETTER ( ValueType::U32, u32, 2 )
+GEN_SETTER ( ValueType::U32, u32, 3 )
+GEN_SETTER ( ValueType::U32, u32, 4 )
+GEN_SETTER ( ValueType::U64, u64, 2 )
+GEN_SETTER ( ValueType::U64, u64, 3 )
+GEN_SETTER ( ValueType::U64, u64, 4 )
 
-GEN_SETTER ( ValueType::eS8, s8, 2 )
-GEN_SETTER ( ValueType::eS8, s8, 3 )
-GEN_SETTER ( ValueType::eS8, s8, 4 )
-GEN_SETTER ( ValueType::eS16, s16, 2 )
-GEN_SETTER ( ValueType::eS16, s16, 3 )
-GEN_SETTER ( ValueType::eS16, s16, 4 )
-GEN_SETTER ( ValueType::eS32, s32, 2 )
-GEN_SETTER ( ValueType::eS32, s32, 3 )
-GEN_SETTER ( ValueType::eS32, s32, 4 )
-GEN_SETTER ( ValueType::eS64, s64, 2 )
-GEN_SETTER ( ValueType::eS64, s64, 3 )
-GEN_SETTER ( ValueType::eS64, s64, 4 )
+GEN_SETTER ( ValueType::S8, s8, 2 )
+GEN_SETTER ( ValueType::S8, s8, 3 )
+GEN_SETTER ( ValueType::S8, s8, 4 )
+GEN_SETTER ( ValueType::S16, s16, 2 )
+GEN_SETTER ( ValueType::S16, s16, 3 )
+GEN_SETTER ( ValueType::S16, s16, 4 )
+GEN_SETTER ( ValueType::S32, s32, 2 )
+GEN_SETTER ( ValueType::S32, s32, 3 )
+GEN_SETTER ( ValueType::S32, s32, 4 )
+GEN_SETTER ( ValueType::S64, s64, 2 )
+GEN_SETTER ( ValueType::S64, s64, 3 )
+GEN_SETTER ( ValueType::S64, s64, 4 )
 
-GEN_SETTER ( ValueType::eF32, f32, 2 )
-GEN_SETTER ( ValueType::eF32, f32, 3 )
-GEN_SETTER ( ValueType::eF32, f32, 4 )
-GEN_SETTER ( ValueType::eF64, f64, 2 )
-GEN_SETTER ( ValueType::eF64, f64, 3 )
-GEN_SETTER ( ValueType::eF64, f64, 4 )
+GEN_SETTER ( ValueType::F32, f32, 2 )
+GEN_SETTER ( ValueType::F32, f32, 3 )
+GEN_SETTER ( ValueType::F32, f32, 4 )
+GEN_SETTER ( ValueType::F64, f64, 2 )
+GEN_SETTER ( ValueType::F64, f64, 3 )
+GEN_SETTER ( ValueType::F64, f64, 4 )
 #undef GEN_SETTER
 #define GEN_SETTER(__VALUETYPE, __TYPE, __COUNT) inline void set_value_m##__COUNT ( void* datablock, const DataGroupDef* groupdef, const __TYPE* valptr, u32 group_index, u32 val_index, u32 array_index = 0 ) {\
 		assert(group_index < groupdef->arraycount && val_index < groupdef->valuedefs.size && array_index < groupdef->valuedefs[val_index].arraycount && groupdef->valuedefs[val_index].type == __VALUETYPE);\
 		__TYPE* ptr = (__TYPE*)(((u8*)datablock) + (groupdef->size * group_index + __COUNT*__COUNT*sizeof(__TYPE)*array_index + groupdef->valuedefs[val_index].offset));\
 		memcpy(ptr, valptr, __COUNT*__COUNT*sizeof(__TYPE));\
 	}
-GEN_SETTER ( ValueType::eU8, u8, 2 )
-GEN_SETTER ( ValueType::eU8, u8, 3 )
-GEN_SETTER ( ValueType::eU8, u8, 4 )
-GEN_SETTER ( ValueType::eU16, u16, 2 )
-GEN_SETTER ( ValueType::eU16, u16, 3 )
-GEN_SETTER ( ValueType::eU16, u16, 4 )
-GEN_SETTER ( ValueType::eU32, u32, 2 )
-GEN_SETTER ( ValueType::eU32, u32, 3 )
-GEN_SETTER ( ValueType::eU32, u32, 4 )
-GEN_SETTER ( ValueType::eU64, u64, 2 )
-GEN_SETTER ( ValueType::eU64, u64, 3 )
-GEN_SETTER ( ValueType::eU64, u64, 4 )
+GEN_SETTER ( ValueType::U8, u8, 2 )
+GEN_SETTER ( ValueType::U8, u8, 3 )
+GEN_SETTER ( ValueType::U8, u8, 4 )
+GEN_SETTER ( ValueType::U16, u16, 2 )
+GEN_SETTER ( ValueType::U16, u16, 3 )
+GEN_SETTER ( ValueType::U16, u16, 4 )
+GEN_SETTER ( ValueType::U32, u32, 2 )
+GEN_SETTER ( ValueType::U32, u32, 3 )
+GEN_SETTER ( ValueType::U32, u32, 4 )
+GEN_SETTER ( ValueType::U64, u64, 2 )
+GEN_SETTER ( ValueType::U64, u64, 3 )
+GEN_SETTER ( ValueType::U64, u64, 4 )
 
-GEN_SETTER ( ValueType::eS8, s8, 2 )
-GEN_SETTER ( ValueType::eS8, s8, 3 )
-GEN_SETTER ( ValueType::eS8, s8, 4 )
-GEN_SETTER ( ValueType::eS16, s16, 2 )
-GEN_SETTER ( ValueType::eS16, s16, 3 )
-GEN_SETTER ( ValueType::eS16, s16, 4 )
-GEN_SETTER ( ValueType::eS32, s32, 2 )
-GEN_SETTER ( ValueType::eS32, s32, 3 )
-GEN_SETTER ( ValueType::eS32, s32, 4 )
-GEN_SETTER ( ValueType::eS64, s64, 2 )
-GEN_SETTER ( ValueType::eS64, s64, 3 )
-GEN_SETTER ( ValueType::eS64, s64, 4 )
+GEN_SETTER ( ValueType::S8, s8, 2 )
+GEN_SETTER ( ValueType::S8, s8, 3 )
+GEN_SETTER ( ValueType::S8, s8, 4 )
+GEN_SETTER ( ValueType::S16, s16, 2 )
+GEN_SETTER ( ValueType::S16, s16, 3 )
+GEN_SETTER ( ValueType::S16, s16, 4 )
+GEN_SETTER ( ValueType::S32, s32, 2 )
+GEN_SETTER ( ValueType::S32, s32, 3 )
+GEN_SETTER ( ValueType::S32, s32, 4 )
+GEN_SETTER ( ValueType::S64, s64, 2 )
+GEN_SETTER ( ValueType::S64, s64, 3 )
+GEN_SETTER ( ValueType::S64, s64, 4 )
 
-GEN_SETTER ( ValueType::eF32, f32, 2 )
-GEN_SETTER ( ValueType::eF32, f32, 3 )
-GEN_SETTER ( ValueType::eF32, f32, 4 )
-GEN_SETTER ( ValueType::eF64, f64, 2 )
-GEN_SETTER ( ValueType::eF64, f64, 3 )
-GEN_SETTER ( ValueType::eF64, f64, 4 )
+GEN_SETTER ( ValueType::F32, f32, 2 )
+GEN_SETTER ( ValueType::F32, f32, 3 )
+GEN_SETTER ( ValueType::F32, f32, 4 )
+GEN_SETTER ( ValueType::F64, f64, 2 )
+GEN_SETTER ( ValueType::F64, f64, 3 )
+GEN_SETTER ( ValueType::F64, f64, 4 )
 #undef GEN_SETTER

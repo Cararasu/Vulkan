@@ -233,6 +233,7 @@ struct MyDynArray {
 		return data + size;
 	}
 };
+
 template<typename T>
 struct Array {
 	u64 size;
@@ -379,13 +380,13 @@ template<typename K, typename T>
 using HashMap = std::unordered_map<K, T>;
 
 enum class RendResult {
-	eFail = 0,
-	eSuccess = 1,
-	eUnmodified = 2,
-	eAlreadyRegistered = -0x10,
-	eWrongInstance = -0x11,
-	eWrongType = -0x12,
-	eUninitialized = -0x20
+	Fail = 0,
+	Success = 1,
+	Unmodified = 2,
+	AlreadyRegistered = -0x10,
+	WrongInstance = -0x11,
+	WrongType = -0x12,
+	Uninitialized = -0x20
 };
 
 template<typename T>

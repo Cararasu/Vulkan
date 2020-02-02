@@ -142,20 +142,20 @@ struct Viewport {
 };
 
 enum class AbsRel {
-	eAbsolute,
-	eRelative,
+	Absolute,
+	Relative,
 };
 
 template<typename T>
 struct AbsRelValue {
 	T value = 0;
-	AbsRel absolute = AbsRel::eAbsolute;
+	AbsRel absolute = AbsRel::Absolute;
 	void abs ( T value ) {
 		this->value = value;
-		absolute = AbsRel::eAbsolute;
+		absolute = AbsRel::Absolute;
 	}
 	void rel ( T value ) {
 		this->value = value;
-		absolute = AbsRel::eRelative;
+		absolute = AbsRel::Relative;
 	}
 };

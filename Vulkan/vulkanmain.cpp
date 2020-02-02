@@ -36,7 +36,6 @@ using namespace std::chrono_literals;
 GameState g_state;
 
 #include <render/Queues.h>
-
 //TODO imageCubeArray
 
 //TODO independentBlend
@@ -59,30 +58,30 @@ int main ( int argc, char **argv ) {
 
 	Monitor* primMonitor = instance->get_primary_monitor();
 
-	if ( g_logger.level <= LogLevel::eDebug ) {
-		g_logger.log<LogLevel::eDebug> ( "Monitors" );
+	if ( g_logger.level <= LogLevel::Debug ) {
+		g_logger.log<LogLevel::Debug> ( "Monitors" );
 		for ( Monitor* monitor : instance->monitors ) {
 			if ( monitor == primMonitor )
-				g_logger.log<LogLevel::eDebug> ( "\tPrimary Monitor | %s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
+				g_logger.log<LogLevel::Debug> ( "\tPrimary Monitor | %s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
 			else
-				g_logger.log<LogLevel::eDebug> ( "\t%s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
+				g_logger.log<LogLevel::Debug> ( "\t%s %dx%d", monitor->name, monitor->extend.x, monitor->extend.y );
 		}
-		g_logger.log<LogLevel::eDebug> ( "Devices" );
+		g_logger.log<LogLevel::Debug> ( "Devices" );
 		for ( Device* device : instance->devices ) {
-			g_logger.log<LogLevel::eDebug> ( "\t%s %" PRId32, device->name, device->rating );
+			g_logger.log<LogLevel::Debug> ( "\t%s %" PRId32, device->name, device->rating );
 		}
 	}
 
 	Window* window = instance->create_window();
 
 	window->position() = primMonitor->offset;
-	window->showmode() = WindowShowMode::eWindowed;
+	window->showmode() = WindowShowMode::Windowed;
 	window->fullscreen_monitor() = nullptr;
-	window->border() = WindowBorder::eNone;
+	window->border() = WindowBorder::None;
 	window->size() = instance->get_primary_monitor()->extend;// - Extent2D<s32>(100, 100);
 	window->visible() = true;
 
-	window->cursor_mode() = CursorMode::eInvisible;
+	window->cursor_mode() = CursorMode::Invisible;
 	window->update();
 
 	Array<Context> sm_contexts = {
@@ -129,7 +128,7 @@ int main ( int argc, char **argv ) {
 	}
 	world.billboards.resize ( 0 );
 
-	g_logger.log<LogLevel::eInfo> ( "Starting Main Loop" );
+	g_logger.log<LogLevel::Info> ( "Starting Main Loop" );
 
 	g_state.current_time = 0.0;
 
@@ -179,13 +178,13 @@ int main ( int argc, char **argv ) {
 		OSEvent event;
 		while ( window->eventqueue.pop ( &event ) ) {
 			switch ( event.type ) {
-			case OSEventType::eButton: {
-				bool ispressed = event.button.action != PressAction::eRelease;
-				if ( event.button.keycode == KeyCode::eF10 && event.button.action == PressAction::ePress ) {
-					window->showmode() = window->showmode() == WindowShowMode::eMaximized ? WindowShowMode::eWindowed : WindowShowMode::eMaximized;
+			case OSEventType::Button: {
+				bool ispressed = event.button.action != PressAction::Release;
+				if ( event.button.keycode == KeyCode::F10 && event.button.action == PressAction::Press ) {
+					window->showmode() = window->showmode() == WindowShowMode::Maximized ? WindowShowMode::Windowed : WindowShowMode::Maximized;
 					window->update();
 				}
-				if ( event.button.keycode != KeyCode::eUnknown ) {
+				if ( event.button.keycode != KeyCode::Unknown ) {
 					KeyState& keystate = g_state.basic_keystates[ ( u32 ) event.button.keycode];
 					keystate.pressed = ispressed;
 					keystate.time_pressed = g_state.current_time;
@@ -199,38 +198,38 @@ int main ( int argc, char **argv ) {
 				keystate.pressed = ispressed;
 				keystate.time_pressed = g_state.current_time;
 
-				if ( event.button.keycode == KeyCode::ePlus || event.button.keycode == KeyCode::eKPAdd ) {
+				if ( event.button.keycode == KeyCode::Plus || event.button.keycode == KeyCode::KPAdd ) {
 					if ( !g_state.debug_camera ) {
-						if ( event.button.action == PressAction::ePress ) {
+						if ( event.button.action == PressAction::Press ) {
 							g_state.timescale = 1.0 / 10.0;
-						} else if ( event.button.action == PressAction::eRelease ) {
+						} else if ( event.button.action == PressAction::Release ) {
 							g_state.timescale = 1.0 / 100.0;
 						}
 					}
 				}
-				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eF11 ) {
-					if(window->border() == WindowBorder::eNormal) {
+				if ( event.button.action == PressAction::Press && event.button.keycode == KeyCode::F11 ) {
+					if(window->border() == WindowBorder::Normal) {
 						window->position() = primMonitor->offset;
-						window->showmode() = WindowShowMode::eWindowed;
-						window->border() = WindowBorder::eNone;
+						window->showmode() = WindowShowMode::Windowed;
+						window->border() = WindowBorder::None;
 						window->size() = primMonitor->extend;
 						window->update();
 					} else {
 						window->position() = primMonitor->offset + Extent2D<s32>(50, 50);
-						window->showmode() = WindowShowMode::eWindowed;
-						window->border() = WindowBorder::eNormal;
+						window->showmode() = WindowShowMode::Windowed;
+						window->border() = WindowBorder::Normal;
 						window->size() = primMonitor->extend - Extent2D<s32>(100, 100);
 						window->update();
 					}
 				}
 				
-				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eC ) {
+				if ( event.button.action == PressAction::Press && event.button.keycode == KeyCode::C ) {
 					puts ( "Camera:" );
 					printf ( "\tPosition: (%f, %f, %f)\n", g_state.camera.orientation.look_at.x, g_state.camera.orientation.look_at.y, g_state.camera.orientation.look_at.z );
 					printf ( "\tView-Vec: (%f, %f, %f)\n", g_state.camera.orientation.view_vector.x, g_state.camera.orientation.view_vector.y, g_state.camera.orientation.view_vector.z );
 					printf ( "\tUp-Vec: (%f, %f, %f)\n", g_state.camera.orientation.up_vector.x, g_state.camera.orientation.up_vector.y, g_state.camera.orientation.up_vector.z );
 				}
-				if ( event.button.action == PressAction::ePress && event.button.keycode == KeyCode::eI ) {
+				if ( event.button.action == PressAction::Press && event.button.keycode == KeyCode::I ) {
 					g_state.debug_camera = !g_state.debug_camera;
 					if ( g_state.debug_camera ) {
 						g_state.timescale = 0.0;
@@ -240,44 +239,44 @@ int main ( int argc, char **argv ) {
 				}
 			}
 			break;
-			case OSEventType::eMouse: {
+			case OSEventType::Mouse: {
 				switch ( event.mouse.action ) {
-				case MouseMoveAction::eMoved:
-					if ( g_state.basic_keystates[ ( u32 ) KeyCode::eMouseLeft].pressed ) {
+				case MouseMoveAction::Moved:
+					if ( g_state.basic_keystates[ ( u32 ) KeyCode::MouseLeft].pressed ) {
 						g_state.camera.orientation.turn ( event.mouse.deltay / 1000.0, event.mouse.deltax / 1000.0 );
 					}
 					break;
-				case MouseMoveAction::eEntered:
+				case MouseMoveAction::Entered:
 					break;
-				case MouseMoveAction::eLeft:
+				case MouseMoveAction::Left:
 					break;
 				}
 			}
 			break;
-			case OSEventType::eScroll: {
+			case OSEventType::Scroll: {
 				g_state.camera.orientation.zoom ( -event.scroll.deltay );
 			}
 			break;
-			case OSEventType::eChar: {
+			case OSEventType::Char: {
 				printf ( "eChar\n" );
 			}
 			break;
-			case OSEventType::eWindow: {
+			case OSEventType::Window: {
 				switch ( event.window.action ) {
-				case WindowAction::eMoved:
+				case WindowAction::Moved:
 					break;
-				case WindowAction::eFrameResized:
+				case WindowAction::FrameResized:
 					g_state.camera.aspect = ( ( float ) event.window.x ) / ( ( float ) event.window.y );
 					break;
-				case WindowAction::eResized:
+				case WindowAction::Resized:
 					break;
-				case WindowAction::eIconify:
+				case WindowAction::Iconify:
 					break;
-				case WindowAction::eMaximize:
+				case WindowAction::Maximize:
 					break;
-				case WindowAction::eFocused:
+				case WindowAction::Focused:
 					break;
-				case WindowAction::eClosed:
+				case WindowAction::Closed:
 					break;
 				}
 			}
@@ -289,13 +288,13 @@ int main ( int argc, char **argv ) {
 
 		glm::vec3 move_vec ( 0.0f, 0.0f, 0.0f );
 
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eA].pressed ) move_vec.x -= camera_move_factor;
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eD].pressed ) move_vec.x += camera_move_factor;
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eS].pressed ) move_vec.z -= camera_move_factor;
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eW].pressed ) move_vec.z += camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::A].pressed ) move_vec.x -= camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::D].pressed ) move_vec.x += camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::S].pressed ) move_vec.z -= camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::W].pressed ) move_vec.z += camera_move_factor;
 
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eSpace].pressed ) move_vec.y += camera_move_factor;
-		if ( g_state.basic_keystates[ ( u32 ) KeyCode::eLCntrl].pressed ) move_vec.y -= camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::Space].pressed ) move_vec.y += camera_move_factor;
+		if ( g_state.basic_keystates[ ( u32 ) KeyCode::LCntrl].pressed ) move_vec.y -= camera_move_factor;
 
 		g_state.camera.orientation.move ( move_vec );
 

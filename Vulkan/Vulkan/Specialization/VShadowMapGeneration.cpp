@@ -13,7 +13,7 @@
 
 void gen_model1_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 pipeline_index, Viewport<f32> viewport, vk::RenderPass renderpass ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -40,7 +40,7 @@ void gen_model1_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -52,7 +52,7 @@ void gen_model1_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -129,12 +129,14 @@ void gen_model1_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		vk::GraphicsPipelineCreateInfo create_info[1] = {pipelineInfo};
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, create_info, nullptr, &p_struct->pipelines[pipeline_index] ), 
+			printf("Could not create GraphicsPipeline\n"));
 	}
 }
 void gen_model2_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 pipeline_index, Viewport<f32> viewport, vk::RenderPass renderpass ) {
 	if ( !p_struct->pipelines[pipeline_index] ) {
-		v_logger.log<LogLevel::eTrace> ( "Rebuild Pipelines" );
+		v_logger.log<LogLevel::Trace> ( "Rebuild Pipelines" );
 
 		const ModelBase* modelbase = v_instance->modelbase ( p_struct->modelbase_id );
 		const InstanceBase* instancebase = v_instance->instancebase ( p_struct->instancebase_id );
@@ -161,7 +163,7 @@ void gen_model2_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 0, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 0, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -173,7 +175,7 @@ void gen_model2_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 				u32 count = formatdata.count * valuedef.arraycount;
 				u32 offset = valuedef.offset;
 				for ( u32 i = 0; i < count; i++ ) {
-					v_logger.log<LogLevel::eTrace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
+					v_logger.log<LogLevel::Trace> ( "Value: %s %d, %d, %d", to_string ( formatdata.format ).c_str(), bindingindex, 1, offset );
 					vertexInputAttributes[index] = vk::VertexInputAttributeDescription ( bindingindex, 1, formatdata.format, offset/* + value*/ );
 					offset += formatdata.bytesize;
 					bindingindex += ( ( formatdata.bytesize - 1 ) / 16 ) + 1;
@@ -250,7 +252,8 @@ void gen_model2_pipeline ( VInstance* v_instance, PipelineStruct* p_struct, u32 
 		    vk::Pipeline(),
 		    -1
 		);
-		p_struct->pipelines[pipeline_index] = v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), {pipelineInfo}, nullptr ) [0];
+		V_CHECKCALL(v_instance->vk_device ().createGraphicsPipelines ( vk::PipelineCache(), 1, &pipelineInfo, nullptr, &p_struct->pipelines[pipeline_index] ),
+			printf("Could not create GraphicsPipeline\n"));
 	}
 }
 
@@ -285,7 +288,7 @@ void VShadowMapGeneration::v_destroy_pipelines() {
 void VShadowMapGeneration::v_destroy_renderpasses() {
 	for ( RenderPassWrapper& wrap : renderpasses ) {
 		if ( wrap.renderpass ) {
-			v_instance->vk_device ().destroyRenderPass ( wrap.renderpass );
+			v_instance->vk_device ().destroyRenderPass ( wrap.renderpass, nullptr );
 			wrap.renderpass = vk::RenderPass();
 		}
 	}
@@ -293,7 +296,7 @@ void VShadowMapGeneration::v_destroy_renderpasses() {
 void VShadowMapGeneration::v_destroy_framebuffers() {
 	for ( RenderPassWrapper& wrap : renderpasses ) {
 		if ( wrap.framebuffer ) {
-			v_instance->vk_device ().destroyFramebuffer ( wrap.framebuffer );
+			v_instance->vk_device ().destroyFramebuffer ( wrap.framebuffer, nullptr );
 			wrap.framebuffer = vk::Framebuffer();
 		}
 	}
@@ -324,12 +327,12 @@ void VShadowMapGeneration::v_check_rebuild() {
 	u32 width = 0, height = 0;
 	for ( VBundleImageState& imagestate : v_bundlestates ) {
 		if ( !imagestate.actual_image ) {
-			v_logger.log<LogLevel::eWarn>  ( "One or more Images not set for MainBundle" );
+			v_logger.log<LogLevel::Warn>  ( "One or more Images not set for MainBundle" );
 			continue;
 		}
 		if ( last_frame_index_pipeline_built < imagestate.actual_image->created_frame_index ) {
-			v_logger.log<LogLevel::eTrace> ( "Last Frame Index Pipeline Built %" PRId64 "", last_frame_index_pipeline_built );
-			v_logger.log<LogLevel::eTrace> ( "Last Image built index %" PRId64 "", imagestate.actual_image->created_frame_index );
+			v_logger.log<LogLevel::Trace> ( "Last Frame Index Pipeline Built %" PRId64 "", last_frame_index_pipeline_built );
+			v_logger.log<LogLevel::Trace> ( "Last Image built index %" PRId64 "", imagestate.actual_image->created_frame_index );
 			v_destroy_pipelines();
 		}
 		u32 thewidth = imagestate.actual_image->extent.width / ( 1 << imagestate.miplayer );
@@ -355,7 +358,7 @@ void VShadowMapGeneration::v_rebuild_pipelines() {
 	for ( int i = 0; i < renderpasses.size; i++ ) {
 		RenderPassWrapper& wrap = renderpasses[i];
 		if ( !wrap.renderpass ) {
-			v_logger.log<LogLevel::eDebug> ( "Rebuild Renderpasses" );
+			v_logger.log<LogLevel::Debug> ( "Rebuild Renderpasses" );
 			std::array<vk::AttachmentDescription, 1> attachments = {
 				vk::AttachmentDescription ( vk::AttachmentDescriptionFlags(),
 				                            v_bundlestates[0].current_format, vk::SampleCountFlagBits::e1,//format, samples
@@ -388,7 +391,8 @@ void VShadowMapGeneration::v_rebuild_pipelines() {
 			        subpasses.size(), subpasses.data(),
 			        0, nullptr /*dependencies*/ );
 
-			wrap.renderpass = v_instance->vk_device ().createRenderPass ( renderPassInfo, nullptr );
+			V_CHECKCALL(v_instance->vk_device ().createRenderPass ( &renderPassInfo, nullptr, &wrap.renderpass ),
+				printf("Could not create RenderPass\n"));
 
 		}
 		if ( !model1_pipeline.pipelines[i] ) {
@@ -431,7 +435,8 @@ void VShadowMapGeneration::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 				1, attachments,
 				( u32 ) viewport.extend.width / ( 1 << i ), ( u32 ) viewport.extend.height / ( 1 << i ), 1
 			};
-			wrap.framebuffer = v_instance->vk_device ().createFramebuffer ( frameBufferCreateInfo );
+			V_CHECKCALL(v_instance->vk_device ().createFramebuffer ( &frameBufferCreateInfo, nullptr, &wrap.framebuffer ),
+				printf("Could not create FrameBuffer\n"));
 		}
 
 		vk::ClearValue clearColors[] = {
@@ -444,7 +449,7 @@ void VShadowMapGeneration::v_dispatch ( vk::CommandBuffer buffer, u32 index ) {
 		};
 		v_bundlestates[0].actual_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal, buffer );
 
-		buffer.beginRenderPass ( renderPassBeginInfo, vk::SubpassContents::eInline );
+		buffer.beginRenderPass ( &renderPassBeginInfo, vk::SubpassContents::eInline );
 		render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &model1_pipeline, &subpass_inputs[0], buffer, i );
 		render_pipeline ( v_instance, v_instancegroup, v_contextgroup, &model2_pipeline, &subpass_inputs[0], buffer, i );
 		buffer.endRenderPass();

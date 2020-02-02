@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="Main" Version="10.0.0" InternalType="Console">
+<CodeLite_Project Name="Main" Version="11000" InternalType="Console">
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00010001N0005Debug000000000000]]>
@@ -10,6 +10,10 @@
   <VirtualDirectory Name="src">
     <File Name="main.cpp"/>
   </VirtualDirectory>
+  <Dependencies Name="DebugWindows">
+    <Project Name="MetaBuilder"/>
+    <Project Name="Vulkan"/>
+  </Dependencies>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="-Wall;-std=c++17" C_Options="-Wall;-std=c99" Assembler="">
@@ -139,8 +143,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <Dependencies Name="DebugWindows">
-    <Project Name="MetaBuilder"/>
-    <Project Name="Vulkan"/>
-  </Dependencies>
 </CodeLite_Project>

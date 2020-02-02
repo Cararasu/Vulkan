@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="Vulkan" Version="10.0.0" InternalType="Library">
+<CodeLite_Project Name="Vulkan" Version="11000" InternalType="Library">
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00040001N0005Debug0000000000000001N0013Debug Windows0000000000000001N0007Release0000000000000001N0015Release Windows000000000000]]>

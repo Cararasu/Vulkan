@@ -68,7 +68,7 @@ Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 		if ( it->size == size ) {
 			Chunk c = *it;
 			freelist.erase ( it );
-			v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			v_logger.log<LogLevel::Debug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
 			return c;
 		}
 	}
@@ -77,18 +77,18 @@ Chunk VUpdateableBufferStorage::allocate_chunk ( u64 size ) {
 			Chunk c = *it;
 			c.size = size;
 			it->offset += size;
-			v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
+			v_logger.log<LogLevel::Debug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, size, c.index, c.offset);
 			return c;
 		}
 	}
 	if ( size >= UNIFORM_BUFFER_SIZE ) {
 		buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
-		v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+		v_logger.log<LogLevel::Debug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 		return {buffers.size() - 1, 0, size};
 	}
 	buffers.push_back ( std::make_pair(new VBuffer ( v_instance, UNIFORM_BUFFER_SIZE, usageflags, vk::MemoryPropertyFlags() | vk::MemoryPropertyFlagBits::eDeviceLocal ), VThinBuffer()) );
 	freelist.push_back ( {buffers.size() - 1, size, UNIFORM_BUFFER_SIZE - size} );
-	v_logger.log<LogLevel::eDebug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
+	v_logger.log<LogLevel::Debug> ("Allocating chunk from BufferStorage of size %" PRId64 " in Buffer %" PRId64 " Offset %" PRId64, buffers.size() - 1, 0, size);
 	return {buffers.size() - 1, 0, size};
 }
 VBuffer* VUpdateableBufferStorage::get_buffer ( u64 index ) {
@@ -139,7 +139,7 @@ VThinBuffer VDividableBufferStore::acquire_buffer(u64 size) {
 	vk::Device device = v_instance->vk_device ();
 	vk::Buffer buffer;
 	vk::BufferCreateInfo bufferInfo ( vk::BufferCreateFlags(), size, usage, vk::SharingMode::eExclusive );
-	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), v_logger.log<LogLevel::eError> ( "Failed To Create Buffer" ) );
+	V_CHECKCALL ( device.createBuffer ( &bufferInfo, nullptr, &buffer ), v_logger.log<LogLevel::Error> ( "Failed To Create Buffer" ) );
 	
 	vk::MemoryRequirements mem_req;
 	device.getBufferMemoryRequirements ( buffer, &mem_req );
@@ -151,14 +151,14 @@ VThinBuffer VDividableBufferStore::acquire_buffer(u64 size) {
 			device.bindBufferMemory ( buffer, memory.memory.memory, possible_offset );
 			memory.offset = possible_offset + size;
 			buffers.push_back(buffer);
-			return VThinBuffer ( v_instance, buffer, size, memory.mapped_ptr + possible_offset);
+			return VThinBuffer ( v_instance, buffer, size, reinterpret_cast<u8*>(memory.mapped_ptr) + possible_offset);
 		}
 	}
 	vk::MemoryRequirements new_mem_req = mem_req;
 	new_mem_req.size = new_mem_req.size > MAX_MEMORY_CUNK_SIZE ? new_mem_req.size : MAX_MEMORY_CUNK_SIZE;
 	
 	GPUMemory memory( new_mem_req.size, needed, recommended );
-	v_logger.log<LogLevel::eDebug>("Allocating Memory for transfer of size %" PRId64, new_mem_req.size);
+	v_logger.log<LogLevel::Debug>("Allocating Memory for transfer of size %" PRId64, new_mem_req.size);
 	v_instance->allocate_gpu_memory ( new_mem_req, &memory );
 	void* mapped_ptr;
 	vk::Result res = v_instance->vk_device ().mapMemory ( memory.memory, ( vk::DeviceSize ) 0L, memory.size, vk::MemoryMapFlags(), &mapped_ptr );
@@ -174,7 +174,7 @@ VThinBuffer VDividableBufferStore::acquire_buffer(u64 size) {
 }
 void VDividableBufferStore::free_buffers() {
 	for(vk::Buffer buffer : buffers) {
-		v_logger.log<LogLevel::eDebug> ( "Destroying Buffer 0x%" PRIx64, static_cast<VkBuffer>(buffer) );
+		v_logger.log<LogLevel::Debug> ( "Destroying Buffer 0x%" PRIx64, static_cast<VkBuffer>(buffer) );
 		v_instance->vk_device ().destroyBuffer ( buffer, nullptr );
 	}
 	for(VDividableMemory& chunk : memory_chunks) {

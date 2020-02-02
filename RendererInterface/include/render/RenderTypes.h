@@ -38,173 +38,173 @@ typedef float f32;
 typedef double f64;
 
 enum class ValueType {
-	eUndefined = 0,
-	eU8, eU16, eU32, eU64,
-	eS8, eS16, eS32, eS64,
-	           eF32, eF64,
+	Undefined = 0,
+	U8, U16, U32, U64,
+	S8, S16, S32, S64,
+	           F32, F64,
 
-	eU8Vec2, eU16Vec2, eU32Vec2, eU64Vec2,
-	eS8Vec2, eS16Vec2, eS32Vec2, eS64Vec2,
-	                   eF32Vec2, eF64Vec2,
+	U8Vec2, U16Vec2, U32Vec2, U64Vec2,
+	S8Vec2, S16Vec2, S32Vec2, S64Vec2,
+	                   F32Vec2, F64Vec2,
 
-	eU8Vec3, eU16Vec3, eU32Vec3, eU64Vec3,
-	eS8Vec3, eS16Vec3, eS32Vec3, eS64Vec3,
-	                   eF32Vec3, eF64Vec3,
+	U8Vec3, U16Vec3, U32Vec3, U64Vec3,
+	S8Vec3, S16Vec3, S32Vec3, S64Vec3,
+	                   F32Vec3, F64Vec3,
 
-	eU8Vec4, eU16Vec4, eU32Vec4, eU64Vec4,
-	eS8Vec4, eS16Vec4, eS32Vec4, eS64Vec4,
-	                   eF32Vec4, eF64Vec4,
+	U8Vec4, U16Vec4, U32Vec4, U64Vec4,
+	S8Vec4, S16Vec4, S32Vec4, S64Vec4,
+	                   F32Vec4, F64Vec4,
 
-	eU8Mat2, eU16Mat2, eU32Mat2, eU64Mat2,
-	eS8Mat2, eS16Mat2, eS32Mat2, eS64Mat2,
-	                   eF32Mat2, eF64Mat2,
+	U8Mat2, U16Mat2, U32Mat2, U64Mat2,
+	S8Mat2, S16Mat2, S32Mat2, S64Mat2,
+	                   F32Mat2, F64Mat2,
 
-	eU8Mat3, eU16Mat3, eU32Mat3, eU64Mat3,
-	eS8Mat3, eS16Mat3, eS32Mat3, eS64Mat3,
-	                   eF32Mat3, eF64Mat3,
+	U8Mat3, U16Mat3, U32Mat3, U64Mat3,
+	S8Mat3, S16Mat3, S32Mat3, S64Mat3,
+	                   F32Mat3, F64Mat3,
 
-	eU8Mat4, eU16Mat4, eU32Mat4, eU64Mat4,
-	eS8Mat4, eS16Mat4, eS32Mat4, eS64Mat4,
-	                   eF32Mat4, eF64Mat4,
+	U8Mat4, U16Mat4, U32Mat4, U64Mat4,
+	S8Mat4, S16Mat4, S32Mat4, S64Mat4,
+	                   F32Mat4, F64Mat4,
 };
 inline const char* to_cstring(ValueType type){
 	switch(type) {
-	case ValueType::eUndefined: return "undefined";
+	case ValueType::Undefined: return "undefined";
 	
-	case ValueType::eU8: return "u8";
-	case ValueType::eU16: return "u16";
-	case ValueType::eU32: return "u32";
-	case ValueType::eU64: return "u64";
-	case ValueType::eS8: return "s8";
-	case ValueType::eS16: return "s16";
-	case ValueType::eS32: return "s32";
-	case ValueType::eS64: return "s64";
-	case ValueType::eF32: return "f32";
-	case ValueType::eF64: return "f64";
+	case ValueType::U8: return "u8";
+	case ValueType::U16: return "u16";
+	case ValueType::U32: return "u32";
+	case ValueType::U64: return "u64";
+	case ValueType::S8: return "s8";
+	case ValueType::S16: return "s16";
+	case ValueType::S32: return "s32";
+	case ValueType::S64: return "s64";
+	case ValueType::F32: return "f32";
+	case ValueType::F64: return "f64";
 	
-	case ValueType::eU8Vec2: return "u8Vec2";
-	case ValueType::eU16Vec2: return "u16Vec2";
-	case ValueType::eU32Vec2: return "u32Vec2";
-	case ValueType::eU64Vec2: return "u64Vec2";
-	case ValueType::eS8Vec2: return "s8Vec2";
-	case ValueType::eS16Vec2: return "s16Vec2";
-	case ValueType::eS32Vec2: return "s32Vec2";
-	case ValueType::eS64Vec2: return "s64Vec2";
-	case ValueType::eF32Vec2: return "f32Vec2";
-	case ValueType::eF64Vec2: return "f64Vec2";
+	case ValueType::U8Vec2: return "u8Vec2";
+	case ValueType::U16Vec2: return "u16Vec2";
+	case ValueType::U32Vec2: return "u32Vec2";
+	case ValueType::U64Vec2: return "u64Vec2";
+	case ValueType::S8Vec2: return "s8Vec2";
+	case ValueType::S16Vec2: return "s16Vec2";
+	case ValueType::S32Vec2: return "s32Vec2";
+	case ValueType::S64Vec2: return "s64Vec2";
+	case ValueType::F32Vec2: return "f32Vec2";
+	case ValueType::F64Vec2: return "f64Vec2";
 	
-	case ValueType::eU8Vec3: return "u8Vec3";
-	case ValueType::eU16Vec3: return "u16Vec3";
-	case ValueType::eU32Vec3: return "u32Vec3";
-	case ValueType::eU64Vec3: return "u64Vec3";
-	case ValueType::eS8Vec3: return "s8Vec3";
-	case ValueType::eS16Vec3: return "s16Vec3";
-	case ValueType::eS32Vec3: return "s32Vec3";
-	case ValueType::eS64Vec3: return "s64Vec3";
-	case ValueType::eF32Vec3: return "f32Vec3";
-	case ValueType::eF64Vec3: return "f64Vec3";
+	case ValueType::U8Vec3: return "u8Vec3";
+	case ValueType::U16Vec3: return "u16Vec3";
+	case ValueType::U32Vec3: return "u32Vec3";
+	case ValueType::U64Vec3: return "u64Vec3";
+	case ValueType::S8Vec3: return "s8Vec3";
+	case ValueType::S16Vec3: return "s16Vec3";
+	case ValueType::S32Vec3: return "s32Vec3";
+	case ValueType::S64Vec3: return "s64Vec3";
+	case ValueType::F32Vec3: return "f32Vec3";
+	case ValueType::F64Vec3: return "f64Vec3";
 	
-	case ValueType::eU8Vec4: return "u8Vec4";
-	case ValueType::eU16Vec4: return "u16Vec4";
-	case ValueType::eU32Vec4: return "u32Vec4";
-	case ValueType::eU64Vec4: return "u64Vec4";
-	case ValueType::eS8Vec4: return "s8Vec4";
-	case ValueType::eS16Vec4: return "s16Vec4";
-	case ValueType::eS32Vec4: return "s32Vec4";
-	case ValueType::eS64Vec4: return "s64Vec4";
-	case ValueType::eF32Vec4: return "f32Vec4";
-	case ValueType::eF64Vec4: return "f64Vec4";
+	case ValueType::U8Vec4: return "u8Vec4";
+	case ValueType::U16Vec4: return "u16Vec4";
+	case ValueType::U32Vec4: return "u32Vec4";
+	case ValueType::U64Vec4: return "u64Vec4";
+	case ValueType::S8Vec4: return "s8Vec4";
+	case ValueType::S16Vec4: return "s16Vec4";
+	case ValueType::S32Vec4: return "s32Vec4";
+	case ValueType::S64Vec4: return "s64Vec4";
+	case ValueType::F32Vec4: return "f32Vec4";
+	case ValueType::F64Vec4: return "f64Vec4";
 
-	case ValueType::eU8Mat2: return "u8Mat2";
-	case ValueType::eU16Mat2: return "u16Mat2";
-	case ValueType::eU32Mat2: return "u32Mat2";
-	case ValueType::eU64Mat2: return "u64Mat2";
-	case ValueType::eS8Mat2: return "s8Mat2";
-	case ValueType::eS16Mat2: return "s16Mat2";
-	case ValueType::eS32Mat2: return "s32Mat2";
-	case ValueType::eS64Mat2: return "s64Mat2";
-	case ValueType::eF32Mat2: return "f32Mat2";
-	case ValueType::eF64Mat2: return "f64Mat2";
+	case ValueType::U8Mat2: return "u8Mat2";
+	case ValueType::U16Mat2: return "u16Mat2";
+	case ValueType::U32Mat2: return "u32Mat2";
+	case ValueType::U64Mat2: return "u64Mat2";
+	case ValueType::S8Mat2: return "s8Mat2";
+	case ValueType::S16Mat2: return "s16Mat2";
+	case ValueType::S32Mat2: return "s32Mat2";
+	case ValueType::S64Mat2: return "s64Mat2";
+	case ValueType::F32Mat2: return "f32Mat2";
+	case ValueType::F64Mat2: return "f64Mat2";
 	
-	case ValueType::eU8Mat3: return "u8Mat3";
-	case ValueType::eU16Mat3: return "u16Mat3";
-	case ValueType::eU32Mat3: return "u32Mat3";
-	case ValueType::eU64Mat3: return "u64Mat3";
-	case ValueType::eS8Mat3: return "s8Mat3";
-	case ValueType::eS16Mat3: return "s16Mat3";
-	case ValueType::eS32Mat3: return "s32Mat3";
-	case ValueType::eS64Mat3: return "s64Mat3";
-	case ValueType::eF32Mat3: return "f32Mat3";
-	case ValueType::eF64Mat3: return "f64Mat3";
+	case ValueType::U8Mat3: return "u8Mat3";
+	case ValueType::U16Mat3: return "u16Mat3";
+	case ValueType::U32Mat3: return "u32Mat3";
+	case ValueType::U64Mat3: return "u64Mat3";
+	case ValueType::S8Mat3: return "s8Mat3";
+	case ValueType::S16Mat3: return "s16Mat3";
+	case ValueType::S32Mat3: return "s32Mat3";
+	case ValueType::S64Mat3: return "s64Mat3";
+	case ValueType::F32Mat3: return "f32Mat3";
+	case ValueType::F64Mat3: return "f64Mat3";
 	
-	case ValueType::eU8Mat4: return "u8Mat4";
-	case ValueType::eU16Mat4: return "u16Mat4";
-	case ValueType::eU32Mat4: return "u32Mat4";
-	case ValueType::eU64Mat4: return "u64Mat4";
-	case ValueType::eS8Mat4: return "s8Mat4";
-	case ValueType::eS16Mat4: return "s16Mat4";
-	case ValueType::eS32Mat4: return "s32Mat4";
-	case ValueType::eS64Mat4: return "s64Mat4";
-	case ValueType::eF32Mat4: return "f32Mat4";
-	case ValueType::eF64Mat4: return "f64Mat4";
+	case ValueType::U8Mat4: return "u8Mat4";
+	case ValueType::U16Mat4: return "u16Mat4";
+	case ValueType::U32Mat4: return "u32Mat4";
+	case ValueType::U64Mat4: return "u64Mat4";
+	case ValueType::S8Mat4: return "s8Mat4";
+	case ValueType::S16Mat4: return "s16Mat4";
+	case ValueType::S32Mat4: return "s32Mat4";
+	case ValueType::S64Mat4: return "s64Mat4";
+	case ValueType::F32Mat4: return "f32Mat4";
+	case ValueType::F64Mat4: return "f64Mat4";
 	}
 	return "undefined Type";
 }
 
 enum class ImagePart {
-	eColor,
-	eDepth,
-	eDepthStencil,
-	eStencil,
+	Color,
+	Depth,
+	DepthStencil,
+	Stencil,
 };
 //type U, S, Unorm, Snorm, Float
 enum class ImageFormat {
-	eUndefined,
+	Undefined,
 	//color
-	eU8, eU16, eU32, eU64,
-	eS8, eS16, eS32, eS64,
-	     eF16, eF32, eF64,
-	eUnorm8, eUnorm16,
-	eSnorm8, eSnorm16,
+	U8, U16, U32, U64,
+	S8, S16, S32, S64,
+	     F16, F32, F64,
+	Unorm8, Unorm16,
+	Snorm8, Snorm16,
 	
-	e2U8, e2U16, e2U32, e2U64,
-	e2S8, e2S16, e2S32, e2S64,
-	      e2F16, e2F32, e2F64,
-	e2Unorm8, e2Unorm16,
-	e2Snorm8, e2Snorm16,
+	U8x2, U16x2, U32x2, U64x2,
+	S8x2, S16x2, S32x2, S64x2,
+	      F16x2, F32x2, F64x2,
+	Unorm8x2, Unorm16x2,
+	Snorm8x2, Snorm16x2,
 	
-	e4U8, e4U16, e4U32, e4U64,
-	e4S8, e4S16, e4S32, e4S64,
-	      e4F16, e4F32, e4F64,
-	e4Unorm8, e4Unorm16,
-	e4Snorm8, e4Snorm16,
+	U8x4, U16x4, U32x4, U64x4,
+	S8x4, S16x4, S32x4, S64x4,
+	      F16x4, F32x4, F64x4,
+	Unorm8x4, Unorm16x4,
+	Snorm8x4, Snorm16x4,
 	
 	//srgb???
 	
-	e3U10_U2,
-	e3S10_S2,
-	e3Unorm10_Unorm2,
-	e3Snorm10_Snorm2,
+	U10x3_U2,
+	S10x3_S2,
+	Unorm10x3_Unorm2,
+	Snorm10x3_Snorm2,
 	
 	//depth
-	eD16Unorm, eD32F, 
+	D16Unorm, D32F, 
 	//depthstencil
-	eD16F_St8U, eD24Unorm_St8U, eD32F_St8U,
+	D16F_St8U, D24Unorm_St8U, D32F_St8U,
 	
 	//stencil
-	eSt8U
+	St8U
 };
 enum class ResourceType {
-	eUndefined,
-	eImage,
-	eBuffer,
+	Undefined,
+	Image,
+	Buffer,
 	
-	eDataGroupDef,
-	eContextBase,
-	eModelBase,
-	eModelInstanceBase,
+	DataGroupDef,
+	ContextBase,
+	ModelBase,
+	ModelInstancBase,
 	
-	eModel,
-	eModelInstance,
-	eRenderPass,
+	Model,
+	ModelInstance,
+	RenderPass,
 };

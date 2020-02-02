@@ -5,11 +5,11 @@
 #include "String.h"
 
 enum class LogLevel {
-	eTrace = 0x1,
-	eDebug = 0x2,
-	eInfo  = 0x3,
-	eWarn  = 0x4,
-	eError = 0x5,
+	Trace = 0x1,
+	Debug = 0x2,
+	Info  = 0x3,
+	Warn  = 0x4,
+	Error = 0x5,
 };
 
 struct Logger {
@@ -17,10 +17,10 @@ struct Logger {
 	LogLevel level;
 	FILE * log_output;
 
-	Logger ( const String& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
+	Logger ( const String& module_name, LogLevel level = LogLevel::Info, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
 
 	}
-	Logger ( const String&& module_name, LogLevel level = LogLevel::eInfo, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
+	Logger ( const String&& module_name, LogLevel level = LogLevel::Info, FILE * log_output = stdout ) : module_name ( module_name ), level ( level ), log_output(log_output) {
 
 	}
 	~Logger() = default;

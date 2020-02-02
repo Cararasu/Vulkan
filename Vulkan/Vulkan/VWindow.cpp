@@ -8,270 +8,270 @@
 KeyCode glfw_button_transform ( int button_code ) {
 	switch ( button_code ) {
 	case GLFW_KEY_UNKNOWN:
-		return KeyCode::eUnknown;
+		return KeyCode::Unknown;
 	case GLFW_KEY_SPACE:
-		return KeyCode::eSpace;
+		return KeyCode::Space;
 	case GLFW_KEY_APOSTROPHE:
-		return KeyCode::eApostrophe;
+		return KeyCode::Apostrophe;
 	case GLFW_KEY_COMMA:
-		return KeyCode::eComma;
+		return KeyCode::Comma;
 	case GLFW_KEY_MINUS:
-		return KeyCode::eMinus;
+		return KeyCode::Minus;
 	case GLFW_KEY_PERIOD:
-		return KeyCode::ePeriod;
+		return KeyCode::Period;
 	case GLFW_KEY_SLASH:
-		return KeyCode::eSlash;
+		return KeyCode::Slash;
 	case GLFW_KEY_0:
-		return KeyCode::e0;
+		return KeyCode::Digit0;
 	case GLFW_KEY_1:
-		return KeyCode::e1;
+		return KeyCode::Digit1;
 	case GLFW_KEY_2:
-		return KeyCode::e2;
+		return KeyCode::Digit2;
 	case GLFW_KEY_3:
-		return KeyCode::e3;
+		return KeyCode::Digit3;
 	case GLFW_KEY_4:
-		return KeyCode::e4;
+		return KeyCode::Digit4;
 	case GLFW_KEY_5:
-		return KeyCode::e5;
+		return KeyCode::Digit5;
 	case GLFW_KEY_6:
-		return KeyCode::e6;
+		return KeyCode::Digit6;
 	case GLFW_KEY_7:
-		return KeyCode::e7;
+		return KeyCode::Digit7;
 	case GLFW_KEY_8:
-		return KeyCode::e8;
+		return KeyCode::Digit8;
 	case GLFW_KEY_9:
-		return KeyCode::e9;
+		return KeyCode::Digit9;
 	case GLFW_KEY_SEMICOLON:
-		return KeyCode::eSemicolon;
+		return KeyCode::Semicolon;
 	case GLFW_KEY_EQUAL:
-		return KeyCode::eEqual;
+		return KeyCode::Equal;
 	case GLFW_KEY_A:
-		return KeyCode::eA;
+		return KeyCode::A;
 	case GLFW_KEY_B:
-		return KeyCode::eB;
+		return KeyCode::B;
 	case GLFW_KEY_C:
-		return KeyCode::eC;
+		return KeyCode::C;
 	case GLFW_KEY_D:
-		return KeyCode::eD;
+		return KeyCode::D;
 	case GLFW_KEY_E:
-		return KeyCode::eE;
+		return KeyCode::E;
 	case GLFW_KEY_F:
-		return KeyCode::eF;
+		return KeyCode::F;
 	case GLFW_KEY_G:
-		return KeyCode::eG;
+		return KeyCode::G;
 	case GLFW_KEY_H:
-		return KeyCode::eH;
+		return KeyCode::H;
 	case GLFW_KEY_I:
-		return KeyCode::eI;
+		return KeyCode::I;
 	case GLFW_KEY_J:
-		return KeyCode::eJ;
+		return KeyCode::J;
 	case GLFW_KEY_K:
-		return KeyCode::eK;
+		return KeyCode::K;
 	case GLFW_KEY_L:
-		return KeyCode::eL;
+		return KeyCode::L;
 	case GLFW_KEY_M:
-		return KeyCode::eM;
+		return KeyCode::M;
 	case GLFW_KEY_N:
-		return KeyCode::eN;
+		return KeyCode::N;
 	case GLFW_KEY_O:
-		return KeyCode::eO;
+		return KeyCode::O;
 	case GLFW_KEY_P:
-		return KeyCode::eP;
+		return KeyCode::P;
 	case GLFW_KEY_Q:
-		return KeyCode::eQ;
+		return KeyCode::Q;
 	case GLFW_KEY_R:
-		return KeyCode::eR;
+		return KeyCode::R;
 	case GLFW_KEY_S:
-		return KeyCode::eS;
+		return KeyCode::S;
 	case GLFW_KEY_T:
-		return KeyCode::eT;
+		return KeyCode::T;
 	case GLFW_KEY_U:
-		return KeyCode::eU;
+		return KeyCode::U;
 	case GLFW_KEY_V:
-		return KeyCode::eV;
+		return KeyCode::V;
 	case GLFW_KEY_W:
-		return KeyCode::eW;
+		return KeyCode::W;
 	case GLFW_KEY_X:
-		return KeyCode::eX;
+		return KeyCode::X;
 	case GLFW_KEY_Y:
-		return KeyCode::eY;
+		return KeyCode::Y;
 	case GLFW_KEY_Z:
-		return KeyCode::eZ;
+		return KeyCode::Z;
 	case GLFW_KEY_LEFT_BRACKET:
-		return KeyCode::eLBracket;
+		return KeyCode::LBracket;
 	case GLFW_KEY_BACKSLASH:
-		return KeyCode::eBackslash;
+		return KeyCode::Backslash;
 	case GLFW_KEY_RIGHT_BRACKET:
-		return KeyCode::eRBracket;
+		return KeyCode::RBracket;
 	case GLFW_KEY_GRAVE_ACCENT:
-		return KeyCode::eGraveAccent;
+		return KeyCode::GraveAccent;
 	case GLFW_KEY_WORLD_1:
-		return KeyCode::eWorld1;
+		return KeyCode::World1;
 	case GLFW_KEY_WORLD_2:
-		return KeyCode::eWorld2;
+		return KeyCode::World2;
 	case GLFW_KEY_ESCAPE:
-		return KeyCode::eEscape;
+		return KeyCode::Escape;
 	case GLFW_KEY_ENTER:
-		return KeyCode::eEnter;
+		return KeyCode::Enter;
 	case GLFW_KEY_TAB:
-		return KeyCode::eTab;
+		return KeyCode::Tab;
 	case GLFW_KEY_BACKSPACE:
-		return KeyCode::eBackspace;
+		return KeyCode::Backspace;
 	case GLFW_KEY_INSERT:
-		return KeyCode::eInsert;
+		return KeyCode::Insert;
 	case GLFW_KEY_DELETE:
-		return KeyCode::eDelete;
+		return KeyCode::Delete;
 	case GLFW_KEY_RIGHT:
-		return KeyCode::eRight;
+		return KeyCode::Right;
 	case GLFW_KEY_LEFT:
-		return KeyCode::eLeft;
+		return KeyCode::Left;
 	case GLFW_KEY_DOWN:
-		return KeyCode::eDown;
+		return KeyCode::Down;
 	case GLFW_KEY_UP:
-		return KeyCode::eUp;
+		return KeyCode::Up;
 	case GLFW_KEY_PAGE_UP:
-		return KeyCode::ePageUp;
+		return KeyCode::PageUp;
 	case GLFW_KEY_PAGE_DOWN:
-		return KeyCode::ePageDown;
+		return KeyCode::PageDown;
 	case GLFW_KEY_HOME:
-		return KeyCode::eHome;
+		return KeyCode::Home;
 	case GLFW_KEY_END:
-		return KeyCode::eEnd;
+		return KeyCode::End;
 	case GLFW_KEY_CAPS_LOCK:
-		return KeyCode::eCapsLock;
+		return KeyCode::CapsLock;
 	case GLFW_KEY_SCROLL_LOCK:
-		return KeyCode::eScrollLock;
+		return KeyCode::ScrollLock;
 	case GLFW_KEY_NUM_LOCK:
-		return KeyCode::eNumLock;
+		return KeyCode::NumLock;
 	case GLFW_KEY_PRINT_SCREEN:
-		return KeyCode::ePrintScreen;
+		return KeyCode::PrintScreen;
 	case GLFW_KEY_PAUSE:
-		return KeyCode::ePause;
+		return KeyCode::Pause;
 	case GLFW_KEY_F1:
-		return KeyCode::eF1;
+		return KeyCode::F1;
 	case GLFW_KEY_F2:
-		return KeyCode::eF2;
+		return KeyCode::F2;
 	case GLFW_KEY_F3:
-		return KeyCode::eF3;
+		return KeyCode::F3;
 	case GLFW_KEY_F4:
-		return KeyCode::eF4;
+		return KeyCode::F4;
 	case GLFW_KEY_F5:
-		return KeyCode::eF5;
+		return KeyCode::F5;
 	case GLFW_KEY_F6:
-		return KeyCode::eF6;
+		return KeyCode::F6;
 	case GLFW_KEY_F7:
-		return KeyCode::eF7;
+		return KeyCode::F7;
 	case GLFW_KEY_F8:
-		return KeyCode::eF8;
+		return KeyCode::F8;
 	case GLFW_KEY_F9:
-		return KeyCode::eF9;
+		return KeyCode::F9;
 	case GLFW_KEY_F10:
-		return KeyCode::eF10;
+		return KeyCode::F10;
 	case GLFW_KEY_F11:
-		return KeyCode::eF11;
+		return KeyCode::F11;
 	case GLFW_KEY_F12:
-		return KeyCode::eF12;
+		return KeyCode::F12;
 	case GLFW_KEY_F13:
-		return KeyCode::eF13;
+		return KeyCode::F13;
 	case GLFW_KEY_F14:
-		return KeyCode::eF14;
+		return KeyCode::F14;
 	case GLFW_KEY_F15:
-		return KeyCode::eF15;
+		return KeyCode::F15;
 	case GLFW_KEY_F16:
-		return KeyCode::eF16;
+		return KeyCode::F16;
 	case GLFW_KEY_F17:
-		return KeyCode::eF17;
+		return KeyCode::F17;
 	case GLFW_KEY_F18:
-		return KeyCode::eF18;
+		return KeyCode::F18;
 	case GLFW_KEY_F19:
-		return KeyCode::eF19;
+		return KeyCode::F19;
 	case GLFW_KEY_F20:
-		return KeyCode::eF20;
+		return KeyCode::F20;
 	case GLFW_KEY_F21:
-		return KeyCode::eF21;
+		return KeyCode::F21;
 	case GLFW_KEY_F22:
-		return KeyCode::eF22;
+		return KeyCode::F22;
 	case GLFW_KEY_F23:
-		return KeyCode::eF23;
+		return KeyCode::F23;
 	case GLFW_KEY_F24:
-		return KeyCode::eF24;
+		return KeyCode::F24;
 	case GLFW_KEY_F25:
-		return KeyCode::eF25;
+		return KeyCode::F25;
 	case GLFW_KEY_KP_0:
-		return KeyCode::eKP0;
+		return KeyCode::KP0;
 	case GLFW_KEY_KP_1:
-		return KeyCode::eKP1;
+		return KeyCode::KP1;
 	case GLFW_KEY_KP_2:
-		return KeyCode::eKP2;
+		return KeyCode::KP2;
 	case GLFW_KEY_KP_3:
-		return KeyCode::eKP3;
+		return KeyCode::KP3;
 	case GLFW_KEY_KP_4:
-		return KeyCode::eKP4;
+		return KeyCode::KP4;
 	case GLFW_KEY_KP_5:
-		return KeyCode::eKP5;
+		return KeyCode::KP5;
 	case GLFW_KEY_KP_6:
-		return KeyCode::eKP6;
+		return KeyCode::KP6;
 	case GLFW_KEY_KP_7:
-		return KeyCode::eKP7;
+		return KeyCode::KP7;
 	case GLFW_KEY_KP_8:
-		return KeyCode::eKP8;
+		return KeyCode::KP8;
 	case GLFW_KEY_KP_9:
-		return KeyCode::eKP9;
+		return KeyCode::KP9;
 	case GLFW_KEY_KP_DECIMAL:
-		return KeyCode::eKPDecimal;
+		return KeyCode::KPDecimal;
 	case GLFW_KEY_KP_DIVIDE:
-		return KeyCode::eKPDivide;
+		return KeyCode::KPDivide;
 	case GLFW_KEY_KP_MULTIPLY:
-		return KeyCode::eKPMultiply;
+		return KeyCode::KPMultiply;
 	case GLFW_KEY_KP_SUBTRACT:
-		return KeyCode::eKPSubtract;
+		return KeyCode::KPSubtract;
 	case GLFW_KEY_KP_ADD:
-		return KeyCode::eKPAdd;
+		return KeyCode::KPAdd;
 	case GLFW_KEY_KP_ENTER:
-		return KeyCode::eKPEnter;
+		return KeyCode::KPEnter;
 	case GLFW_KEY_KP_EQUAL:
-		return KeyCode::eKPEqual;
+		return KeyCode::KPEqual;
 	case GLFW_KEY_LEFT_SHIFT:
-		return KeyCode::eLShift;
+		return KeyCode::LShift;
 	case GLFW_KEY_LEFT_CONTROL:
-		return KeyCode::eLCntrl;
+		return KeyCode::LCntrl;
 	case GLFW_KEY_LEFT_ALT:
-		return KeyCode::eLAlt;
+		return KeyCode::LAlt;
 	case GLFW_KEY_LEFT_SUPER:
-		return KeyCode::eLSuper;
+		return KeyCode::LSuper;
 	case GLFW_KEY_RIGHT_SHIFT:
-		return KeyCode::eRShift;
+		return KeyCode::RShift;
 	case GLFW_KEY_RIGHT_CONTROL:
-		return KeyCode::eRCntrl;
+		return KeyCode::RCntrl;
 	case GLFW_KEY_RIGHT_ALT:
-		return KeyCode::eRAlt;
+		return KeyCode::RAlt;
 	case GLFW_KEY_RIGHT_SUPER:
-		return KeyCode::eRSuper;
+		return KeyCode::RSuper;
 	case GLFW_KEY_MENU:
-		return KeyCode::eMenu;
+		return KeyCode::Menu;
 	}
-	return KeyCode::eUnknown;
+	return KeyCode::Unknown;
 }
 KeyCode glfw_mouse_transform ( int mouse_code ) {
 	switch ( mouse_code ) {
 	case GLFW_MOUSE_BUTTON_LEFT:
-		return KeyCode::eMouseLeft;
+		return KeyCode::MouseLeft;
 	case GLFW_MOUSE_BUTTON_RIGHT:
-		return KeyCode::eMouseLeft;
+		return KeyCode::MouseLeft;
 	case GLFW_MOUSE_BUTTON_MIDDLE:
-		return KeyCode::eMouseLeft;
+		return KeyCode::MouseLeft;
 	case GLFW_MOUSE_BUTTON_4:
-		return KeyCode::eMouse4;
+		return KeyCode::Mouse4;
 	case GLFW_MOUSE_BUTTON_5:
-		return KeyCode::eMouse5;
+		return KeyCode::Mouse5;
 	case GLFW_MOUSE_BUTTON_6:
-		return KeyCode::eMouse6;
+		return KeyCode::Mouse6;
 	case GLFW_MOUSE_BUTTON_7:
-		return KeyCode::eMouse7;
+		return KeyCode::Mouse7;
 	case GLFW_MOUSE_BUTTON_8:
-		return KeyCode::eMouse8;
+		return KeyCode::Mouse8;
 	}
-	return KeyCode::eUnknown;
+	return KeyCode::Unknown;
 }
 
 
@@ -289,15 +289,15 @@ VWindow::~VWindow() {
 void VWindow::initialize() {
 	glfwWindowHint ( GLFW_CLIENT_API, GLFW_NO_API );
 	switch ( m_showmode.wanted ) {
-	case WindowShowMode::eMaximized:
+	case WindowShowMode::Maximized:
 		glfwWindowHint ( GLFW_MAXIMIZED, true );
 		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
 		break;
-	case WindowShowMode::eMinimized:
+	case WindowShowMode::Minimized:
 		glfwWindowHint ( GLFW_MAXIMIZED, false );
 		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
 		break;
-	case WindowShowMode::eWindowed:
+	case WindowShowMode::Windowed:
 		glfwWindowHint ( GLFW_MAXIMIZED, false );
 		glfwWindowHint ( GLFW_AUTO_ICONIFY, false );
 		break;
@@ -305,7 +305,7 @@ void VWindow::initialize() {
 	glfwWindowHint ( GLFW_FLOATING, false );
 	glfwWindowHint ( GLFW_VISIBLE, false );
 	glfwWindowHint ( GLFW_RESIZABLE, ( bool ) m_resizable.wanted );
-	glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::eNormal );
+	glfwWindowHint ( GLFW_DECORATED, m_border.wanted == WindowBorder::Normal );
 
 	VMonitor* fullscreen_monitor = dynamic_cast<VMonitor*> ( this->m_fullscreen_monitor.wanted );
 	if ( fullscreen_monitor ) { //it is fullscreen
@@ -315,17 +315,17 @@ void VWindow::initialize() {
 		glfwWindowHint ( GLFW_REFRESH_RATE, m_refreshrate.wanted );
 
 		m_refreshrate.apply();
-		v_logger.log<LogLevel::eDebug> ( "Fullscreen Videomode %dx%d %dHz", wanted_mode.extend.width, wanted_mode.extend.height, wanted_mode.refresh_rate );
+		v_logger.log<LogLevel::Debug> ( "Fullscreen Videomode %dx%d %dHz", wanted_mode.extend.width, wanted_mode.extend.height, wanted_mode.refresh_rate );
 	}
 
 	window = glfwCreateWindow ( m_size.wanted.x, m_size.wanted.y, "Vulkan Test", fullscreen_monitor ? fullscreen_monitor->monitor : nullptr, nullptr );
 
-	if ( m_showmode.wanted == WindowShowMode::eWindowed ) {
+	if ( m_showmode.wanted == WindowShowMode::Windowed ) {
 		glfwSetWindowPos ( window, m_position.wanted.x, m_position.wanted.y );
 	}
 	m_showmode.apply();
 
-	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), v_logger.log<LogLevel::eError> ( "Creation of Surface failed" ) );
+	VCHECKCALL ( glfwCreateWindowSurface ( v_instance->v_instance, window, nullptr, ( VkSurfaceKHR* ) &surface ), v_logger.log<LogLevel::Error> ( "Creation of Surface failed" ) );
 
 	glfwSetWindowUserPointer ( window, this );
 
@@ -339,116 +339,116 @@ void VWindow::initialize() {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eMoved;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::Moved;
 			event.window.x = x;
 			event.window.y = y;
 			vulkan_window->eventqueue.push ( event );
-			v_logger.log<LogLevel::eDebug> ( "Position of Window %dx%d", x, y );
+			v_logger.log<LogLevel::Debug> ( "Position of Window %dx%d", x, y );
 			vulkan_window->m_position.apply ( {x, y} );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eResized;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::Resized;
 			event.window.x = x;
 			event.window.y = y;
 			vulkan_window->eventqueue.push ( event );
-			v_logger.log<LogLevel::eDebug> ( "Size of Window %dx%d", x, y );
+			v_logger.log<LogLevel::Debug> ( "Size of Window %dx%d", x, y );
 			vulkan_window->m_size.apply ( {x, y} );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowCloseCallback ( window, [] ( GLFWwindow * window ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eClosed;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::Closed;
 			vulkan_window->eventqueue.push ( event );
 			glfwHideWindow ( window );
 			vulkan_window->m_visible.apply ( false );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowRefreshCallback ( window, [] ( GLFWwindow * window ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			//@Remove when rendering is delegated into a different thread
-			v_logger.log<LogLevel::eDebug> ( "Refresh" );
+			v_logger.log<LogLevel::Debug> ( "Refresh" );
 			//vulkan_window->v_instance->present_window ( vulkan_window );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowFocusCallback ( window, [] ( GLFWwindow * window, int focus ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eFocused;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::Focused;
 			event.window.value = focus == GLFW_TRUE;
 			vulkan_window->eventqueue.push ( event );
 			vulkan_window->m_focused.apply ( focus == GLFW_TRUE );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetWindowIconifyCallback ( window, [] ( GLFWwindow * window, int iconified ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eIconify;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::Iconify;
 			event.window.value = iconified == GLFW_TRUE;
-			vulkan_window->m_showmode.apply ( iconified == GLFW_TRUE ? WindowShowMode::eMinimized : WindowShowMode::eWindowed );
+			vulkan_window->m_showmode.apply ( iconified == GLFW_TRUE ? WindowShowMode::Minimized : WindowShowMode::Windowed );
 			vulkan_window->eventqueue.push ( event );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetFramebufferSizeCallback ( window, [] ( GLFWwindow * window, int x, int y ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eWindow;
-			event.window.action = WindowAction::eFrameResized;
+			event.type = OSEventType::Window;
+			event.window.action = WindowAction::FrameResized;
 			event.window.x = x;
 			event.window.y = y;
 			vulkan_window->eventqueue.push ( event );
-			v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", x, y );
+			v_logger.log<LogLevel::Debug> ( "Size of Framebuffer %dx%d", x, y );
 			vulkan_window->rendering_mutex.lock();
 			vulkan_window->framebuffer_size_changed ( {x, y} );
 			vulkan_window->rendering_mutex.unlock();
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetScrollCallback ( window, [] ( GLFWwindow * window, double xoffset, double yoffset ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eScroll;
+			event.type = OSEventType::Scroll;
 			event.scroll.deltax = xoffset;
 			event.scroll.deltay = yoffset;
 			vulkan_window->eventqueue.push ( event );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetKeyCallback ( window, [] ( GLFWwindow * window, int key, int scancode, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eButton;
-			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
+			event.type = OSEventType::Button;
+			event.button.action = action == GLFW_PRESS ? PressAction::Press : ( action == GLFW_RELEASE ? PressAction::Release : PressAction::Repeat );
 			event.button.shift = ( mods | GLFW_MOD_SHIFT ) != 0;
 			event.button.cntrl = ( mods | GLFW_MOD_CONTROL ) != 0;
 			event.button.alt = ( mods | GLFW_MOD_ALT ) != 0;
@@ -490,19 +490,19 @@ void VWindow::initialize() {
 			if ( mods & GLFW_MOD_SUPER )   printf ( "Super " );
 			printf ( "\n" );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCharModsCallback ( window, [] ( GLFWwindow * window, unsigned int codepoint, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eChar;
+			event.type = OSEventType::Char;
 			utf32_to_utf8 ( codepoint, event.charinput.utf8 );
-			event.charinput.shift = ( mods | GLFW_MOD_SHIFT ) == true;
-			event.charinput.cntrl = ( mods | GLFW_MOD_CONTROL ) == true;
-			event.charinput.alt = ( mods | GLFW_MOD_ALT ) == true;
-			event.charinput.super = ( mods | GLFW_MOD_SUPER ) == true;
+			event.charinput.shift = ( mods & GLFW_MOD_SHIFT ) != 0;
+			event.charinput.cntrl = ( mods & GLFW_MOD_CONTROL ) != 0;
+			event.charinput.alt = ( mods & GLFW_MOD_ALT ) != 0;
+			event.charinput.super = ( mods & GLFW_MOD_SUPER ) != 0;
 			vulkan_window->eventqueue.push ( event );
 			printf ( "%lc ", ( wint_t ) codepoint );
 			if ( mods & GLFW_MOD_SHIFT )
@@ -515,38 +515,38 @@ void VWindow::initialize() {
 				printf ( "Super " );
 			printf ( "\n" );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCursorPosCallback ( window, [] ( GLFWwindow * window, double xpos, double ypos ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eMouse;
-			event.mouse.action = MouseMoveAction::eMoved;
+			event.type = OSEventType::Mouse;
+			event.mouse.action = MouseMoveAction::Moved;
 			event.mouse.deltax = ( vulkan_window->mouse_x < 0.0 ) ? 0.0 : xpos - vulkan_window->mouse_x;
 			event.mouse.deltay = ( vulkan_window->mouse_y < 0.0 ) ? 0.0 : ypos - vulkan_window->mouse_y;
 			event.mouse.posx = vulkan_window->mouse_x = xpos;
 			event.mouse.posy = vulkan_window->mouse_y = ypos;
 			vulkan_window->eventqueue.push ( event );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetCursorEnterCallback ( window, [] ( GLFWwindow * window, int entered ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eMouse;
+			event.type = OSEventType::Mouse;
 			if ( entered ) {
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
-				event.mouse.action = MouseMoveAction::eEntered;
+				event.mouse.action = MouseMoveAction::Entered;
 				vulkan_window->eventqueue.push ( event );
 			} else {
 				vulkan_window->mouse_x = -1.0;
 				vulkan_window->mouse_y = -1.0;
-				event.mouse.action = MouseMoveAction::eLeft;
+				event.mouse.action = MouseMoveAction::Left;
 			}
 			event.mouse.posx = vulkan_window->mouse_x;
 			event.mouse.posy = vulkan_window->mouse_x;
@@ -554,24 +554,24 @@ void VWindow::initialize() {
 			event.mouse.deltay = 0.0f;
 			vulkan_window->eventqueue.push ( event );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	glfwSetMouseButtonCallback ( window, [] ( GLFWwindow * window, int button, int action, int mods ) {
 		VWindow* vulkan_window = static_cast<VWindow*> ( glfwGetWindowUserPointer ( window ) );
 		if ( vulkan_window ) {
 			OSEvent event;
-			event.type = OSEventType::eButton;
-			event.button.action = action == GLFW_PRESS ? PressAction::ePress : ( action == GLFW_RELEASE ? PressAction::eRelease : PressAction::eRepeat );
-			event.button.shift = ( mods | GLFW_MOD_SHIFT ) != 0;
-			event.button.cntrl = ( mods | GLFW_MOD_CONTROL ) != 0;
-			event.button.alt = ( mods | GLFW_MOD_ALT ) != 0;
-			event.button.super = ( mods | GLFW_MOD_SUPER ) != 0;
+			event.type = OSEventType::Button;
+			event.button.action = action == GLFW_PRESS ? PressAction::Press : ( action == GLFW_RELEASE ? PressAction::Release : PressAction::Repeat );
+			event.button.shift = ( mods & GLFW_MOD_SHIFT ) != 0;
+			event.button.cntrl = ( mods & GLFW_MOD_CONTROL ) != 0;
+			event.button.alt = ( mods & GLFW_MOD_ALT ) != 0;
+			event.button.super = ( mods & GLFW_MOD_SUPER ) != 0;
 			event.button.keycode = glfw_mouse_transform ( button );
 			event.button.scancode = 0;
 			vulkan_window->eventqueue.push ( event );
 		} else {
-			v_logger.log<LogLevel::eError> ( "No Window Registered For GLFW-Window" );
+			v_logger.log<LogLevel::Error> ( "No Window Registered For GLFW-Window" );
 		}
 	} );
 	//initialize Vulkan stuff
@@ -580,7 +580,7 @@ void VWindow::initialize() {
 
 	{
 		u32 formatCount;
-		v_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
+		v_instance->vk_physical_device().getSurfaceFormatsKHR ( surface, &formatCount, nullptr );
 		if ( formatCount != 0 ) {
 			vk::SurfaceFormatKHR formats[formatCount];
 			v_instance->vk_physical_device ().getSurfaceFormatsKHR ( surface, &formatCount, formats );
@@ -596,9 +596,9 @@ void VWindow::initialize() {
 					break;
 				}
 			}
-			if ( v_logger.level <= LogLevel::eDebug ) {
+			if ( v_logger.level <= LogLevel::Debug ) {
 				for ( size_t i = 0; i < formatCount; i++ ) {
-					v_logger.log<LogLevel::eDebug> ( "Present Format: %s Colorspace: %s", to_string ( formats[i].format ).c_str(), to_string ( formats[i].colorSpace ).c_str() );
+					v_logger.log<LogLevel::Debug> ( "Present Format: %s Colorspace: %s", to_string ( formats[i].format ).c_str(), to_string ( formats[i].colorSpace ).c_str() );
 				}
 			}
 		}
@@ -649,8 +649,8 @@ void VWindow::prepare_frame() {
 	FrameLocalData* data = current_framelocal_data();
 
 	//reset for frame
-	v_instance->vk_device().waitForFences ( {data->image_presented_fence}, true, std::numeric_limits<u64>::max() );
-	v_instance->vk_device().resetFences ( {data->image_presented_fence} );
+	v_instance->vk_device().waitForFences ( 1, &data->image_presented_fence, true, std::numeric_limits<u64>::max() );
+	v_instance->vk_device().resetFences ( 1, &data->image_presented_fence );
 	v_instance->wait_for_frame ( data->frame_index );
 
 	//TODO reset all needed command_buffers
@@ -683,7 +683,7 @@ RendResult VWindow::v_update() {
 			}
 			if ( m_showmode.changed() ) {
 				switch ( m_showmode.wanted ) {
-				case WindowShowMode::eMaximized:
+				case WindowShowMode::Maximized:
 					if ( m_fullscreen_monitor.wanted ) {
 						VMonitor* vulkan_monitor = dynamic_cast<VMonitor*> ( m_fullscreen_monitor.wanted );
 						if ( vulkan_monitor ) {
@@ -697,10 +697,10 @@ RendResult VWindow::v_update() {
 						glfwMaximizeWindow ( window );
 					}
 					break;
-				case WindowShowMode::eMinimized:
+				case WindowShowMode::Minimized:
 					glfwIconifyWindow ( window );
 					break;
-				case WindowShowMode::eWindowed:
+				case WindowShowMode::Windowed:
 					glfwRestoreWindow ( window );
 					break;
 				}
@@ -716,13 +716,13 @@ RendResult VWindow::v_update() {
 
 		if ( m_cursormode.changed() ) {
 			switch ( m_cursormode.wanted ) {
-			case CursorMode::eNormal:
+			case CursorMode::Normal:
 				glfwSetInputMode ( window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
 				break;
-			case CursorMode::eInvisible:
+			case CursorMode::Invisible:
 				glfwSetInputMode ( window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN );
 				break;
-			case CursorMode::eCatch:
+			case CursorMode::Catch:
 				glfwSetInputMode ( window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
 				break;
 			}
@@ -733,14 +733,14 @@ RendResult VWindow::v_update() {
 	if ( !window ) {
 		initialize();
 	}
-	return RendResult::eSuccess;
+	return RendResult::Success;
 }
 void VWindow::create_swapchain() {
 
 	//needs to be done first, because it waits for the fences to finish, which empties the graphics/presentation queue
 	destroy_frame_local_data();
 
-	capabilities = v_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface );
+	V_CHECKCALL(v_instance->vk_physical_device().getSurfaceCapabilitiesKHR ( surface, &capabilities ), printf("Cannot get SurfaceCapabilities"));
 
 	{
 		Extent2D<s32> actualExtent = m_size.value;
@@ -756,7 +756,7 @@ void VWindow::create_swapchain() {
 	u32 image_buffer_count = std::max<u32> ( capabilities.minImageCount, MAX_PRESENTIMAGE_COUNT );
 	if ( capabilities.maxImageCount > 0 ) {
 		image_buffer_count = std::min<u32> ( capabilities.maxImageCount, MAX_PRESENTIMAGE_COUNT );
-		v_logger.log<LogLevel::eDebug> ( "Present Image Counts: %d", image_buffer_count );
+		v_logger.log<LogLevel::Debug> ( "Present Image Counts: %d", image_buffer_count );
 	}
 
 	{
@@ -789,25 +789,32 @@ void VWindow::create_swapchain() {
 		swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
 		swapchainCreateInfo.preTransform = capabilities.currentTransform;//VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR??
 		switch ( m_alphablend.value ) {
-		case WindowAlphaBlend::eOpaque:
+		case WindowAlphaBlend::Opaque:
 			swapchainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 			break;
-		case WindowAlphaBlend::eBlend:
+		case WindowAlphaBlend::Blend:
 			swapchainCreateInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::ePostMultiplied;
 			break;
 		}
 		swapchainCreateInfo.presentMode = chosen_presentation_mode;
 		swapchainCreateInfo.clipped = VK_TRUE;//clip pixels that are behind other windows
 
-		v_logger.log<LogLevel::eTrace> ( "SUPPORTED %d", v_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface ) );
+		vk::Bool32 support;
+		V_CHECKCALL(v_instance->vk_physical_device().getSurfaceSupportKHR ( queue_wrapper->present_queue_id, surface, &support ), printf("Cannot get SurfaceSupport\n"));
 
-		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), v_logger.log<LogLevel::eError> ( "Creation of Swapchain failed" ) );
-		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain );
+		v_logger.log<LogLevel::Trace> ( "SUPPORTED %d", support);
+
+		V_CHECKCALL ( v_instance->vk_device().createSwapchainKHR ( &swapchainCreateInfo, nullptr, &swap_chain ), v_logger.log<LogLevel::Error> ( "Creation of Swapchain failed" ) );
+		v_instance->vk_device().destroySwapchainKHR ( swapchainCreateInfo.oldSwapchain, nullptr );
 	}
-	std::vector<vk::Image> images = v_instance->vk_device().getSwapchainImagesKHR ( swap_chain );
+	u32 image_count;
+	std::vector<vk::Image> images;
+	V_CHECKCALL(v_instance->vk_device().getSwapchainImagesKHR ( swap_chain, &image_count, nullptr ), printf("Cannot get SwapchainImage-Count"));
+	images.resize(image_count);
+	V_CHECKCALL(v_instance->vk_device().getSwapchainImagesKHR ( swap_chain, &image_count, images.data() ), printf("Cannot get SwapchainImages"));
 	if ( !present_images.size ) {
 		present_images.resize ( images.size() );
-		for ( int i = 0; i < present_images.size; i++ ) {
+		for ( size_t i = 0; i < present_images.size; i++ ) {
 			present_images[i] = v_instance->m_resource_manager->v_images.insert ( new VBaseImage ( v_instance, this ) );
 		}
 	}
@@ -815,7 +822,7 @@ void VWindow::create_swapchain() {
 		VBaseImage* present_image = present_images[i];
 		bool changed = present_image->width != swap_chain_extend.width || present_image->height != swap_chain_extend.height || present_image->depth != 0;
 		if ( changed ) {
-			v_logger.log<LogLevel::eInfo> ( "Resizing Window Frame %d from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
+			v_logger.log<LogLevel::Info> ( "Resizing Window Frame %d from size %" PRId32 "x%" PRId32 "x%" PRId32 " to %" PRId32 "x%" PRId32 "x%" PRId32,
 			                                i, present_image->width, present_image->height, present_image->depth, swap_chain_extend.width, swap_chain_extend.height, 0 );
 		}
 		present_image->v_set_extent ( swap_chain_extend.width, swap_chain_extend.height, 0 );
@@ -824,7 +831,7 @@ void VWindow::create_swapchain() {
 		if ( changed ) {
 			auto it = v_instance->m_resource_manager->dependency_map.find ( present_image );
 			if ( it != v_instance->m_resource_manager->dependency_map.end() ) {
-				v_logger.log<LogLevel::eInfo> ( "Found %d dependant Image(s)", it->second.size() );
+				v_logger.log<LogLevel::Info> ( "Found %d dependant Image(s)", it->second.size() );
 				for ( VBaseImage* image : it->second ) {
 					image->rebuild_image ( present_image->width, present_image->height, present_image->depth );
 				}
@@ -835,36 +842,38 @@ void VWindow::create_swapchain() {
 	create_frame_local_data ( present_images.size );
 }
 void VWindow::framebuffer_size_changed ( Extent2D<s32> extent ) {
-	v_logger.log<LogLevel::eDebug> ( "Size of Framebuffer %dx%d", extent.x, extent.y );
+	v_logger.log<LogLevel::Debug> ( "Size of Framebuffer %dx%d", extent.x, extent.y );
 
 	if ( extent.x > 0 && extent.y > 0 )
 		create_swapchain();
-	v_logger.log<LogLevel::eTrace> ( "Actual Extent %dx%d", swap_chain_extend.x, swap_chain_extend.y );
+	v_logger.log<LogLevel::Trace> ( "Actual Extent %dx%d", swap_chain_extend.x, swap_chain_extend.y );
 }
 
 vk::CommandPool VWindow::graphics_command_pool() {
-	if ( !frame_local_data[present_image_index].graphics_command_pool )
-		frame_local_data[present_image_index].graphics_command_pool = v_instance->m_device.createCommandPool ( vk::CommandPoolCreateInfo() );
+	if ( !frame_local_data[present_image_index].graphics_command_pool ) {
+		vk::CommandPoolCreateInfo create_info;
+		V_CHECKCALL(v_instance->m_device.createCommandPool ( &create_info, nullptr, &frame_local_data[present_image_index].graphics_command_pool ), printf("Cannot create GraphicsCommandPool\n"));
+	}
 	return frame_local_data[present_image_index].graphics_command_pool;
 }
 void VWindow::create_frame_local_data ( u32 count ) {
 
 	frame_local_data.resize ( count );
 	for ( u32 i = 0; i < count; i++ ) {
-
-		frame_local_data[i].image_presented_fence = v_instance->vk_device().createFence ( vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) ); //image is ready
+		vk::FenceCreateInfo create_info{ vk::FenceCreateFlags ( vk::FenceCreateFlagBits::eSignaled ) };
+		V_CHECKCALL(v_instance->m_device.createFence ( &create_info, nullptr, &frame_local_data[i].image_presented_fence ), printf("Cannot create Fence\n"));
 		frame_local_data[i].present_ready_sem = v_instance->create_semaphore();
 	}
 }
 void VWindow::destroy_frame_local_data() {
-	v_logger.log<LogLevel::eDebug> ( "Wait For Queues to clear out" );
+	v_logger.log<LogLevel::Debug> ( "Wait For Queues to clear out" );
 	v_instance->m_device.waitIdle();
 	u32 index = 0;
 	for ( FrameLocalData& data : frame_local_data ) {
 		if ( data.image_presented_fence ) {
 			//@TODO figure out why this freezes the Screen on Ubuntu/GNOME
 			//v_instance->vk_device().waitForFences ( {data.image_presented_fence}, true, std::numeric_limits<u64>::max() );
-			v_instance->vk_device().destroyFence ( data.image_presented_fence );
+			v_instance->vk_device().destroyFence ( data.image_presented_fence, nullptr );
 		}
 		v_instance->destroy_semaphore ( data.present_ready_sem );
 		index++;
@@ -873,19 +882,19 @@ void VWindow::destroy_frame_local_data() {
 	frame_local_data.clear();
 }
 RendResult VWindow::destroy() {
-	v_logger.log<LogLevel::eDebug> ( "Destroy Semaphores" );
+	v_logger.log<LogLevel::Debug> ( "Destroy Semaphores" );
 	if ( image_available_guard_sem )
 		v_instance->destroy_semaphore ( image_available_guard_sem );
-	v_logger.log<LogLevel::eDebug> ( "Destroy Local Data" );
+	v_logger.log<LogLevel::Debug> ( "Destroy Local Data" );
 	destroy_frame_local_data();
-	v_logger.log<LogLevel::eDebug> ( "Destroy Swap Chain" );
+	v_logger.log<LogLevel::Debug> ( "Destroy Swap Chain" );
 	if ( swap_chain )
-		v_instance->vk_device().destroySwapchainKHR ( swap_chain );
-	v_logger.log<LogLevel::eDebug> ( "Destroy Command Pools" );
+		v_instance->vk_device().destroySwapchainKHR ( swap_chain, nullptr );
+	v_logger.log<LogLevel::Debug> ( "Destroy Command Pools" );
 	if ( window_graphics_command_pool ) {
-		v_instance->vk_device().destroyCommandPool ( window_graphics_command_pool );
+		v_instance->vk_device().destroyCommandPool ( window_graphics_command_pool, nullptr );
 		window_graphics_command_pool = vk::CommandPool();
 	}
-	v_logger.log<LogLevel::eDebug> ( "Destroyed Everything" );
-	return RendResult::eSuccess;
+	v_logger.log<LogLevel::Debug> ( "Destroyed Everything" );
+	return RendResult::Success;
 }

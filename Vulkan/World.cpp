@@ -15,11 +15,11 @@ struct SimpleVertex {
 
 u32 loadDataFile ( std::string file, std::vector<SimpleVertex>& vertices, std::vector<u32>& indices, std::tuple<u32, u32>& vertex_data, std::tuple<u32, u32>& index_data ) {
 
-	g_logger.log<LogLevel::eDebug> ( "Loading File %s", file.c_str() );
+	g_logger.log<LogLevel::Debug> ( "Loading File %s", file.c_str() );
 	std::ifstream input ( file, std::ios::binary );
 
 	if ( !input.is_open() ) {
-		g_logger.log<LogLevel::eError> ( "Couldn't open File %s", file.c_str() );
+		g_logger.log<LogLevel::Error> ( "Couldn't open File %s", file.c_str() );
 		return false;
 	}
 
@@ -38,11 +38,11 @@ u32 loadDataFile ( std::string file, std::vector<SimpleVertex>& vertices, std::v
 
 	input.close();
 
-	if ( g_logger.level <= LogLevel::eDebug ) {
-		g_logger.log<LogLevel::eDebug> ( "Model %s", str.c_str() );
-		g_logger.log<LogLevel::eDebug> ( "\tVertices %u", std::get<0> ( vertex_data ) );
-		g_logger.log<LogLevel::eDebug> ( "\tInstances %u", std::get<0> ( index_data ) );
-		g_logger.log<LogLevel::eDebug> ( "\t%u Bytes Read", ( sizeof ( SimpleVertex ) * std::get<0> ( vertex_data ) + sizeof ( u32 ) * std::get<0> ( index_data ) + 8 + str.size() ) );
+	if ( g_logger.level <= LogLevel::Debug ) {
+		g_logger.log<LogLevel::Debug> ( "Model %s", str.c_str() );
+		g_logger.log<LogLevel::Debug> ( "\tVertices %u", std::get<0> ( vertex_data ) );
+		g_logger.log<LogLevel::Debug> ( "\tInstances %u", std::get<0> ( index_data ) );
+		g_logger.log<LogLevel::Debug> ( "\t%u Bytes Read", ( sizeof ( SimpleVertex ) * std::get<0> ( vertex_data ) + sizeof ( u32 ) * std::get<0> ( index_data ) + 8 + str.size() ) );
 	}
 	return true;
 }
@@ -119,7 +119,7 @@ void World::init ( Instance* instance ) {
 		instance->load_generic_model ( square_model, data_to_load.data, data_to_load.size, indices.data, indices.size );
 	}
 	ResourceManager* resource_manager = instance->resource_manager();
-	Image* skybox_teximage = resource_manager->create_texture ( 2048, 2048, 0, 6, 1, ImageFormat::e4Unorm8 );
+	Image* skybox_teximage = resource_manager->create_texture ( 2048, 2048, 0, 6, 1, ImageFormat::Unorm8x4 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveZ_2k.png", skybox_teximage, 0, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveY_2k.png", skybox_teximage, 1, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_PositiveX_2k.png", skybox_teximage, 2, 0 );
@@ -127,7 +127,7 @@ void World::init ( Instance* instance ) {
 	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeY_2k.png", skybox_teximage, 4, 0 );
 	resource_manager->load_image_to_texture ( "assets/SkyboxGalaxy/GalaxyTex_NegativeX_2k.png", skybox_teximage, 5, 0 );
 
-	Image* explosion_teximage = resource_manager->create_texture ( 256, 256, 0, 32, 1, ImageFormat::e4Unorm8 );
+	Image* explosion_teximage = resource_manager->create_texture ( 256, 256, 0, 32, 1, ImageFormat::Unorm8x4 );
 	for ( int i = 0; i < 32; i++ ) {
 		char buffer[100];
 		snprintf ( buffer, 100, "assets/Explosion/explode_%d.bmp", i + 1 );
@@ -302,15 +302,15 @@ void World::init ( Instance* instance ) {
 
 	Context x_context = instance->create_context ( tex_simplemodel_context_base_id );
 	Image* x_teximage = resource_manager->load_image_to_texture ( "assets/X/XWing_Diffuse_01_2k.png", 4 );
-	instance->update_context_image_sampler ( x_context, 0, 0, x_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( x_context, 0, 0, x_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 1} ), sampler );
 	for ( Model& model : xwing_models ) instance->set_context ( model, x_context );
 
 	world_shard.skybox_context = instance->create_context ( skybox_context_base_id );
-	instance->update_context_image_sampler ( world_shard.skybox_context, 0, 0, skybox_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 6} ), sampler );
+	instance->update_context_image_sampler ( world_shard.skybox_context, 0, 0, skybox_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 6} ), sampler );
 	instance->set_context ( cube_model, world_shard.skybox_context );
 
 	Context explosion_context = instance->create_context ( explosion_context_base_id );
-	instance->update_context_image_sampler ( explosion_context, 0, 0, explosion_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 32} ), sampler );
+	instance->update_context_image_sampler ( explosion_context, 0, 0, explosion_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 32} ), sampler );
 	instance->set_context ( square_model, explosion_context );
 
 
@@ -320,9 +320,9 @@ void World::init ( Instance* instance ) {
 	Image* tie_body_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Body_Diffuse_2k.png", 4 );
 	Image* tie_arm_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Arm_Diffuse_2k.png", 4 );
 	Image* tie_wing_teximage = resource_manager->load_image_to_texture ( "assets/Tie/Tie_Fighter_Wing_Diffuse_2k.png", 4 );
-	instance->update_context_image_sampler ( tie_body_context, 0, 0, tie_body_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
-	instance->update_context_image_sampler ( tie_arm_context, 0, 0, tie_arm_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
-	instance->update_context_image_sampler ( tie_wing_context, 0, 0, tie_wing_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( tie_body_context, 0, 0, tie_body_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( tie_arm_context, 0, 0, tie_arm_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( tie_wing_context, 0, 0, tie_wing_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 1} ), sampler );
 	instance->set_context ( tie_models[0], tie_body_context );
 	instance->set_context ( tie_models[1], tie_body_context );
 	instance->set_context ( tie_models[2], tie_arm_context );
@@ -334,7 +334,7 @@ void World::init ( Instance* instance ) {
 	Context flat_gallofree_context = instance->create_context ( flat_simplemodel_context_base_id );
 	Image* gallofree_teximage = resource_manager->load_image_to_texture ( "assets/Gallofree/ScratchedMetal2.jpeg", 4 );
 
-	instance->update_context_image_sampler ( gallofree_context, 0, 0, gallofree_teximage->create_use ( ImagePart::eColor, {0, 1}, {0, 1} ), sampler );
+	instance->update_context_image_sampler ( gallofree_context, 0, 0, gallofree_teximage->create_use ( ImagePart::Color, {0, 1}, {0, 1} ), sampler );
 
 	glm::vec4 color ( 0.75f, 0.75f, 0.75f, 1.0f );
 	instance->update_context_data ( flat_gallofree_context, &color );

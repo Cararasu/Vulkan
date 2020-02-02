@@ -10,7 +10,7 @@ VResourceManager::VResourceManager ( VInstance* instance ) : v_instance ( instan
 
 VResourceManager::~VResourceManager() {
 	for ( VShaderModule* shadermodule : shader_array ) {
-		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule );
+		v_instance->vk_device ().destroyShaderModule ( shadermodule->shadermodule, nullptr );
 		delete shadermodule;
 	}
 	dependency_map.clear();
@@ -28,7 +28,7 @@ static std::vector<char> readFile ( String filename ) {
 	std::ifstream file ( filename.cstr, std::ios::ate | std::ios::binary );
 
 	if ( !file.is_open() ) {
-		v_logger.log<LogLevel::eError> ( "Couldn't open File %s", filename.cstr );
+		v_logger.log<LogLevel::Error> ( "Couldn't open File %s", filename.cstr );
 		return std::vector<char>();
 	}
 	size_t fileSize = ( size_t ) file.tellg();
@@ -49,14 +49,14 @@ u64 VResourceManager::load_shader ( ShaderType type, String name, String filenam
 	std::vector<char> shaderCode = readFile ( filename.cstr );
 
 	if ( !shaderCode.size() ) {
-		v_logger.log<LogLevel::eWarn> ( "Shader from File %s could not be loaded or is empty", filename.cstr );
+		v_logger.log<LogLevel::Warn> ( "Shader from File %s could not be loaded or is empty", filename.cstr );
 		return 0;
 	}
 
 	vk::ShaderModuleCreateInfo createInfo ( vk::ShaderModuleCreateFlags(), shaderCode.size(), ( const u32* ) shaderCode.data() );
 
 	vk::ShaderModule shadermodule;
-	V_CHECKCALL ( v_instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), v_logger.log<LogLevel::eError> ( "Creation of Shadermodule failed" ) );
+	V_CHECKCALL ( v_instance->vk_device ().createShaderModule ( &createInfo, nullptr, &shadermodule ), v_logger.log<LogLevel::Error> ( "Creation of Shadermodule failed" ) );
 	module = new VShaderModule ( type, name, shadermodule );
 	shader_array.insert ( module );
 	shader_string_id_map.insert ( std::make_pair ( name, module->id ) );
@@ -88,20 +88,20 @@ Image* VResourceManager::create_texture ( u32 width, u32 height, u32 depth, u32 
 	vk::ImageUsageFlags usages = vk::ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc;
 	vk::ImageAspectFlags aspectFlags;
 	switch ( format ) {
-	case ImageFormat::eD16Unorm:
-	case ImageFormat::eD32F: {
+	case ImageFormat::D16Unorm:
+	case ImageFormat::D32F: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 	}
 	break;
-	case ImageFormat::eD24Unorm_St8U:
-	case ImageFormat::eD32F_St8U: {
+	case ImageFormat::D24Unorm_St8U:
+	case ImageFormat::D32F_St8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
 	break;
-	case ImageFormat::eSt8U: {
+	case ImageFormat::St8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
@@ -125,7 +125,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 	if ( !pixels ) {
-		v_logger.log<LogLevel::eWarn> ( "failed to load texture image from file %s", file.c_str() );
+		v_logger.log<LogLevel::Warn> ( "failed to load texture image from file %s", file.c_str() );
 		throw std::runtime_error ( "failed to load texture image!" );
 	}
 	VThinBuffer buffer = v_instance->request_staging_buffer ( imageSize );
@@ -134,7 +134,7 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	v_instance->free_transfer_command_buffer ( cmdbuffer );
 	vk::CommandBufferBeginInfo begininfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
 
-	cmdbuffer.begin ( begininfo );
+	cmdbuffer.begin ( &begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, mipmap_layer, array_layer, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
 	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
@@ -153,8 +153,8 @@ Image* VResourceManager::load_image_to_texture ( std::string file, Image* image,
 	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, fence );
 	//TODO make asynch
 	if ( fence ) {
-		v_instance->vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
-		v_instance->vk_device().resetFences ( {fence} );
+		v_instance->vk_device().waitForFences ( 1, &fence, true, std::numeric_limits<u64>::max() );
+		v_instance->vk_device().resetFences ( 1, &fence );
 		v_instance->free_data.fences.push_back ( fence );
 	}
 	stbi_image_free ( pixels );
@@ -178,11 +178,10 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 	v_instance->free_transfer_command_buffer ( cmdbuffer );
 
 	memcpy ( buffer.mapped_ptr, pixels, imageSize );
-	vk::CommandBufferBeginInfo begininfo = {
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr
-	};
+	
+	vk::CommandBufferBeginInfo begininfo = { vk::CommandBufferUsageFlagBits::eOneTimeSubmit, nullptr };
+	cmdbuffer.begin ( &begininfo );
 
-	cmdbuffer.begin ( begininfo );
 	v_image->transition_layout ( vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, cmdbuffer );
 	vk::BufferImageCopy bufferimagecopy ( 0, texWidth, texHeight, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {texWidth, texHeight, 1} );
 	cmdbuffer.copyBufferToImage ( buffer.buffer, v_image->image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferimagecopy );
@@ -201,8 +200,8 @@ Image* VResourceManager::load_image_to_texture ( std::string file, u32 mipmap_la
 	v_instance->queue_wrapper()->transfer_queue.submit ( 1, submitinfos, fence );
 	//TODO make asynch
 	if ( fence ) {
-		v_instance->vk_device().waitForFences ( {fence}, true, std::numeric_limits<u64>::max() );
-		v_instance->vk_device().resetFences ( {fence} );
+		v_instance->vk_device().waitForFences ( 1, &fence, true, std::numeric_limits<u64>::max() );
+		v_instance->vk_device().resetFences ( 1, &fence );
 		v_instance->free_data.fences.push_back ( fence );
 	}
 	stbi_image_free ( pixels );
@@ -219,20 +218,20 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	vk::ImageUsageFlags usages;
 	vk::ImageAspectFlags aspectFlags;
 	switch ( type ) {
-	case ImageFormat::eD16Unorm:
-	case ImageFormat::eD32F: {
+	case ImageFormat::D16Unorm:
+	case ImageFormat::D32F: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 	}
 	break;
-	case ImageFormat::eD24Unorm_St8U:
-	case ImageFormat::eD32F_St8U: {
+	case ImageFormat::D24Unorm_St8U:
+	case ImageFormat::D32F_St8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eDepth;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
 	break;
-	case ImageFormat::eSt8U: {
+	case ImageFormat::St8U: {
 		usages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 		aspectFlags |= vk::ImageAspectFlagBits::eStencil;
 	}
@@ -245,20 +244,16 @@ VBaseImage* VResourceManager::v_create_dependant_image ( VBaseImage* base_image,
 	}
 	//TODO make eSampled and eInputAttachment dynamically
 	VBaseImage* v_wrapper = v_images.insert ( new VBaseImage ( base_image->v_instance,
-	                        base_image->width,
-	                        base_image->height,
-	                        base_image->depth,
+	                        base_image->width, base_image->height, base_image->depth,
 	                        1,
 	                        mipmap_layers,
 	                        format,
 	                        vk::ImageTiling::eOptimal,
 	                        usages | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eInputAttachment,
 	                        aspectFlags,
-							scalingtype,
-							scaling,
+							scalingtype, scaling,
 							base_image->id,
-	                        vk::MemoryPropertyFlagBits::eDeviceLocal,
-							vk::MemoryPropertyFlags() ) );
+	                        vk::MemoryPropertyFlagBits::eDeviceLocal, vk::MemoryPropertyFlags() ) );
 	auto it = dependency_map.find ( base_image );
 	if ( it == dependency_map.end() ) {
 		it = dependency_map.insert ( it, std::make_pair ( base_image, DynArray<VBaseImage*>() ) );

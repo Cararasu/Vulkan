@@ -18,10 +18,10 @@ VSampler::VSampler ( VInstance* instance, FilterType magnification, FilterType m
 	    vk::BorderColor::eFloatTransparentBlack, //borderColor
 	    VK_FALSE //unnormalizedCoordinates
 	);
-	sampler = v_instance->vk_device().createSampler ( samplerInfo );
+	v_instance->vk_device().createSampler ( &samplerInfo, nullptr, &sampler );
 	created_frame_index = v_instance->frame_index;
 }
 
 VSampler::~VSampler() {
-	v_instance->vk_device().destroySampler ( sampler );
+	v_instance->vk_device().destroySampler ( sampler, nullptr );
 }

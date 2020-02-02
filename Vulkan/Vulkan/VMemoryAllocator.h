@@ -62,7 +62,7 @@ struct AlwaysGrowAllocator {
 			init_chunk ( chunk );
 		}
 		init_chunk ( chunk );
-		void* ptr = chunk->data + ALLOCATED_CHUNK_SIZE - chunk->bytesleft;
+		void* ptr = reinterpret_cast<u8*>(chunk->data) + ALLOCATED_CHUNK_SIZE - chunk->bytesleft;
 		chunk->bytesleft -= bytes;
 		fflush ( stdout );
 		return ptr;

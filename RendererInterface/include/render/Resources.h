@@ -66,17 +66,17 @@ struct ImageUseRef {
 };
 
 enum class ImageScalingType {
-	eNone,
-	eMultiply,
+	None,
+	Multiply,
 	
-	eCeil2,
-	eMultiplyCeil2,
+	Ceil2,
+	MultiplyCeil2,
 	
-	eFloor2,
-	eMultiplyFloor2,
+	Floor2,
+	MultiplyFloor2,
 	
-	eRound2,
-	eMultiplyRound2,
+	Round2,
+	MultiplyRound2,
 };
 
 struct Image : public Resource {

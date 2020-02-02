@@ -71,7 +71,7 @@ struct PerFrameData  {
 	AlwaysGrowAllocator frame_allocator;
 };
 
-	struct VInstance : public Instance {
+struct VInstance : public Instance {
 	InstanceOptions options;
 
 	VExtLayerStruct extLayers;
@@ -224,11 +224,14 @@ struct PerFrameData  {
 
 	inline vk::Semaphore create_semaphore () {
 		//TODO caching
-		return m_device.createSemaphore ( vk::SemaphoreCreateInfo(), nullptr );
+		vk::Semaphore semaphore;
+		vk::SemaphoreCreateInfo create_info;
+		V_CHECKCALL(m_device.createSemaphore ( &create_info, nullptr, &semaphore ), printf("Could not create Semaphore\n"));
+		return semaphore;
 	}
 	inline RendResult destroy_semaphore ( vk::Semaphore sem ) {
 		m_device.destroySemaphore ( sem, nullptr );
-		return RendResult::eSuccess;
+		return RendResult::Success;
 	}
 
 //------------------------ CommandPools/CommandBuffers
@@ -245,7 +248,8 @@ struct PerFrameData  {
 
 inline RendResult wrap_command ( std::function<RendResult ( vk::CommandBuffer ) > do_command, VInstance* v_instance, vk::CommandPool commandpool, vk::CommandBuffer* cmdbuffer ) {
 	*cmdbuffer = v_instance->createCommandBuffer ( commandpool, vk::CommandBufferLevel::ePrimary );
-	cmdbuffer->begin ( vk::CommandBufferBeginInfo ( vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) );
+	vk::CommandBufferBeginInfo begin_info( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
+	cmdbuffer->begin ( &begin_info );
 	RendResult res = do_command ( *cmdbuffer );
 	cmdbuffer->end();
 	return res;

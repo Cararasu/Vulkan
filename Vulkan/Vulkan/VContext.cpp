@@ -30,19 +30,19 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	for ( TextureResource& texres : contextbase->texture_resources ) {
 		vk::DescriptorType type;
 		switch(texres.type) {
-		case TextureResourceType::eImage:
+		case TextureResourceType::Image:
 			if(texres.needs_write)
 				type = vk::DescriptorType::eStorageImage;
 			else
 				type = vk::DescriptorType::eSampledImage;
 			break;
-		case TextureResourceType::eSampler:
+		case TextureResourceType::Sampler:
 			type = vk::DescriptorType::eSampler;
 			break;
-		case TextureResourceType::eImageSampled:
+		case TextureResourceType::ImageSampled:
 			type = vk::DescriptorType::eCombinedImageSampler;
 			break;
-		case TextureResourceType::eBufferSampled:
+		case TextureResourceType::BufferSampled:
 			if(texres.needs_write)
 				type = vk::DescriptorType::eStorageTexelBuffer;
 			else
@@ -58,7 +58,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 		dscount++;
 	}
 	vk::DescriptorPoolCreateInfo poolInfo ( vk::DescriptorPoolCreateFlags(), CONTEXT_DESCRIPTOR_SET_COUNT, poolsizes.size, poolsizes.data );
-	descriptor_pool = v_instance->vk_device().createDescriptorPool ( poolInfo );
+	V_CHECKCALL(v_instance->vk_device().createDescriptorPool ( &poolInfo, nullptr, &descriptor_pool ), printf("Cannot create DescriptorPool\n"));
 
 	u32 writecount = 0;
 
@@ -94,7 +94,7 @@ VContext::VContext ( VInstance* instance, ContextBaseId contextbase_id ) : id ( 
 	}
 }
 VContext::~VContext() {
-	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool );
+	v_instance->vk_device().destroyDescriptorPool ( descriptor_pool, nullptr );
 }
 void VContext::prepare_for_use() {
 	if(texture_resources.size) {
@@ -128,7 +128,7 @@ void VContext::prepare_for_use() {
 						nullptr, nullptr
 					);
 			}
-			v_instance->vk_device().updateDescriptorSets ( writesets, {} );
+			v_instance->vk_device().updateDescriptorSets ( writesets.size(), writesets.data(), 1, nullptr );
 			needs_update = false;
 		}
 	}
